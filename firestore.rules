@@ -48,6 +48,10 @@ service cloud.firestore {
       allow write: if canTeam(team);
     }
 
+    // 회칙: 읽기는 비밀번호를 넣은 기기, 올리기는 관리자만
+    match /bylaws/{id} { allow read: if canShared(); allow write: if signedIn() && hasUnlock('admin'); }
+    match /bylawsChunks/{id} { allow read: if canShared(); allow write: if signedIn() && hasUnlock('admin'); }
+
     // 교회 공용 자료: 곡 · 악보 · 제목 목록 (어느 팀이든 비밀번호를 넣은 기기만)
     match /songs/{id} { allow read, write: if canShared(); }
     match /catalog/{id} { allow read, write: if canShared(); }
