@@ -162,8 +162,8 @@ body.fb-pad{padding-bottom:72px}
 .cal-day .dn{align-self:flex-start;font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums}
 .cal-day .more{font-size:.7rem;color:var(--muted)}
 .chipc{display:block;font-size:.7rem;line-height:1.35;border-radius:4px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--kc);background:color-mix(in srgb,var(--kc) 14%,transparent);color:var(--ink)}
-.k-service{--kc:var(--team,var(--accent))}.k-practice{--kc:#d9822b}.k-group{--kc:#1d8a5a}.k-etc{--kc:#7a8299}
-.cal-legend{display:flex;flex-wrap:wrap;gap:6px}.cal-legend .chipc{display:inline-block;font-size:.75rem}
+.k-service{--kc:var(--team,var(--accent))}.k-practice{--kc:#d9822b}.k-group{--kc:#1d8a5a}.k-etc,.k-custom{--kc:#7a8299}.k-bday{--kc:#d6457a}
+.cal-legend{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.cal-legend .chipc{display:inline-block;font-size:.75rem}
 .evcard{text-align:left;border-left:4px solid var(--kc);cursor:pointer;font:inherit;color:inherit}
 .uplist{display:flex;flex-direction:column}
 .uprow{display:grid;grid-template-columns:150px auto 1fr;gap:10px;align-items:center;padding:8px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
@@ -1302,14 +1302,17 @@ function versionsBox(s,can){const vs=clone(vers(s));const mine=teamVer(s);const 
 function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editId=null;
   const nameIn=h("input",{type:"text",id:"mb-name",placeholder:"이름"});
   const tierSel=h("select",{id:"mb-tier",style:"width:auto"},TIERS.map(t=>h("option",{value:t,text:t})));
+  const bmSel=h("select",{id:"mb-bm",style:"width:auto","aria-label":"생일 월"},h("option",{value:"",text:"월"}),Array.from({length:12},(_,i)=>h("option",{value:pad(i+1),text:`${i+1}월`})));
+  const bdSel=h("select",{id:"mb-bd",style:"width:auto","aria-label":"생일 일"},h("option",{value:"",text:"일"}),Array.from({length:31},(_,i)=>h("option",{value:pad(i+1),text:`${i+1}일`})));
   const posBox=h("div",{class:"row"});const extra=h("input",{type:"text",id:"mb-extra",placeholder:"다른 자리 (예: 바이올린)",style:"max-width:200px"});
   const saveBtn=h("button",{class:"btn primary",disabled:!S.canWrite||!S.db,text:"멤버 등록"});const cancelBtn=h("button",{class:"btn",text:"취소"});cancelBtn.hidden=true;
   const allPos=()=>[...new Set([...POSITIONS,...S.members.flatMap(mb=>mb.positions||[])])];
   function drawPos(){posBox.replaceChildren(...[...new Set([...allPos(),...f.positions])].map(p=>h("button",{type:"button",class:"lbtn","aria-pressed":String(f.positions.includes(p)),text:p,onclick:()=>{f.positions=f.positions.includes(p)?f.positions.filter(x=>x!==p):[...f.positions,p];drawPos();}})));}
-  function reset(){editId=null;f.name="";f.tier="정규";f.positions=[];nameIn.value="";tierSel.value="정규";saveBtn.textContent="멤버 등록";cancelBtn.hidden=true;drawPos();}
+  function reset(){editId=null;f.name="";f.tier="정규";f.positions=[];nameIn.value="";tierSel.value="정규";bmSel.value="";bdSel.value="";saveBtn.textContent="멤버 등록";cancelBtn.hidden=true;drawPos();}
   saveBtn.onclick=async()=>{const name=nameIn.value.trim();if(!name){nameIn.focus();return toast("이름을 써 주세요");}
     const ex=extra.value.trim();if(ex&&!f.positions.includes(ex))f.positions.push(ex);extra.value="";
-    const body={name,tier:tierSel.value,positions:f.positions,updatedAt:Date.now()};
+    if(!!bmSel.value!==!!bdSel.value)return toast("생일은 월과 일을 모두 골라 주세요 (없으면 둘 다 비워 두세요)");
+    const body={name,tier:tierSel.value,positions:f.positions,birthday:bmSel.value?`${bmSel.value}-${bdSel.value}`:"",updatedAt:Date.now()};
     const same=S.members.filter(mb=>mb.id!==editId&&norm(mb.name)===norm(name));
     if(same.length){askSameName(name,same,body,editId,reset);return;}
     try{if(editId)await S.db.doc(`members/${editId}`).update(body);else await S.db.collection("members").add({...body,team:S.team,by:S.myId||null,createdAt:Date.now()});toast(editId?"고쳤어요":`${name} 님을 등록했어요`);reset();}
@@ -1317,7 +1320,8 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
   cancelBtn.onclick=reset;
   const listBox=h("div",{class:"tablewrap"});
   m.append(h("div",{class:"sheet"},h("h2",{},"멤버 슬롯",h("span",{class:"sub",text:"여기 등록한 사람이 콘티 참여자 칸에서 바로 떠요"})),
-    h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"mb-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"mb-tier",text:"구분"}),tierSel)),
+    h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"mb-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"mb-tier",text:"구분"}),tierSel),
+      h("div",{class:"field"},h("label",{htmlFor:"mb-bm",text:"생일 (선택)"}),h("div",{class:"row",style:"flex-wrap:nowrap"},bmSel,bdSel))),
     h("div",{class:"lab",style:"margin-top:12px",text:"맡는 자리 (여러 개 고를 수 있어요)"}),posBox,
     h("div",{class:"row",style:"margin-top:8px"},extra,h("span",{class:"spacer"}),cancelBtn,saveBtn)),
     h("div",{class:"sheet"},h("h2",{},"멤버 명단",h("span",{class:"sub",text:`${teamName(S.team)} · ${S.members.length}명`})),listBox));
@@ -1334,10 +1338,12 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
     const lead=S.contis.reduce((o,c)=>{for(const r of c.roster||[])for(const p of r.people||[])if(p.id)o[p.id]=(o[p.id]||0)+1;return o;},{});
     listBox.append(h("div",{class:"mcards"},arr.map(mb=>{let armed=false;const del=h("button",{class:"btn sm danger",disabled:!S.canWrite,text:"빼기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말?";setTimeout(()=>{armed=false;del.textContent="빼기";},3000);return;}try{await S.db.doc(`members/${mb.id}`).delete();toast("명단에서 뺐어요");}catch(e){toast("빼지 못했어요");}}});
         return h("div",{class:"mcard"},h("span",{class:"avatar","aria-hidden":"true",text:[...mb.name][0]||"?"}),
-          h("div",{class:"mi"},h("span",{class:`tier t${mb.tier}`,style:"align-self:flex-start",text:mb.tier}),h("b",{text:mb.name}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",""].filter(Boolean).join("  ·  ")})),
-          h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!S.canWrite,text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=mb.tier;f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));})));}
+          h("div",{class:"mi"},h("span",{class:`tier t${mb.tier}`,style:"align-self:flex-start",text:mb.tier}),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",""].filter(Boolean).join("  ·  ")})),
+          h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!S.canWrite,text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=mb.tier;[bmSel.value,bdSel.value]=(mb.birthday||"-").split("-");f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));})));}
   draw();renderMembers.redraw=draw;}
 
+const bdayLabel=b=>{const[m,d]=(b||"").split("-").map(Number);return m&&d?`${m}.${d}`:"";};
+const mbName=mb=>mb.birthday?`${mb.name}(${bdayLabel(mb.birthday)})`:mb.name;
 /* same name in one team → ask whether it's the same person and merge */
 function askSameName(name,same,body,editId,done,dupRest){const t=same[0];
   const desc=mb=>`${mb.name} · ${mb.tier} · ${(mb.positions||[]).join(", ")||"자리 없음"}`;
@@ -1426,59 +1432,67 @@ const HOLIDAYS={"2026-01-01":"신정","2026-02-16":"설날 연휴","2026-02-17":
   "2027-01-01":"신정","2027-02-06":"설날 연휴","2027-02-07":"설날","2027-02-08":"설날 연휴","2027-02-09":"대체공휴일","2027-03-01":"삼일절","2027-05-05":"어린이날","2027-05-13":"부처님오신날",
   "2027-06-06":"현충일","2027-06-07":"대체공휴일","2027-07-17":"제헌절","2027-08-15":"광복절","2027-08-16":"대체공휴일","2027-09-14":"추석 연휴","2027-09-15":"추석","2027-09-16":"추석 연휴",
   "2027-10-03":"개천절","2027-10-04":"대체공휴일","2027-10-09":"한글날","2027-10-11":"대체공휴일","2027-12-25":"성탄절","2027-12-27":"대체공휴일"};
-const EVKINDS=[["practice","찬양 연습"],["group","소모임"],["service","예배"],["etc","기타"]];
-const evKindName=k=>(EVKINDS.find(x=>x[0]===k)||EVKINDS[3])[1];
+const EVKINDS=[["practice","찬양 연습"],["group","소모임"],["service","예배"],["custom","직접 입력"]];
+const evKindName=(k,e)=>k==="custom"?((e&&e.kindName)||"직접 입력"):k==="etc"?"기타":(EVKINDS.find(x=>x[0]===k)||EVKINDS[3])[1];
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const addDays=(ds,n)=>{const d=parseD(ds)||new Date();d.setDate(d.getDate()+n);return ymd(d);};
 function eventModal(ev,preset={}){const can=S.canWrite&&!!S.db;const e=ev?clone(ev):{date:preset.date||todayStr(),time:preset.time||"",title:preset.title||"",kind:preset.kind||"practice",place:preset.place||"",memo:preset.memo||""};
-  const kindSel=h("select",{id:"ev-kind",disabled:!can,onchange:x=>{const old=evKindName(e.kind);e.kind=x.target.value;if(!titleIn.value.trim()||titleIn.value===old)titleIn.value=evKindName(e.kind);}},EVKINDS.map(([v,l])=>h("option",{value:v,text:l,selected:e.kind===v})));
+  if(e.kind==="etc"){e.kind="custom";e.kindName=e.kindName||"기타";}
+  const kindName=h("input",{type:"text",id:"ev-kindname",placeholder:"종류 이름 (예: 수련회, 회의)",value:e.kindName||"",disabled:!can,oninput:x=>{if(!titleIn.value.trim()||titleIn.value===titleIn.dataset.auto){titleIn.value=x.target.value;titleIn.dataset.auto=x.target.value;}}});
+  kindName.hidden=e.kind!=="custom";
+  const kindSel=h("select",{id:"ev-kind",disabled:!can,onchange:x=>{const old=evKindName(e.kind,e);e.kind=x.target.value;kindName.hidden=e.kind!=="custom";if(e.kind==="custom"){kindName.focus();if(titleIn.value===old)titleIn.value="";}else if(!titleIn.value.trim()||titleIn.value===old)titleIn.value=evKindName(e.kind);}},EVKINDS.filter(k=>k[0]!=="service").map(([v,l])=>h("option",{value:v,text:l,selected:e.kind===v})));
   const dateIn=h("input",{type:"date",id:"ev-date",value:e.date,disabled:!can});
   const timeIn=h("input",{type:"time",id:"ev-time",value:e.time||"",disabled:!can});
   const titleIn=h("input",{type:"text",id:"ev-title",value:e.title||evKindName(e.kind),placeholder:"예: 찬양 연습",disabled:!can});
   const placeIn=h("input",{type:"text",id:"ev-place",value:e.place||"",placeholder:"예: 본당, 비전홀",disabled:!can});
   const memoIn=h("textarea",{id:"ev-memo",value:e.memo||"",placeholder:"예: 10/11 주일예배 곡 연습, 6시 30분까지 세팅",disabled:!can,style:"min-height:70px"});
   const fld=(id,l,el)=>h("div",{class:"field"},h("label",{htmlFor:id,text:l}),el);
-  const save=async()=>{const body={team:S.team,date:dateIn.value,time:timeIn.value,title:titleIn.value.trim()||evKindName(kindSel.value),kind:kindSel.value,place:placeIn.value.trim(),memo:memoIn.value.trim(),updatedAt:Date.now()};
+  const save=async()=>{const kn=kindSel.value==="custom"?kindName.value.trim():"";if(kindSel.value==="custom"&&!kn){kindName.focus();return toast("종류 이름을 써 주세요");}
+    const body={team:S.team,date:dateIn.value,time:timeIn.value,title:titleIn.value.trim()||kn||evKindName(kindSel.value),kind:kindSel.value,kindName:kn,place:placeIn.value.trim(),memo:memoIn.value.trim(),updatedAt:Date.now()};
     if(!body.date)return toast("날짜를 골라 주세요");
     try{if(ev)await S.db.doc(`events/${ev.id}`).update(body);else await S.db.collection("events").add({...body,by:S.myId||null,createdAt:Date.now()});
-      md.close();toast(`${fmtDate(body.date)}에 「${body.title}」 일정을 ${ev?"고쳤어요":"넣었어요"}`);S.calMonth=body.date.slice(0,7);S.calDay=body.date;if(S.tab==="cal")render();}
+      md.close();toast(`${fmtDate(body.date)}에 「${body.title}」 일정을 ${ev?"고쳤어요":"넣었어요"}`);S.calMonth=body.date.slice(0,7);if(S.tab==="cal")render();}
     catch(err){toast("일정을 저장하지 못했어요");}};
   let armed=false;const del=ev&&can?h("button",{class:"btn danger",text:"지우기",onclick:async x=>{if(!armed){armed=true;x.currentTarget.textContent="정말 지울까요?";return;}
     try{await S.db.doc(`events/${ev.id}`).delete();md.close();toast("일정을 지웠어요");if(S.tab==="cal")render();}catch(err){toast("지우지 못했어요");}}}):null;
-  const md=modal(ev?"일정 고치기":"일정 추가",h("div",{class:"panel-body"},h("div",{class:"grid"},fld("ev-kind","종류",kindSel),fld("ev-date","날짜",dateIn),fld("ev-time","시간 (선택)",timeIn),fld("ev-place","장소 (선택)",placeIn)),
+  const md=modal(ev?"일정 고치기":"일정 추가",h("div",{class:"panel-body"},h("div",{class:"grid"},fld("ev-kind","종류",h("div",{style:"display:flex;flex-direction:column;gap:6px"},kindSel,kindName)),fld("ev-date","날짜",dateIn),fld("ev-time","시간 (선택)",timeIn),fld("ev-place","장소 (선택)",placeIn)),
     fld("ev-title","제목",titleIn),fld("ev-memo","메모 (선택)",memoIn),can?null:h("p",{class:"hint",text:"보기만 할 수 있어요."})),
     [del,h("span",{class:"spacer"}),h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can?h("button",{class:"btn primary",text:"저장",onclick:save}):null]);}
 function dayItems(ds){const evs=S.events.filter(e=>e.date===ds).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
-  const cs=S.contis.filter(c=>c.date===ds&&!c.noService);return{evs,cs};}
-function renderCal(m){const today=todayStr();if(!S.calMonth)S.calMonth=today.slice(0,7);if(!S.calDay)S.calDay=today;
+  const cs=S.contis.filter(c=>c.date===ds&&!c.noService);const bds=S.members.filter(mb=>mb.birthday&&mb.birthday===ds.slice(5));return{evs,cs,bds};}
+/* tap a date: see that day, add to it */
+function dayModal(ds){const {evs,cs,bds}=dayItems(ds);const hol=HOLIDAYS[ds];
+  const body=h("div",{class:"panel-body"},
+    hol?h("p",{style:"color:var(--danger);margin:0 0 8px",text:`🇰🇷 ${hol}`}):null,
+    (evs.length+cs.length+bds.length)?h("div",{class:"cards"},
+      bds.map(mb=>h("div",{class:"card evcard k-bday"},h("div",{class:"row"},h("span",{class:"tag",text:"생일"}),h("b",{text:`🎂 ${mb.name} 생일`})))),
+      cs.map(c=>h("div",{class:"card evcard k-service"},h("div",{class:"row"},h("span",{class:"tag",text:"예배"}),h("b",{text:wtypeOf(c)}),h("span",{class:"hint",text:[leaderOf(c)&&`인도 ${leaderOf(c)}`,`${allItems(c).length}곡`].filter(Boolean).join(" · ")}),h("span",{class:"spacer"}),
+        h("button",{class:"btn sm",text:"콘티 열기",onclick:()=>{md.close();openConti(c);}})))),
+      evs.map(e=>h("button",{type:"button",class:`card evcard k-${e.kind}`,onclick:()=>{md.close();eventModal(e);}},h("div",{class:"row"},h("span",{class:"tag",text:evKindName(e.kind,e)}),e.time?h("b",{text:e.time}):null,h("b",{text:e.title}),e.place?h("span",{class:"hint",text:`@ ${e.place}`}):null),
+        e.memo?h("div",{class:"hint",style:"white-space:pre-wrap;text-align:left",text:e.memo}):null))):h("div",{class:"empty",text:"이 날은 아직 일정이 없어요."}));
+  const md=modal(fmtDate(ds),body,[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),S.canWrite&&S.db?h("button",{class:"btn primary",text:"+ 이 날 일정 추가",onclick:()=>{md.close();eventModal(null,{date:ds});}}):null]);}
+function renderCal(m){const today=todayStr();if(!S.calMonth)S.calMonth=today.slice(0,7);
   const [Y,M]=S.calMonth.split("-").map(Number);const first=new Date(Y,M-1,1);const start=new Date(Y,M-1,1-first.getDay());
   const go=n=>{const d=new Date(Y,M-1+n,1);S.calMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;render();};
   const grid=h("div",{class:"cal",role:"grid"});
   ["일","월","화","수","목","금","토"].forEach((w,i)=>grid.append(h("div",{class:"cal-wd"+(i===0?" sun":i===6?" sat":""),text:w})));
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=ymd(d);if(i>=35&&d.getMonth()!==M-1)break;
-    const {evs,cs}=dayItems(ds);const out=d.getMonth()!==M-1;
-    const hol=HOLIDAYS[ds];
-    grid.append(h("button",{type:"button",class:"cal-day"+(out?" out":"")+(ds===today?" today":"")+(ds===S.calDay?" sel":"")+(d.getDay()===0?" sun":"")+(hol?" hol":""),"aria-label":`${fmtDate(ds)}${hol?" "+hol:""} 일정 ${evs.length+cs.length}개`,onclick:()=>{S.calDay=ds;render();}},
+    const {evs,cs,bds}=dayItems(ds);const out=d.getMonth()!==M-1;const hol=HOLIDAYS[ds];const n=evs.length+cs.length+bds.length;
+    grid.append(h("button",{type:"button",class:"cal-day"+(out?" out":"")+(ds===today?" today":"")+(d.getDay()===0?" sun":"")+(hol?" hol":""),"aria-label":`${fmtDate(ds)}${hol?" "+hol:""} 일정 ${n}개 · 눌러서 보기와 추가`,onclick:()=>dayModal(ds)},
       h("span",{class:"dn",text:d.getDate()}),hol?h("span",{class:"holname",text:hol}):null,
+      bds.map(mb=>h("span",{class:"chipc k-bday",text:`🎂 ${mb.name}`})),
       cs.map(c=>h("span",{class:"chipc k-service",text:wtypeOf(c)})),
       evs.slice(0,3).map(e=>h("span",{class:`chipc k-${e.kind}`,text:(e.time?e.time+" ":"")+e.title})),
       evs.length>3?h("span",{class:"more",text:`+${evs.length-3}`}):null));}
-  const {evs,cs}=dayItems(S.calDay);
-  const dayBox=h("div",{class:"sheet"},h("h2",{},fmtDate(S.calDay)+(HOLIDAYS[S.calDay]?` · ${HOLIDAYS[S.calDay]}`:""),h("span",{class:"sub",text:evs.length+cs.length?`${evs.length+cs.length}개`:"일정 없음"})),
-    h("div",{class:"cards"},
-      cs.map(c=>h("div",{class:"card evcard k-service"},h("div",{class:"row"},h("span",{class:"tag",text:"예배"}),h("b",{text:wtypeOf(c)}),h("span",{class:"hint",text:[leaderOf(c)&&`인도 ${leaderOf(c)}`,`${allItems(c).length}곡`].filter(Boolean).join(" · ")}),h("span",{class:"spacer"}),
-        h("button",{class:"btn sm",text:"콘티 열기",onclick:()=>openConti(c)})))),
-      evs.map(e=>h("button",{type:"button",class:`card evcard k-${e.kind}`,onclick:()=>eventModal(e)},h("div",{class:"row"},h("span",{class:"tag",text:evKindName(e.kind)}),e.time?h("b",{text:e.time}):null,h("b",{text:e.title}),e.place?h("span",{class:"hint",text:`@ ${e.place}`}):null),
-        e.memo?h("div",{class:"hint",style:"white-space:pre-wrap;text-align:left",text:e.memo}):null))),
-    S.canWrite?h("div",{class:"row",style:"margin-top:10px"},h("button",{class:"btn primary",text:"+ 이 날 일정 추가",onclick:()=>eventModal(null,{date:S.calDay})})):null);
-  /* next 4 weeks at a glance */
-  const end=addDays(today,28);const up=[...S.events.filter(e=>e.date>=today&&e.date<=end).map(e=>({d:e.date,t:e.time||"",k:e.kind,label:e.title,ev:e})),
-    ...S.contis.filter(c=>c.date>=today&&c.date<=end&&!c.noService).map(c=>({d:c.date,t:"",k:"service",label:wtypeOf(c),c}))].sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));
+  /* next 4 weeks at a glance (with birthdays) */
+  const end=addDays(today,28);const bdIn=[];for(let i=0;i<=28;i++){const ds=addDays(today,i);for(const mb of S.members)if(mb.birthday===ds.slice(5))bdIn.push({d:ds,t:"",k:"bday",label:`🎂 ${mb.name} 생일`});}
+  const up=[...S.events.filter(e=>e.date>=today&&e.date<=end).map(e=>({d:e.date,t:e.time||"",k:e.kind,label:e.title,ev:e})),
+    ...S.contis.filter(c=>c.date>=today&&c.date<=end&&!c.noService).map(c=>({d:c.date,t:"",k:"service",label:wtypeOf(c),c})),...bdIn].sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{style:"display:inline-flex;align-items:center;gap:6px"},h("button",{class:"btn sm ghost","aria-label":"이전 달",text:"◀",onclick:()=>go(-1)}),`${Y}년 ${M}월`,h("button",{class:"btn sm ghost","aria-label":"다음 달",text:"▶",onclick:()=>go(1)})),
-      h("span",{class:"row",style:"gap:6px"},h("button",{class:"btn sm",text:"오늘",onclick:()=>{S.calMonth=today.slice(0,7);S.calDay=today;render();}}),S.canWrite?h("button",{class:"btn sm primary",text:"+ 일정",onclick:()=>eventModal(null,{date:S.calDay})}):null)),
-    h("div",{class:"cal-legend"},[["service","예배 (콘티)"],...EVKINDS.filter(k=>k[0]!=="service")].map(([k,l])=>h("span",{class:`chipc k-${k}`,text:l}))),grid),dayBox,
-    h("div",{class:"sheet"},h("h2",{},"다가오는 일정",h("span",{class:"sub",text:"오늘부터 4주"})),up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:"uprow",onclick:()=>x.ev?eventModal(x.ev):openConti(x.c)},
-      h("span",{class:"when",text:fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":evKindName(x.k)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):h("div",{class:"empty",text:"4주 안에 잡힌 일정이 없어요."})));}
+      h("button",{class:"btn sm",text:"오늘",onclick:()=>{S.calMonth=today.slice(0,7);render();}})),
+    h("div",{class:"cal-legend"},[["service","예배 (콘티)"],["practice","찬양 연습"],["group","소모임"],["custom","직접 입력"],["bday","생일"]].map(([k,l])=>h("span",{class:`chipc k-${k}`,text:l})),h("span",{class:"hint",text:"날짜를 누르면 그날 일정을 보고 더할 수 있어요"})),grid),
+    h("div",{class:"sheet"},h("h2",{},"다가오는 일정",h("span",{class:"sub",text:"오늘부터 4주"})),up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:"uprow",onclick:()=>x.ev?eventModal(x.ev):x.c?openConti(x.c):dayModal(x.d)},
+      h("span",{class:"when",text:fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":x.k==="bday"?"생일":evKindName(x.k,x.ev)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):h("div",{class:"empty",text:"4주 안에 잡힌 일정이 없어요."})));}
 
 /* =========================================================
    BYLAWS TAB  (회칙: 관리자가 PDF를 올리고, 모두 찾아 읽어요)
