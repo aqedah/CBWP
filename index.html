@@ -475,7 +475,8 @@ async function fileToImages(file){const name=(file.name||"").toLowerCase(),type=
 const ssSearch=q=>`https://songselect.ccli.com/search/results?search=${encodeURIComponent(q)}`;
 const ssSong=id=>`https://songselect.ccli.com/songs/${id}`;
 /* suggestions: team library songs first, then the shared title list (hymns carry "찬송가 N장") */
-function catItems(cat){return(cat.items||[]).map(r=>typeof r[0]==="number"||r[0]===null?r.slice(1):r).filter(r=>r[0]);}
+/* a title row is "제목\t첫 줄…" (a string, since Firestore can't keep arrays inside arrays); older rows were arrays */
+function catItems(cat){return(cat.items||[]).map(r=>typeof r==="string"?r.split("\t"):(typeof r[0]==="number"||r[0]===null?r.slice(1):r)).filter(r=>r&&r[0]);}
 function suggest(q,yid){const out=[];q=(q||"").trim();const num=/^\d+$/.test(q)?+q:null;
   const hymnHit=t=>num!=null&&splitTitle(t).hymn===num;
   for(const s of S.songs){let r=-1;if(yid&&(s.yt||[]).includes(yid))r=-3;else if(num!=null&&(hymnHit(s.title)||String(s.ccli||"")===q))r=-1.5;else if(q&&num==null){r=matchRank(s.title,q);if(r===-1&&s.author)r=matchRank(s.author,q)>-1?3.5:-1;}if(r!==-1)out.push({kind:"song",r,s,title:s.title});}
@@ -530,7 +531,7 @@ function importModal(){const st=h("p",{class:"hint"});
         while(i<rows.length&&n<200){const sz=JSON.stringify(rows[i][2]).length;if(n&&size+sz>3e6)break;b.set(fdb.doc(`${rows[i][0]}/${rows[i][1]}`),rows[i][2]);size+=sz;n++;i++;}
         await b.commit();done=i;st.textContent=`옮기는 중… ${done} / ${rows.length}`;}
       st.textContent=`다 옮겼어요 (${rows.length}개)`;toast("자료를 모두 옮겼어요");}
-    catch(err){console.error(err);st.textContent=`${done}개까지 옮기고 멈췄어요. 다시 고르면 이어서 덮어써요.`;}}});
+    catch(err){console.error(err);st.textContent=`${done}개까지 옮기고 멈췄어요. 다시 고르면 이어서 덮어써요. (${(err&&(err.code||err.message))||"알 수 없는 문제"})`;}}});
   const md=modal("자료 가져오기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"Claude에서 내보낸 자료 파일(.json)을 고르면 콘티 · 곡 · 악보 · 멤버가 이 앱으로 옮겨져요. 같은 자료를 다시 넣으면 덮어써요."}),
     h("span",{class:"btn primary filebtn"},"자료 파일 고르기",fin),st),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
 function render(){const m=$("#main");m.replaceChildren();drawChrome();drawAdminRow();
@@ -1094,8 +1095,8 @@ function catalogSheet(){
   const go=h("button",{class:"btn primary",disabled:!S.canWrite||!S.db,text:"제목 목록에 넣기",onclick:async()=>{
     const rows=parseTitles(ta.value);if(!rows.length)return toast("붙여 넣은 제목이 없어요");
     const known=new Set(S.catalogs.flatMap(c=>catItems(c).map(r=>norm(r[0]))));
-    const items=[...catItems(extra||{})];let added=0;
-    for(const t of rows){if(known.has(norm(t)))continue;known.add(norm(t));items.push([t]);added++;}
+    const items=catItems(extra||{}).map(r=>r.join("\t"));let added=0;
+    for(const t of rows){if(known.has(norm(t)))continue;known.add(norm(t));items.push(t);added++;}
     if(!added)return toast("이미 모두 들어 있는 제목이에요");
     const body={name:"직접 추가한 제목",kind:"titles",items,updatedAt:Date.now(),by:S.myId||null};
     if(JSON.stringify(body).length>240000)return toast("목록이 너무 길어요. 나눠서 넣어 주세요.");
