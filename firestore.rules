@@ -38,6 +38,11 @@ service cloud.firestore {
       allow create, update: if canTeam(request.resource.data.team);
       allow delete: if canTeam(resource.data.team);
     }
+    match /events/{id} {
+      allow read: if canTeam(resource.data.team);
+      allow create, update: if canTeam(request.resource.data.team);
+      allow delete: if canTeam(resource.data.team);
+    }
     match /teams/{team} {
       allow read: if canTeam(team);
       allow write: if canTeam(team);
