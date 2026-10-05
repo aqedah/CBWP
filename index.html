@@ -252,6 +252,7 @@ footer.foot a{color:var(--ink2)}
 .teambtn>span:last-child{font-size:.82rem;color:var(--ink2);margin-top:6px}
 .teamchip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:.8rem;font-weight:600;color:#fff;background:var(--team,var(--accent));border-radius:999px;padding:2px 10px}
 .teamchip button{color:#fff!important;opacity:.85}
+.homelink{color:inherit;text-decoration:none}.homelink:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
 .lockchip{font-family:var(--font-body);font-size:.74rem;font-weight:600;border:1px solid var(--line);background:var(--soft);color:var(--ink2);border-radius:999px;padding:2px 10px;cursor:pointer}
 .lockchip.on{cursor:default;color:var(--ok);border-color:currentColor;background:transparent}
 header.top{border-top:4px solid var(--team,transparent)}
@@ -287,7 +288,7 @@ header.top{border-top:4px solid var(--team,transparent)}
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <h1>Central Bible Worship Planner <small id="teamName"></small></h1>
+      <h1><a href="#" id="homeLink" class="homelink" title="처음 화면 (팀 고르기)">Central Bible Worship Planner</a> <small id="teamName"></small></h1>
       <div class="links" id="topLinks"></div>
     </div>
     <nav class="tabs" role="tablist" id="tabsNav">
@@ -344,6 +345,7 @@ function joinTitle(base,hymn,arr){base=(base||"").trim();if(!hymn)return base;re
 const S={db:null,user:null,downloads:null,myId:null,isOwner:false,canWrite:true,ready:false,dbFailed:false,team:null,teamCfgs:{},
   allMembers:[],allContis:[],members:[],songs:[],contis:[],catalogs:[],tab:"write",cur:null,curId:null,dirty:false,names:{}};
 try{const t=localStorage.getItem(TEAM_KEY);if(TEAMS.some(x=>x.id===t))S.team=t;}catch(e){}
+if(window.CBWP&&S.team&&!window.CBWP.canWrite(S.team))S.team=null;
 function applyTeam(){S.contis=S.allContis.filter(c=>teamOf(c)===S.team);S.members=S.allMembers.filter(mb=>teamOf(mb)===S.team);}
 const imgCache=new Map(), imgInflight=new Map();
 
@@ -499,6 +501,7 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
 
 /* ---------- tabs ---------- */
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+$("#homeLink").addEventListener("click",e=>{e.preventDefault();if(S.team)switchTeam();else window.scrollTo({top:0});});
 function setTab(t){S.tab=t;document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));render();window.scrollTo({top:0});}
 function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   const tc=(TEAMS.find(t=>t.id===S.team)||{}).color;if(tc)document.documentElement.style.setProperty("--team",tc);else document.documentElement.style.removeProperty("--team");
@@ -508,16 +511,18 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
   const links=[h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),"중앙성서교회")];
   $("#topLinks").replaceChildren(...links);$("#tabsNav").hidden=!S.team;}
-function pickTeam(id){S.team=id;try{localStorage.setItem(TEAM_KEY,id);}catch(e){}applyTeam();if(window.CBWP)S.canWrite=window.CBWP.canWrite(id);
+function pickTeam(id){if(window.CBWP&&!window.CBWP.canWrite(id)){unlockModal(id,()=>pickTeam(id));return;}
+  if(window.CBWP){startShared();startTeam(id);}
+  S.team=id;try{localStorage.setItem(TEAM_KEY,id);}catch(e){}applyTeam();if(window.CBWP)S.canWrite=window.CBWP.canWrite(id);
   if(!loadDraft()){S.cur=blankConti();S.curId=null;S.dirty=false;}S.past=null;S.tab="write";
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab==="write")));render();window.scrollTo({top:0});}
 function switchTeam(){saveDraft();S.team=null;try{localStorage.removeItem(TEAM_KEY);}catch(e){}render();window.scrollTo({top:0});}
 const VERSE=["호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야","시편 150:6"];
-function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
+function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:window.CBWP?"팀 비밀번호를 넣으면 그 팀의 콘티 · 멤버 · 결산이 열려요.":"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
   h("div",{class:"teampick"},TEAMS.map(t=>{const n=S.allContis.filter(c=>teamOf(c)===t.id).length;
     const i=TEAMS.indexOf(t)+1;
     return h("button",{type:"button",class:"teambtn",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:String(i).padStart(2,"0")}),
-      h("span",{class:"tnote","aria-hidden":"true",text:"♪"}),h("b",{text:t.name}),h("small",{text:t.en}),h("span",{text:S.ready&&!S.dbFailed?`저장된 콘티 ${n}개`:"들어가기"}));}))));}
+      h("span",{class:"tnote","aria-hidden":"true",text:"♪"}),h("b",{text:t.name}),h("small",{text:t.en}),h("span",{text:window.CBWP?(window.CBWP.canWrite(t.id)?"들어가기 →":"🔒 비밀번호로 들어가기"):(S.ready&&!S.dbFailed?`저장된 콘티 ${n}개`:"들어가기")}));}))));}
 function drawAdminRow(){const r=$("#adminRow");if(!r)return;r.hidden=!window.CBWP;if(!window.CBWP)return;
   r.replaceChildren(S.isOwner?h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}):h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
 /* admin: load an export file (contis, songs, scores, members …) into the shared store */
@@ -539,18 +544,18 @@ function render(){const m=$("#main");m.replaceChildren();drawChrome();drawAdminR
   if(!S.team){renderTeamPick(m);return;}
   ({write:renderWrite,list:renderList,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
-function unlockModal(team){const isAdmin=team==="admin";
+function unlockModal(team,after){const isAdmin=team==="admin";
   const nameIn=h("input",{type:"text",id:"ul-name",placeholder:"이름 (콘티 작성자로 보여요)",value:window.CBWP.myName()||""});
   const codeIn=h("input",{type:"password",id:"ul-code",placeholder:isAdmin?"관리자 비밀번호":`${teamName(team)} 팀 비밀번호`,autocomplete:"off"});
   const msg=h("p",{class:"hint",style:"color:var(--danger)"});
   const go=async()=>{const name=nameIn.value.trim();if(!isAdmin&&!name){nameIn.focus();msg.textContent="이름을 써 주세요";return;}
     btn.disabled=true;msg.textContent="";try{await window.CBWP.unlock(team,codeIn.value,name);md.close();
-      if(isAdmin){S.isOwner=true;}S.canWrite=window.CBWP.canWrite(S.team);render();toast(isAdmin?"관리자로 들어왔어요. 모든 콘티를 고칠 수 있어요":`이제 ${teamName(team)} 팀 콘티를 쓸 수 있어요`,3200);}
+      if(isAdmin){S.isOwner=true;}S.canWrite=!!S.team&&window.CBWP.canWrite(S.team);if(after)return after();render();toast(isAdmin?"관리자로 들어왔어요. 모든 콘티를 고칠 수 있어요":`이제 ${teamName(team)} 팀 콘티를 쓸 수 있어요`,3200);}
     catch(e){btn.disabled=false;msg.textContent=e.message==="wrong"?"비밀번호가 맞지 않아요":"확인하지 못했어요. 인터넷 연결을 확인해 주세요";codeIn.select();}};
   codeIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)go();});
   const btn=h("button",{class:"btn primary",text:"확인",onclick:go});
   const md=modal(isAdmin?"관리자 비밀번호":`${teamName(team)} 팀 비밀번호`,h("div",{class:"panel-body"},
-    h("p",{class:"hint",text:isAdmin?"관리자는 모든 팀의 콘티를 고치고, 저장된 자료를 옮길 수 있어요.":"팀 비밀번호는 인도자나 목사님께 물어보세요. 한 번 넣으면 이 기기에서는 계속 쓸 수 있어요."}),
+    h("p",{class:"hint",text:isAdmin?"관리자는 모든 팀의 콘티를 고치고, 저장된 자료를 옮길 수 있어요.":`${teamName(team)} 팀 멤버만 들어갈 수 있어요. 비밀번호는 인도자나 목사님께 물어보세요. 한 번 넣으면 이 기기에서는 다시 묻지 않아요.`}),
     isAdmin?null:h("div",{class:"field"},h("label",{htmlFor:"ul-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"ul-code",text:"비밀번호"}),codeIn),msg),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),btn]);setTimeout(()=>(isAdmin||nameIn.value?codeIn:nameIn).focus(),0);}
 function statusBanner(){
@@ -1468,6 +1473,15 @@ function showPreview(canvases){const body=h("div",{class:"panel-body pdfprev"},h
    BOOT
    ========================================================= */
 if(!S.team||!loadDraft())S.cur=blankConti();
+/* stand-alone listeners: shared data (songs, title lists) and one team's data */
+const RR={rerender:()=>render(),onErr:e=>console.warn(e),shared:false,team:null,offs:[]};
+function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
+  db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();},RR.onErr);
+  db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();},RR.onErr);}
+function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.teamCfgs={};
+  RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
+  RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
+  RR.offs.push(db.doc(`teams/${team}`).onSnapshot(d=>{S.teamCfgs=d.exists?{[team]:clone(d.data())}:{};if(S.tab!=="write")RR.rerender();},RR.onErr));}
 render();
 (async()=>{
   const claude=window.claude;
@@ -1482,6 +1496,10 @@ render();
     if(S.tab==="past"){const a=document.activeElement;if(!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))&&!document.querySelector(".modal"))render();return;}
     if(document.activeElement&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.closest("#main")&&S.tab!=="list"&&S.tab!=="stats"){const fn=({songs:renderSongs,members:renderMembers})[S.tab];fn&&fn.redraw&&fn.redraw();return;}
     render();};
+  RR.rerender=rerender;RR.onErr=onErr;
+  if(window.CBWP){/* stand-alone: nothing is readable until a team password was entered on this device */
+    if(S.team&&!window.CBWP.canWrite(S.team))S.team=null;
+    S.ready=true;if(S.team){startShared();startTeam(S.team);}render();return;}
   let f1=0,f2=0,f3=0,f4=0,f5=0;
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
   db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f4++)done();else rerender();},onErr);

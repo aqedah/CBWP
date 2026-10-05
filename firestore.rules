@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function codes() { return get(/databases/$(database)/documents/secrets/codes).data; }
+    function hasUnlock(key) { return exists(/databases/$(database)/documents/unlocks/$(request.auth.uid + '_' + key)); }
+    function canTeam(team) { return signedIn() && (hasUnlock(team) || hasUnlock('admin')); }
+    function canShared() { return signedIn() && (hasUnlock('any') || hasUnlock('admin')); }
+
+    // 팀 비밀번호: 콘솔에서만 보고 고칠 수 있어요
+    match /secrets/{doc} { allow read, write: if false; }
+
+    // 비밀번호를 맞게 넣은 기기 표시 (맞을 때만 만들어져요)
+    match /unlocks/{key} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && key == request.auth.uid + '_' + request.resource.data.team
+        && ((request.resource.data.team == 'any' && request.resource.data.code in codes().values())
+            || (request.resource.data.team != 'any' && request.resource.data.code == codes()[request.resource.data.team]));
+      allow update, delete: if false;
+    }
+
+    // 작성자 이름
+    match /users/{uid} {
+      allow read: if canShared();
+      allow write: if signedIn() && (request.auth.uid == uid || hasUnlock('admin'));
+    }
+
+    // 팀별 자료: 보기와 쓰기 모두 그 팀 비밀번호(또는 관리자)
+    match /contis/{id} {
+      allow read: if canTeam(resource.data.team);
+      allow create, update: if canTeam(request.resource.data.team);
+      allow delete: if canTeam(resource.data.team);
+    }
+    match /members/{id} {
+      allow read: if canTeam(resource.data.team);
+      allow create, update: if canTeam(request.resource.data.team);
+      allow delete: if canTeam(resource.data.team);
+    }
+    match /teams/{team} {
+      allow read: if canTeam(team);
+      allow write: if canTeam(team);
+    }
+
+    // 교회 공용 자료: 곡 · 악보 · 제목 목록 (어느 팀이든 비밀번호를 넣은 기기만)
+    match /songs/{id} { allow read, write: if canShared(); }
+    match /catalog/{id} { allow read, write: if canShared(); }
+    match /imgs/{id} { allow read, write: if canShared(); }
+    match /imgChunks/{id} { allow read, write: if canShared(); }
+  }
+}
