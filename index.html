@@ -126,6 +126,7 @@ fieldset{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:col
 .scoreinfo b{font-size:.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sthumb{width:30px;height:38px;flex:none;border-radius:4px;background:#fff center/cover no-repeat;border:1px solid var(--line)}
 .vpick{display:flex;flex-direction:column;gap:8px}
+.cithumb{width:46px;height:60px;object-fit:cover;object-position:top;border:1px solid var(--line);border-radius:4px;background:#fff;flex:none}
 .byl{display:flex;flex-direction:column;gap:14px;max-width:76ch}
 .bylpage{border-top:1px solid var(--line);padding-top:10px}
 .bylno{font-size:.75rem;font-weight:700;color:var(--team,var(--accent));margin-bottom:4px}
@@ -883,7 +884,7 @@ function openScorePicker(it,song,key){const editable=curEditable();let vs=vers(s
       const vid=song?await rememberScore(song.id,null,pages,{key:it.key,name:it.key?`${it.key}코드`:`악보 ${vs.length+1}`}):null;choose(vid||"",pages,"");if(vid)setTimeout(()=>openScorePicker(it,song,key),50);toast(`새 악보(${n}장)를 올렸어요. 이름(예: G코드)을 바로 적어 주세요`,3800);}});
   const body=h("div",{class:"panel-body"},h("p",{class:"hint",text:"하나만 고르세요. 고른 악보가 PDF에 나가요. 한 악보가 여러 쪽이면 쪽이 모두 나가요."}),list,
     editable?h("div",{class:"row",style:"margin-top:10px"},h("span",{class:"btn sm filebtn"},"+ 새 악보 올리기 (다른 조성 · 편곡)",up),st):null);
-  const md=modal(`악보 선택 · ${it.title}`,body,[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);draw();}
+  const md=modal(`악보 선택 · ${it.title}`,body,[h("button",{class:"btn primary",text:"완료",onclick:()=>md.close()})]);draw();}
 /* editable title + reference YouTube link for one setlist item */
 function titleRow(it,song,key){const canSong=song&&!String(song.id).startsWith("local-")&&S.db&&S.canWrite;
   const tIn=h("input",{type:"text",class:"ititle",id:`t-${it.uid}`,"aria-label":"곡 제목",value:it.title,oninput:e=>{it.title=e.target.value;markDirty();sync();}});
@@ -904,13 +905,6 @@ async function renameSong(song,title){if(!song||!title||!S.db)return;
 /* ---------- fill 예배 찬양 from a conti file (PDF text, or photo/scan → OCR) ---------- */
 const TESS_URL="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
 const nk=s=>(s||"").replace(/\([^)]*\)/g,"").replace(/[^가-힣A-Za-z0-9]/g,"").toLowerCase();
-async function readContiFile(file,onStatus){const name=(file.name||"").toLowerCase();
-  if(file.type==="application/pdf"||name.endsWith(".pdf")){onStatus("PDF 글자를 읽는 중…");const pages=await pdfToText(await file.arrayBuffer());const t=pages.join("\n");
-    if(t.replace(/\s/g,"").length>=6)return t;}
-  onStatus("사진 속 글자를 읽는 중… (처음엔 30초쯤 걸려요)");
-  await loadScript(TESS_URL);const ims=await fileToImages(file);const worker=await window.Tesseract.createWorker("kor+eng");
-  try{let t="";for(let i=0;i<ims.length;i++){onStatus(`사진 속 글자를 읽는 중… (${i+1}/${ims.length})`);const r=await worker.recognize(ims[i].url);t+=r.data.text+"\n";}return t;}
-  finally{try{await worker.terminate();}catch(e){}}}
 function findTitles(text){const T=nk(text);const hits=[];
   const add=(key,o)=>{if(key.length<3)return;let i=T.indexOf(key);if(i<0)return;hits.push({...o,pos:i,end:i+key.length,len:key.length});};
   for(const s of S.songs){const sp=splitTitle(s.title);add(nk(sp.base),{kind:"song",s,title:s.title});const inner=(s.title.match(/\(([^)]{3,})\)/)||[])[1];if(inner&&!/찬송가/.test(inner))add(nk(inner),{kind:"song",s,title:s.title});}
@@ -921,19 +915,77 @@ function findTitles(text){const T=nk(text);const hits=[];
   /* numbered lines that matched nothing: offer them as new songs (unchecked) */
   const extra=[];for(const line of text.split(/\n/)){const m=line.match(/^\s*(?:\d{1,2}|[①-⑳])\s*[.)\]:-]?\s*(.{2,40})$/);if(!m||/^\s*\d+\s*[월일]|콘티|예배|설교|본문|인도/.test(line))continue;const k=nk(m[1]);if(k.length<3||res.some(x=>k.includes(nk(x.title).slice(0,4))))continue;extra.push({kind:"new",title:m[1].replace(/\s+/g," ").trim()});}
   return{found:res,extra};}
-function contiImportModal(key="before"){if(!curEditable())return;const st=h("p",{class:"hint"});const list=h("div",{class:"cards"});let rows=[];
-  const fin=h("input",{type:"file",id:"ci-file",accept:"image/*,.heic,.heif,.pdf",onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;list.replaceChildren();addBtn.disabled=true;
-    try{const text=await readContiFile(f,t=>st.textContent=t);const {found,extra}=findTitles(text);rows=[...found.map(x=>({...x,on:true})),...extra.map(x=>({...x,on:false}))];
-      st.textContent=rows.length?`곡 ${found.length}개를 찾았어요${extra.length?` · 목록에 없는 제목 ${extra.length}개`:""}. 맞는 것만 체크하고 넣으세요.`:"곡 제목을 찾지 못했어요. 글자가 또렷한 파일로 다시 해 보거나 직접 넣어 주세요.";draw();}
-    catch(err){console.error(err);st.textContent=window.CBWP?"파일을 읽지 못했어요. 다른 파일로 해 보세요.":"사진 글자 읽기는 앱 사이트(aqedah.github.io/CBWP)에서 돼요. 여기서는 글자가 든 PDF만 읽을 수 있어요.";}}});
-  function draw(){list.replaceChildren(...rows.map((r,i)=>h("label",{class:"card row",htmlFor:`ci-${i}`,style:"flex-wrap:nowrap;cursor:pointer"},
-    h("input",{type:"checkbox",id:`ci-${i}`,checked:r.on,onchange:e=>{r.on=e.target.checked;addBtn.disabled=!rows.some(x=>x.on);}}),
-    h("span",{style:"flex:1;min-width:0"},h("b",{text:r.title}),r.alt?h("span",{class:"hint",text:` · 첫 줄 「${r.alt}」로 찾음`}):null),
-    h("span",{class:"tag",text:r.kind==="song"?"우리 곡":r.kind==="cat"?"제목 목록":"새 곡"}))));addBtn.disabled=!rows.some(x=>x.on);}
-  const addBtn=h("button",{class:"btn primary",text:"예배 찬양에 넣기",disabled:true,onclick:async()=>{addBtn.disabled=true;let n=0;
-    for(const r of rows.filter(x=>x.on)){const song=r.kind==="song"?r.s:(S.songs.find(s=>norm(s.title)===norm(r.title))||await createSong(r.title,null));S.cur[key].push(itemFromSong(song));n++;}
-    markDirty();md.close();for(const[k]of SECTIONS)renderSetlist(k);toast(`${n}곡을 넣었어요. 순서와 악보를 확인해 주세요`,3200);}});
-  const md=modal("콘티 파일로 채우기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"콘티 PDF나 사진(캡처, 카톡 이미지)을 고르면 곡 제목을 찾아 예배 찬양에 순서대로 넣어 줘요. 사진은 글자가 또렷할수록 잘 찾아요."}),
+async function readContiFile(file,onStatus){const name=(file.name||"").toLowerCase();
+  if(file.type==="application/pdf"||name.endsWith(".pdf")){onStatus("PDF 글자를 읽는 중…");const pages=await pdfToText(await file.arrayBuffer());const t=pages.join("\n");
+    if(t.replace(/\s/g,"").length>=6)return t;}
+  onStatus("사진 속 글자를 읽는 중… (처음엔 30초쯤 걸려요)");
+  await loadScript(TESS_URL);const ims=await fileToImages(file);const worker=await window.Tesseract.createWorker("kor+eng");
+  try{let t="";for(let i=0;i<ims.length;i++){onStatus(`사진 속 글자를 읽는 중… (${i+1}/${ims.length})`);const r=await worker.recognize(ims[i].url);t+=r.data.text+"\n";}return t;}
+  finally{try{await worker.terminate();}catch(e){}}}
+/* every title we know: library songs first, then the shared title lists */
+function titleIndex(){if(titleIndex.c&&titleIndex.n===S.songs.length+S.catalogs.length)return titleIndex.c;const out=[];
+  for(const s of S.songs){out.push({key:nk(splitTitle(s.title).base),kind:"song",s,title:s.title});const inner=(s.title.match(/\(([^)]{3,})\)/)||[])[1];if(inner&&!/찬송가/.test(inner))out.push({key:nk(inner),kind:"song",s,title:s.title});}
+  for(const cat of S.catalogs)for(const[title,...alts]of catItems(cat)){out.push({key:nk(splitTitle(title).base),kind:"cat",title});if(alts[0])out.push({key:nk(alts[0]),kind:"cat",title,alt:alts[0]});}
+  titleIndex.c=out.filter(x=>x.key.length>=3);titleIndex.n=S.songs.length+S.catalogs.length;return titleIndex.c;}
+const bigr=s=>{const m=new Map();for(let i=0;i<s.length-1;i++){const b=s.slice(i,i+2);m.set(b,(m.get(b)||0)+1);}return m;};
+function dice(a,b){if(a.length<2||b.length<2)return 0;const A=bigr(a),B=bigr(b);let x=0;for(const[k,v]of A)x+=Math.min(v,B.get(k)||0);return 2*x/(a.length-1+b.length-1);}
+/* best known title for one line of text (OCR is never perfect, so allow near matches) */
+function matchLine(line){const L0=nk(line);if(L0.length<2)return null;let best=null,bs=0;
+  const LH=L0.replace(/[^가-힣]/g,"");const Ls=[...new Set([L0,LH])].filter(x=>x.length>=2);
+  for(const t of titleIndex())for(const L of Ls){let sc=0;if(L===t.key)sc=1;else if(L.includes(t.key)&&t.key.length>=4)sc=.75+.2*t.key.length/L.length;else if(t.key.includes(L)&&L.length>=4)sc=.8*L.length/t.key.length;else{if(Math.abs(L.length-t.key.length)>Math.max(4,t.key.length*.6))continue;sc=dice(L,t.key);}
+    if(sc>bs||(sc===bs&&best&&best.kind!=="song"&&t.kind==="song")){bs=sc;best=t;}}
+  return bs>=.62?{...best,score:bs,read:line.replace(/\s+/g," ").trim()}:null;}
+/* score sheets: the title sits at the top centre of a page → read just that strip, one page at a time */
+async function readScorePages(file,onStatus){onStatus("악보 장을 펼치는 중…");const ims=await fileToImages(file);
+  onStatus("제목을 읽을 준비 중… (처음엔 30초쯤 걸려요)");await loadScript(TESS_URL);const worker=await window.Tesseract.createWorker("kor+eng");
+  const pages=[];try{for(let i=0;i<ims.length;i++){onStatus(`악보 제목 읽는 중… (${i+1}/${ims.length}장)`);const im=ims[i];
+      /* two strips (centre, then wide): OCR reads them a little differently, keep the better match */
+      const lines=[];for(const[l,w,hh]of[[.12,.8,.2],[.04,.92,.22]]){const r=await worker.recognize(im.url,{rectangle:{left:Math.round(im.w*l),top:0,width:Math.round(im.w*w),height:Math.round(im.h*hh)}});
+        lines.push(...r.data.text.split(/\n/).map(x=>x.trim()).filter(Boolean));const best=lines.map(matchLine).filter(Boolean).sort((a,b)=>b.score-a.score)[0];if(best&&best.score>=.9)break;}
+      let m=null,raw="";
+      for(const ln of lines){const x=matchLine(ln);if(x&&(!m||x.score>m.score))m=x;}
+      if(!m){raw=lines.map(l=>l.replace(/[^가-힣A-Za-z0-9 ()]/g,"").trim()).sort((a,b)=>(b.match(/[가-힣]/g)||[]).length-(a.match(/[가-힣]/g)||[]).length)[0]||"";
+        if((raw.match(/[가-힣]/g)||[]).length<5)raw="";}
+      pages.push({im,m,raw});}}
+  finally{try{await worker.terminate();}catch(e){}}
+  /* a page with a title starts a song; a page without one belongs to the song before it */
+  const groups=[];for(const p of pages){if(p.m||p.raw||!groups.length)groups.push({kind:p.m?p.m.kind:"new",s:p.m&&p.m.s,title:p.m?p.m.title:(p.raw||"제목 못 읽음"),alt:p.m&&p.m.alt,read:p.m?"":p.raw,seen:p.m&&p.m.score<.9?p.m.read:"",pages:[p.im],on:!!p.m});else groups[groups.length-1].pages.push(p.im);}
+  return groups;}
+function contiImportModal(key="before"){if(!curEditable())return;const st=h("p",{class:"hint"});const list=h("div",{class:"cards"});let rows=[];let mode="list";
+  const fin=h("input",{type:"file",id:"ci-file",accept:"image/*,.heic,.heif,.pdf",onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;list.replaceChildren();addBtn.disabled=true;rows=[];
+    try{
+      /* 1) a typed conti (PDF with real text) */
+      const name=(f.name||"").toLowerCase();
+      if(f.type==="application/pdf"||name.endsWith(".pdf")){st.textContent="PDF 글자를 읽는 중…";const t=(await pdfToText(await f.arrayBuffer())).join("\n");const r=findTitles(t);
+        if(r.found.length){mode="list";rows=[...r.found.map(x=>({...x,on:true})),...r.extra.map(x=>({...x,on:false}))];}}
+      /* 2) score sheets (PDF or photos): read the title strip of every page and keep the pages as the score */
+      if(!rows.length){const g=await readScorePages(f,t=>st.textContent=t);if(g.some(x=>x.kind!=="new")){mode="score";rows=g;}}
+      /* 3) a photo of a list */
+      if(!rows.length){mode="list";const t=await readContiFile(f,x=>st.textContent=x);const r=findTitles(t);rows=[...r.found.map(x=>({...x,on:true})),...r.extra.map(x=>({...x,on:false}))];}
+      const ok=rows.filter(x=>x.kind!=="new").length;
+      st.textContent=rows.length?(mode==="score"?`악보 ${rows.reduce((n,r)=>n+r.pages.length,0)}장에서 곡 ${ok}개를 찾았어요. 악보는 곡마다 그대로 붙어서, 넣은 뒤 바로 「악보 편집」을 할 수 있어요.`:`곡 ${ok}개를 찾았어요. 맞는 것만 체크하고 넣으세요.`):"곡 제목을 찾지 못했어요. 글자가 또렷한 파일로 다시 해 보거나 직접 넣어 주세요.";draw();}
+    catch(err){console.error(err);st.textContent=window.CBWP?"파일을 읽지 못했어요. 다른 파일로 해 보세요.":"사진·악보 글자 읽기는 앱 사이트(aqedah.github.io/CBWP)에서 돼요. 여기서는 글자가 든 PDF만 읽을 수 있어요.";}}});
+  function draw(){list.replaceChildren(...rows.map((r,i)=>{const th=r.pages?h("img",{class:"cithumb",src:r.pages[0].url,alt:""}):null;
+    if(r.seen&&!r.orig)r.orig={kind:r.kind,title:r.title,s:r.s};
+    const editable=r.kind==="new"||r.seen;
+    const tIn=editable?h("input",{type:"text",id:`ci-t-${i}`,value:r.kind==="new"?(r.read||""):r.title,placeholder:"곡 제목을 써 주세요",style:"flex:1;min-width:0",oninput:e=>{r.title=e.target.value;
+      if(r.orig){if(norm(r.title)===norm(r.orig.title)){r.kind=r.orig.kind;r.s=r.orig.s;}else r.kind="typed";}
+      if(e.target.value.trim()&&!r.on){r.on=true;cb.checked=true;addBtn.disabled=false;}}}):null;
+    const cleanRead=(r.seen||"").replace(/[^가-힣\s()]/g," ").replace(/^\s*\d+\s*/,"").replace(/\s+/g," ").trim();
+    const useRead=r.seen&&cleanRead?h("button",{type:"button",class:"btn sm ghost",text:`「${cleanRead.slice(0,20)}」로 바꾸기`,onclick:()=>{tIn.value=cleanRead;tIn.dispatchEvent(new Event("input"));}}):null;
+    const cb=h("input",{type:"checkbox",id:`ci-${i}`,checked:r.on,onchange:e=>{r.on=e.target.checked;addBtn.disabled=!rows.some(x=>x.on);}});
+    return h("div",{class:"card row",style:"flex-wrap:nowrap;align-items:center"},cb,th,
+      h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"},tIn?h("div",{class:"row",style:"gap:6px"},tIn,useRead):h("label",{htmlFor:`ci-${i}`,style:"cursor:pointer"},h("b",{text:r.title})),
+        h("span",{class:"hint",text:[r.kind==="song"?"우리 곡":r.kind==="cat"?"제목 목록":r.kind==="typed"?"고친 제목":"새 곡 (제목을 확인해 주세요)",r.alt?`첫 줄 「${r.alt}」로 찾음`:"",r.seen&&r.kind!=="typed"?`읽은 글자 「${r.seen.slice(0,30)}」 — 비슷한 제목을 골랐어요. 맞는지 확인해 주세요`:"",r.pages?`악보 ${r.pages.length}장`:""].filter(Boolean).join(" · ")})));}));
+    addBtn.disabled=!rows.some(x=>x.on);}
+  const addBtn=h("button",{class:"btn primary",text:"예배 찬양에 넣기",disabled:true,onclick:async()=>{addBtn.disabled=true;let n=0;const picked=rows.filter(x=>x.on&&(x.title||"").trim());
+    for(const r of picked){st.textContent=`넣는 중… (${n+1}/${picked.length})`;
+      const song=r.kind==="song"?r.s:(S.songs.find(s=>norm(s.title)===norm(r.title))||await createSong(r.title.trim(),null));const item=itemFromSong(song);
+      if(r.pages){const pages=[];for(const im of r.pages){const id=await storeImage(im);pages.push({imgId:id,w:im.w,h:im.h,marks:[]});}
+        item.pages=pages;const vid=await rememberScore(song.id,null,pages,{key:item.key,name:`콘티 악보 ${fmtDate(S.cur.date||todayStr()).replace(/\s*\(.*\)/,"")}`});item.verId=vid||"";}
+      S.cur[key].push(item);n++;}
+    markDirty();md.close();for(const[k]of SECTIONS)renderSetlist(k);toast(`${n}곡을 넣었어요${mode==="score"?". 악보가 붙어 있어서 바로 「악보 편집」을 할 수 있어요":". 순서와 악보를 확인해 주세요"}`,3600);}});
+  const md=modal("콘티 파일로 채우기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"콘티 PDF나 사진을 고르세요. 악보 묶음이면 장마다 위쪽 가운데 제목을 읽어 곡을 나누고, 그 악보를 곡에 그대로 붙여 줘요. 제목만 적힌 콘티는 곡 제목을 찾아 넣어요."}),
     h("span",{class:"btn primary filebtn"},"콘티 파일 고르기",fin),st,list),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),addBtn]);}
 /* drag a row by its handle inside a list box; onDrop gets the new order as old indexes (data-i) */
 function dragRows(handle,row,box,onDrop){handle.addEventListener("pointerdown",e=>{e.preventDefault();try{handle.setPointerCapture(e.pointerId);}catch(_){}row.classList.add("dragging");
