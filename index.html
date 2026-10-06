@@ -741,7 +741,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
     h("div",{class:"row"},h("button",{class:"btn",onclick:()=>exportPdf(S.cur),text:"PDF 출력"}),
       h("button",{class:"btn",onclick:()=>exportCompact(S.cur),title:"모든 악보를 A3 가로 한두 장에 모아요",text:"압축버전 (A3)"}),
       h("button",{class:"btn",onclick:()=>exportLyricsPpt(S.cur),title:"곡마다 넣어 둔 가사로 팀 템플릿 PPT를 만들어요",text:"가사 PPT"}),
-      h("button",{class:"btn ghost",onclick:pptTemplateModal,text:"PPT 템플릿"}))));
+      h("button",{class:"btn",onclick:pptTemplateModal,text:"PPT 템플릿"}))));
   [...fs.querySelectorAll(".sheet > h2")].forEach((h2,i)=>{const first=h2.firstChild;const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updateStatus();updUndo();}
 /* bring songs (and optionally the roster) from an earlier conti into the one being written */
@@ -1947,6 +1947,7 @@ const JSZIP_URL="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.j
 const PPT_FONTS=["맑은 고딕","나눔고딕","나눔스퀘어","나눔명조","본고딕","Noto Sans KR","굴림","바탕"];
 const PPT_DEF={bgId:"",bgColor:"#000000",color:"#FFFFFF",font:"맑은 고딕",size:40,lines:2,valign:"middle",titleSlide:true,ratio:"16:9",bold:true,shadow:true};
 const pptCfg=()=>({...PPT_DEF,...(teamCfg().ppt||{})});
+const cleanLyrics=t=>String(t||"").replace(/\r/g,"").split("\n").map(l=>l.replace(/\s+$/,"")).join("\n").replace(/\n{3,}/g,"\n\n").trim();
 const SEC_LABEL=/^\s*(\[.*\]|\(.*\)|\d+\s*절|후렴|브릿지|간주|bridge|chorus|verse\s*\d*|pre-?chorus|tag|ending|intro|outro)\s*:?\s*$/i;
 function lyricSlides(text,per){const out=[];
   for(const para of String(text||"").replace(/\r/g,"").split(/\n\s*\n/)){const lines=para.split("\n").map(l=>l.trim()).filter(l=>l&&!SEC_LABEL.test(l));
@@ -1956,9 +1957,13 @@ const songOf=it=>S.songs.find(s=>s.id===it.songId);
 const lyricsOf=it=>{const s=songOf(it);return (s&&s.lyrics)||it.lyrics||"";};
 function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
   const ta=h("textarea",{id:"ly-text",value:lyricsOf(it),placeholder:"가사를 붙여 넣으세요.\n\n빈 줄을 두면 거기서 다음 장으로 넘어가요.\n[1절] [후렴] 같은 표시 줄은 슬라이드에 나오지 않아요.",style:"min-height:320px;font-size:1rem;line-height:1.6"});
-  const cnt=h("span",{class:"hint"});const upd=()=>{cnt.textContent=`슬라이드 ${lyricSlides(ta.value,per).length}장 (한 장에 ${per}줄까지)`;};ta.addEventListener("input",upd);upd();
+  const cnt=h("span",{class:"hint"});const upd=()=>{cnt.textContent=`슬라이드 ${lyricSlides(ta.value,per).length}장 (한 장에 ${per}줄까지)`;};ta.addEventListener("input",upd);upd();ta.addEventListener("paste",()=>setTimeout(()=>{ta.value=cleanLyrics(ta.value);upd();},0));
   const can=S.canWrite&&!!S.db;
+  const q=splitTitle(it.title).base.replace(/\([^)]*\)/g,"").trim()||it.title;
+  const paste=h("button",{type:"button",class:"btn sm",text:"📋 붙여넣기",onclick:async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim())return toast("복사한 가사가 없어요");ta.value=cleanLyrics(t);upd();}catch(e){ta.focus();toast("가사 칸을 길게 누르거나 Ctrl+V로 붙여 넣어 주세요");}}});
   const md=modal(`가사 · ${it.title}`,h("div",{class:"panel-body"},
+    h("div",{class:"row"},h("a",{class:"btn sm",href:`https://music.bugs.co.kr/search/integrated?q=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"벅스에서 찾기 ↗"}),paste,
+      h("span",{class:"hint",text:"벅스에서 곡을 열어 가사를 복사한 뒤 붙여 넣으세요"})),
     h("p",{class:"hint",text:song&&!song.id.startsWith("local-")?"곡에 저장돼서 다음에 이 곡을 넣을 때도 그대로 쓰여요. 교회 전체가 함께 써요.":"이 콘티에만 저장돼요."}),ta,cnt),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can||!song?h("button",{class:"btn primary",text:"가사 저장",onclick:async()=>{const v=ta.value.replace(/\r/g,"").trim();
       if(song&&!song.id.startsWith("local-")&&S.db){try{await S.db.doc(`songs/${song.id}`).update({lyrics:v,updatedAt:Date.now()});song.lyrics=v;}catch(e){return toast("저장하지 못했어요");}}
