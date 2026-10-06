@@ -62,12 +62,25 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .links a:hover{border-color:var(--accent);color:var(--ink)}
 .links svg{width:16px;height:16px;flex:none}
 @media (max-width:700px){.brand{padding-right:52px}.brandlogo{height:34px}.brand h1{font-size:1.25rem}.links a{padding:8px;border-radius:999px}.links a .ytlabel{display:none}.links svg{width:20px;height:20px}}
-nav.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-block:4px 10px}
-nav.tabs button{--tc:var(--accent);border:1px solid color-mix(in srgb,var(--tc) 30%,transparent);background:color-mix(in srgb,var(--tc) 10%,var(--sheet));padding:7px 14px;border-radius:999px;font-weight:700;color:color-mix(in srgb,var(--tc) 80%,var(--ink));cursor:pointer;white-space:nowrap;flex:none}
-nav.tabs button:hover{background:color-mix(in srgb,var(--tc) 18%,var(--sheet))}
-nav.tabs button[aria-selected="true"]{background:var(--tc);border-color:var(--tc);color:#fff;box-shadow:0 2px 6px color-mix(in srgb,var(--tc) 35%,transparent)}
-nav.tabs [data-tab=home]{--tc:#262b3d}nav.tabs [data-tab=write]{--tc:#2b4fb0}nav.tabs [data-tab=list]{--tc:#1f8a5e}nav.tabs [data-tab=songs]{--tc:#8a4fc4}nav.tabs [data-tab=cal]{--tc:#d0711a}
-nav.tabs [data-tab=members]{--tc:#c23f66}nav.tabs [data-tab=stats]{--tc:#128198}nav.tabs [data-tab=bible]{--tc:#9a6b22}nav.tabs [data-tab=bylaws]{--tc:#5d6884}
+/* bottom nav (4 big groups) + sub-tabs */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--sheet);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgb(0 0 0 / .06);padding-bottom:env(safe-area-inset-bottom,0px)}
+.bnav-in{display:grid;grid-template-columns:repeat(4,1fr);max-width:640px;margin:0 auto}
+.bnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:60px;border:0;background:none;color:var(--muted);font:inherit;font-size:.74rem;font-weight:700;cursor:pointer;position:relative}
+.bnav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bnav button[aria-current="page"]{color:var(--team,var(--accent))}
+.bnav button[aria-current="page"]::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:currentColor}
+body.has-bnav{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+body.has-bnav .totop{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+body.has-bnav .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+.subtabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:4px}
+.subtabs button{flex:1 0 auto;border:0;background:none;padding:8px 14px;border-radius:9px;font:inherit;font-weight:700;font-size:.9rem;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.subtabs button[aria-selected="true"]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 4px rgb(0 0 0 / .1)}
+.chipbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chipbar .fchip{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--sheet);color:var(--ink2);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
+.chipbar .fchip[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.chipbar select{height:34px;font-size:.84rem;width:auto;min-width:130px;padding:0 28px 0 10px;margin-left:auto}
+.star{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--sheet);color:var(--muted);font-size:1.1rem;line-height:1;cursor:pointer}
+.star[aria-pressed="true"]{color:#d99a00;border-color:#e8c25a;background:color-mix(in srgb,#ffd34d 18%,var(--sheet))}
 
 main{padding-block:18px 40px;display:flex;flex-direction:column;gap:16px}
 .sheet{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:18px}
@@ -252,6 +265,8 @@ body.fb-pad{padding-bottom:72px}
 .post .ptext{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.post .pname{font-size:.85rem}.btn.on{background:var(--accent-soft);border-color:var(--accent)}
 .rolebadge{font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap}.rolebadge.lead{background:var(--team,var(--accent));color:#fff}.rolebadge.duty{background:var(--accent-soft);color:var(--ink);border:1px solid var(--line)}
 .mcard.lead{border-color:var(--team,var(--accent));box-shadow:0 0 0 1px var(--team,var(--accent)) inset}
+.mcard.me{border:2px dashed var(--team,var(--accent));padding:11px;box-shadow:none}.mcard.me.lead{border-style:solid}
+.rolebadge.me{background:var(--sheet);color:var(--team,var(--accent));border:1.5px dashed var(--team,var(--accent))}
 .pptprev{flex:none;container-type:inline-size;width:100%;max-width:560px;margin:0 auto;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:5% 6%;box-sizing:border-box;overflow:hidden}
 .pptprev .pp-t{white-space:pre-line;text-align:center;line-height:1.35}
 .btn.hasly{border-color:var(--ok);color:var(--ok)}
@@ -419,21 +434,13 @@ header.top{border-top:4px solid var(--team,transparent)}
       <h1><a href="#" id="homeLink" class="homelink" title="처음 화면 (팀 고르기)"><img class="brandlogo" alt="중앙성서교회" src="data:image/png;base64,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"><span>Central Bible Worship Planner</span></a> <small id="teamName"></small></h1>
       <div class="links" id="topLinks"></div>
     </div>
-    <nav class="tabs" role="tablist" id="tabsNav">
-      <button role="tab" data-tab="home" aria-selected="true">홈</button>
-      <button role="tab" data-tab="write" aria-selected="false">콘티 작성</button>
-      <button role="tab" data-tab="list" aria-selected="false">지난 콘티</button>
-      <button role="tab" data-tab="songs" aria-selected="false">찬양 라이브러리</button>
-      <button role="tab" data-tab="cal" aria-selected="false">일정</button>
-      <button role="tab" data-tab="members" aria-selected="false">멤버</button>
-      <button role="tab" data-tab="stats" aria-selected="false">결산</button>
-      <button role="tab" data-tab="bible" aria-selected="false">성경읽기</button>
-      <button role="tab" data-tab="bylaws" aria-selected="false">회칙</button>
-    </nav>
+    
   </div>
 </header>
 
 <main class="wrap" id="main"></main>
+<nav class="bnav" id="tabsNav" aria-label="큰 메뉴" hidden><div class="bnav-in"><button type="button" data-group="home" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>홈</span></button><button type="button" data-group="conti" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>콘티</span></button><button type="button" data-group="songs" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg><span>찬양</span></button><button type="button" data-group="team" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.2 5 2.6 5 5.8"/></svg><span>우리 팀</span></button></div></nav>
+
 
 <footer class="foot wrap">
   <div>제작자: 이삭 목사 · <a href="https://www.centralbible.net/" target="_blank" rel="noopener">https://www.centralbible.net/</a></div>
@@ -644,17 +651,27 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
   try{await S.db.doc(`songs/${song.id}`).update({yt:[...(song.yt||[]),yid],updatedAt:Date.now()});}catch(e){}}
 
 /* ---------- tabs ---------- */
-document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+const NAVG={home:[["home","홈"]],conti:[["write","콘티 작성"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"]],team:[["cal","일정"],["members","멤버"],["stats","결산"],["bible","성경읽기"],["bylaws","회칙"]]};
+const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
+const subsOf=g=>NAVG[g].filter(([k])=>k!=="write"||isWriter()||S.curId);
+S.lastSub={};
+document.querySelectorAll(".bnav button").forEach(b=>b.addEventListener("click",()=>{const g=b.dataset.group;const subs=subsOf(g).map(x=>x[0]);
+  if(groupOf(S.tab)===g&&subs.length>1){window.scrollTo({top:0,behavior:"smooth"});return;}
+  const last=S.lastSub[g];setTab(subs.includes(last)?last:subs[0]);}));
+function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;document.querySelectorAll(".bnav button").forEach(b=>b.setAttribute("aria-current",b.dataset.group===g?"page":"false"));
+  const on=!!S.team;$("#tabsNav").hidden=!on;document.body.classList.toggle("has-bnav",on);}
+function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)return null;
+  return h("div",{class:"subtabs",role:"tablist","aria-label":"작은 메뉴"},subs.map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(k===S.tab),text:l,onclick:()=>{if(k!==S.tab)setTab(k);}})));}
 {const tt=h("button",{type:"button",class:"totop","aria-label":"맨 위로",title:"맨 위로",text:"↑",onclick:()=>window.scrollTo({top:0,behavior:"smooth"})});document.body.append(tt);
   const upd=()=>tt.classList.toggle("on",window.scrollY>innerHeight*.8);window.addEventListener("scroll",upd,{passive:true});upd();}
 $("#homeLink").addEventListener("click",e=>{e.preventDefault();if(S.team)switchTeam();else window.scrollTo({top:0});});
-function setTab(t){S.tab=t;document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));render();window.scrollTo({top:0});}
+function setTab(t){S.tab=t;render();window.scrollTo({top:0});}
 /* who writes contis: admin, team leader password, a member marked 리더 or 인도자 (by the name given on this device), or someone who already wrote one */
 function isWriter(){if(!S.canWrite)return false;if(!window.CBWP)return true;if(window.CBWP.isAdmin()||canLead())return true;
   if(S.myId&&S.contis.some(c=>c.authorId===S.myId&&!c.past))return true;const me=normName(myName());if(!me)return false;
   return S.members.some(mb=>normName(mb.name)===me&&(mb.role==="리더"||(mb.positions||[]).includes("인도자")));}
 function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
-  const wb=document.querySelector('nav.tabs [data-tab="write"]');if(wb)wb.hidden=!!S.team&&!isWriter();
+  
   const tc=(TEAMS.find(t=>t.id===S.team)||{}).color;if(tc)document.documentElement.style.setProperty("--team",tc);else document.documentElement.style.removeProperty("--team");
   if(S.team)nm.append(h("span",{class:"teamchip"},teamName(S.team),h("button",{type:"button",text:"팀 바꾸기",onclick:switchTeam})));
   if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.canWrite?(S.isOwner?h("button",{type:"button",class:"lockchip on",title:"눌러서 관리자 로그아웃",text:"관리자 ✕",onclick:adminLogout}):h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:"쓰기 가능"})):
@@ -662,12 +679,12 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   if(S.team&&window.CBWP&&S.canWrite)nm.append(h("button",{type:"button",class:"lockchip",title:"이 기기에서 로그아웃",text:"로그아웃",onclick:logoutModal}));
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
   const links=[h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
-  $("#topLinks").replaceChildren(...links);$("#tabsNav").hidden=!S.team;}
+  $("#topLinks").replaceChildren(...links);}
 function pickTeam(id){if(window.CBWP&&!window.CBWP.canWrite(id)){unlockModal(id,()=>pickTeam(id));return;}
   if(window.CBWP){startShared();startTeam(id);}
   S.team=id;try{localStorage.setItem(TEAM_KEY,id);}catch(e){}applyTeam();if(window.CBWP)S.canWrite=window.CBWP.canWrite(id);
   if(!loadDraft()){S.cur=blankConti();S.curId=null;S.dirty=false;}S.past=null;S.tab="home";
-  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab==="home")));render();window.scrollTo({top:0});}
+  render();window.scrollTo({top:0});}
 function switchTeam(){saveDraft();S.team=null;try{localStorage.removeItem(TEAM_KEY);}catch(e){}render();window.scrollTo({top:0});}
 const VERSE=["호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야","시편 150:6"];
 function renderTeamPick(m){m.append(h("img",{class:"bigLogo",alt:"중앙성서교회 로고",src:$(".brandlogo").src}));m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:window.CBWP?"팀 비밀번호를 넣으면 그 팀의 콘티 · 멤버 · 결산이 열려요.":"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
@@ -708,8 +725,10 @@ function importModal(){const st=h("p",{class:"hint"});
     h("span",{class:"btn primary filebtn"},"자료 파일 고르기",fin),st),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
 function render(){const m=$("#main");m.replaceChildren();document.body.classList.remove("fb-pad");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
+  if(S.tab==="write"&&S.team&&!S.curId&&!isWriter())S.tab="list";
+  syncNav();
   if(!S.team){renderTeamPick(m);return;}
-  if(S.tab==="write"&&!S.curId&&!isWriter()){S.tab="home";document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab==="home")));}
+  const st=subTabs();if(st)m.append(st);
   ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
 function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lead$/.test(team);const tn=isLead?`${teamName(team.replace(/_lead$/,""))} 리더`:teamName(team);
@@ -1405,15 +1424,21 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
 /* =========================================================
    SONGS TAB
    ========================================================= */
-function renderSongs(m){let q="";const box=h("div",{class:"cards"});
+const FAV_KEY="cbwp-fav";
+function favs(){try{return new Set(JSON.parse(localStorage.getItem(FAV_KEY)||"[]"));}catch(e){return new Set();}}
+function toggleFav(id){const f=favs();f.has(id)?f.delete(id):f.add(id);try{localStorage.setItem(FAV_KEY,JSON.stringify([...f]));}catch(e){}return f.has(id);}
+function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)S.songF={f:"all",sort:"used"};const F=S.songF;
   const usage={};for(const c of S.contis)for(const it of allItems(c)){const k=it.songId||it.title;usage[k]=(usage[k]||0)+1;}
+  const FL=[["all","전체"],["fav","☆ 즐겨찾기"],["score","악보 있는 곡"],["lyrics","가사 있는 곡"],["hymn","찬송가"]];
+  const chips=h("div",{class:"chipbar"},FL.map(([k,l])=>h("button",{type:"button",class:"fchip","aria-pressed":String(F.f===k),text:l,onclick:e=>{F.f=k;[...chips.querySelectorAll(".fchip")].forEach(b=>b.setAttribute("aria-pressed",String(b===e.currentTarget)));draw();}})),
+    h("select",{id:"song-sort","aria-label":"정렬",onchange:e=>{F.sort=e.target.value;draw();}},[["used","많이 부른 순"],["abc","가나다순"]].map(([v,l])=>h("option",{value:v,text:l,selected:F.sort===v}))));
   const newT=h("input",{type:"text",id:"song-new",placeholder:"새 곡 제목 (유튜브 주소를 같이 붙여도 돼요)"});
   m.append(h("div",{class:"sheet"},h("h2",{},"찬양 라이브러리",h("span",{class:"sub",text:`모두 ${S.songs.length}곡 · 교회 전체가 함께 써요`})),
     h("div",{class:"row"},newT,h("button",{class:"btn",disabled:!S.canWrite,text:"곡 등록",onclick:async()=>{const v=newT.value;const yid=ytId(v);const t=yid?cleanTitle(v):v.trim();if(!t){toast("곡 제목을 써 주세요");return;}
       if(S.songs.some(s=>norm(s.title)===norm(t))){toast("이미 있는 곡이에요");return;}await createSong(t,yid);newT.value="";draw();toast(`「${t}」 등록했어요`);}})),
     h("p",{class:"hint",text:"자주 부르는 곡을 미리 등록하고 기본 악보와 구간 표시를 저장해 두면, 콘티에 넣을 때 그대로 불러와요."}),
     S.canWrite?h("div",{class:"row",style:"margin-bottom:8px"},h("button",{class:"btn",text:"📂 가사 PPT 한꺼번에 올리기",onclick:lyricsDbModal}),h("span",{class:"hint",text:"방송실 가사 DB를 곡마다 가사로 넣어요"})):null,
-    h("input",{type:"search",id:"song-q",placeholder:"곡 찾기 · 초성 · 찬송가 장 번호 (예: 524)",oninput:e=>{q=e.target.value;draw();}}),h("div",{style:"height:10px"}),box));
+    h("input",{type:"search",id:"song-q",placeholder:"곡 찾기 · 초성 · 찬송가 장 번호 (예: 524)",oninput:e=>{q=e.target.value;draw();}}),h("div",{style:"height:8px"}),chips,h("div",{style:"height:10px"}),box));
   /* titles that are not in the library yet (21세기 찬송가 645곡 · 곡집 제목) */
   const more=h("div",{class:"cards"});
   const addFromList=async t=>{if(S.songs.some(s=>norm(s.title)===norm(t)))return toast("이미 라이브러리에 있어요");await createSong(t,null);toast(`「${t}」을(를) 라이브러리에 넣었어요`);draw();};
@@ -1425,8 +1450,11 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});
         S.canWrite?h("button",{class:"btn sm",text:"+ 라이브러리에 넣기",onclick:()=>addFromList(t)}):null)));}
   function draw(){box.replaceChildren();drawMore();
     let arr=S.songs.slice();const qn=/^\d+$/.test(q.trim())?+q.trim():null;if(q.trim())arr=arr.filter(s=>qn!=null?splitTitle(s.title).hymn===qn:matchRank(s.title,q)>-1);
-    arr.sort((a,b)=>(usage[b.id]||0)-(usage[a.id]||0)||a.title.localeCompare(b.title,"ko"));
-    if(!arr.length){box.append(h("div",{class:"empty",text:S.songs.length?"찾는 곡이 없어요.":"아직 등록된 곡이 없어요. 위에서 곡을 등록하거나, 콘티를 쓰면서 새 곡을 넣으면 여기 쌓여요."}));return;}
+    const fv=favs();const hasScore=s=>{const v=teamVer(s);return !!(v&&v.pages.length);};
+    if(F.f==="fav")arr=arr.filter(s=>fv.has(s.id));else if(F.f==="score")arr=arr.filter(hasScore);else if(F.f==="lyrics")arr=arr.filter(s=>(s.lyrics||"").trim());else if(F.f==="hymn")arr=arr.filter(s=>splitTitle(s.title).hymn);
+    arr.sort(F.sort==="abc"?(a,b)=>a.title.localeCompare(b.title,"ko"):(a,b)=>(usage[b.id]||0)-(usage[a.id]||0)||a.title.localeCompare(b.title,"ko"));
+    if(F.f!=="all"||q.trim())box.append(h("div",{class:"hint",text:`${arr.length}곡`}));
+    if(!arr.length){box.append(h("div",{class:"empty",text:F.f==="fav"?"아직 즐겨찾기한 곡이 없어요. 곡 카드의 ☆를 누르면 여기 모여요.":F.f!=="all"?"조건에 맞는 곡이 없어요.":S.songs.length?"찾는 곡이 없어요.":"아직 등록된 곡이 없어요. 위에서 곡을 등록하거나, 콘티를 쓰면서 새 곡을 넣으면 여기 쌓여요."}));return;}
     for(const s of arr.slice(0,200))box.append(songCard(s,usage[s.id]||0));}
   box.after(more);draw();renderSongs.redraw=draw;
   m.append(hymnSheet(addFromList),catalogSheet());}
@@ -1480,7 +1508,7 @@ function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canW
     S.cur.before.push(itemFromSong(s));markDirty();saveDraft();toast(`「${s.title}」을(를) 예배 찬양 ${S.cur.before.length}번째로 넣었어요`);}});
   return h("div",{class:"card"},
     h("div",{class:"row",style:"flex-wrap:nowrap;align-items:flex-start"},th,h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"},
-      h("div",{class:"row",style:"flex-wrap:nowrap"},tIn,keyIn),
+      h("div",{class:"row",style:"flex-wrap:nowrap"},tIn,keyIn,(()=>{const on=favs().has(s.id);const b=h("button",{type:"button",class:"star","aria-pressed":String(on),"aria-label":"즐겨찾기",title:"즐겨찾기 (이 기기에 저장)",text:on?"★":"☆",onclick:()=>{const v=toggleFav(s.id);b.setAttribute("aria-pressed",String(v));b.textContent=v?"★":"☆";toast(v?"즐겨찾기에 넣었어요":"즐겨찾기에서 뺐어요");if(S.songF&&S.songF.f==="fav"&&renderSongs.redraw)renderSongs.redraw();}});return b;})()),
       h("div",{class:"row sbadges"},
         sp.hymn?h("span",{class:"sbadge",text:`찬송가 ${sp.hymn}장${sp.arr?` · ${sp.arr} 편곡`:""}`}):null,
         h("span",{class:"sbadge"+(tv&&tv.pages.length?" ok":" no"),title:tv?verLabel(tv):"",text:tv&&tv.pages.length?`악보 ✓ ${verLabel(tv)}`:"악보 없음"}),
@@ -1557,11 +1585,11 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
         `(${g.map(mb=>(mb.positions||[]).join("·")||"자리 없음").join(" / ")}) `,
         h("button",{class:"btn sm",disabled:!canLead(),text:"통합할까요?",onclick:()=>{const rest=g.slice(1);
           askSameName(first.name,[first],{name:first.name,tier:rest[0].tier,positions:[...new Set(rest.flatMap(x=>x.positions||[]))]},null,()=>{},rest);}})));}
-    const rk=mb=>mb.role==="리더"?0:mb.role?1+(ROLES.indexOf(mb.role)<0?ROLES.length:ROLES.indexOf(mb.role))/10:9;const meN=normName(myName());const rk2=mb=>mb.role==="리더"?0:meN&&normName(mb.name)===meN?0.5:rk(mb);const arr=S.members.slice().sort((a,b)=>rk2(a)-rk2(b)||TIERS.indexOf(a.tier)-TIERS.indexOf(b.tier)||a.name.localeCompare(b.name,"ko"));
+    const rk=mb=>mb.role==="리더"?0:mb.role?1+(ROLES.indexOf(mb.role)<0?ROLES.length:ROLES.indexOf(mb.role))/10:9;const meN=normName(myName());const isMe=mb=>!!meN&&normName(mb.name)===meN;const rk2=mb=>isMe(mb)?-1:rk(mb);const arr=S.members.slice().sort((a,b)=>rk2(a)-rk2(b)||TIERS.indexOf(a.tier)-TIERS.indexOf(b.tier)||a.name.localeCompare(b.name,"ko"));
     const lead=S.contis.reduce((o,c)=>{for(const r of c.roster||[])for(const p of r.people||[])if(p.id)o[p.id]=(o[p.id]||0)+1;return o;},{});
     listBox.append(h("div",{class:"mcards"},arr.map(mb=>{let armed=false;const del=h("button",{class:"btn sm danger",disabled:!canLead(),text:"빼기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말?";setTimeout(()=>{armed=false;del.textContent="빼기";},3000);return;}try{await S.db.doc(`members/${mb.id}`).delete();toast("명단에서 뺐어요");}catch(e){toast("빼지 못했어요");}}});
-        return h("div",{class:"mcard"+(mb.role==="리더"?" lead":"")},h("span",{class:"avatar","aria-hidden":"true",text:[...mb.name][0]||"?"}),
-          h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",""].filter(Boolean).join("  ·  ")})),
+        return h("div",{class:"mcard"+(mb.role==="리더"?" lead":"")+(isMe(mb)?" me":"")},h("span",{class:"avatar","aria-hidden":"true",text:[...mb.name][0]||"?"}),
+          h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},isMe(mb)?h("span",{class:"rolebadge me",text:"● 나"}):null,mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",""].filter(Boolean).join("  ·  ")})),
           h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!canLead(),text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=mb.tier;titleSel.value=mb.title||"";roleSel.value=mb.role==="담당자"?"직접입력":(mb.role||"");dutyIn.value=mb.duty||"";dutyIn.hidden=roleSel.value!=="직접입력";f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));})));}
   draw();renderMembers.redraw=draw;}
 
@@ -1770,7 +1798,7 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
     up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:`uprow k-${x.k}`+(x.d===today?" today":""),onclick:()=>x.ev?eventModal(x.ev):x.c?viewConti(x.c):setTab("cal")},
       h("span",{class:"when",text:x.d===today?"오늘":fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":x.k==="hol"?"공휴일":evKindName(x.k,x.ev)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):
       h("div",{class:"empty",text:"2주 안에 잡힌 일정이 없어요."}));
-  m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),myServeSheet(),svc,nbox,boardSheet(),sch);}
+  m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),myServeSheet(),nbox,boardSheet(),sch);}
 /* home: my serving, one-line board, prayer & sharing */
 const myName=()=>((window.CBWP&&window.CBWP.myName&&window.CBWP.myName())||S.meName||"").trim();
 const POSTK={talk:"한마디",prayer:"기도제목",share:"나눔"};
@@ -1783,11 +1811,16 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
   return h("div",{class:"row"},inp,h("button",{class:"btn sm primary",text:"이름 저장",onclick:async()=>{const v=inp.value.trim();if(!v)return inp.focus();
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 function myServeSheet(){const me=normName(myName());const today=todayStr();
-  if(!me)return h("div",{class:"sheet myserve"},h("h2",{},"나의 섬김",h("span",{class:"sub",text:"이름을 넣으면 내가 들어간 콘티가 여기 나와요"})),nameBox());
+  const nextSvc=()=>{const c=S.contis.filter(c=>!c.past&&!c.noService&&c.date&&c.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0];
+    if(!c)return h("div",{class:"empty"},"다가오는 콘티가 아직 없어요.",S.canWrite&&isWriter()?h("div",{style:"margin-top:8px"},h("button",{class:"btn primary",text:"콘티 쓰러 가기",onclick:()=>setTab("write")})):null);
+    return h("div",{class:"card"},h("div",{class:"row"},h("span",{class:"hint",text:"다가오는 예배"}),h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),h("span",{class:"spacer"}),h("b",{class:"dday",text:ddayLabel(c.date)})),
+      leaderOf(c)?h("div",{class:"hint",text:`인도 ${leaderOf(c)}`}):null,allItems(c).length?songsBlock(c):null,
+      h("div",{class:"row"},h("button",{class:"btn sm primary",text:"콘티 · 악보 보기",onclick:()=>viewConti(c)})));};
+  if(!me)return h("div",{class:"sheet myserve"},h("h2",{},"나의 섬김",h("span",{class:"sub",text:"이름을 넣으면 내가 들어간 콘티가 여기 나와요"})),nameBox(),nextSvc());
   const mine=S.contis.filter(c=>!c.past&&!c.noService&&c.date&&c.date>=today).map(c=>({c,pos:(c.roster||[]).filter(r=>(r.people||[]).some(p=>normName(p.name)===me)).map(r=>r.pos)}))
     .filter(x=>x.pos.length).sort((a,b)=>a.c.date.localeCompare(b.c.date)).slice(0,3);
   const head=h("h2",{text:`${myName()} 님의 섬김`});
-  if(!mine.length)return h("div",{class:"sheet myserve"},head,h("div",{class:"empty",text:"다가오는 콘티에 아직 이름이 없어요."}));
+  if(!mine.length)return h("div",{class:"sheet myserve"},head,h("p",{class:"hint",text:"다가오는 콘티에 아직 이름이 없어요."}),nextSvc());
   return h("div",{class:"sheet myserve"},head,h("div",{class:"cards"},mine.map(({c,pos})=>{const ids=refIds(c);
     return h("div",{class:"card servecard"},
       h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),h("span",{class:"spacer"}),h("b",{class:"dday",text:ddayLabel(c.date)})),
