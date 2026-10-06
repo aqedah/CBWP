@@ -617,7 +617,7 @@ function setTab(t){S.tab=t;document.querySelectorAll("nav.tabs button").forEach(
 function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   const tc=(TEAMS.find(t=>t.id===S.team)||{}).color;if(tc)document.documentElement.style.setProperty("--team",tc);else document.documentElement.style.removeProperty("--team");
   if(S.team)nm.append(h("span",{class:"teamchip"},teamName(S.team),h("button",{type:"button",text:"팀 바꾸기",onclick:switchTeam})));
-  if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.canWrite?h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:S.isOwner?"관리자":"쓰기 가능"}):
+  if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.canWrite?(S.isOwner?h("button",{type:"button",class:"lockchip on",title:"눌러서 관리자 로그아웃",text:"관리자 ✕",onclick:adminLogout}):h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:"쓰기 가능"})):
     h("button",{type:"button",class:"lockchip",title:"팀 비밀번호를 넣으면 콘티를 쓸 수 있어요",text:"🔒 보기 전용",onclick:()=>unlockModal(S.team)}));
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
   const links=[h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
@@ -635,7 +635,11 @@ function renderTeamPick(m){m.append(h("img",{class:"bigLogo",alt:"중앙성서�
     return h("button",{type:"button",class:"teambtn",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:String(i).padStart(2,"0")}),
       h("span",{class:"tnote","aria-hidden":"true",text:"♪"}),h("b",{text:t.name}),h("small",{text:t.en}),h("span",{text:window.CBWP?(window.CBWP.canWrite(t.id)?"들어가기 →":"🔒 비밀번호로 들어가기"):(S.ready&&!S.dbFailed?`저장된 콘티 ${n}개`:"들어가기")}));}))));}
 function drawAdminRow(){const r=$("#adminRow");if(!r)return;r.hidden=!window.CBWP;if(!window.CBWP)return;
-  r.replaceChildren(S.isOwner?h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}):h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
+  r.replaceChildren(...(S.isOwner?[h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}),h("button",{class:"btn sm",text:"관리자 로그아웃",onclick:adminLogout})]:[]));if(S.isOwner)return;r.append(h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
+function adminLogout(){if(!window.CBWP||!window.CBWP.logoutAdmin)return;
+  askConfirm("관리자 로그아웃",[h("p",{text:"이 기기에서 관리자 권한을 내려놓아요. 지금 들어와 있는 팀은 그대로 쓸 수 있어요."})],"로그아웃",async()=>{
+    const md=modal("로그아웃 중",h("div",{class:"panel-body"},h("p",{text:"잠시만요…"})),null);
+    try{await window.CBWP.logoutAdmin();}catch(e){console.error(e);}md.close();S.isOwner=false;try{sessionStorage.setItem("cbwp-toast","관리자에서 나왔어요");}catch(e){}location.reload();});}
 /* admin: load an export file (contis, songs, scores, members …) into the shared store */
 function importModal(){const st=h("p",{class:"hint"});
   const fin=h("input",{type:"file",id:"imp-file",accept:".json,application/json",onchange:async e=>{const f=e.target.files[0];if(!f)return;
@@ -2160,6 +2164,7 @@ render();
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f2++)done();else rerender();},onErr);
   db.collection("contis").onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f3++)done();else rerender();},onErr);
 })().catch(e=>{console.error(e);S.dbFailed=true;S.ready=true;render();});
+setTimeout(()=>{try{const t=sessionStorage.getItem("cbwp-toast");if(t){sessionStorage.removeItem("cbwp-toast");toast(t);}}catch(e){}},1500);
 </script>
 
 </body>
