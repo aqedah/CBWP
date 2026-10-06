@@ -428,6 +428,18 @@ header.top{border-top:4px solid var(--team,transparent)}
 .pinfo dt{align-self:stretch;display:flex;align-items:center;padding:0 14px;background:var(--soft);color:var(--ink2);font-size:.84rem;font-weight:700}
 .pinfo dd{margin:0;padding:10px 14px;font-weight:600;min-width:0}
 .pchips{display:flex;flex-wrap:wrap;gap:6px}.pchip{font-size:.84rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--sheet)}
+.availlist{display:flex;flex-direction:column;gap:8px}
+.availrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.availd{display:flex;flex-direction:column;gap:2px}.availbtns{display:flex;gap:6px;flex-wrap:wrap}
+.btn.okon{background:#2f9e5b;border-color:#2f9e5b;color:#fff}.btn.noon{background:#d0473e;border-color:#d0473e;color:#fff}
+.lchip{display:inline-flex;align-items:center;gap:4px;font-size:.85rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--sheet)}
+.lchip.ok{border-color:#2f9e5b;color:#1f7a44;background:color-mix(in srgb,#2f9e5b 10%,var(--sheet))}
+.lchip.no{border-color:#d0473e;color:#b3362e;background:color-mix(in srgb,#d0473e 10%,var(--sheet));text-decoration:line-through}
+.avcols .lchip.no{text-decoration:none}
+.avb{font-size:.7rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--soft);color:var(--muted)}.avb.ok{background:#2f9e5b;color:#fff}.avb.no{background:#d0473e;color:#fff}
+.avn{font-size:.66rem!important;color:#d0473e!important;font-weight:700}
+.avcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.avcol{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.lgrid{font-size:.82rem;white-space:nowrap}.lgrid tbody tr{cursor:pointer}.lgrid tr.sel{background:var(--soft)}
 .attdays{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
 .attday{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:58px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--sheet);color:var(--ink);font:inherit;cursor:pointer}
 .attday b{font-size:1rem}.attday span{font-size:.7rem;color:var(--muted)}
@@ -614,8 +626,8 @@ function canDeletePast(c){if(!S.db||!c||!c.id||!S.canWrite)return false;return S
 /* 다가오는 예배 날짜: 이 팀이 주로 예배드린 요일(없으면 주일) 중 오늘부터 가장 가까운 날 */
 function nextServiceDate(){const cnt=[0,0,0,0,0,0,0];for(const c of (S.contis||[]).filter(c=>c.date&&!c.noService).slice(-30)){const d=parseD(c.date);if(d)cnt[d.getDay()]++;}
   let wd=0;cnt.forEach((n,i)=>{if(n>cnt[wd])wd=i;});const d=new Date();d.setDate(d.getDate()+((wd-d.getDay()+7)%7));return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-function blankConti(){const d=nextServiceDate(),g=guessWtype(d);return{date:d,wtype:g.wtype,wtypeCustom:g.custom,passage:"",sermonTitle:"",preacher:"",playlist:"",
-  roster:POSITIONS.map(p=>({pos:p,people:[]})),opening:fixedOpening(),before:[],after:[],memo:"",status:"draft",team:S.team};}
+function blankConti(){const d=nextServiceDate(),pl=(S.posts||[]).find(p=>p.id===`plan_${S.team}_${d}`),g=guessWtype(d);return{date:d,wtype:g.wtype,wtypeCustom:g.custom,passage:"",sermonTitle:"",preacher:"",playlist:"",
+  roster:planRoster(pl),opening:fixedOpening(),before:[],after:[],memo:"",status:"draft",team:S.team};}
 const teamCfg=()=>S.teamCfgs[S.team]||{};
 const fixedOpening=()=>(teamCfg().fixedOpening||[]).map(it=>({...clone(it),uid:uid(8)}));
 async function setFixedOpening(items){if(!S.db||!S.team)return;try{await S.db.doc(`teams/${S.team}`).set({...teamCfg(),fixedOpening:clone(items).map(it=>({...it,memo:""})),updatedAt:Date.now()});}catch(e){toast("저장하지 못했어요");}}
@@ -719,7 +731,7 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
   try{await S.db.doc(`songs/${song.id}`).update({yt:[...(song.yt||[]),yid],updatedAt:Date.now()});}catch(e){}}
 
 /* ---------- tabs ---------- */
-const NAVG={home:[["home","홈"]],conti:[["write","콘티 작성"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"]],team:[["cal","일정"],["members","멤버"],["attend","출결"],["stats","결산"],["bible","성경읽기"],["bylaws","회칙"]],me:[["me","나"]]};
+const NAVG={home:[["home","홈"]],conti:[["write","콘티 작성"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"]],team:[["cal","일정"],["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bible","성경읽기"],["bylaws","회칙"]],me:[["me","나"]]};
 const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
 const subsOf=g=>NAVG[g].filter(([k])=>k!=="write"||isWriter()||S.curId);
 S.lastSub={};
@@ -805,7 +817,7 @@ function render(){const m=$("#main");m.replaceChildren();document.body.classList
   syncNav();
   if(!S.team){renderTeamPick(m);return;}
   const st=subTabs();if(st)m.append(st);
-  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend})[S.tab](m);}
+  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend,lineup:renderLineup})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
 function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lead$/.test(team);const tn=isLead?`${teamName(team.replace(/_lead$/,""))} 리더`:teamName(team);
   const nameIn=h("input",{type:"text",id:"ul-name",placeholder:"이름 (콘티 작성자로 보여요)",value:window.CBWP.myName()||""});
@@ -872,7 +884,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   const rosterBox=h("div",{class:"roster",id:"rosterBox"});
   const newPos=h("input",{type:"text",id:"f-newpos",placeholder:"자리 이름 (예: 바이올린)",style:"max-width:220px"});
   fs.append(h("div",{class:"sheet"},h("h2",{},"참여자",h("span",{class:"sub",text:"자리를 누르면 멤버를 고를 수 있어요"})),rosterBox,
-    h("div",{class:"row",style:"margin-top:10px"},Object.keys(basicRoster()).length&&editable?h("button",{class:"btn sm primary",text:"기본 편성 불러오기",onclick:()=>{fillBasicRoster(c);markDirty();renderRoster();toast("기본 편성으로 채웠어요. 빠지는 사람만 고치세요");}}):null,newPos,h("button",{class:"btn sm",text:"+ 자리 직접입력",onclick:()=>{const v=newPos.value.trim();if(!v)return newPos.focus();c.roster.push({pos:v,people:[]});newPos.value="";markDirty();renderRoster();}}))));
+    h("div",{class:"row",style:"margin-top:10px"},planOf(c.date)&&editable?h("button",{class:"btn sm primary",text:"편성표 불러오기",title:"우리 팀 → 편성에서 정한 이 날 참여자",onclick:()=>{c.roster=planRoster(planOf(c.date));markDirty();renderRoster();toast("편성표대로 채웠어요");}}):null,Object.keys(basicRoster()).length&&editable?h("button",{class:"btn sm primary",text:"기본 편성 불러오기",onclick:()=>{fillBasicRoster(c);markDirty();renderRoster();toast("기본 편성으로 채웠어요. 빠지는 사람만 고치세요");}}):null,newPos,h("button",{class:"btn sm",text:"+ 자리 직접입력",onclick:()=>{const v=newPos.value.trim();if(!v)return newPos.focus();c.roster.push({pos:v,people:[]});newPos.value="";markDirty();renderRoster();}}))));
   /* setlists */
   for(const [key,label,sub] of SECTIONS){
     const fixed=teamCfg().fixedOpening||[];
@@ -937,12 +949,12 @@ function renderRoster(){const box=$("#rosterBox");if(!box)return;box.replaceChil
         h("button",{"aria-label":`${p.name} 빼기`,text:"×",onclick:()=>{slot.people.splice(pi,1);markDirty();renderRoster();}}))):h("span",{class:"hint",text:"비어 있음"})),
       h("button",{class:"btn sm add",text:"+ 이름 고르기",onclick:()=>openPicker(slot,null,c.roster)})));});}
 
-function openPicker(slot,onApply,roster){const chosen=new Map(slot.people.map(p=>[p.id||("x:"+p.name),p]));
+function openPicker(slot,onApply,roster,badge){const chosen=new Map(slot.people.map(p=>[p.id||("x:"+p.name),p]));
   const mine=S.members.filter(mb=>(mb.positions||[]).includes(slot.pos)),others=S.members.filter(mb=>!(mb.positions||[]).includes(slot.pos));
   const sortM=a=>a.slice().sort((x,y)=>TIERS.indexOf(x.tier)-TIERS.indexOf(y.tier)||x.name.localeCompare(y.name,"ko"));
   const row=mb=>{const id=`pk-${mb.id}`;return h("label",{class:"pick",htmlFor:id},
     h("input",{type:"checkbox",id,checked:chosen.has(mb.id),onchange:e=>{e.target.checked?chosen.set(mb.id,{id:mb.id,name:mb.name,tier:mb.tier}):chosen.delete(mb.id);}}),
-    h("span",{text:mbName(mb)}),mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier}),h("span",{class:"pos",text:(mb.positions||[]).join(" · ")}));};
+    h("span",{text:mbName(mb)}),mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier}),badge?badge(mb):null,h("span",{class:"pos",text:(mb.positions||[]).join(" · ")}));};
   const quick=h("input",{type:"text",id:"pk-quick",placeholder:"명단에 없는 이름 (게스트로 들어가요)"});
   const body=h("div",{class:"panel-body"},
     S.members.length?null:h("div",{class:"empty"},"아직 등록된 멤버가 없어요. 「멤버」 탭에서 팀원을 등록하면 여기서 바로 고를 수 있어요."),
@@ -1672,6 +1684,95 @@ function renderMembers(m){const f={name:"",tier:"정회원",positions:[]};let ed
   draw();renderMembers.redraw=draw;
   m.append(basicRosterSheet(),probationSheet());}
 
+/* =========================================================
+   주간 편성 (리더) · 참여 응답 (팀원)
+   events/plan_팀_날짜 {roster,practice,note,off,label} · events/avail_팀_날짜 {resp:{이름:{ok,note,at}}}
+   ========================================================= */
+const planId=d=>`plan_${S.team}_${d}`,availId=d=>`avail_${S.team}_${d}`;
+const planOf=d=>(S.posts||[]).find(p=>p.id===planId(d))||null;
+const availOf=d=>((S.posts||[]).find(p=>p.id===availId(d))||{}).resp||{};
+function planRoster(pl){const r=POSITIONS.map(pos=>({pos,people:[]}));if(pl&&pl.roster)for(const x of pl.roster){let sl=r.find(y=>y.pos===x.pos);if(!sl){sl={pos:x.pos,people:[]};r.push(sl);}sl.people=clone(x.people||[]);}return r;}
+function basicAsRoster(){const c={roster:POSITIONS.map(pos=>({pos,people:[]}))};fillBasicRoster(c,true);return c.roster;}
+function respOf(d,name){const r=availOf(d);const k=normName(name);for(const[n,v]of Object.entries(r))if(normName(n)===k||normName(resolveName(n))===k)return v;return null;}
+const canPlan=()=>canAttend();
+function upcomingDates(n){const out=new Set();const d=parseD(nextServiceDate());for(let i=0;i<n;i++){out.add(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);d.setDate(d.getDate()+7);}
+  const last=[...out].sort().pop();for(const c of S.contis)if(!c.noService&&c.date&&c.date>=todayStr()&&c.date<=last)out.add(c.date);return [...out].sort();}
+function patchLocal(id,fn){const cur=(S.allEvents||[]).find(e=>e.id===id);const next=fn(cur?clone(cur):null);S.allEvents=(S.allEvents||[]).filter(e=>e.id!==id).concat(next?[{...next,id}]:[]);applyTeam();}
+async function setAvail(d,ok,note){const name=myName();if(!name)return toast("「나」에서 이름을 먼저 넣어 주세요");if(!S.db)return toast("팀 저장소에 연결되지 않았어요");
+  const v={ok,note:note||"",at:Date.now()};
+  try{await S.db.doc(`events/${availId(d)}`).set({team:S.team,post:"avail",date:d,resp:{[name]:v},updatedAt:Date.now()},{merge:true});}catch(e){console.error(e);return toast("응답을 저장하지 못했어요");}
+  patchLocal(availId(d),cur=>({...(cur||{team:S.team,post:"avail",date:d}),resp:{...((cur&&cur.resp)||{}),[name]:v}}));toast(ok?"참여 가능으로 알렸어요":"불참으로 알렸어요");render();}
+async function savePlan(d,pl){const body={team:S.team,post:"plan",date:d,roster:(pl.roster||[]).filter(r=>(r.people||[]).length).map(r=>({pos:r.pos,people:r.people.map(p=>({id:p.id||null,name:p.name,tier:p.tier||""}))})),
+    practice:pl.practice||"",note:pl.note||"",off:!!pl.off,label:pl.label||"",by:S.myId||null,updatedAt:Date.now()};
+  try{await S.db.doc(`events/${planId(d)}`).set(body);}catch(e){console.error(e);toast("편성을 저장하지 못했어요");return false;}
+  patchLocal(planId(d),()=>body);return true;}
+const dLabel=d=>{const x=parseD(d);return `${x.getMonth()+1}/${x.getDate()}(${"일월화수목금토"[x.getDay()]})`;};
+/* 홈: 참여 응답 */
+function availSheet(){const me=myName();if(!me||!S.team)return null;const mb=S.members.find(x=>normName(x.name)===normName(me));if(mb&&tierOf(mb)==="휴면")return null;
+  const ds=upcomingDates(3).filter(d=>!(planOf(d)||{}).off);if(!ds.length)return null;const can=S.canWrite&&!!S.db;
+  return h("div",{class:"sheet"},h("h2",{},"참여 응답",h("span",{class:"sub",text:"리더가 편성할 때 참고해요"})),
+    h("div",{class:"availlist"},ds.map(d=>{const r=respOf(d,me);const pl=planOf(d);const mine=pl?(pl.roster||[]).filter(x=>(x.people||[]).some(p=>normName(p.name)===normName(me))).map(x=>x.pos):[];
+      const no=()=>{const ni=h("input",{type:"text",id:"av-note",placeholder:"사유 (예: 가족 일정, 시험)",value:r&&!r.ok?r.note:""});
+        const md=modal(`${dLabel(d)} 불참`,h("div",{class:"panel-body"},h("p",{class:"hint",text:"사유는 우리 팀 → 편성의 응답 현황에 함께 보여요."}),ni),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn danger",text:"불참으로 알리기",onclick:()=>{md.close();setAvail(d,false,ni.value.trim());}})]);setTimeout(()=>ni.focus(),50);};
+      return h("div",{class:"availrow"},h("div",{class:"availd"},h("b",{text:dLabel(d)}),mine.length?h("span",{class:"hint",text:`편성: ${mine.join(" · ")}`}):h("span",{class:"hint",text:pl?"편성 나옴":"편성 전"})),
+        h("div",{class:"availbtns"},h("button",{class:"btn sm"+(r&&r.ok?" okon":""),disabled:!can,text:r&&r.ok?"✓ 참여 가능":"참여 가능",onclick:()=>setAvail(d,true,"")}),
+          h("button",{class:"btn sm"+(r&&!r.ok?" noon":""),disabled:!can,text:r&&!r.ok?`✕ 불참${r.note?` (${r.note})`:""}`:"어려워요",onclick:no})));})));}
+/* 우리 팀 → 편성 */
+function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);if(!S.lineDay||!ds.includes(S.lineDay))S.lineDay=ds[0];const d=S.lineDay;
+  const saved=planOf(d);const conti=S.contis.find(c=>c.date===d&&!c.noService&&!c.past);
+  if(!S.lineDraft||S.lineDraft.d!==d||S.lineDraft.at!==(saved?saved.updatedAt:0)){
+    const base=saved?planRoster(saved):conti&&(conti.roster||[]).some(r=>(r.people||[]).length)?planRoster({roster:conti.roster}):basicAsRoster();
+    S.lineDraft={d,at:saved?saved.updatedAt:0,roster:base,practice:saved?saved.practice:"",note:saved?saved.note:"",off:saved?saved.off:false,label:saved?saved.label:"",dirty:!saved};}
+  const L=S.lineDraft;const resp=availOf(d);
+  const people=S.members.filter(mb=>!["게스트","휴면"].includes(tierOf(mb))).sort((a,b)=>tierRank(a)-tierRank(b)||a.name.localeCompare(b.name,"ko"));
+  const yes=[],no=[],none=[];for(const mb of people){const r=respOf(d,mb.name);(r?r.ok?yes:no:none).push({mb,r});}
+  const badge=mb=>{const r=respOf(d,mb.name);return r?h("span",{class:"avb "+(r.ok?"ok":"no"),text:r.ok?"가능":`불참${r.note?`·${r.note}`:""}`}):h("span",{class:"avb",text:"응답 전"});};
+  const chip=p=>{const r=respOf(d,p.name);return h("span",{class:"lchip"+(r?r.ok?" ok":" no":""),title:r&&!r.ok?`불참 ${r.note||""}`:""},p.name);};
+  const dirty=()=>{L.dirty=true;render();};
+  /* 날짜 고르기 */
+  const days=h("div",{class:"attdays"},ds.map(x=>{const pl=planOf(x);const n=Object.values(availOf(x)).filter(v=>!v.ok).length;
+    return h("button",{type:"button",class:"attday"+(x===d?" on":"")+(pl&&pl.off?" off":""),onclick:()=>{S.lineDay=x;render();}},h("b",{text:dLabel(x).replace(/\(.\)/,"")}),
+      h("span",{text:pl?(pl.off?(pl.label||"쉼"):"편성 ✓"):"편성 전"}),n?h("span",{class:"avn",text:`불참 ${n}`}):null);}));
+  /* 편성표 */
+  const rows=L.roster.filter(r=>can||(r.people||[]).length).map(slot=>h("div",{class:"pinfo-row"},h("dt",{text:slot.pos}),h("dd",{},h("span",{class:"pchips"},(slot.people||[]).map(chip),
+    can?h("button",{class:"btn sm add",text:(slot.people||[]).length?"바꾸기":"+ 고르기",onclick:()=>openPicker(slot,()=>dirty(),L.roster,badge)}):null))));
+  const prIn=h("input",{type:"text",id:"ln-practice",value:L.practice,disabled:!can,placeholder:"예: 10/10(토) 10:30, 본당",oninput:e=>{L.practice=e.target.value;L.dirty=true;}});
+  const noteIn=h("input",{type:"text",id:"ln-note",value:L.note,disabled:!can,placeholder:"예: 민서 불참, 요한 드럼 대타",oninput:e=>{L.note=e.target.value;L.dirty=true;}});
+  const save=async()=>{if(await savePlan(d,L)){S.lineDraft=null;toast("편성을 저장했어요");render();}};
+  const diffConti=conti&&JSON.stringify((conti.roster||[]).filter(r=>(r.people||[]).length).map(r=>[r.pos,r.people.map(p=>normName(p.name))]))!==JSON.stringify(L.roster.filter(r=>(r.people||[]).length).map(r=>[r.pos,r.people.map(p=>normName(p.name))]));
+  const card=h("div",{class:"sheet"},h("h2",{},`${dLabel(d)} 편성`,h("span",{class:"sub",text:can?"고친 뒤 「편성 저장」":"리더가 정한 편성이에요"})),days,
+    L.off?h("div",{class:"empty",style:"margin-top:10px"},`이 주는 「${L.label||"쉬는 주"}」예요.`,can?h("div",{style:"margin-top:8px"},h("button",{class:"btn sm",text:"보통 주로 되돌리기",onclick:async()=>{L.off=false;await save();}})):null):h("div",{style:"margin-top:12px;display:flex;flex-direction:column;gap:12px"},
+      !saved&&can?h("div",{class:"banner"},h("b",{text:"아직 저장 전이에요. "}),conti?"콘티 참여자를 바탕으로 채워 두었어요.":"기본 편성으로 미리 채워 두었어요. 불참한 사람(빨간색)을 바꾸고 저장하세요."):null,
+      L.dirty&&saved&&can?h("div",{class:"banner warn"},"고친 내용이 아직 저장되지 않았어요."):null,
+      h("dl",{class:"pinfo",style:"max-width:none"},rows),
+      h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"ln-practice",text:"연습 일시"}),prIn),h("div",{class:"field"},h("label",{htmlFor:"ln-note",text:"비고"}),noteIn)),
+      can?h("div",{class:"row"},h("button",{class:"btn primary",text:"편성 저장",onclick:save}),h("button",{class:"btn",text:"기본 편성으로 다시 채우기",onclick:()=>{L.roster=basicAsRoster();dirty();}}),
+        conti&&diffConti&&saved?h("button",{class:"btn",text:"콘티 참여자에 반영",title:"이 날 콘티의 참여자를 편성표대로 바꿔요",onclick:async()=>{try{await S.db.doc(`contis/${conti.id}`).update({roster:planRoster(saved),updatedAt:Date.now()});toast("콘티 참여자를 편성표대로 바꿨어요");}catch(e){toast("바꾸지 못했어요");}}}):null,
+        h("span",{class:"spacer"}),h("button",{class:"btn sm ghost",text:"쉬는 주로 표시",onclick:()=>{const lb=h("input",{type:"text",id:"ln-off",placeholder:"예: 디모데 담당, 쉐마 담당"});
+          const md=modal("쉬는 주로 표시",h("div",{class:"panel-body"},lb),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"표시",onclick:async()=>{md.close();L.off=true;L.label=lb.value.trim();await save();}})]);}})):null,
+      h("div",{class:"row"},h("button",{class:"btn primary",disabled:!saved,title:saved?"":"편성을 저장하면 공지를 만들 수 있어요",text:"📣 편성 공지 만들기",onclick:()=>lineupNotice(d)}),saved?null:h("span",{class:"hint",text:"저장한 뒤에 만들 수 있어요"}))));
+  /* 응답 현황 */
+  const col=(t,cls,arr,fn)=>h("div",{class:"avcol "+cls},h("div",{class:"lab",text:`${t} ${arr.length}명`}),arr.length?h("div",{class:"pchips"},arr.map(fn)):h("span",{class:"hint",text:"없음"}));
+  const respSheet=h("div",{class:"sheet"},h("h2",{},"참여 응답",h("span",{class:"sub",text:"팀원이 홈에서 직접 알려요"})),
+    h("div",{class:"avcols"},col("가능","ok",yes,x=>h("span",{class:"lchip ok",text:x.mb.name})),col("불참","no",no,x=>h("span",{class:"lchip no",text:`${x.mb.name}${x.r.note?` · ${x.r.note}`:""}`})),col("응답 전","",none,x=>h("span",{class:"lchip",text:x.mb.name}))));
+  /* 한눈에 (엑셀 멤버 구성표처럼) */
+  const posUsed=[...new Set(ds.flatMap(x=>{const pl=planOf(x);return pl&&!pl.off?(pl.roster||[]).map(r=>r.pos):[];}))].sort((a,b)=>(POSITIONS.indexOf(a)+99)%199-(POSITIONS.indexOf(b)+99)%199);
+  const grid=posUsed.length?h("div",{class:"sheet"},h("h2",{},"앞으로 편성 한눈에"),h("div",{class:"tablewrap"},h("table",{class:"t lgrid"},h("thead",{},h("tr",{},h("th",{text:"날짜"}),posUsed.map(p=>h("th",{text:p})),h("th",{text:"비고"}))),
+    h("tbody",{},ds.map(x=>{const pl=planOf(x);return h("tr",{class:x===d?"sel":"",onclick:()=>{S.lineDay=x;render();}},h("th",{text:dLabel(x)}),
+      pl&&pl.off?h("td",{colspan:posUsed.length,class:"hint",text:pl.label||"쉬는 주"}):posUsed.map(p=>h("td",{text:pl?((pl.roster||[]).find(r=>r.pos===p)||{people:[]}).people.map(q=>q.name).join(", "):""})),
+      h("td",{class:"hint",text:pl?(pl.note||""):"편성 전"}));}))))):null;
+  m.append(card,respSheet);if(grid)m.append(grid);}
+function lineupNotice(d){const pl=planOf(d);if(!pl)return;let short=true;
+  const nm=n=>short&&n.length>=3?n.slice(1):n;
+  const build=()=>{const no=Object.entries(availOf(d)).filter(([,v])=>!v.ok).map(([n,v])=>`${nm(resolveName(n))}${v.note?`(${v.note})`:""}`);
+    return [`[${teamName(S.team)}] ${dLabel(d)} 예배 편성`,...(pl.roster||[]).filter(r=>(r.people||[]).length).map(r=>`${r.pos}: ${r.people.map(p=>nm(p.name)).join(", ")}`),
+      pl.practice?`연습: ${pl.practice}`:"",pl.note?`비고: ${pl.note}`:"",no.length?`불참: ${no.join(", ")}`:""].filter(Boolean).join("\n");};
+  const ta=h("textarea",{id:"ln-text",style:"min-height:220px;font-size:.95rem;line-height:1.6",value:build()});
+  const sh=h("input",{type:"checkbox",id:"ln-short",checked:true,onchange:e=>{short=e.target.checked;ta.value=build();}});
+  const md=modal("편성 공지",h("div",{class:"panel-body"},h("label",{class:"row hint",htmlFor:"ln-short",style:"gap:6px"},sh,"이름에서 성 빼기 (서연, 현정처럼)"),ta,h("p",{class:"hint",text:"고쳐서 쓸 수 있어요. 「복사」해서 카톡방에 붙이거나, 「공지로 올리기」로 홈 공지에 올려요."})),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn",text:"복사",onclick:async()=>{try{await navigator.clipboard.writeText(ta.value);toast("복사했어요");}catch(e){ta.select();toast("글을 길게 눌러 복사해 주세요");}}}),
+      h("button",{class:"btn primary",text:"공지로 올리기",onclick:async()=>{const n={id:uid(8),text:ta.value.trim(),by:S.myId||null,name:myName(),at:Date.now(),pin:true};
+        if(await saveNotices([n,...notices().map(x=>({...x,pin:false}))].slice(0,30))){md.close();toast("홈 공지 맨 위에 올렸어요");}}})]);}
 /* 기본 편성: 팀이 보통 서는 자리별 사람 (teams 문서 basicRoster) → 콘티 참여자 한 번에 채우기 */
 const basicRoster=()=>teamCfg().basicRoster||{};
 function basicRosterSheet(){const lead=canLead()&&!!S.db;const br=basicRoster();const posList=[...new Set([...POSITIONS,...Object.keys(br)])];
@@ -1684,7 +1785,7 @@ function basicRosterSheet(){const lead=canLead()&&!!S.db;const br=basicRoster();
     lead?h("div",{class:"row",style:"margin-top:10px"},h("span",{class:"spacer"}),h("button",{class:"btn primary",text:"기본 편성 저장",onclick:async()=>{const next={};
       for(const[pos,el]of Object.entries(ins)){const v=el.value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean).map(resolveName);if(v.length)next[pos]=v;}
       if(await saveTeamCfg({basicRoster:next})){toast("기본 편성을 저장했어요");render();}}})):null);}
-function fillBasicRoster(c){const br=basicRoster();if(!Object.keys(br).length)return toast("우리 팀 → 멤버에서 기본 편성을 먼저 정해 주세요");
+function fillBasicRoster(c,quiet){const br=basicRoster();if(!Object.keys(br).length)return quiet?null:toast("우리 팀 → 멤버에서 기본 편성을 먼저 정해 주세요");
   for(const[pos,names]of Object.entries(br)){let slot=c.roster.find(r=>r.pos===pos);if(!slot){slot={pos,people:[]};c.roster.push(slot);}
     slot.people=names.map(n=>{const full=resolveName(n);const mb=S.members.find(x=>normName(x.name)===normName(full));return mb?{id:mb.id,name:mb.name,tier:mb.tier}:{id:null,name:full,tier:""};});}}
 /* 수습 기록 (teams 문서 probation) */
@@ -1779,7 +1880,7 @@ function renderAttend(m){const today=todayStr();if(!S.attMonth)S.attMonth=today.
     !cur?h("div",{class:"empty",text:"이 달에 예배 날짜가 없어요."}):cur.off?h("div",{class:"empty"},`${fmtDate(cur.d)}은 「${cur.label||"쉬는 주"}」로 표시된 날이에요.`,can?h("div",{style:"margin-top:8px"},h("button",{class:"btn sm",text:"보통 주로 되돌리기",onclick:()=>edit(d=>{d.dates=d.dates.map(x=>x.d===cur.d?{...x,off:false}:x);})})):null):
     h("div",{},
       can?h("div",{class:"row",style:"margin:10px 0"},h("button",{class:"btn sm primary",text:"남은 칸 모두 출석",onclick:()=>edit(d=>{const dm=d.marks[day]=d.marks[day]||{};for(const n of people){const r=(dm[n]||["",""]).slice();r[0]=r[0]||"출석";r[1]=r[1]||"출석";dm[n]=r;}})}),
-        h("button",{class:"btn sm",text:"이 날 비우기",onclick:()=>edit(d=>{delete d.marks[day];})}),h("span",{class:"spacer"}),
+        Object.values(availOf(day)).some(v=>!v.ok)?h("button",{class:"btn sm",title:"참여 응답에서 불참이라고 한 사람을 공결로",text:"불참 응답 → 공결",onclick:()=>edit(d=>{const dm=d.marks[day]=d.marks[day]||{};for(const[n0,v]of Object.entries(availOf(day))){if(v.ok)continue;const n=resolveName(n0);const r=(dm[n]||["",""]).slice();r[0]=r[0]||"공결";r[1]=r[1]||"공결";dm[n]=r;}})}):null,h("button",{class:"btn sm",text:"이 날 비우기",onclick:()=>edit(d=>{delete d.marks[day];})}),h("span",{class:"spacer"}),
         h("button",{class:"btn sm ghost",text:"쉬는 주로 표시",onclick:()=>{const lb=h("input",{type:"text",id:"att-off",placeholder:"예: 디모데 담당, 쉐마 담당, 수련회"});
           const md=modal("쉬는 주로 표시",h("div",{class:"panel-body"},h("p",{class:"hint",text:`${fmtDate(day)}을 출석 셈에서 빼요.`}),lb),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"표시",onclick:()=>{md.close();edit(d=>{d.dates=d.dates.map(x=>x.d===day?{...x,off:true,label:lb.value.trim()}:x);delete d.marks[day];});}})]);}})):null,
       h("div",{class:"attlist"},h("div",{class:"atthead"},h("span"),h("span",{text:"연습"}),h("span",{text:"주일"})),
@@ -1987,7 +2088,7 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
     up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:`uprow k-${x.k}`+(x.d===today?" today":""),onclick:()=>x.ev?eventModal(x.ev):x.c?viewConti(x.c):setTab("cal")},
       h("span",{class:"when",text:x.d===today?"오늘":fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":x.k==="hol"?"공휴일":evKindName(x.k,x.ev)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):
       h("div",{class:"empty",text:"2주 안에 잡힌 일정이 없어요."}));
-  m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),myServeSheet(),nbox,boardSheet(),sch);}
+  m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),myServeSheet(),availSheet()||"",nbox,boardSheet(),sch);}
 /* home: my serving, one-line board, prayer & sharing */
 const myName=()=>((window.CBWP&&window.CBWP.myName&&window.CBWP.myName())||S.meName||"").trim();
 const POSTK={talk:"한마디",prayer:"기도제목",share:"나눔"};
@@ -2615,7 +2716,7 @@ function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
   RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
-  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(["cal","home","me","members","attend"].includes(S.tab))RR.rerender();},RR.onErr));
+  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(["cal","home","me","members","attend","lineup"].includes(S.tab))RR.rerender();},RR.onErr));
   RR.offs.push(db.doc(`teams/${team}`).onSnapshot(d=>{S.teamCfgs=d.exists?{[team]:clone(d.data())}:{};if(S.tab!=="write")RR.rerender();},RR.onErr));}
 render();
 (async()=>{
@@ -2638,7 +2739,7 @@ render();
     if(S.team&&!window.CBWP.canWrite(S.team))S.team=null;
     S.ready=true;if(S.team){startShared();startTeam(S.team);}render();return;}
   let f1=0,f2=0,f3=0,f4=0,f5=0,f6=0;
-  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members","attend"].includes(S.tab))rerender();},onErr);
+  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members","attend","lineup"].includes(S.tab))rerender();},onErr);
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
   db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
