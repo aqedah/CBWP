@@ -531,7 +531,7 @@ let draftT;function markDirty(){S.dirty=true;if(refPlaylistLink.upd&&document.ge
 let histT;const H={owner:null,list:[],last:null};
 function initHist(){if(H.owner!==S.cur){H.owner=S.cur;H.list=[];H.last=JSON.stringify(S.cur);}}
 function snapHist(){if(H.owner!==S.cur)return initHist();const j=JSON.stringify(S.cur);if(j!==H.last){H.list.push(H.last);if(H.list.length>60)H.list.shift();H.last=j;}updUndo();}
-function updUndo(){const b=$("#undoBtn");if(b)b.disabled=!H.list.length&&JSON.stringify(S.cur)===H.last;}
+function updUndo(){const off=!H.list.length&&JSON.stringify(S.cur)===H.last;for(const b of document.querySelectorAll("#undoBtn,#undoBtn2"))if(curEditable())b.disabled=off;}
 function undoConti(){if(!curEditable())return;clearTimeout(histT);snapHist();if(!H.list.length)return toast("더 되돌릴 내용이 없어요");
   H.last=H.list.pop();S.cur=fixConti(JSON.parse(H.last));H.owner=S.cur;S.dirty=true;saveDraft();render();toast("한 단계 되돌렸어요");}
 function resetConti(btn){if(!S.curId&&!curEditable())return;if(!btn.dataset.armed){btn.dataset.armed="1";btn.textContent=S.curId?"새로 시작할까요?":"정말 비울까요?";setTimeout(()=>{delete btn.dataset.armed;btn.textContent="초기화";},3000);return;}
@@ -729,16 +729,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("span",{class:"spacer"}),h("span",{class:"status",id:"saveStatus"})));
   if(S.curId){const a=$("#authorLine",head);a.append("작성: ",authorEl(c.authorId));resolveNames([c.authorId]);}
   m.append(head);
-  /* when the top bar scrolls away, the same main buttons wait at the bottom of the screen */
-  const fbar=h("div",{class:"floatbar",role:"toolbar","aria-label":"콘티 작업"},h("div",{class:"wrap fb-in"},
-    h("span",{class:"status",id:"saveStatus2"}),h("span",{class:"spacer"}),
-    h("button",{class:"btn sm",title:"맨 위로",onclick:()=>window.scrollTo({top:0,behavior:"smooth"}),text:"↑ 위로"}),
-    h("button",{class:"btn sm",disabled:!editable,onclick:undoConti,text:"↶ 실행 취소"}),
-    h("button",{class:"btn sm",onclick:()=>exportPdf(S.cur),text:"PDF"}),
-    S.canWrite?h("button",{class:"btn sm",onclick:addPracticeEvent,text:"+ 연습 일정"}):null,
-    h("button",{class:"btn sm primary",disabled:!editable,onclick:saveConti,text:"저장"})));
-  m.append(fbar);
-  if("IntersectionObserver" in window){const io=new IntersectionObserver(([en])=>{const off=!en.isIntersecting&&en.boundingClientRect.top<0;fbar.classList.toggle("on",off);document.body.classList.toggle("fb-pad",off);},{threshold:0});io.observe($(".savebar",head));}
+
   if(S.curId&&!editable&&S.canWrite)m.append(h("div",{class:"banner"},h("b",{text:"다른 사람이 쓴 콘티예요. "}),"고치기는 작성자만 할 수 있어요. 보기와 PDF 출력은 가능하고, 「복제해서 새로 쓰기」로 내 콘티를 만들 수 있어요."));
 
   const fs=h("fieldset",{disabled:!editable});
@@ -777,8 +768,12 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   fs.append(h("div",{class:"sheet"},h("h2",{text:"메모"}),
     h("textarea",{id:"f-memo",placeholder:"리허설 시간, 전달 사항 등",value:c.memo||"",oninput:e=>{c.memo=e.target.value;markDirty();}})));
   m.append(fs);
-  m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"출력"}),h("span",{class:"sub",text:"다 썼으면 PDF로 뽑아 나눠요"})),
-    h("div",{class:"row"},h("button",{class:"btn",onclick:()=>exportPdf(S.cur),text:"PDF 출력"}),
+  m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 출력"}),h("span",{class:"status",id:"saveStatus2"})),
+    h("div",{class:"row"},h("button",{class:"btn primary",disabled:!editable,onclick:saveConti,text:"콘티 저장"}),
+      S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
+      h("button",{class:"btn",id:"undoBtn2",disabled:!editable,onclick:undoConti,title:"방금 한 일을 한 단계씩 되돌려요",text:"↶ 실행 취소"}),
+      h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"})),
+    h("div",{class:"row",style:"margin-top:10px"},h("button",{class:"btn",onclick:()=>exportPdf(S.cur),text:"PDF 출력"}),
       h("button",{class:"btn",onclick:()=>exportCompact(S.cur),title:"모든 악보를 A3 가로 한두 장에 모아요",text:"압축버전 (A3)"}),
       h("button",{class:"btn",onclick:()=>exportLyricsPpt(S.cur),title:"곡마다 넣어 둔 가사로 팀 템플릿 PPT를 만들어요",text:"가사 PPT"}),
       h("button",{class:"btn",onclick:pptTemplateModal,text:"PPT 템플릿"}))));
