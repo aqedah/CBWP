@@ -256,6 +256,11 @@ body.fb-pad{padding-bottom:72px}
 .pptprev .pp-t{white-space:pre-line;text-align:center;line-height:1.35}
 .btn.hasly{border-color:var(--ok);color:var(--ok)}
 a.btn{text-decoration:none}
+.sbadges{gap:6px}.sbadge{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;font-size:.78rem;font-weight:700;border:1px solid var(--line);background:var(--soft);color:var(--ink2);font-family:inherit;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+button.sbadge{cursor:pointer}.sbadge.ok{border-color:color-mix(in srgb,var(--ok) 55%,transparent);color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--sheet))}.sbadge.no{color:var(--muted);border-style:dashed}
+details.songmore{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}details.songmore>summary{cursor:pointer;font-size:.82rem;color:var(--ink2);font-weight:600;padding:4px 0;list-style:none}
+details.songmore>summary::before{content:"▸ ";color:var(--team,var(--accent))}details.songmore[open]>summary::before{content:"▾ "}details.songmore>summary::-webkit-details-marker{display:none}
+.songmore-in{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .duplist{margin:6px 0;padding-left:1.2em}
 .tag{font-size:.74rem;font-weight:600;border-radius:4px;padding:1px 7px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
 
@@ -1399,9 +1404,9 @@ function catalogSheet(){
     h("p",{class:"hint",text:"찬송가는 21세기 찬송가 장 번호가 제목에 붙어 있어요. 검색칸에 장 번호만 써도 찾을 수 있어요. 같은 제목이 겹치지 않게 한 번씩만 들어 있어요."}),
     h("div",{class:"lab",text:"목록에 없는 제목 넣기"}),ta,preview,h("div",{class:"row"},h("span",{class:"spacer"}),go));}
 function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canWrite&&!local&&S.db;
-  const keyIn=h("input",{type:"text",id:`sk-${s.id}`,"aria-label":"기본 키",placeholder:"기본 Key",value:s.key||"",style:"width:90px",disabled:!can});
+  const keyIn=h("input",{type:"text",id:`sk-${s.id}`,"aria-label":"기본 키",placeholder:"Key",value:s.key||"",style:"width:72px;text-align:center;font-weight:700",disabled:!can,onchange:()=>save()});
   const sp=splitTitle(s.title);
-  const tIn=h("input",{type:"text",id:`st-${s.id}`,"aria-label":"곡 제목",value:sp.base,disabled:!can,style:"flex:1;min-width:160px"});
+  const tIn=h("input",{type:"text",id:`st-${s.id}`,"aria-label":"곡 제목",value:sp.base,disabled:!can,style:"flex:1;min-width:0;font-weight:700;font-size:1.02rem",onchange:()=>save()});
   const hyIn=h("input",{type:"text",id:`sh-${s.id}`,"aria-label":"찬송가 장 번호",placeholder:"찬송가 장",value:sp.hymn||"",disabled:!can,style:"width:100px",inputmode:"numeric"});
   const arIn=h("input",{type:"text",id:`sr-${s.id}`,"aria-label":"편곡한 찬양팀",placeholder:"편곡한 찬양팀 (찬송가 편곡일 때)",value:sp.arr,disabled:!can,style:"flex:1;min-width:180px"});
   const ytIn=h("input",{type:"text",id:`sy-${s.id}`,"aria-label":"유튜브 주소",placeholder:"유튜브 주소",value:(s.yt||[]).map(ytUrl).join(" "),disabled:!can,style:"flex:2;min-width:200px"});
@@ -1420,13 +1425,23 @@ function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canW
   const addBtn=h("button",{class:"btn sm primary",text:"콘티에 추가",title:"지금 쓰는 콘티의 예배 찬양 끝에 넣어요",onclick:()=>{if(!curEditable())return toast("지금 열린 콘티는 고칠 수 없어요. 「콘티 작성」에서 새 콘티를 열어 주세요");
     S.cur.before.push(itemFromSong(s));markDirty();saveDraft();toast(`「${s.title}」을(를) 예배 찬양 ${S.cur.before.length}번째로 넣었어요`);}});
   return h("div",{class:"card"},
-    h("div",{class:"row",style:"flex-wrap:nowrap;align-items:flex-start"},th,h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:6px"},h("div",{class:"row"},tIn,keyIn),h("div",{class:"row"},addBtn,h("span",{class:"hint",text:tv?`우리 팀 악보: ${verLabel(tv)}`:"악보 없음"})))),
-    h("div",{class:"row"},hyIn,arIn),
-    h("div",{class:"row"},ytIn,(s.yt||[])[0]?h("a",{class:"btn sm",href:ytUrl(s.yt[0]),target:"_blank",rel:"noopener",text:"듣기"}):null),
-    h("div",{class:"row"},ccIn,auIn,s.ccli?h("a",{class:"btn sm",href:ssSong(s.ccli),target:"_blank",rel:"noopener",text:"CCLI 곡 보기"}):h("a",{class:"btn sm",href:ssSearch(s.title),target:"_blank",rel:"noopener",text:"SongSelect에서 찾기"})),
-    versionsBox(s,can),
-    h("div",{class:"row"},h("span",{class:"hint",text:`부른 횟수 ${used}회 · 악보 ${vers(s).length}가지${s.lyrics?" · 가사 있음":""}`}),h("button",{class:"btn sm"+(s.lyrics?" hasly":""),text:s.lyrics?"가사 ✓":"가사 넣기",onclick:()=>lyricsModal({songId:s.id,title:s.title},()=>{})}),h("span",{class:"spacer"}),
-      h("button",{class:"btn sm primary",disabled:!can,text:"정보 저장",onclick:save}),del));}
+    h("div",{class:"row",style:"flex-wrap:nowrap;align-items:flex-start"},th,h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"},
+      h("div",{class:"row",style:"flex-wrap:nowrap"},tIn,keyIn),
+      h("div",{class:"row sbadges"},
+        sp.hymn?h("span",{class:"sbadge",text:`찬송가 ${sp.hymn}장${sp.arr?` · ${sp.arr} 편곡`:""}`}):null,
+        h("span",{class:"sbadge"+(tv&&tv.pages.length?" ok":" no"),title:tv?verLabel(tv):"",text:tv&&tv.pages.length?`악보 ✓ ${verLabel(tv)}`:"악보 없음"}),
+        h("button",{type:"button",class:"sbadge"+(s.lyrics?" ok":" no"),title:s.lyrics?"가사 보기 · 고치기":"가사 넣기",onclick:()=>lyricsModal({songId:s.id,title:s.title},()=>{})},s.lyrics?"가사 ✓":"가사 없음 · 넣기"),
+        used?h("span",{class:"hint",text:`부른 횟수 ${used}회`}):null),
+      h("div",{class:"row"},addBtn,(s.yt||[])[0]?h("a",{class:"btn sm",href:ytUrl(s.yt[0]),target:"_blank",rel:"noopener",text:"▶ 듣기"}):null))),
+    h("details",{class:"songmore",open:S.openSong===s.id,ontoggle:e=>{if(e.target.open)S.openSong=s.id;else if(S.openSong===s.id)S.openSong=null;}},
+      h("summary",{text:"자세히 보기 · 찬송가 장, 유튜브, CCLI, 악보 관리"}),
+      h("div",{class:"songmore-in"},
+        h("div",{class:"row"},hyIn,arIn),
+        h("div",{class:"row"},ytIn),
+        h("div",{class:"row"},ccIn,auIn,s.ccli?h("a",{class:"btn sm",href:ssSong(s.ccli),target:"_blank",rel:"noopener",text:"CCLI 곡 보기"}):h("a",{class:"btn sm",href:ssSearch(s.title),target:"_blank",rel:"noopener",text:"SongSelect에서 찾기"})),
+        versionsBox(s,can),
+        h("div",{class:"row"},h("span",{class:"hint",text:`악보 ${vers(s).length}가지`}),h("span",{class:"spacer"}),
+          h("button",{class:"btn sm primary",disabled:!can,text:"정보 저장",onclick:save}),del))));}
 /* several score versions per song (key / arrangement); each team picks its own default */
 function versionsBox(s,can){const vs=clone(vers(s));const mine=teamVer(s);const st=h("span",{class:"hint"});
   const up=h("input",{type:"file",id:`sv-${s.id}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,"aria-label":`${s.title} 새 악보 올리기`,disabled:!can,
