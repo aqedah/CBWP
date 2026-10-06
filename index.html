@@ -779,7 +779,7 @@ function openPicker(slot,onApply,roster){const chosen=new Map(slot.people.map(p=
   const sortM=a=>a.slice().sort((x,y)=>TIERS.indexOf(x.tier)-TIERS.indexOf(y.tier)||x.name.localeCompare(y.name,"ko"));
   const row=mb=>{const id=`pk-${mb.id}`;return h("label",{class:"pick",htmlFor:id},
     h("input",{type:"checkbox",id,checked:chosen.has(mb.id),onchange:e=>{e.target.checked?chosen.set(mb.id,{id:mb.id,name:mb.name,tier:mb.tier}):chosen.delete(mb.id);}}),
-    h("span",{text:mbName(mb)}),mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"리더":(mb.duty||"담당")}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier}),h("span",{class:"pos",text:(mb.positions||[]).join(" · ")}));};
+    h("span",{text:mbName(mb)}),mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier}),h("span",{class:"pos",text:(mb.positions||[]).join(" · ")}));};
   const quick=h("input",{type:"text",id:"pk-quick",placeholder:"명단에 없는 이름 (게스트로 들어가요)"});
   const body=h("div",{class:"panel-body"},
     S.members.length?null:h("div",{class:"empty"},"아직 등록된 멤버가 없어요. 「멤버」 탭에서 팀원을 등록하면 여기서 바로 고를 수 있어요."),
@@ -1431,8 +1431,8 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
   const nameIn=h("input",{type:"text",id:"mb-name",placeholder:"이름"});
   const tierSel=h("select",{id:"mb-tier",style:"width:auto"},TIERS.map(t=>h("option",{value:t,text:t})));
   const titleSel=h("select",{id:"mb-title",style:"width:auto"},[["","없음"],...["목사","전도사","장로","권사","집사","청년"].map(x=>[x,x])].map(([v,t])=>h("option",{value:v,text:t})));
-  const roleSel=h("select",{id:"mb-role",style:"width:auto",onchange:()=>{dutyIn.hidden=roleSel.value!=="담당자";}},[["","없음"],["리더","리더"],["담당자","담당자"]].map(([v,t])=>h("option",{value:v,text:t})));
-  const dutyIn=h("input",{type:"text",id:"mb-duty",placeholder:"무엇 담당? (예: 악보, 음향, 회계)",style:"max-width:240px"});dutyIn.hidden=true;
+  const roleSel=h("select",{id:"mb-role",style:"width:auto",onchange:()=>{dutyIn.hidden=roleSel.value!=="직접입력";if(!dutyIn.hidden)dutyIn.focus();}},[["","없음"],...ROLES.map(x=>[x,x]),["직접입력","직접입력"]].map(([v,t])=>h("option",{value:v,text:t})));
+  const dutyIn=h("input",{type:"text",id:"mb-duty",placeholder:"역할 이름 (예: 악보 담당, 음향)",style:"max-width:240px"});dutyIn.hidden=true;
   const posBox=h("div",{class:"row"});const extra=h("input",{type:"text",id:"mb-extra",placeholder:"다른 자리 (예: 바이올린)",style:"max-width:200px"});
   const saveBtn=h("button",{class:"btn primary",disabled:!S.canWrite||!S.db,text:"멤버 등록"});const cancelBtn=h("button",{class:"btn",text:"취소"});cancelBtn.hidden=true;
   const allPos=()=>[...new Set([...POSITIONS,...S.members.flatMap(mb=>mb.positions||[])])];
@@ -1440,7 +1440,7 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
   function reset(){editId=null;f.name="";f.tier="정규";f.positions=[];nameIn.value="";tierSel.value="정규";titleSel.value="";roleSel.value="";dutyIn.value="";dutyIn.hidden=true;saveBtn.textContent="멤버 등록";cancelBtn.hidden=true;drawPos();}
   saveBtn.onclick=async()=>{const name=nameIn.value.trim();if(!name){nameIn.focus();return toast("이름을 써 주세요");}
     const ex=extra.value.trim();if(ex&&!f.positions.includes(ex))f.positions.push(ex);extra.value="";
-    const body={name,tier:tierSel.value,positions:f.positions,title:titleSel.value,role:roleSel.value,duty:roleSel.value==="담당자"?dutyIn.value.trim():"",birthday:"",updatedAt:Date.now()};
+    const body={name,tier:tierSel.value,positions:f.positions,title:titleSel.value,role:roleSel.value==="직접입력"&&!dutyIn.value.trim()?"":roleSel.value,duty:roleSel.value==="직접입력"?dutyIn.value.trim():"",birthday:"",updatedAt:Date.now()};
     const same=S.members.filter(mb=>mb.id!==editId&&norm(mb.name)===norm(name));
     if(same.length){askSameName(name,same,body,editId,reset);return;}
     try{if(editId)await S.db.doc(`members/${editId}`).update(body);else await S.db.collection("members").add({...body,team:S.team,by:S.myId||null,createdAt:Date.now()});toast(editId?"고쳤어요":`${name} 님을 등록했어요`);reset();}
@@ -1450,7 +1450,7 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
   m.append(h("div",{class:"sheet"},h("h2",{},"멤버 슬롯",h("span",{class:"sub",text:"여기 등록한 사람이 콘티 참여자 칸에서 바로 떠요"})),
     h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"mb-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"mb-tier",text:"구분"}),tierSel),
       h("div",{class:"field"},h("label",{htmlFor:"mb-title",text:"직분 (선택)"}),titleSel),
-      h("div",{class:"field"},h("label",{htmlFor:"mb-role",text:"팀 안 역할 (선택)"}),h("div",{class:"row",style:"gap:6px"},roleSel,dutyIn))),
+      h("div",{class:"field"},h("label",{htmlFor:"mb-role",text:"역할 (선택)"}),h("div",{class:"row",style:"gap:6px"},roleSel,dutyIn))),
     h("div",{class:"lab",style:"margin-top:12px",text:"맡는 자리 (여러 개 고를 수 있어요)"}),posBox,
     h("div",{class:"row",style:"margin-top:8px"},extra,h("span",{class:"spacer"}),cancelBtn,saveBtn)),
     h("div",{class:"sheet"},h("h2",{},"멤버 명단",h("span",{class:"sub",text:`${teamName(S.team)} · ${S.members.length}명`})),listBox));
@@ -1463,15 +1463,17 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
         `(${g.map(mb=>(mb.positions||[]).join("·")||"자리 없음").join(" / ")}) `,
         h("button",{class:"btn sm",disabled:!S.canWrite,text:"통합할까요?",onclick:()=>{const rest=g.slice(1);
           askSameName(first.name,[first],{name:first.name,tier:rest[0].tier,positions:[...new Set(rest.flatMap(x=>x.positions||[]))]},null,()=>{},rest);}})));}
-    const rk=mb=>mb.role==="리더"?0:mb.role==="담당자"?1:2;const arr=S.members.slice().sort((a,b)=>rk(a)-rk(b)||TIERS.indexOf(a.tier)-TIERS.indexOf(b.tier)||a.name.localeCompare(b.name,"ko"));
+    const rk=mb=>mb.role==="리더"?0:mb.role?1+(ROLES.indexOf(mb.role)<0?ROLES.length:ROLES.indexOf(mb.role))/10:9;const arr=S.members.slice().sort((a,b)=>rk(a)-rk(b)||TIERS.indexOf(a.tier)-TIERS.indexOf(b.tier)||a.name.localeCompare(b.name,"ko"));
     const lead=S.contis.reduce((o,c)=>{for(const r of c.roster||[])for(const p of r.people||[])if(p.id)o[p.id]=(o[p.id]||0)+1;return o;},{});
     listBox.append(h("div",{class:"mcards"},arr.map(mb=>{let armed=false;const del=h("button",{class:"btn sm danger",disabled:!S.canWrite,text:"빼기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말?";setTimeout(()=>{armed=false;del.textContent="빼기";},3000);return;}try{await S.db.doc(`members/${mb.id}`).delete();toast("명단에서 뺐어요");}catch(e){toast("빼지 못했어요");}}});
         return h("div",{class:"mcard"+(mb.role==="리더"?" lead":"")},h("span",{class:"avatar","aria-hidden":"true",text:[...mb.name][0]||"?"}),
-          h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":`담당 · ${mb.duty||"담당자"}`}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",""].filter(Boolean).join("  ·  ")})),
-          h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!S.canWrite,text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=mb.tier;titleSel.value=mb.title||"";roleSel.value=mb.role||"";dutyIn.value=mb.duty||"";dutyIn.hidden=roleSel.value!=="담당자";f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));})));}
+          h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",""].filter(Boolean).join("  ·  ")})),
+          h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!S.canWrite,text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=mb.tier;titleSel.value=mb.title||"";roleSel.value=mb.role==="담당자"?"직접입력":(mb.role||"");dutyIn.value=mb.duty||"";dutyIn.hidden=roleSel.value!=="직접입력";f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));})));}
   draw();renderMembers.redraw=draw;}
 
 const bdayLabel=b=>{const[m,d]=(b||"").split("-").map(Number);return m&&d?`${m}.${d}`:"";};
+const ROLES=["리더","서기","회계","총무"];
+const roleText=mb=>mb.role==="직접입력"||mb.role==="담당자"?(mb.duty||"역할"):mb.role;
 const mbName=mb=>mb.title?`${mb.name} ${mb.title}`:mb.name;
 /* same name in one team → ask whether it's the same person and merge */
 function askSameName(name,same,body,editId,done,dupRest){const t=same[0];
