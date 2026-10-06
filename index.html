@@ -433,6 +433,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .chipx{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 0 0 4px;font-size:.8rem}
 .songhelp{border:1px dashed var(--line);border-radius:10px;padding:8px 12px;background:var(--soft)}.songhelp summary{cursor:pointer;font-weight:700;font-size:.9rem}.songhelp-in{padding-top:10px}
 .attoff{padding:22px 14px;text-align:center;color:var(--ink2);display:flex;flex-direction:column;align-items:center;gap:8px}.attoff b{font-size:1.05rem;color:var(--ink)}
+.yeart{width:auto;border-collapse:collapse}.yeart th,.yeart td{border:1px solid var(--line);padding:5px 8px}.yeart thead th{background:var(--soft)}.yeart th.g{color:#fff}.yeart th.g.ok{background:#2f9e5b}.yeart th.g.late{background:#e09a1a}.yeart th.g.exc{background:#5a7fc0}.yeart th.g.abs{background:#d0473e}.yeart tr.sub th{font-size:.72rem;color:var(--ink2)}.yeart .tot{font-weight:700;background:color-mix(in srgb,var(--soft) 60%,var(--sheet))}.yeart tbody th{text-align:left;white-space:nowrap}
 .availlist{display:flex;flex-direction:column;gap:8px}
 .availrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .availd{display:flex;flex-direction:column;gap:2px}.availbtns{display:flex;gap:6px;flex-wrap:wrap}
@@ -806,7 +807,11 @@ function adminLogout(){if(!window.CBWP||!window.CBWP.logoutAdmin)return;
 function importModal(){const st=h("p",{class:"hint"});
   const fin=h("input",{type:"file",id:"imp-file",accept:".json,application/json",onchange:async e=>{const f=e.target.files[0];if(!f)return;
     let data;try{data=JSON.parse(await f.text());}catch(err){st.textContent="파일을 읽지 못했어요";return;}
-    const rows=[];const skipped=[];for(const[col,docs]of Object.entries(data.collections||{}))for(const[id,v]of Object.entries(docs)){
+    const rows=[];const skipped=[];const noConti=[];let filled=0;for(const[col,docs]of Object.entries(data.collections||{}))for(const[id,v]of Object.entries(docs)){
+      if(col==="rosterPatch"){const[tm,dt]=id.split(":");const cs=S.allContis.filter(c=>teamOf(c)===tm&&c.date===dt&&!c.noService);if(!cs.length){noConti.push(dt);continue;}
+        const mem=S.allMembers.filter(mb=>teamOf(mb)===tm);const res=n=>{const k=normName(n.replace(/(목사|전도사|강도사)$/,""));let mb=mem.find(x=>normName(x.name)===k)||null;if(!mb){const c2=mem.filter(x=>normName(x.name).slice(1)===k);if(c2.length===1)mb=c2[0];}return mb?{id:mb.id,name:mb.name,tier:mb.tier}:{id:null,name:n,tier:"게스트"};};
+        for(const c of cs){const roster=clone(c.roster||[]);let ch=0;for(const pr of v.roster||[]){let sl=roster.find(r=>r.pos===pr.pos);if(sl&&(sl.people||[]).length)continue;if(!sl){sl={pos:pr.pos,people:[]};roster.push(sl);}sl.people=pr.people.map(res);ch++;}
+          if(ch){rows.push(["contis",c.id,{roster,updatedAt:Date.now()},true]);filled++;}}continue;}
       if(col==="memberPatch"){const[tm,nm]=id.split(":");const k=normName(nm);let c=S.allMembers.filter(mb=>teamOf(mb)===tm&&normName(mb.name)===k);if(!c.length)c=S.allMembers.filter(mb=>teamOf(mb)===tm&&normName(mb.name).slice(1)===k);
         if(c.length===1)rows.push(["members",c[0].id,v,true]);else skipped.push(nm);continue;}
       rows.push([col,id,v,col==="teams"]);}
@@ -815,7 +820,7 @@ function importModal(){const st=h("p",{class:"hint"});
     try{let i=0;while(i<rows.length){const b=fdb.batch();let n=0,size=0;
         while(i<rows.length&&n<200){const sz=JSON.stringify(rows[i][2]).length;if(n&&size+sz>3e6)break;b.set(fdb.doc(`${rows[i][0]}/${rows[i][1]}`),rows[i][2],rows[i][3]?{merge:true}:{});size+=sz;n++;i++;}
         await b.commit();done=i;st.textContent=`옮기는 중… ${done} / ${rows.length}`;}
-      st.textContent=`다 옮겼어요 (${rows.length}개)`+(skipped.length?` · 명단에서 못 찾은 이름: ${skipped.join(", ")}`:"");toast("자료를 모두 옮겼어요");}
+      st.textContent=`다 옮겼어요 (${rows.length}개)`+(filled?` · 참여자를 채운 콘티 ${filled}개`:"")+(noConti.length?` · 콘티가 없는 날짜 ${noConti.length}개 (${noConti.slice(0,6).map(d=>d.slice(5).replace("-","/")).join(", ")}${noConti.length>6?" …":""})`:"")+(skipped.length?` · 찾지 못한 이름/날짜: ${skipped.join(", ")}`:"");toast("자료를 모두 옮겼어요");}
     catch(err){console.error(err);st.textContent=`${done}개까지 옮기고 멈췄어요. 다시 고르면 이어서 덮어써요. (${(err&&(err.code||err.message))||"알 수 없는 문제"})`;}}});
   const md=modal("자료 가져오기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"Claude에서 내보낸 자료 파일(.json)을 고르면 콘티 · 곡 · 악보 · 멤버가 이 앱으로 옮겨져요. 같은 자료를 다시 넣으면 덮어써요."}),
     h("span",{class:"btn primary filebtn"},"자료 파일 고르기",fin),st),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
@@ -1870,8 +1875,8 @@ function attDates(doc,mo){return doc&&doc.dates&&doc.dates.length?doc.dates.slic
 function attPeople(doc){const mem=S.members.filter(mb=>tierOf(mb)!=="게스트").sort((a,b)=>tierRank(a)-tierRank(b)||a.name.localeCompare(b.name,"ko")).map(mb=>mb.name);const extra=new Set();
   if(doc)for(const day of Object.values(doc.marks||{}))for(const n of Object.keys(day))if(!mem.some(x=>normName(x)===normName(n)))extra.add(n);
   return [...mem,...[...extra].sort((a,b)=>a.localeCompare(b,"ko"))];}
-function attCount(docs,name){const c={"출석":0,"지각":0,"공결":0,"무단":0};const n=normName(name);
-  for(const doc of docs)for(const day of Object.values(doc.marks||{}))for(const[k,v]of Object.entries(day))if(normName(k)===n)for(const x of v||[])if(c[x]!=null)c[x]++;return c;}
+function attCount(docs,name){const c={"출석":0,"지각":0,"공결":0,"무단":0,p:{"출석":0,"지각":0,"공결":0,"무단":0},s:{"출석":0,"지각":0,"공결":0,"무단":0}};const n=normName(name);
+  for(const doc of docs){const off=new Set((doc.dates||[]).filter(x=>x.off).map(x=>x.d));for(const[d,day]of Object.entries(doc.marks||{})){if(off.has(d))continue;for(const[k,v]of Object.entries(day))if(normName(k)===n)(v||[]).forEach((x,i)=>{if(c[x]!=null){c[x]++;(i?c.s:c.p)[x]++;}});}}return c;}
 const attYearDocs=y=>S.posts.filter(p=>p.post==="attend"&&p.team===S.team&&(p.month||"").startsWith(y));
 let attSaveT=null;
 function attSave(doc){clearTimeout(attSaveT);const pid=doc.id;const body={...doc};delete body.id;body.updatedAt=Date.now();
@@ -1921,9 +1926,10 @@ function renderAttend(m){const today=todayStr();if(!S.attMonth)S.attMonth=today.
     h("div",{class:"tablewrap"},tbl),h("div",{class:"attlegend"},ATT.map(st=>h("span",{class:"attc "+ATTC[st],text:`${st[0]} = ${st==="무단"?"무단결석":st}`}))));
   /* 3. 올해 누계 */
   const yd=attYearDocs(String(Y));const rows=people.map(n=>({n,c:attCount(yd,n)})).filter(r=>ATT.some(k=>r.c[k])).sort((a,b)=>b.c["출석"]-a.c["출석"]||a.n.localeCompare(b.n,"ko"));const top=rows[0]&&rows[0].c["출석"];
-  const yearSheet=h("div",{class:"sheet"},h("h2",{},`${Y}년 누계`,h("span",{class:"sub",text:"연습·주일을 따로 셈"})),
-    rows.length?null:h("div",{class:"empty",text:"아직 올해 출결 기록이 없어요."}),h("div",{class:"tablewrap"},h("table",{class:"t ctr"},h("thead",{},h("tr",{},["이름","출석","지각","공결","무단"].map(t=>h("th",{text:t})))),
-      h("tbody",{},rows.map(r=>h("tr",{},h("th",{},r.n,top&&r.c["출석"]===top?" 🏅":""),h("td",{class:"n",text:r.c["출석"]}),h("td",{class:"n",text:r.c["지각"]||""}),h("td",{class:"n",text:r.c["공결"]||""}),h("td",{class:"n",text:r.c["무단"]||""})))))));
+  const yearSheet=h("div",{class:"sheet"},h("h2",{},`${Y}년 누계`,h("span",{class:"sub",text:"쉬는 주는 빼고 셈"})),
+    rows.length?null:h("div",{class:"empty",text:"아직 올해 출결 기록이 없어요."}),h("div",{class:"tablewrap"},h("table",{class:"t ctr yeart"},h("thead",{},h("tr",{},h("th",{rowSpan:2,text:"이름"}),ATT.map(k=>h("th",{colSpan:3,class:"g "+ATTC[k],text:k==="무단"?"무단결석":k}))),
+        h("tr",{class:"sub"},ATT.flatMap(()=>[h("th",{text:"연습"}),h("th",{text:"주일"}),h("th",{class:"tot",text:"합계"})]))),
+      h("tbody",{},rows.map(r=>h("tr",{},h("th",{},r.n,top&&r.c["출석"]===top?" 🏅":""),ATT.flatMap(k=>[h("td",{class:"n",text:r.c.p[k]||""}),h("td",{class:"n",text:r.c.s[k]||""}),h("td",{class:"n tot",text:r.c[k]||""})])))))));
   const DEFN={gideon:"*지각/무단 결석 시 = 해당 주차 말씀 묵상 나눔 월요일까지\n*지각 3회 혹은 무단 결석 1회 시 = 수습 절차\n*수습절차: 4주간 시편 1주 3편씩 총 12편 필사하여 매주 토요일까지 톡방에 업로드\n*11월까지 출석이 가장 많은 팀원에게 소정의 선물과 격려가 있을지도!?"};
   const ntext=teamCfg().attendNotice!=null?teamCfg().attendNotice:(DEFN[S.team]||"");
   const nview=h("div",{class:"attnotice",text:ntext||"아직 출결 공지가 없어요."});
@@ -2312,7 +2318,7 @@ function renderMe(m){const me=normName(myName());const today=todayStr();const ca
   /* 2-1. 내 출석 (올해) */
   {const yd=attYearDocs(year);if(yd.length){const c=attCount(yd,myName());
     m.append(h("div",{class:"sheet"},h("h2",{},`${year}년 내 출결`,h("button",{class:"btn sm",text:"출결 보기",onclick:()=>setTab("attend")})),
-      h("div",{class:"attlegend",style:"gap:8px"},ATT.map(st=>h("span",{class:"attc "+ATTC[st],style:"font-size:.9rem;padding:6px 12px",text:`${st==="무단"?"무단결석":st} ${c[st]}`})))));}}
+      h("div",{class:"attlegend",style:"gap:8px"},ATT.map(st=>h("span",{class:"attc "+ATTC[st],style:"font-size:.9rem;padding:6px 12px",text:`${st==="무단"?"무단결석":st} ${c[st]} (연습 ${c.p[st]} · 주일 ${c.s[st]})`})))));}}
   /* 3. my prayer requests */
   const mine=S.posts.filter(p=>p.post==="prayer"&&((S.myId&&p.by===S.myId)||normName(p.name)===me)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const ta=h("textarea",{id:"me-prayer",placeholder:"함께 기도할 제목을 나눠 주세요 (홈의 기도제목에도 올라가요)",style:"min-height:70px"});
