@@ -428,6 +428,29 @@ header.top{border-top:4px solid var(--team,transparent)}
 .pinfo dt{align-self:stretch;display:flex;align-items:center;padding:0 14px;background:var(--soft);color:var(--ink2);font-size:.84rem;font-weight:700}
 .pinfo dd{margin:0;padding:10px 14px;font-weight:600;min-width:0}
 .pchips{display:flex;flex-wrap:wrap;gap:6px}.pchip{font-size:.84rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--sheet)}
+.attdays{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.attday{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:58px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--sheet);color:var(--ink);font:inherit;cursor:pointer}
+.attday b{font-size:1rem}.attday span{font-size:.7rem;color:var(--muted)}
+.attday.on{background:var(--ink);color:var(--sheet);border-color:var(--ink)}.attday.on span{color:inherit;opacity:.8}
+.attday.off{opacity:.55;border-style:dashed}.attday.add{border-style:dashed;color:var(--muted)}
+.attlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.atthead,.attrow{display:grid;grid-template-columns:minmax(84px,1fr) auto auto;gap:8px;align-items:center;padding:8px 10px}
+.atthead{background:var(--soft);font-size:.76rem;font-weight:700;color:var(--ink2)}.atthead span{text-align:center}
+.attrow+.attrow{border-top:1px solid var(--line)}
+.attname{display:flex;align-items:center;gap:8px;min-width:0}.attname b{font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.avatar.sm{width:28px;height:28px;font-size:.8rem;border-radius:50%}
+.attseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.attb{border:0;background:var(--sheet);color:var(--ink2);font:inherit;font-size:.74rem;font-weight:700;padding:6px 6px;min-width:34px;cursor:pointer}
+.attb+.attb{border-left:1px solid var(--line)}
+.attb:disabled{cursor:default}
+.attb.on.ok,.attc.ok{background:#2f9e5b;color:#fff}.attb.on.late,.attc.late{background:#e09a1a;color:#fff}.attb.on.exc,.attc.exc{background:#5a7fc0;color:#fff}.attb.on.abs,.attc.abs{background:#d0473e;color:#fff}
+.attlab{display:none}
+@media (max-width:560px){.atthead{display:none}.attrow{grid-template-columns:1fr;gap:6px}.attcell{display:flex;align-items:center;gap:8px}.attlab{display:block;width:30px;flex:none;font-size:.74rem;font-weight:700;color:var(--muted)}.attseg{flex:1;display:flex}.attb{flex:1;min-width:0}}
+.atttable{font-size:.8rem;white-space:nowrap}.atttable th,.atttable td{padding:5px 6px;text-align:center}.atttable tbody th{text-align:left;position:sticky;left:0;background:var(--sheet)}
+.atttable td.attc{width:26px;font-weight:700;border-left:1px solid var(--line)}.atttable tr.sub th{font-size:.7rem;color:var(--muted)}
+.atttable tr.warn th,.atttable tr.warn td.n{color:var(--danger);font-weight:700}
+.attnote{min-width:120px;height:28px;font-size:.78rem;padding:2px 6px}
+.attlegend{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.attlegend span{font-size:.74rem;padding:2px 8px;border-radius:6px}
 .cropcv{width:min(300px,100%);aspect-ratio:1;touch-action:none;cursor:grab;border-radius:12px;background:#222;flex:none}
 #crop-zoom{flex:1}
 .avatar.hasphoto{background-size:cover;background-position:center;color:transparent}
@@ -684,7 +707,7 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
   try{await S.db.doc(`songs/${song.id}`).update({yt:[...(song.yt||[]),yid],updatedAt:Date.now()});}catch(e){}}
 
 /* ---------- tabs ---------- */
-const NAVG={home:[["home","홈"]],conti:[["write","콘티 작성"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"]],team:[["cal","일정"],["members","멤버"],["stats","결산"],["bible","성경읽기"],["bylaws","회칙"]],me:[["me","나"]]};
+const NAVG={home:[["home","홈"]],conti:[["write","콘티 작성"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"]],team:[["cal","일정"],["members","멤버"],["attend","출석"],["stats","결산"],["bible","성경읽기"],["bylaws","회칙"]],me:[["me","나"]]};
 const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
 const subsOf=g=>NAVG[g].filter(([k])=>k!=="write"||isWriter()||S.curId);
 S.lastSub={};
@@ -767,7 +790,7 @@ function render(){const m=$("#main");m.replaceChildren();document.body.classList
   syncNav();
   if(!S.team){renderTeamPick(m);return;}
   const st=subTabs();if(st)m.append(st);
-  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe})[S.tab](m);}
+  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
 function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lead$/.test(team);const tn=isLead?`${teamName(team.replace(/_lead$/,""))} 리더`:teamName(team);
   const nameIn=h("input",{type:"text",id:"ul-name",placeholder:"이름 (콘티 작성자로 보여요)",value:window.CBWP.myName()||""});
@@ -1664,6 +1687,76 @@ async function mergeMembers(keep,drop){if(!S.db)return;
    STATS TAB
    ========================================================= */
 let statRange="6m",statFrom="",statTo="";
+/* =========================================================
+   출석부: 달마다 문서 한 개 (events/att_팀_YYYY-MM, post:"attend")
+   marks[날짜][이름] = [연습, 주일]  · 값: 출석 지각 공결 무단
+   ========================================================= */
+const ATT=["출석","지각","공결","무단"];const ATTC={"출석":"ok","지각":"late","공결":"exc","무단":"abs"};
+const attId=(mo,team=S.team)=>`att_${team}_${mo}`;
+const attDoc=mo=>S.posts.find(p=>p.id===attId(mo))||null;
+const attRule=()=>Object.assign({late:3,absent:1},teamCfg().attendRule||{});
+function canAttend(){if(!S.db||!S.canWrite)return false;if(S.isOwner||canLead())return true;const me=normName(myName());return !!me&&S.members.some(mb=>normName(mb.name)===me&&(mb.role==="리더"||mb.role==="서기"));}
+function sundaysOf(mo){const[y,m]=mo.split("-").map(Number);const out=[];const d=new Date(y,m-1,1);while(d.getMonth()===m-1){if(d.getDay()===0)out.push(`${y}-${pad(m)}-${pad(d.getDate())}`);d.setDate(d.getDate()+1);}return out;}
+function attDates(doc,mo){return doc&&doc.dates&&doc.dates.length?doc.dates.slice().sort((a,b)=>a.d.localeCompare(b.d)):sundaysOf(mo).map(d=>({d,label:""}));}
+function attPeople(doc){const mem=S.members.filter(mb=>mb.tier!=="게스트").map(mb=>mb.name);const extra=new Set();
+  if(doc)for(const day of Object.values(doc.marks||{}))for(const n of Object.keys(day))if(!mem.some(x=>normName(x)===normName(n)))extra.add(n);
+  return [...mem,...extra].sort((a,b)=>a.localeCompare(b,"ko"));}
+function attCount(docs,name){const c={"출석":0,"지각":0,"공결":0,"무단":0};const n=normName(name);
+  for(const doc of docs)for(const day of Object.values(doc.marks||{}))for(const[k,v]of Object.entries(day))if(normName(k)===n)for(const x of v||[])if(c[x]!=null)c[x]++;return c;}
+const attYearDocs=y=>S.posts.filter(p=>p.post==="attend"&&p.team===S.team&&(p.month||"").startsWith(y));
+let attSaveT=null;
+function attSave(doc){clearTimeout(attSaveT);const pid=doc.id;const body={...doc};delete body.id;body.updatedAt=Date.now();
+  S.allEvents=S.allEvents.filter(e=>e.id!==pid).concat([{id:pid,...body}]);applyTeam();
+  attSaveT=setTimeout(async()=>{try{await S.db.doc(`events/${pid}`).set(body);}catch(e){console.error(e);toast("출석을 저장하지 못했어요");}},500);}
+function renderAttend(m){const today=todayStr();if(!S.attMonth)S.attMonth=today.slice(0,7);const mo=S.attMonth;const can=canAttend();
+  const doc=attDoc(mo)||{id:attId(mo),team:S.team,post:"attend",month:mo,dates:[],marks:{},notes:{}};
+  const dates=attDates(doc,mo);const people=attPeople(doc);
+  if(!S.attDay||!dates.some(x=>x.d===S.attDay))S.attDay=(dates.filter(x=>x.d<=today&&!x.off).pop()||dates.find(x=>!x.off)||dates[0]||{}).d;
+  const day=S.attDay;const[Y,M]=mo.split("-").map(Number);
+  const go=n=>{const d=new Date(Y,M-1+n,1);S.attMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;S.attDay=null;render();};
+  const edit=fn=>{if(!can)return;const d=clone(doc);d.id=doc.id;if(!d.dates||!d.dates.length)d.dates=dates.map(x=>({...x}));d.marks=d.marks||{};d.notes=d.notes||{};fn(d);attSave(d);render();};
+  const val=(d,n,i)=>(((doc.marks||{})[d]||{})[n]||[])[i]||"";
+  /* 1. 날짜 고르고 체크 */
+  const chips=h("div",{class:"attdays"},dates.map(x=>h("button",{type:"button",class:"attday"+(x.d===day?" on":"")+(x.off?" off":""),onclick:()=>{S.attDay=x.d;render();}},
+    h("b",{text:`${+x.d.slice(5,7)}/${+x.d.slice(8)}`}),h("span",{text:x.off?(x.label||"쉼"):x.label||(x.d===today?"오늘":"주일")}))),
+    can?h("button",{type:"button",class:"attday add",title:"날짜 더하기",onclick:()=>attDateModal(doc,dates,edit)},h("b",{text:"+"}),h("span",{text:"날짜"})):null);
+  const cur=dates.find(x=>x.d===day);
+  const seg=(n,i)=>h("div",{class:"attcell"},h("span",{class:"attlab",text:i?"주일":"연습"}),h("div",{class:"attseg",role:"group","aria-label":`${n} ${i?"주일":"연습"}`},ATT.map(st=>{const on=val(day,n,i)===st;
+    return h("button",{type:"button",class:`attb ${ATTC[st]}`+(on?" on":""),"aria-pressed":String(on),disabled:!can,text:st,onclick:()=>edit(d=>{const row=((d.marks[day]=d.marks[day]||{})[n]=(d.marks[day][n]||["",""]).slice());row[i]=on?"":st;d.marks[day][n]=row;})});})));
+  const daySheet=h("div",{class:"sheet"},h("h2",{},h("span",{style:"display:inline-flex;align-items:center;gap:6px"},h("button",{class:"btn sm ghost","aria-label":"이전 달",text:"◀",onclick:()=>go(-1)}),`${Y}년 ${M}월 출석`,h("button",{class:"btn sm ghost","aria-label":"다음 달",text:"▶",onclick:()=>go(1)})),
+      h("span",{class:"sub",text:can?"누르면 바로 저장돼요":"보기만 할 수 있어요 (리더·서기만 체크)"})),
+    chips,
+    !cur?h("div",{class:"empty",text:"이 달에 예배 날짜가 없어요."}):cur.off?h("div",{class:"empty"},`${fmtDate(cur.d)}은 「${cur.label||"쉬는 주"}」로 표시된 날이에요.`,can?h("div",{style:"margin-top:8px"},h("button",{class:"btn sm",text:"보통 주로 되돌리기",onclick:()=>edit(d=>{d.dates=d.dates.map(x=>x.d===cur.d?{...x,off:false}:x);})})):null):
+    h("div",{},
+      can?h("div",{class:"row",style:"margin:10px 0"},h("button",{class:"btn sm primary",text:"남은 칸 모두 출석",onclick:()=>edit(d=>{const dm=d.marks[day]=d.marks[day]||{};for(const n of people){const r=(dm[n]||["",""]).slice();r[0]=r[0]||"출석";r[1]=r[1]||"출석";dm[n]=r;}})}),
+        h("button",{class:"btn sm",text:"이 날 비우기",onclick:()=>edit(d=>{delete d.marks[day];})}),h("span",{class:"spacer"}),
+        h("button",{class:"btn sm ghost",text:"쉬는 주로 표시",onclick:()=>{const lb=h("input",{type:"text",id:"att-off",placeholder:"예: 디모데 담당, 쉐마 담당, 수련회"});
+          const md=modal("쉬는 주로 표시",h("div",{class:"panel-body"},h("p",{class:"hint",text:`${fmtDate(day)}을 출석 셈에서 빼요.`}),lb),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"표시",onclick:()=>{md.close();edit(d=>{d.dates=d.dates.map(x=>x.d===day?{...x,off:true,label:lb.value.trim()}:x);delete d.marks[day];});}})]);}})):null,
+      h("div",{class:"attlist"},h("div",{class:"atthead"},h("span"),h("span",{text:"연습"}),h("span",{text:"주일"})),
+        people.map(n=>h("div",{class:"attrow"},h("div",{class:"attname"},avatarEl(n,"avatar sm"),h("b",{text:n})),seg(n,0),seg(n,1))))));
+  /* 2. 한 달 표 */
+  const rule=attRule();const act=dates.filter(x=>!x.off);
+  const mcount=n=>{const c={"지각":0,"무단":0};for(const x of act)for(const v of (((doc.marks||{})[x.d]||{})[n]||[]))if(c[v]!=null)c[v]++;return c;};
+  const tbl=h("table",{class:"t atttable"},h("thead",{},h("tr",{},h("th",{text:"이름"}),act.map(x=>h("th",{colspan:2,text:`${+x.d.slice(5,7)}/${+x.d.slice(8)}`})),h("th",{text:"지각"}),h("th",{text:"무단"}),h("th",{text:"비고"})),
+      h("tr",{class:"sub"},h("th"),act.flatMap(()=>[h("th",{text:"연"}),h("th",{text:"주"})]),h("th"),h("th"),h("th"))),
+    h("tbody",{},people.map(n=>{const c=mcount(n);const warn=c["지각"]>=rule.late||c["무단"]>=rule.absent;
+      const note=h("input",{type:"text",class:"attnote",value:(doc.notes||{})[n]||"",disabled:!can,"aria-label":`${n} 비고`,onchange:e=>edit(d=>{const v=e.target.value.trim();if(v)d.notes[n]=v;else delete d.notes[n];})});
+      return h("tr",{class:warn?"warn":""},h("th",{text:n}),act.flatMap(x=>[0,1].map(i=>{const v=val(x.d,n,i);return h("td",{class:"attc "+(ATTC[v]||""),title:v,text:v?v[0]:""});})),
+        h("td",{class:"n",text:c["지각"]||""}),h("td",{class:"n",text:c["무단"]||""}),h("td",{},note));})));
+  const monthSheet=h("div",{class:"sheet"},h("h2",{},`${M}월 한눈에 보기`,h("span",{class:"sub",text:`지각 ${rule.late}회 또는 무단결석 ${rule.absent}회면 수습 대상 (빨간 줄)`})),
+    h("div",{class:"tablewrap"},tbl),h("div",{class:"attlegend"},ATT.map(st=>h("span",{class:"attc "+ATTC[st],text:`${st[0]} = ${st==="무단"?"무단결석":st}`}))));
+  /* 3. 올해 누계 */
+  const yd=attYearDocs(String(Y));const rows=people.map(n=>({n,c:attCount(yd,n)})).sort((a,b)=>b.c["출석"]-a.c["출석"]||a.n.localeCompare(b.n,"ko"));const top=rows[0]&&rows[0].c["출석"];
+  const yearSheet=h("div",{class:"sheet"},h("h2",{},`${Y}년 누계`,h("span",{class:"sub",text:"연습·주일을 따로 셈"})),
+    h("div",{class:"tablewrap"},h("table",{class:"t"},h("thead",{},h("tr",{},["이름","출석","지각","공결","무단"].map(t=>h("th",{text:t})))),
+      h("tbody",{},rows.map(r=>h("tr",{},h("th",{},r.n,top&&r.c["출석"]===top?" 🏅":""),h("td",{class:"n",text:r.c["출석"]}),h("td",{class:"n",text:r.c["지각"]||""}),h("td",{class:"n",text:r.c["공결"]||""}),h("td",{class:"n",text:r.c["무단"]||""})))))));
+  m.append(daySheet,monthSheet,yearSheet);}
+function attDateModal(doc,dates,edit){const fld=(id,l,el)=>h("div",{class:"field"},h("label",{htmlFor:id,text:l}),el);const di=h("input",{type:"date",id:"att-date",value:todayStr()});const lb=h("input",{type:"text",id:"att-label",placeholder:"이름표 (선택) 예: 수련회, 특별예배"});
+  const md=modal("출석 날짜 더하기",h("div",{class:"panel-body"},fld("att-date","날짜",di),fld("att-label","이름표",lb),
+    dates.length?h("div",{},h("div",{class:"lab",text:"이 달 날짜 (✕로 빼기)"}),h("div",{class:"row"},dates.map(x=>h("button",{class:"btn sm",text:`${+x.d.slice(5,7)}/${+x.d.slice(8)} ✕`,onclick:()=>{md.close();edit(d=>{d.dates=d.dates.filter(y=>y.d!==x.d);delete d.marks[x.d];});}})))):null),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"더하기",onclick:()=>{const v=di.value;if(!v)return;
+      if(v.slice(0,7)!==S.attMonth){S.attMonth=v.slice(0,7);}md.close();const mo=v.slice(0,7);const base=attDoc(mo)||{id:attId(mo),team:S.team,post:"attend",month:mo,dates:[],marks:{},notes:{}};
+      const d=clone(base);d.id=base.id;if(!d.dates||!d.dates.length)d.dates=attDates(base,mo).map(x=>({...x}));if(!d.dates.some(x=>x.d===v))d.dates.push({d:v,label:lb.value.trim()});d.marks=d.marks||{};d.notes=d.notes||{};attSave(d);S.attDay=v;render();}})]);}
 function renderStats(m){
   const end=todayStr();
   const startFor=r=>{const d=new Date();if(r==="1m")d.setMonth(d.getMonth()-1);if(r==="6m")d.setMonth(d.getMonth()-6);if(r==="1y")d.setFullYear(d.getFullYear()-1);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
@@ -2036,6 +2129,10 @@ function renderMe(m){const me=normName(myName());const today=todayStr();const ca
     h("div",{class:"lab",style:"margin-top:14px",text:"지난 섬김"}),
     done.length?h("div",{class:"uplist"},done.slice(0,S.meMore||5).map(row),done.length>(S.meMore||5)?h("button",{class:"btn sm",text:`더 보기 (${done.length-(S.meMore||5)}건 더)`,onclick:()=>{S.meMore=(S.meMore||5)+5;render();}}):null):
       h("p",{class:"hint",text:"아직 기록된 섬김이 없어요. 콘티 참여자에 내 이름이 들어가면 여기 쌓여요."})));
+  /* 2-1. 내 출석 (올해) */
+  {const yd=attYearDocs(year);if(yd.length){const c=attCount(yd,myName());
+    m.append(h("div",{class:"sheet"},h("h2",{},`${year}년 내 출석`,h("button",{class:"btn sm",text:"출석부 보기",onclick:()=>setTab("attend")})),
+      h("div",{class:"attlegend",style:"gap:8px"},ATT.map(st=>h("span",{class:"attc "+ATTC[st],style:"font-size:.9rem;padding:6px 12px",text:`${st==="무단"?"무단결석":st} ${c[st]}`})))));}}
   /* 3. my prayer requests */
   const mine=S.posts.filter(p=>p.post==="prayer"&&((S.myId&&p.by===S.myId)||normName(p.name)===me)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const ta=h("textarea",{id:"me-prayer",placeholder:"함께 기도할 제목을 나눠 주세요 (홈의 기도제목에도 올라가요)",style:"min-height:70px"});
@@ -2462,7 +2559,7 @@ function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
   RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
-  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(["cal","home","me","members"].includes(S.tab))RR.rerender();},RR.onErr));
+  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(["cal","home","me","members","attend"].includes(S.tab))RR.rerender();},RR.onErr));
   RR.offs.push(db.doc(`teams/${team}`).onSnapshot(d=>{S.teamCfgs=d.exists?{[team]:clone(d.data())}:{};if(S.tab!=="write")RR.rerender();},RR.onErr));}
 render();
 (async()=>{
@@ -2485,7 +2582,7 @@ render();
     if(S.team&&!window.CBWP.canWrite(S.team))S.team=null;
     S.ready=true;if(S.team){startShared();startTeam(S.team);}render();return;}
   let f1=0,f2=0,f3=0,f4=0,f5=0,f6=0;
-  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members"].includes(S.tab))rerender();},onErr);
+  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members","attend"].includes(S.tab))rerender();},onErr);
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
   db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
