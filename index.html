@@ -2375,8 +2375,7 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
       can?h("div",{class:"field"},h("label",{htmlFor:"kk-text",text:"카톡에서 받은 글"}),kt,h("div",{class:"row"},h("span",{class:"hint",text:"날짜 · 예배 · 본문 · 제목 · 설교자 · 설교 후 찬양을 알아서 나눠 넣어요"}),h("span",{class:"spacer"}),h("button",{class:"btn primary",text:"칸에 채우기",onclick:fill}))):null,
       h("div",{class:"grid",style:"margin-top:8px"},h("div",{class:"field"},h("label",{htmlFor:"kk-date",text:"날짜"}),dateIn),h("div",{class:"field"},h("label",{htmlFor:"kk-wtype",text:"예배"}),h("div",{style:"display:flex;flex-direction:column;gap:6px"},wsel,wc)),
         h("div",{class:"field"},h("label",{htmlFor:"kk-passage",text:"본문"}),pIn),h("div",{class:"field"},h("label",{htmlFor:"kk-title",text:"설교 제목"}),tIn),h("div",{class:"field"},h("label",{htmlFor:"kk-preacher",text:"설교자"}),prIn)),
-      h("div",{class:"lab",style:"margin-top:10px",text:"설교 후 찬양"}),afterBox,can?h("div",{style:"margin-top:8px"},songSearch("kkafter",item=>{c.after.push(item);markDirty();saveDraft();drawAfter();})):null,
-      h("div",{class:"row",style:"margin-top:12px"},h("span",{class:"spacer"}),h("button",{class:"btn primary",text:"콘티 작성으로 →",onclick:()=>setTab("write")}))));}
+      h("div",{class:"lab",style:"margin-top:10px",text:"설교 후 찬양"}),afterBox,can?h("div",{style:"margin-top:8px"},songSearch("kkafter",item=>{c.after.push(item);markDirty();saveDraft();drawAfter();})):null));}
   /* 2. 본문 */
   const q=h("input",{type:"search",id:"bib-q",placeholder:"요 15:1-8 · 시 23 · 창 1:1-5",value:bibQ,autocomplete:"off",style:"flex:1;min-width:0",
     onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){bibQ=q.value;go();}}});
