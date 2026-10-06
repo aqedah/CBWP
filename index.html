@@ -768,12 +768,12 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"}),
       h("button",{class:"btn",disabled:!editable,onclick:openLoadPast,text:"지난 콘티 불러오기"}),
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
-      S.curId?h("button",{class:"btn",onclick:()=>dupConti(S.cur),text:"복제해서 새로 쓰기"}):null,
+      S.curId&&isWriter()?h("button",{class:"btn"+(editable?"":" primary"),onclick:newConti,title:"빈 콘티를 새로 시작해요",text:"+ 새 콘티 만들기"}):null,
       h("span",{class:"spacer"}),h("span",{class:"status",id:"saveStatus"})));
   if(S.curId){const a=$("#authorLine",head);a.append("작성: ",authorEl(c.authorId));resolveNames([c.authorId]);}
   m.append(head);
 
-  if(S.curId&&!editable&&S.canWrite)m.append(h("div",{class:"banner"},h("b",{text:"다른 사람이 쓴 콘티예요. "}),"고치기는 작성자만 할 수 있어요. 보기와 PDF 출력은 가능하고, 「복제해서 새로 쓰기」로 내 콘티를 만들 수 있어요."));
+  if(S.curId&&!editable&&S.canWrite)m.append(h("div",{class:"banner"},h("b",{text:"다른 사람이 쓴 콘티예요. "}),"고치기는 작성자만 할 수 있어요. 보기와 PDF 출력은 할 수 있어요. 내 콘티를 쓰려면 ",isWriter()?h("button",{class:"btn sm primary",text:"+ 새 콘티 만들기",onclick:newConti}):"「새 콘티 만들기」",h("span",{text:" 를 눌러 주세요."})));
 
   const fs=h("fieldset",{disabled:!editable});
   /* info */
@@ -1453,9 +1453,11 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
     const fv=favs();const hasScore=s=>{const v=teamVer(s);return !!(v&&v.pages.length);};
     if(F.f==="fav")arr=arr.filter(s=>fv.has(s.id));else if(F.f==="score")arr=arr.filter(hasScore);else if(F.f==="lyrics")arr=arr.filter(s=>(s.lyrics||"").trim());else if(F.f==="hymn")arr=arr.filter(s=>splitTitle(s.title).hymn);
     arr.sort(F.sort==="abc"?(a,b)=>a.title.localeCompare(b.title,"ko"):(a,b)=>(usage[b.id]||0)-(usage[a.id]||0)||a.title.localeCompare(b.title,"ko"));
-    if(F.f!=="all"||q.trim())box.append(h("div",{class:"hint",text:`${arr.length}곡`}));
+    
     if(!arr.length){box.append(h("div",{class:"empty",text:F.f==="fav"?"아직 즐겨찾기한 곡이 없어요. 곡 카드의 ☆를 누르면 여기 모여요.":F.f!=="all"?"조건에 맞는 곡이 없어요.":S.songs.length?"찾는 곡이 없어요.":"아직 등록된 곡이 없어요. 위에서 곡을 등록하거나, 콘티를 쓰면서 새 곡을 넣으면 여기 쌓여요."}));return;}
-    for(const s of arr.slice(0,200))box.append(songCard(s,usage[s.id]||0));}
+    const lim=q.trim()?40:F.f==="fav"?200:5;
+    for(const s of arr.slice(0,lim))box.append(songCard(s,usage[s.id]||0));
+    if(arr.length>lim)box.append(h("p",{class:"hint",style:"text-align:center",text:q.trim()?`비슷한 곡이 더 있어요. 조금 더 자세히 찾아 보세요.`:`${F.sort==="abc"?"가나다순":"많이 부른 순"} 5곡만 보여요. 다른 곡은 위 검색 칸에서 찾으세요.`}));}
   box.after(more);draw();renderSongs.redraw=draw;
   m.append(hymnSheet(addFromList),catalogSheet());}
 /* browse all 645 hymns by number */
