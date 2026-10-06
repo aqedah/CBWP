@@ -50,13 +50,14 @@
     async setName(name){name=String(name||"").trim();if(!name)return;ls.set(NAME,name);try{await init();await fs.doc(`users/${uid}`).set({name,at:Date.now()},{merge:true});}catch(e){}},
     unlock,
     lock(team){unlocked.delete(team);ls.set(LS,[...unlocked]);},
-    /* leave admin: the admin mark lives on this device's sign-in, so start a fresh sign-in and re-open only the teams that were open */
-    async logoutAdmin(){await init();const name=ls.get(NAME,"");const keep=[];
-      for(const k of [...unlocked]){if(k==="admin"||k==="any")continue;try{const d=await fs.doc(`unlocks/${uid}_${k}`).get();if(d.exists&&d.data().code)keep.push([k,d.data().code]);}catch(e){}}
-      await auth.signOut();uid=null;unlocked.clear();ls.set(LS,[]);
+    /* log out: the unlock marks live on this device's sign-in, so start a fresh sign-in and re-open only what should stay open */
+    async logoutKeys(drop,all){await init();const name=ls.get(NAME,"");const keep=[];
+      if(!all)for(const k of [...unlocked]){if(k==="any"||drop.includes(k))continue;try{const d=await fs.doc(`unlocks/${uid}_${k}`).get();if(d.exists&&d.data().code)keep.push([k,d.data().code]);}catch(e){}}
+      await auth.signOut();uid=null;unlocked.clear();ls.set(LS,[]);if(all){try{localStorage.removeItem(NAME);}catch(e){}}
       await new Promise((res,rej)=>{const off=auth.onAuthStateChanged(u=>{if(u){uid=u.uid;off();res();}});auth.signInAnonymously().catch(rej);});
       for(const [k,code] of keep){try{await unlock(k,code,name);}catch(e){}}
-      return keep.map(x=>x[0]);}
+      return keep.map(x=>x[0]);},
+    logoutAdmin(){return this.logoutKeys(["admin"]);}
   };
   /* service worker (offline + home-screen install) */
   if("serviceWorker" in navigator&&location.protocol==="https:")window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
