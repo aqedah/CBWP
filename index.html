@@ -415,6 +415,8 @@ header.top{border-top:4px solid var(--team,transparent)}
 @media (max-width:520px){.vrow{grid-template-columns:1fr}.vrow .vact{grid-column:1}}
 .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .mcard{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--sheet);min-width:0}
+.cropcv{width:min(300px,100%);aspect-ratio:1;touch-action:none;cursor:grab;border-radius:12px;background:#222;flex:none}
+#crop-zoom{flex:1}
 .avatar.hasphoto{background-size:cover;background-position:center;color:transparent}
 .avatar.big{width:84px;height:84px;font-size:2rem;border-radius:50%}
 .mephoto{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
@@ -556,8 +558,11 @@ function cleanTitle(s){s=(s||"").replace(/https?:\/\/\S+/g," ");s=s.replace(/\[[
 /* ---------- draft ---------- */
 /* 지우기: 다가오는 콘티는 작성자·관리자, 지난 콘티는 리더·관리자 */
 const isPastConti=c=>!!(c.past||c.noService||(c.date&&c.date<todayStr()));
-function canDeleteConti(c){if(!S.db||!c||!c.id||!S.canWrite)return false;if(S.isOwner)return true;return isPastConti(c)?canLead():!!(c.authorId&&c.authorId===S.myId);}
-function canDeletePast(c){if(!S.db||!c||!c.id||!S.canWrite)return false;return S.isOwner||canLead()||(!isPastConti(c)&&!!(c.authorId&&c.authorId===S.myId));}
+/* 작성자 확인: 기기 로그인 번호(uid)가 같거나, 콘티에 적힌 작성자 이름이 지금 내 이름과 같으면 작성자 */
+function isAuthor(c){if(!c)return false;if(c.authorId&&c.authorId===S.myId)return true;const me=normName(typeof myName==="function"?myName():"");if(!me)return false;
+  const n=c.authorName||(c.authorId&&S.names[c.authorId])||"";return !!n&&normName(n)===me;}
+function canDeleteConti(c){if(!S.db||!c||!c.id||!S.canWrite)return false;if(S.isOwner)return true;return isPastConti(c)?canLead():isAuthor(c);}
+function canDeletePast(c){if(!S.db||!c||!c.id||!S.canWrite)return false;return S.isOwner||canLead()||(!isPastConti(c)&&isAuthor(c));}
 /* 다가오는 예배 날짜: 이 팀이 주로 예배드린 요일(없으면 주일) 중 오늘부터 가장 가까운 날 */
 function nextServiceDate(){const cnt=[0,0,0,0,0,0,0];for(const c of (S.contis||[]).filter(c=>c.date&&!c.noService).slice(-30)){const d=parseD(c.date);if(d)cnt[d.getDay()]++;}
   let wd=0;cnt.forEach((n,i)=>{if(n>cnt[wd])wd=i;});const d=new Date();d.setDate(d.getDate()+((wd-d.getDay()+7)%7));return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
@@ -585,14 +590,15 @@ function resetConti(btn){if(!S.curId&&!curEditable())return;if(!btn.dataset.arme
   S.cur=b;H.owner=b;H.list.push(H.last);H.last=JSON.stringify(b);S.dirty=true;saveDraft();render();toast("내용을 비웠어요. 「실행 취소」로 되돌릴 수 있어요",3200);}
 
 /* ---------- permissions ---------- */
-function canEditConti(c,id){if(!id)return S.canWrite;if(S.isOwner)return true;if(c&&c.past&&isWriter())return true;return !!(c&&c.authorId&&c.authorId===S.myId);}
+function canEditConti(c,id){if(!id)return S.canWrite;if(S.isOwner)return true;if(c&&c.past&&isWriter())return true;return isAuthor(c);}
 const curEditable=()=>S.canWrite&&canEditConti(S.cur,S.curId);
 
 /* ---------- names (authors) ---------- */
 async function resolveNames(ids){ids=[...new Set(ids.filter(Boolean))];if(!ids.length||!S.user)return;
   try{const ps=await S.user.profiles(ids);for(const id of ids)S.names[id]=ps[id]?.name||"";}catch(e){}
-  document.querySelectorAll("[data-author]").forEach(el=>{const id=el.dataset.author;el.textContent=(id===S.myId?"나":S.names[id])||"팀원";});}
-const authorEl=id=>h("span",{"data-author":id||"",text:id?(id===S.myId?"나":S.names[id]||"팀원"):"알 수 없음"});
+  document.querySelectorAll("[data-author]").forEach(el=>{const id=el.dataset.author;el.textContent=(id===S.myId?"나":S.names[id])||el.dataset.name||"팀원";});
+  const me=normName(myName());if(me&&!S._nameRR&&ids.some(id=>id!==S.myId&&S.names[id]&&normName(S.names[id])===me)){S._nameRR=true;render();}}
+const authorEl=(id,nm)=>h("span",{"data-author":id||"","data-name":nm||"",text:id?(id===S.myId?"나":S.names[id]||nm||"팀원"):(nm||"알 수 없음")});
 
 /* ---------- images in shared store ---------- */
 async function storeImage(im){const id=uid(12);imgCache.set(id,im.url);
@@ -673,8 +679,8 @@ document.querySelectorAll(".bnav button").forEach(b=>b.addEventListener("click",
   if(groupOf(S.tab)===g&&subs.length>1){window.scrollTo({top:0,behavior:"smooth"});return;}
   const last=S.lastSub[g];goTab(subs.includes(last)?last:subs[0]);}));
 function goTab(k){if(k==="write"&&S.team){const saved=S.curId&&S.contis.find(x=>x.id===S.curId);
-    const keep=(saved&&saved.authorId&&saved.authorId===S.myId)||(hasUnsaved()&&isMineDraft());
-    if(!keep){const own=S.myId&&S.contis.filter(c=>c.authorId===S.myId&&!isPastConti(c)).sort((a,b)=>(a.date||"").localeCompare(b.date||""))[0];
+    const keep=(saved&&isAuthor(saved))||(hasUnsaved()&&isMineDraft());
+    if(!keep){const own=S.contis.filter(c=>isAuthor(c)&&!isPastConti(c)).sort((a,b)=>(a.date||"").localeCompare(b.date||""))[0];
       S.draftOwner=null;if(own){S.cur=fixConti(clone(own));delete S.cur.id;S.curId=own.id;}else{S.cur=blankConti();S.curId=null;}S.dirty=false;saveDraft();}}
   setTab(k);}
 function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;document.querySelectorAll(".bnav button").forEach(b=>b.setAttribute("aria-current",b.dataset.group===g?"page":"false"));
@@ -687,7 +693,7 @@ $("#homeLink").addEventListener("click",e=>{e.preventDefault();if(S.team)switchT
 function setTab(t){S.tab=t;render();window.scrollTo({top:0});}
 /* who writes contis: admin, team leader password, a member marked 리더 or 인도자 (by the name given on this device), or someone who already wrote one */
 function isWriter(){if(!S.canWrite)return false;if(!window.CBWP)return true;if(window.CBWP.isAdmin()||canLead())return true;
-  if(S.myId&&S.contis.some(c=>c.authorId===S.myId&&!c.past))return true;const me=normName(myName());if(!me)return false;
+  if(S.contis.some(c=>isAuthor(c)&&!c.past))return true;const me=normName(myName());if(!me)return false;
   return S.members.some(mb=>normName(mb.name)===me&&(mb.role==="리더"||(mb.positions||[]).includes("인도자")));}
 function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   
@@ -789,7 +795,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       S.curId&&isWriter()?h("button",{class:"btn"+(editable?"":" primary"),onclick:newConti,title:"빈 콘티를 새로 시작해요",text:"+ 새 콘티 만들기"}):null,
       h("span",{class:"spacer"}),h("span",{class:"status",id:"saveStatus"})));
-  if(S.curId){const a=$("#authorLine",head);a.append("콘티 제작 - ",authorEl(c.authorId));resolveNames([c.authorId]);}
+  if(S.curId){const a=$("#authorLine",head);a.append("콘티 제작 - ",authorEl(c.authorId,c.authorName));resolveNames([c.authorId]);}
   m.append(head);
 
   if(S.curId&&!editable&&S.canWrite)m.append(h("div",{class:"banner"},h("b",{text:"다른 사람이 쓴 콘티예요. "}),"고치기는 작성자만 할 수 있어요. 보기와 PDF 출력은 할 수 있어요. 내 콘티를 쓰려면 ",isWriter()?h("button",{class:"btn sm primary",text:"+ 새 콘티 만들기",onclick:newConti}):"「새 콘티 만들기」",h("span",{text:" 를 눌러 주세요."})));
@@ -1172,8 +1178,8 @@ async function saveConti(){if(!curEditable())return;const c=S.cur;
   const btn=$("#saveBtn");btn.disabled=true;btn.textContent="저장 중…";
   const body={...clone(c),team:c.team||S.team,status:$("#f-status")?$("#f-status").value:statusOf(c),updatedAt:Date.now()};
   try{
-    if(!S.curId){const ref=S.db.collection("contis").doc();body.authorId=S.myId||null;body.createdAt=Date.now();await ref.set(body);S.curId=ref.id;S.cur=body;}
-    else{const old=S.contis.find(x=>x.id===S.curId);body.authorId=old?.authorId??c.authorId??S.myId??null;body.createdAt=old?.createdAt||c.createdAt||Date.now();await S.db.doc(`contis/${S.curId}`).set(body);S.cur=body;}
+    if(!S.curId){const ref=S.db.collection("contis").doc();body.authorId=S.myId||null;body.authorName=myName()||"";body.createdAt=Date.now();await ref.set(body);S.curId=ref.id;S.cur=body;}
+    else{const old=S.contis.find(x=>x.id===S.curId);body.authorId=old?.authorId??c.authorId??S.myId??null;body.authorName=old?.authorName||c.authorName||(body.authorId===S.myId?myName():S.names[body.authorId])||"";body.createdAt=old?.createdAt||c.createdAt||Date.now();await S.db.doc(`contis/${S.curId}`).set(body);S.cur=body;}
     H.owner=S.cur;H.last=JSON.stringify(S.cur);S.dirty=false;saveDraft();toast("저장했어요. 팀원 모두에게 보여요.");render();
   }catch(e){toast(e&&e.code==="invalid_argument"?"저장 권한이 없어요":"저장하지 못했어요. 다시 눌러 주세요.");btn.disabled=false;btn.textContent="저장";}}
 /* is there really unsaved work in the write tab? (empty drafts and drafts identical to the saved conti don't count) */
@@ -1302,7 +1308,7 @@ function renderList(m){let q="";
         try{await S.db.doc(`contis/${c.id}`).delete();if(S.curId===c.id){S.curId=null;S.dirty=true;saveDraft();}toast("지웠어요");}catch(e){toast("지우지 못했어요");}}}):null;
       const songs=[...((c.opening||[]).length?["(여는) "+c.opening.map(i=>i.title).join(", ")]:[]),...(c.before||[]).map(i=>i.title),...((c.after||[]).length?["(설교 후) "+c.after.map(i=>i.title).join(", ")]:[])];
       box.append(h("div",{class:"card"},
-        h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),h("span",{class:`stbadge ${statusOf(c)}`,text:statusOf(c)==="final"?"확정":"작성 중"}),h("span",{class:"spacer"}),h("span",{class:"hint"},"작성 ",authorEl(c.authorId))),
+        h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),h("span",{class:`stbadge ${statusOf(c)}`,text:statusOf(c)==="final"?"확정":"작성 중"}),h("span",{class:"spacer"}),h("span",{class:"hint"},"작성 ",authorEl(c.authorId,c.authorName))),
         h("h3",{text:c.sermonTitle||"(설교 제목 없음)"}),
         h("div",{class:"hint",text:[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`,leaderOf(c)&&`인도 ${leaderOf(c)}`].filter(Boolean).join(" · ")}),
         h("div",{class:"songs slist"},songs.length?h("ol",{},songs.map(t=>h("li",{text:t}))):"곡 없음"),
@@ -1414,7 +1420,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
     return h("div",{class:"card"},
       h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),
         c.past?h("span",{class:"stbadge draft",text:"지난 콘티"}):h("span",{class:`stbadge ${statusOf(c)}`,text:statusOf(c)==="final"?"확정":"작성 중"}),
-        h("span",{class:"spacer"}),c.past?null:h("span",{class:"hint"},"콘티 제작 - ",authorEl(c.authorId)),
+        h("span",{class:"spacer"}),c.past?null:h("span",{class:"hint"},"콘티 제작 - ",authorEl(c.authorId,c.authorName)),
         c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:/watch\?v=/.test(c.playlist)?"예배 영상":"재생목록"}):null),
       c.sermonTitle||c.passage||c.preacher?h("div",{},c.sermonTitle?h("h3",{text:c.sermonTitle}):null,h("div",{class:"hint",text:[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`].filter(Boolean).join(" · ")})):null,
       h("div",{class:"row"},gbtn(c,"인도자"),gbtn(c,"싱어"),gbtn(c,"악기")),
@@ -1826,7 +1832,7 @@ const POSTK={talk:"한마디",prayer:"기도제목",share:"나눔"};
 async function addPost(kind,text){if(!S.db)return toast("저장소에 연결되지 않았어요");const name=myName();
   try{await S.db.collection("events").add({team:S.team,post:kind,text,by:S.myId||null,name,prayed:[],createdAt:Date.now(),updatedAt:Date.now()});return true;}catch(e){toast("올리지 못했어요");return false;}}
 async function delPost(p){try{await S.db.doc(`events/${p.id}`).delete();toast("지웠어요");}catch(e){toast("지우지 못했어요");}}
-const postMine=p=>S.isOwner||(p.by&&p.by===S.myId);
+const postMine=p=>S.isOwner||(p.by&&p.by===S.myId)||(!!p.name&&!!normName(myName())&&normName(p.name)===normName(myName()));
 const agoLabel=t=>{const m=Math.round((Date.now()-(t||0))/6e4);return m<1?"방금":m<60?`${m}분 전`:m<1440?`${Math.round(m/60)}시간 전`:m<10080?`${Math.round(m/1440)}일 전`:fmtDate(ymd(new Date(t)));};
 function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"내 이름 (콘티 참여자에 넣은 이름과 같게)",value:myName(),style:"max-width:260px"});
   return h("div",{class:"row"},inp,h("button",{class:"btn sm primary",text:"이름 저장",onclick:async()=>{const v=inp.value.trim();if(!v)return inp.focus();
@@ -1860,7 +1866,7 @@ function tickerSheet(){const can=S.canWrite&&!!S.db;const talks=S.posts.filter(p
   inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)go();});
   let open=false;const all=h("div",{class:"talklist"});all.hidden=true;
   all.append(...talks.map(p=>h("div",{class:"row talkrow"},h("span",{style:"flex:1;min-width:0;overflow-wrap:anywhere",text:p.text}),h("span",{class:"hint",text:`${p.name||""} · ${agoLabel(p.createdAt)}`}),can&&postMine(p)?h("button",{class:"btn sm ghost danger",text:"지우기",onclick:()=>delPost(p)}):null)));
-  return h("div",{class:"sheet tickersheet"},h("h2",{},"한마디",talks.length?h("button",{class:"btn sm ghost",text:"모두 보기",onclick:e=>{open=!open;all.hidden=!open;e.currentTarget.textContent=open?"접기":"모두 보기";}}):null),
+  return h("div",{class:"sheet tickersheet"},h("h2",{},"한마디",talks.length?h("button",{class:"btn sm ghost",text:talks.some(postMine)&&can?"모두 보기 · 지우기":"모두 보기",onclick:e=>{open=!open;all.hidden=!open;e.currentTarget.textContent=open?"접기":(talks.some(postMine)&&can?"모두 보기 · 지우기":"모두 보기");}}):null),
     h("div",{class:"ticker","aria-label":"팀원 한마디"},track),all,
     can?h("div",{class:"row",style:"margin-top:10px;flex-wrap:nowrap"},inp,h("button",{class:"btn primary",text:"올리기",onclick:go})):null);}
 function boardSheet(){const can=S.canWrite&&!!S.db;if(!S.boardTab)S.boardTab="prayer";const k=S.boardTab;
@@ -1957,8 +1963,27 @@ function avatarEl(name,cls="avatar",style=""){const u=photoOf(name);const el=h("
 async function fileToAvatar(file){const url=URL.createObjectURL(file);try{const im=await loadImg(url);const n=Math.min(im.naturalWidth,im.naturalHeight);const S2=320;
   const c=document.createElement("canvas");c.width=c.height=S2;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,S2,S2);
   x.drawImage(im,(im.naturalWidth-n)/2,(im.naturalHeight-n)/2,n,n,0,0,S2,S2);return c.toDataURL("image/jpeg",.82);}finally{URL.revokeObjectURL(url);}}
+/* 사진 자르기: 끌어서 옮기고, 막대로 확대 */
+async function cropModal(file,onDone){const url=URL.createObjectURL(file);let im;try{im=await loadImg(url);}catch(e){URL.revokeObjectURL(url);return toast("사진을 읽지 못했어요");}
+  const V=300,iw=im.naturalWidth,ih=im.naturalHeight,minS=Math.max(V/iw,V/ih);let sc=minS,cx=iw/2,cy=ih/2;
+  const cv=h("canvas",{class:"cropcv",width:V*2,height:V*2,"aria-label":"사진을 끌어서 위치를 맞추세요"});const x=cv.getContext("2d");x.scale(2,2);
+  const clamp=()=>{const hw=V/2/sc;cx=Math.min(Math.max(cx,hw),iw-hw);cy=Math.min(Math.max(cy,hw),ih-hw);};
+  const draw=()=>{clamp();x.clearRect(0,0,V,V);x.drawImage(im,V/2-cx*sc,V/2-cy*sc,iw*sc,ih*sc);
+    x.save();x.fillStyle="rgba(0,0,0,.45)";x.beginPath();x.rect(0,0,V,V);x.arc(V/2,V/2,V/2-2,0,Math.PI*2,true);x.fill("evenodd");x.strokeStyle="#fff";x.lineWidth=2;x.beginPath();x.arc(V/2,V/2,V/2-2,0,Math.PI*2);x.stroke();x.restore();};
+  let drag=null;cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener("pointermove",e=>{if(!drag)return;const k=V/cv.clientWidth;cx-=(e.clientX-drag.x)*k/sc;cy-=(e.clientY-drag.y)*k/sc;drag={x:e.clientX,y:e.clientY};draw();});
+  const end=()=>{drag=null;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+  const zoom=h("input",{type:"range",id:"crop-zoom",min:"1",max:"4",step:"0.01",value:"1","aria-label":"확대",oninput:e=>{sc=minS*(+e.target.value);draw();}});
+  cv.addEventListener("wheel",e=>{e.preventDefault();const z=Math.min(4,Math.max(1,(+zoom.value)*(e.deltaY<0?1.08:1/1.08)));zoom.value=z;sc=minS*z;draw();},{passive:false});
+  const md=modal("사진 자르기",h("div",{class:"panel-body",style:"align-items:center"},h("p",{class:"hint",style:"margin:0",text:"사진을 끌어서 얼굴이 동그라미 안에 오게 맞추고, 아래 막대로 크기를 조절하세요."}),cv,
+    h("div",{class:"row",style:"width:min(300px,100%);flex-wrap:nowrap"},h("span",{text:"−"}),zoom,h("span",{text:"+"}))),
+    [h("button",{class:"btn",text:"취소",onclick:()=>{md.close();URL.revokeObjectURL(url);}}),h("button",{class:"btn primary",text:"이 사진으로 저장",onclick:async()=>{
+      const O=320,k=O/V,oc=document.createElement("canvas");oc.width=oc.height=O;const ox=oc.getContext("2d");ox.fillStyle="#fff";ox.fillRect(0,0,O,O);
+      ox.drawImage(im,(V/2-cx*sc)*k,(V/2-cy*sc)*k,iw*sc*k,ih*sc*k);md.close();URL.revokeObjectURL(url);await onDone(oc.toDataURL("image/jpeg",.85));}})]);
+  draw();}
 async function savePhoto(name,dataUrl){if(!S.db)return toast("팀 저장소에 연결되지 않았어요");
-  try{const ref=S.db.doc(`events/${photoDocId(name)}`);if(dataUrl)await ref.set({team:S.team,post:"photo",name:name.trim(),photo:dataUrl,by:S.myId||null,updatedAt:Date.now()});else await ref.delete();
+  try{const ref=S.db.doc(`events/${photoDocId(name)}`);const doc={team:S.team,post:"photo",name:name.trim(),photo:dataUrl,by:S.myId||null,updatedAt:Date.now()};if(dataUrl)await ref.set(doc);else await ref.delete();
+    const pid=photoDocId(name);S.allEvents=S.allEvents.filter(e=>e.id!==pid).concat(dataUrl?[{id:pid,...doc}]:[]);applyTeam();render();
     toast(dataUrl?"프로필 사진을 바꿨어요":"프로필 사진을 지웠어요");}catch(e){console.error(e);toast("사진을 저장하지 못했어요");}}
 /* 나 (프로필): 맡은 자리, 활동 이력, 기도제목 */
 function renderMe(m){const me=normName(myName());const today=todayStr();const can=S.canWrite&&!!S.db;
@@ -1970,13 +1995,13 @@ function renderMe(m){const me=normName(myName());const today=todayStr();const ca
   const done=served.filter(x=>!(x.c.date>=today&&!x.c.past)).sort((a,b)=>b.c.date.localeCompare(a.c.date));
   const byPos={};for(const x of done)for(const p of x.pos)byPos[p]=(byPos[p]||0)+1;
   const year=today.slice(0,4);const thisYear=done.filter(x=>x.c.date.startsWith(year)).length;
-  const wrote=S.myId?S.contis.filter(c=>c.authorId===S.myId).length:0;
+  const wrote=S.contis.filter(isAuthor).length;
   const row=x=>h("button",{type:"button",class:"uprow k-service",onclick:()=>viewConti(x.c)},h("span",{class:"when",text:fmtDate(x.c.date)}),h("span",{class:"chipc k-service",text:wtypeOf(x.c)}),h("span",{text:x.pos.join(" · ")}));
   /* 1. who I am */
   const posList=(mb&&mb.positions)||[];
   m.append(h("div",{class:"sheet"},
     h("div",{class:"row",style:"flex-wrap:nowrap;gap:14px"},(()=>{const has=!!photoOf(myName());
-      const fin=h("input",{type:"file",accept:"image/*",id:"me-photo",onchange:async e=>{const f=e.target.files[0];if(!f)return;try{await savePhoto(myName(),await fileToAvatar(f));}catch(err){toast("사진을 읽지 못했어요");}e.target.value="";}});
+      const fin=h("input",{type:"file",accept:"image/*",id:"me-photo",onchange:e=>{const f=e.target.files[0];e.target.value="";if(!f)return;cropModal(f,d=>savePhoto(myName(),d));}});
       return h("div",{class:"mephoto"},avatarEl(myName(),"avatar big"),can?h("div",{class:"row",style:"gap:4px;justify-content:center"},h("label",{class:"btn sm filebtn",htmlFor:"me-photo"},has?"사진 바꾸기":"사진 넣기",fin),
         has?h("button",{class:"btn sm ghost danger",text:"지우기",onclick:()=>savePhoto(myName(),null)}):null):null);})(),
       h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"},
@@ -2315,7 +2340,7 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
     h("h4",{text:c.sermonTitle?`「${c.sermonTitle}」`:wtypeOf(c)}),
     [c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`].filter(Boolean).length?h("div",{class:"hint",text:[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`].filter(Boolean).join(" · ")}):null,
     roster.length?h("div",{class:"vw-roster"},roster.flatMap(r=>(r.people||[]).map(p=>h("span",{class:me&&normName(p.name)===me?"me":""},h("b",{text:r.pos}),p.name)))):null,
-    c.authorId?h("div",{class:"hint"},"콘티 제작 - ",authorEl(c.authorId)):null,
+    c.authorId?h("div",{class:"hint"},"콘티 제작 - ",authorEl(c.authorId,c.authorName)):null,
     c.memo?h("div",{class:"vw-memo",text:c.memo}):null,
     h("div",{class:"row"},ids.length?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`,target:"_blank",rel:"noopener",text:`▶ 레퍼런스 재생목록 (${ids.length}곡)`}):null,
       c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:"유튜브 재생목록"}):null));
@@ -2422,7 +2447,7 @@ function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
   RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
-  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(S.tab==="cal"||S.tab==="home")RR.rerender();},RR.onErr));
+  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(["cal","home","me","members"].includes(S.tab))RR.rerender();},RR.onErr));
   RR.offs.push(db.doc(`teams/${team}`).onSnapshot(d=>{S.teamCfgs=d.exists?{[team]:clone(d.data())}:{};if(S.tab!=="write")RR.rerender();},RR.onErr));}
 render();
 (async()=>{
@@ -2445,7 +2470,7 @@ render();
     if(S.team&&!window.CBWP.canWrite(S.team))S.team=null;
     S.ready=true;if(S.team){startShared();startTeam(S.team);}render();return;}
   let f1=0,f2=0,f3=0,f4=0,f5=0,f6=0;
-  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(S.tab==="cal"||S.tab==="home")rerender();},onErr);
+  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members"].includes(S.tab))rerender();},onErr);
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
   db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
