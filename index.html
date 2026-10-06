@@ -255,6 +255,7 @@ body.fb-pad{padding-bottom:72px}
 .pptprev{flex:none;container-type:inline-size;width:100%;max-width:560px;margin:0 auto;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:5% 6%;box-sizing:border-box;overflow:hidden}
 .pptprev .pp-t{white-space:pre-line;text-align:center;line-height:1.35}
 .btn.hasly{border-color:var(--ok);color:var(--ok)}
+a.btn{text-decoration:none}
 .duplist{margin:6px 0;padding-left:1.2em}
 .tag{font-size:.74rem;font-weight:600;border-radius:4px;padding:1px 7px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
 
@@ -1962,8 +1963,11 @@ function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
   const q=splitTitle(it.title).base.replace(/\([^)]*\)/g,"").trim()||it.title;
   const paste=h("button",{type:"button",class:"btn sm",text:"📋 붙여넣기",onclick:async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim())return toast("복사한 가사가 없어요");ta.value=cleanLyrics(t);upd();}catch(e){ta.focus();toast("가사 칸을 길게 누르거나 Ctrl+V로 붙여 넣어 주세요");}}});
   const md=modal(`가사 · ${it.title}`,h("div",{class:"panel-body"},
-    h("div",{class:"row"},h("a",{class:"btn sm",href:`https://music.bugs.co.kr/search/integrated?q=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"벅스에서 찾기 ↗"}),paste,
-      h("span",{class:"hint",text:"벅스에서 곡을 열어 가사를 복사한 뒤 붙여 넣으세요"})),
+    h("div",{class:"row"},h("span",{class:"lab",style:"margin:0",text:"가사 찾기"}),
+      h("a",{class:"btn sm",href:`https://music.bugs.co.kr/search/integrated?q=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"벅스 ↗"}),
+      h("a",{class:"btn sm",href:`http://ccmgasa.com/wordpress/?s=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"CCM가사 ↗"}),
+      h("a",{class:"btn sm",href:`https://cwy0675.tistory.com/search/${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"PPT악보 블로그 ↗"}),paste),
+    h("p",{class:"hint",style:"margin:0",text:"곡을 찾아 가사를 복사한 뒤 「붙여넣기」를 누르거나 아래 칸에 붙여 넣으세요."}),
     h("p",{class:"hint",text:song&&!song.id.startsWith("local-")?"곡에 저장돼서 다음에 이 곡을 넣을 때도 그대로 쓰여요. 교회 전체가 함께 써요.":"이 콘티에만 저장돼요."}),ta,cnt),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can||!song?h("button",{class:"btn primary",text:"가사 저장",onclick:async()=>{const v=ta.value.replace(/\r/g,"").trim();
       if(song&&!song.id.startsWith("local-")&&S.db){try{await S.db.doc(`songs/${song.id}`).update({lyrics:v,updatedAt:Date.now()});song.lyrics=v;}catch(e){return toast("저장하지 못했어요");}}
