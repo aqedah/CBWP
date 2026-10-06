@@ -14,8 +14,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="config.js"></script>
-<script src="platform.js"></script>
+<script src="config.js?v=33906a90"></script>
+<script src="platform.js?v=c8130361"></script>
 <title>Central Bible Worship Planner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -626,7 +626,7 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   if(S.team)nm.append(h("span",{class:"teamchip"},teamName(S.team),h("button",{type:"button",text:"팀 바꾸기",onclick:switchTeam})));
   if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.canWrite?(S.isOwner?h("button",{type:"button",class:"lockchip on",title:"눌러서 관리자 로그아웃",text:"관리자 ✕",onclick:adminLogout}):h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:"쓰기 가능"})):
     h("button",{type:"button",class:"lockchip",title:"팀 비밀번호를 넣으면 콘티를 쓸 수 있어요",text:"🔒 보기 전용",onclick:()=>unlockModal(S.team)}));
-  if(S.team&&window.CBWP&&window.CBWP.logoutKeys&&S.canWrite)nm.append(h("button",{type:"button",class:"lockchip",title:"이 기기에서 로그아웃",text:"로그아웃",onclick:logoutModal}));
+  if(S.team&&window.CBWP&&S.canWrite)nm.append(h("button",{type:"button",class:"lockchip",title:"이 기기에서 로그아웃",text:"로그아웃",onclick:logoutModal}));
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
   const links=[h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
   $("#topLinks").replaceChildren(...links);$("#tabsNav").hidden=!S.team;}
@@ -644,7 +644,7 @@ function renderTeamPick(m){m.append(h("img",{class:"bigLogo",alt:"중앙성서�
       h("span",{class:"tnote","aria-hidden":"true",text:"♪"}),h("b",{text:t.name}),h("small",{text:t.en}),h("span",{text:window.CBWP?(window.CBWP.canWrite(t.id)?"들어가기 →":"🔒 비밀번호로 들어가기"):(S.ready&&!S.dbFailed?`저장된 콘티 ${n}개`:"들어가기")}));}))));}
 function drawAdminRow(){const r=$("#adminRow");if(!r)return;r.hidden=!window.CBWP;if(!window.CBWP)return;
   r.replaceChildren(...(S.isOwner?[h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}),h("button",{class:"btn sm",text:"관리자 로그아웃",onclick:adminLogout})]:[]));if(S.isOwner)return;r.append(h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
-function logoutModal(){if(!window.CBWP||!window.CBWP.logoutKeys)return;const t=S.team;
+function logoutModal(){if(!window.CBWP)return;if(!window.CBWP.logoutKeys)return toast("앱이 예전 버전이에요. 새로고침(PC는 Ctrl+Shift+R)한 뒤 다시 눌러 주세요",4000);const t=S.team;
   const run=async(drop,all,msg)=>{md.close();const w=modal("로그아웃 중",h("div",{class:"panel-body"},h("p",{text:"잠시만요…"})),null);
     try{await window.CBWP.logoutKeys(drop,all);}catch(e){console.error(e);}
     if(all||drop.includes(t)){try{localStorage.removeItem(TEAM_KEY);}catch(e){}}
