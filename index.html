@@ -398,7 +398,7 @@ header.top{border-top:4px solid var(--team,transparent)}
     <nav class="tabs" role="tablist" id="tabsNav">
       <button role="tab" data-tab="home" aria-selected="true">홈</button>
       <button role="tab" data-tab="write" aria-selected="false">콘티 작성</button>
-      <button role="tab" data-tab="list" aria-selected="false">콘티 목록</button>
+      <button role="tab" data-tab="list" aria-selected="false">지난 콘티</button>
       <button role="tab" data-tab="songs" aria-selected="false">찬양 라이브러리</button>
       <button role="tab" data-tab="cal" aria-selected="false">일정</button>
       <button role="tab" data-tab="members" aria-selected="false">멤버</button>
@@ -535,7 +535,7 @@ function updUndo(){const b=$("#undoBtn");if(b)b.disabled=!H.list.length&&JSON.st
 function undoConti(){if(!curEditable())return;clearTimeout(histT);snapHist();if(!H.list.length)return toast("더 되돌릴 내용이 없어요");
   H.last=H.list.pop();S.cur=fixConti(JSON.parse(H.last));H.owner=S.cur;S.dirty=true;saveDraft();render();toast("한 단계 되돌렸어요");}
 function resetConti(btn){if(!S.curId&&!curEditable())return;if(!btn.dataset.armed){btn.dataset.armed="1";btn.textContent=S.curId?"새로 시작할까요?":"정말 비울까요?";setTimeout(()=>{delete btn.dataset.armed;btn.textContent="초기화";},3000);return;}
-  if(S.curId){S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();render();window.scrollTo({top:0});toast("새 콘티를 시작했어요. 저장해 둔 콘티는 「콘티 목록」에 그대로 있어요",3600);return;}
+  if(S.curId){S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();render();window.scrollTo({top:0});toast("새 콘티를 시작했어요. 저장해 둔 콘티는 「지난 콘티」에 그대로 있어요",3600);return;}
   clearTimeout(histT);snapHist();const b=blankConti();b.date=S.cur.date||b.date;const g=guessWtype(b.date);b.wtype=g.wtype;b.wtypeCustom=g.custom;b.team=S.cur.team||S.team;
   S.cur=b;H.owner=b;H.list.push(H.last);H.last=JSON.stringify(b);S.dirty=true;saveDraft();render();toast("내용을 비웠어요. 「실행 취소」로 되돌릴 수 있어요",3200);}
 
@@ -616,7 +616,12 @@ document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("clic
   const upd=()=>tt.classList.toggle("on",window.scrollY>innerHeight*.8);window.addEventListener("scroll",upd,{passive:true});upd();}
 $("#homeLink").addEventListener("click",e=>{e.preventDefault();if(S.team)switchTeam();else window.scrollTo({top:0});});
 function setTab(t){S.tab=t;document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));render();window.scrollTo({top:0});}
+/* who writes contis: admin, team leader password, a member marked 리더 or 인도자 (by the name given on this device), or someone who already wrote one */
+function isWriter(){if(!S.canWrite)return false;if(!window.CBWP)return true;if(window.CBWP.isAdmin()||canLead())return true;
+  if(S.myId&&S.contis.some(c=>c.authorId===S.myId&&!c.past))return true;const me=normName(myName());if(!me)return false;
+  return S.members.some(mb=>normName(mb.name)===me&&(mb.role==="리더"||(mb.positions||[]).includes("인도자")));}
 function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
+  const wb=document.querySelector('nav.tabs [data-tab="write"]');if(wb)wb.hidden=!!S.team&&!isWriter();
   const tc=(TEAMS.find(t=>t.id===S.team)||{}).color;if(tc)document.documentElement.style.setProperty("--team",tc);else document.documentElement.style.removeProperty("--team");
   if(S.team)nm.append(h("span",{class:"teamchip"},teamName(S.team),h("button",{type:"button",text:"팀 바꾸기",onclick:switchTeam})));
   if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.canWrite?(S.isOwner?h("button",{type:"button",class:"lockchip on",title:"눌러서 관리자 로그아웃",text:"관리자 ✕",onclick:adminLogout}):h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:"쓰기 가능"})):
@@ -659,6 +664,7 @@ function importModal(){const st=h("p",{class:"hint"});
 function render(){const m=$("#main");m.replaceChildren();document.body.classList.remove("fb-pad");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
   if(!S.team){renderTeamPick(m);return;}
+  if(S.tab==="write"&&!S.curId&&!isWriter()){S.tab="home";document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab==="home")));}
   ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
 function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lead$/.test(team);const tn=isLead?`${teamName(team.replace(/_lead$/,""))} 리더`:teamName(team);
@@ -1224,7 +1230,7 @@ function renderList(m){let q="";
         h("div",{class:"songs slist"},songs.length?h("ol",{},songs.map(t=>h("li",{text:t}))):"곡 없음"),
         h("div",{class:"row"},h("button",{class:"btn sm primary",text:mine?"열어서 고치기":"열어 보기",onclick:()=>openConti(c)}),
           h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),
-          S.canWrite?h("button",{class:"btn sm",text:"복제",onclick:()=>duplicateConti(c)}):null,h("span",{class:"spacer"}),del)));}
+          isWriter()?h("button",{class:"btn sm",text:"복제",onclick:()=>duplicateConti(c)}):null,h("span",{class:"spacer"}),del)));}
     resolveNames(arr.map(c=>c.authorId));}
   draw();renderList.redraw=draw;}
 
@@ -1313,8 +1319,8 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
   const search=h("input",{type:"search",id:"list-q",placeholder:"날짜 · 제목 · 곡 · 인도자로 찾기 (초성 가능)",value:q,oninput:e=>{q=S.listQ=e.target.value;draw();}});
   const showBlank=h("input",{type:"checkbox",id:"list-blank",checked:S.listBlank!==false,onchange:e=>{S.listBlank=e.target.checked;draw();}});
   const nPast=team.filter(c=>c.past).length;
-  const listSheet=m.appendChild(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`모두 ${team.length}개 (지난 콘티 ${nPast}개 포함) · 결산에 함께 들어가요`})),
-    h("div",{class:"row",style:"flex-wrap:nowrap"},search,can?h("button",{class:"btn primary",text:"+ 새 콘티",onclick:()=>{newConti();}}):null),
+  const listSheet=m.appendChild(h("div",{class:"sheet"},h("h2",{},"지난 콘티",h("span",{class:"sub",text:`모두 ${team.length}개 (지난 콘티 ${nPast}개 포함) · 결산에 함께 들어가요`})),
+    h("div",{class:"row",style:"flex-wrap:nowrap"},search,can&&isWriter()?h("button",{class:"btn primary",text:"+ 새 콘티",onclick:()=>{newConti();}}):null),
     h("label",{class:"row hint",htmlFor:"list-blank",style:"margin-top:8px;gap:6px"},showBlank,"기록 없는 주일도 보기 (예배가 없었다면 비고에 사유를 남겨 주세요)"),h("div",{style:"height:10px"}),box));
   const noteRow=(c,date,mine)=>{const inp=h("input",{type:"text",id:`note-${c?c.id:date}`,placeholder:"비고 (예: 세대통합예배로 오후예배 없음)",value:c?.note||"",disabled:!mine,style:"flex:1;min-width:180px"});
     return h("div",{class:"row"},h("span",{class:"lab",style:"margin:0",text:"비고"}),inp,mine?h("button",{class:"btn sm",text:"비고 저장",onclick:()=>saveNote(c,date,inp.value.trim())}):null);};
@@ -1339,7 +1345,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
       h("div",{class:"row"},h("button",{class:"btn sm primary",text:mine?"열어서 고치기":"열어 보기",onclick:()=>openConti(c)}),
         c.past&&mine?h("button",{class:"btn sm",text:"빠르게 고치기",onclick:()=>{S.pastOpen=true;editPast(c);}}):null,
         h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn sm",text:"가사 PPT",onclick:()=>exportLyricsPpt(c)}),
-        S.canWrite?h("button",{class:"btn sm",text:"복제",onclick:()=>duplicateConti(c)}):null,h("span",{class:"spacer"}),mine?delBtn(c):null));};
+        isWriter()?h("button",{class:"btn sm",text:"복제",onclick:()=>duplicateConti(c)}):null,h("span",{class:"spacer"}),mine?delBtn(c):null));};
   function draw(){box.replaceChildren();let placed=false;const qq=q.trim();
     const match=c=>{if(!qq)return true;const hay=[c.date,wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),c.note,...allItems(c).map(i=>i.title)].join(" ");return hay.includes(qq)||matchRank(hay,qq)>-1;};
     const byDate={};for(const c of team)if(c.date&&match(c))(byDate[c.date]=byDate[c.date]||[]).push(c);
@@ -1697,7 +1703,7 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
       allItems(c).length?songsBlock(c):h("div",{class:"songs",style:"color:var(--warn)",text:"아직 곡이 없어요"}),
       h("div",{class:"row"},h("button",{class:"btn sm primary",text:canEditConti(c,c.id)&&S.canWrite?"열어서 고치기":"열어 보기",onclick:()=>openConti(c)}),
         h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}))))):
-      h("div",{class:"empty"},"이번 주 콘티가 아직 없어요.",can?h("div",{style:"margin-top:8px"},h("button",{class:"btn primary",text:"콘티 쓰러 가기",onclick:()=>setTab("write")})):null));
+      h("div",{class:"empty"},"이번 주 콘티가 아직 없어요.",can&&isWriter()?h("div",{style:"margin-top:8px"},h("button",{class:"btn primary",text:"콘티 쓰러 가기",onclick:()=>setTab("write")})):null));
   /* 2. notices */
   const list=notices().sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.at||0)-(a.at||0));
   const ta=h("textarea",{id:"notice-new",placeholder:"팀원에게 알릴 내용 (예: 이번 주 연습은 토요일 오후 3시, 본당)",style:"min-height:64px"});
