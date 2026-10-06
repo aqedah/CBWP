@@ -1906,7 +1906,7 @@ async function exportPdf(c){if(!c)return;
       drawFooter(x,1,total);canvases.push(cv);}
     /* score pages */
     let n=1;for(const sp of scorePages){n++;st.textContent=`악보 그리는 중… (${n-1}/${scorePages.length})`;
-      const cv=document.createElement("canvas");cv.width=PW;cv.height=PH;const x=cv.getContext("2d");let y=drawHeader(x,c)+52;
+      const cv=document.createElement("canvas");cv.width=PW;cv.height=PH;const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,PW,PH);x.textBaseline="alphabetic";let y=MG+12;
       x.fillStyle="#2b3f8f";x.font=`700 22px ${FB}`;x.fillText(sp.label,MG,y);let cx=MG+x.measureText(sp.label).width+16;
       const right=[sp.it.key?`Key ${sp.it.key}`:"",sp.pn>1?`${sp.pi+1}/${sp.pn}`:""].filter(Boolean).join("   ");x.font=`600 22px ${FB}`;const rw=x.measureText(right).width;
       x.fillStyle="#18213a";x.font=`700 30px ${FB}`;x.fillText(ellipsize(x,sp.it.title,PW-MG-cx-rw-20),cx,y);x.fillStyle="#4a5370";x.font=`600 22px ${FB}`;x.fillText(right,PW-MG-rw,y);
@@ -1941,41 +1941,48 @@ async function exportCompact(c){if(!c)return;
   const md=modal("압축버전 만드는 중",h("div",{class:"panel-body"},h("p",{id:"pdf-st",text:"악보를 모으고 있어요…"})),null);const st=$("#pdf-st",md.el);
   try{await loadScript(JSPDF_URL);try{await document.fonts.load(`700 40px "Gowun Batang"`);await document.fonts.load(`600 20px "IBM Plex Sans KR"`);}catch(e){}
     const imgs=[];for(const s of items){st.textContent=`악보 불러오는 중… (${imgs.length+1}/${items.length})`;const u=await getImg(s.p.imgId);imgs.push(u?await loadImg(u):null);}
-    const A=[2339,3307],M=50,HEAD=150,CAP=34,GAP=18;
+    const W=3307,H=2339,M=50,HEAD=150,CAP=34,GAP=18;   /* A3 landscape only */
     const ratio=imgs.map((im,i)=>im?im.naturalWidth/im.naturalHeight:(items[i].p.w||1)/(items[i].p.h||1.414));
-    let best=null;
-    for(const land of[false,true]){const W=land?A[1]:A[0],H=land?A[0]:A[1];const aw=W-2*M,ah=H-2*M-HEAD;
-      for(let cols=1;cols<=items.length;cols++){const rows=Math.ceil(items.length/cols);const cw=(aw-GAP*(cols-1))/cols,ch=(ah-GAP*(rows-1))/rows-CAP;if(ch<=20)continue;
-        let sc=Infinity;for(const r of ratio){const w=Math.min(cw,ch*r);sc=Math.min(sc,w*w/r);}
-        if(!best||sc>best.sc)best={sc,land,cols,rows,W,H,cw,ch};}}
-    const{land,cols,W,H,cw,ch}=best;const cv=document.createElement("canvas");cv.width=W;cv.height=H;const x=cv.getContext("2d");
-    x.fillStyle="#fff";x.fillRect(0,0,W,H);x.textBaseline="alphabetic";
-    x.fillStyle="#2b3f8f";x.fillRect(M,M,8,64);
-    x.fillStyle="#18213a";const t=`${fmtDate(c.date)}  ${wtypeOf(c)}${c.sermonTitle?"  ·  "+c.sermonTitle:""}`;fitText(x,t,W-2*M-30,44,"700",FD);x.fillText(ellipsize(x,t,W-2*M-30),M+26,M+46);
-    const info=[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`,leaderOf(c)&&`인도 ${leaderOf(c)}`].filter(Boolean).join("   ");
-    const order=secs.filter(([,a])=>a.length).map(([l,a])=>`${l}: `+a.map(it=>it.title+(it.key?`(${it.key})`:"")).join(" → ")).join("   |   ");
-    x.font=`500 24px ${FB}`;x.fillStyle="#4a5370";x.fillText(ellipsize(x,info,W-2*M-30),M+26,M+90);
-    x.font=`600 22px ${FB}`;x.fillStyle="#18213a";x.fillText(ellipsize(x,order,W-2*M),M,M+128);
-    x.strokeStyle="#18213a";x.lineWidth=2;x.beginPath();x.moveTo(M,M+HEAD-6);x.lineTo(W-M,M+HEAD-6);x.stroke();
-    /* each row only as tall as its tallest score, so rows sit snug */
-    const rowH=[];items.forEach((_,i)=>{const r=Math.floor(i/cols);rowH[r]=Math.max(rowH[r]||0,Math.min(ch,cw/ratio[i]));});
-    const rowY=[];rowH.reduce((y,hh,r)=>(rowY[r]=y,y+hh+CAP+GAP),M+HEAD);
-    items.forEach((s,i)=>{const r=Math.floor(i/cols),k=i%cols;const cx=M+k*(cw+GAP),cy=rowY[r];
-      x.fillStyle="#2b3f8f";x.font=`700 22px ${FB}`;const lab=`${s.no}. `;x.fillText(lab,cx,cy+24);const lw=x.measureText(lab).width;
-      const right=[s.it.key?`Key ${s.it.key}`:"",s.pn>1?`${s.pi+1}/${s.pn}`:""].filter(Boolean).join(" ");x.font=`600 18px ${FB}`;const rw=x.measureText(right).width;x.fillStyle="#4a5370";x.fillText(right,cx+cw-rw,cy+24);
-      x.fillStyle="#18213a";x.font=`700 22px ${FB}`;x.fillText(ellipsize(x,s.it.title,cw-lw-rw-12),cx+lw,cy+24);
-      const im=imgs[i];const top=cy+CAP;
-      if(im){const sc=Math.min(cw/im.naturalWidth,ch/im.naturalHeight);const dw=im.naturalWidth*sc,dh=im.naturalHeight*sc;const dx=cx+(cw-dw)/2;
-        x.drawImage(im,dx,top,dw,dh);x.strokeStyle="#d7dce5";x.lineWidth=1;x.strokeRect(dx,top,dw,dh);drawMarks(x,s.p,dx,top,dw,dh);}
-      else{x.fillStyle="#7a8299";x.font=`400 18px ${FB}`;x.fillText("악보를 불러오지 못했어요",cx,top+30);}});
-    x.fillStyle="#7a8299";x.font=`400 16px ${FB}`;x.fillText(`Central Bible Worship Planner · ${teamName(teamOf(c))} · 압축버전 (A3)`,M,H-18);
+    /* best grid for a set of scores on one page */
+    const lay=(idx,head)=>{const aw=W-2*M,ah=H-2*M-head;let best=null;
+      for(let cols=1;cols<=idx.length;cols++){const rows=Math.ceil(idx.length/cols);const cw=(aw-GAP*(cols-1))/cols,ch=(ah-GAP*(rows-1))/rows-CAP;if(ch<=20)continue;
+        let sc=Infinity,mh=Infinity;for(const i of idx){const r=ratio[i];const w=Math.min(cw,ch*r);sc=Math.min(sc,w*w/r);mh=Math.min(mh,w/r);}
+        if(!best||sc>best.sc)best={sc,mh,cols,cw,ch,idx,head};}return best;};
+    const all=items.map((_,i)=>i);let pages=[lay(all,HEAD)];
+    /* doesn't fit legibly on one sheet → use the back side too (2 pages at most) */
+    if(items.length>1&&pages[0].mh<900){const cand=[];for(let k=1;k<items.length;k++){const p1=lay(all.slice(0,k),HEAD),p2=lay(all.slice(k),40);if(p1&&p2)cand.push({k,sc:Math.min(p1.sc,p2.sc),pp:[p1,p2]});}
+      /* among nearly-as-good splits, keep the two sides even */
+      const top=Math.max(...cand.map(x=>x.sc));const b2=cand.filter(x=>x.sc>=top*.85).sort((a,b)=>Math.abs(a.k-items.length/2)-Math.abs(b.k-items.length/2))[0];
+      if(b2&&b2.sc>pages[0].sc*1.15)pages=b2.pp;}
+    const cvs=pages.map((pg,pn)=>{const cv=document.createElement("canvas");cv.width=W;cv.height=H;const x=cv.getContext("2d");
+      x.fillStyle="#fff";x.fillRect(0,0,W,H);x.textBaseline="alphabetic";
+      if(pn===0){x.fillStyle="#2b3f8f";x.fillRect(M,M,8,64);
+        x.fillStyle="#18213a";const t=`${fmtDate(c.date)}  ${wtypeOf(c)}${c.sermonTitle?"  ·  "+c.sermonTitle:""}`;fitText(x,t,W-2*M-30,44,"700",FD);x.fillText(ellipsize(x,t,W-2*M-30),M+26,M+46);
+        const info=[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`,leaderOf(c)&&`인도 ${leaderOf(c)}`].filter(Boolean).join("   ");
+        const order=secs.filter(([,a])=>a.length).map(([l,a])=>`${l}: `+a.map(it=>it.title+(it.key?`(${it.key})`:"")).join(" → ")).join("   |   ");
+        x.font=`500 24px ${FB}`;x.fillStyle="#4a5370";x.fillText(ellipsize(x,info,W-2*M-30),M+26,M+90);
+        x.font=`600 22px ${FB}`;x.fillStyle="#18213a";x.fillText(ellipsize(x,order,W-2*M),M,M+128);
+        x.strokeStyle="#18213a";x.lineWidth=2;x.beginPath();x.moveTo(M,M+HEAD-6);x.lineTo(W-M,M+HEAD-6);x.stroke();}
+      const{cols,cw,ch,idx,head}=pg;
+      const rowH=[];idx.forEach((i,j)=>{const r=Math.floor(j/cols);rowH[r]=Math.max(rowH[r]||0,Math.min(ch,cw/ratio[i]));});
+      const rowY=[];rowH.reduce((y,hh,r)=>(rowY[r]=y,y+hh+CAP+GAP),M+head);
+      idx.forEach((i,j)=>{const s=items[i];const r=Math.floor(j/cols),k=j%cols;const cx=M+k*(cw+GAP),cy=rowY[r];
+        x.fillStyle="#2b3f8f";x.font=`700 22px ${FB}`;const lab=`${s.no}. `;x.fillText(lab,cx,cy+24);const lw=x.measureText(lab).width;
+        const right=[s.it.key?`Key ${s.it.key}`:"",s.pn>1?`${s.pi+1}/${s.pn}`:""].filter(Boolean).join(" ");x.font=`600 18px ${FB}`;const rw=x.measureText(right).width;x.fillStyle="#4a5370";x.fillText(right,cx+cw-rw,cy+24);
+        x.fillStyle="#18213a";x.font=`700 22px ${FB}`;x.fillText(ellipsize(x,s.it.title,cw-lw-rw-12),cx+lw,cy+24);
+        const im=imgs[i];const top=cy+CAP;
+        if(im){const sc=Math.min(cw/im.naturalWidth,ch/im.naturalHeight);const dw=im.naturalWidth*sc,dh=im.naturalHeight*sc;const dx=cx+(cw-dw)/2;
+          x.drawImage(im,dx,top,dw,dh);x.strokeStyle="#d7dce5";x.lineWidth=1;x.strokeRect(dx,top,dw,dh);drawMarks(x,s.p,dx,top,dw,dh);}
+        else{x.fillStyle="#7a8299";x.font=`400 18px ${FB}`;x.fillText("악보를 불러오지 못했어요",cx,top+30);}});
+      x.fillStyle="#7a8299";x.font=`400 16px ${FB}`;x.fillText(`Central Bible Worship Planner · ${teamName(teamOf(c))} · 압축버전 (A3)${pages.length>1?`  ·  ${pn+1} / ${pages.length}`:""}`,M,H-18);
+      return cv;});
     st.textContent="PDF로 묶는 중…";
-    const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"mm",format:"a3",orientation:land?"landscape":"portrait",compress:true});
-    doc.addImage(cv.toDataURL("image/jpeg",.92),"JPEG",0,0,land?420:297,land?297:420,undefined,"FAST");
+    const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"mm",format:"a3",orientation:"landscape",compress:true});
+    cvs.forEach((cv,i)=>{if(i)doc.addPage("a3","landscape");doc.addImage(cv.toDataURL("image/jpeg",.92),"JPEG",0,0,420,297,undefined,"FAST");});
     const blob=doc.output("blob");const fname=`${teamName(teamOf(c))}_콘티_${c.date||"날짜미정"}_압축A3.pdf`;md.close();
-    if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});toast("압축버전 PDF를 저장했어요");}
-      catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else showPreview([cv]);}}
-    else showPreview([cv]);
+    if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});toast(cvs.length>1?"압축버전 PDF를 저장했어요 (2쪽 · 양면으로 뽑으세요)":"압축버전 PDF를 저장했어요");}
+      catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else showPreview(cvs);}}
+    else showPreview(cvs);
   }catch(e){md.close();toast("압축버전을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");console.error(e);}}
 function showPreview(canvases){const body=h("div",{class:"panel-body pdfprev"},h("p",{class:"hint",text:"이 화면에서는 파일 저장이 안 돼요. 아래 이미지를 길게 누르거나 오른쪽 클릭해서 저장하세요."}),canvases.map(cv=>h("img",{src:cv.toDataURL("image/jpeg",.85),alt:"콘티 페이지"})));
   modal("출력 미리보기",body,null);}
