@@ -1430,7 +1430,7 @@ function versionsBox(s,can){const vs=clone(vers(s));const mine=teamVer(s);const 
 function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editId=null;
   const nameIn=h("input",{type:"text",id:"mb-name",placeholder:"이름"});
   const tierSel=h("select",{id:"mb-tier",style:"width:auto"},TIERS.map(t=>h("option",{value:t,text:t})));
-  const titleSel=h("select",{id:"mb-title",style:"width:auto"},[["","없음"],["목사","목사"],["전도사","전도사"]].map(([v,t])=>h("option",{value:v,text:t})));
+  const titleSel=h("select",{id:"mb-title",style:"width:auto"},[["","없음"],...["목사","전도사","장로","권사","집사","청년"].map(x=>[x,x])].map(([v,t])=>h("option",{value:v,text:t})));
   const roleSel=h("select",{id:"mb-role",style:"width:auto",onchange:()=>{dutyIn.hidden=roleSel.value!=="담당자";}},[["","없음"],["리더","리더"],["담당자","담당자"]].map(([v,t])=>h("option",{value:v,text:t})));
   const dutyIn=h("input",{type:"text",id:"mb-duty",placeholder:"무엇 담당? (예: 악보, 음향, 회계)",style:"max-width:240px"});dutyIn.hidden=true;
   const posBox=h("div",{class:"row"});const extra=h("input",{type:"text",id:"mb-extra",placeholder:"다른 자리 (예: 바이올린)",style:"max-width:200px"});
@@ -1449,7 +1449,7 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
   const listBox=h("div",{class:"tablewrap"});
   m.append(h("div",{class:"sheet"},h("h2",{},"멤버 슬롯",h("span",{class:"sub",text:"여기 등록한 사람이 콘티 참여자 칸에서 바로 떠요"})),
     h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"mb-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"mb-tier",text:"구분"}),tierSel),
-      h("div",{class:"field"},h("label",{htmlFor:"mb-title",text:"호칭 (선택)"}),titleSel),
+      h("div",{class:"field"},h("label",{htmlFor:"mb-title",text:"직분 (선택)"}),titleSel),
       h("div",{class:"field"},h("label",{htmlFor:"mb-role",text:"팀 안 역할 (선택)"}),h("div",{class:"row",style:"gap:6px"},roleSel,dutyIn))),
     h("div",{class:"lab",style:"margin-top:12px",text:"맡는 자리 (여러 개 고를 수 있어요)"}),posBox,
     h("div",{class:"row",style:"margin-top:8px"},extra,h("span",{class:"spacer"}),cancelBtn,saveBtn)),
