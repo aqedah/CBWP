@@ -1604,7 +1604,10 @@ function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canW
       h("div",{class:"row",style:"flex-wrap:nowrap"},tIn,keyIn,(()=>{const on=favs().has(s.id);const b=h("button",{type:"button",class:"star","aria-pressed":String(on),"aria-label":"즐겨찾기",title:"즐겨찾기 (이 기기에 저장)",text:on?"★":"☆",onclick:()=>{const v=toggleFav(s.id);b.setAttribute("aria-pressed",String(v));b.textContent=v?"★":"☆";toast(v?"즐겨찾기에 넣었어요":"즐겨찾기에서 뺐어요");if(S.songF&&S.songF.f==="fav"&&renderSongs.redraw)renderSongs.redraw();}});return b;})()),
       h("div",{class:"row sbadges"},
         sp.hymn?h("span",{class:"sbadge",text:`찬송가 ${sp.hymn}장${sp.arr?` · ${sp.arr} 편곡`:""}`}):null,
-        h("span",{class:"sbadge"+(tv&&tv.pages.length?" ok":" no"),title:tv?verLabel(tv):"",text:tv&&tv.pages.length?`악보 ✓ ${verLabel(tv)}`:"악보 없음"}),
+        tv&&tv.pages.length?h("span",{class:"sbadge ok",title:verLabel(tv),text:`악보 ✓ ${verLabel(tv)}`}):h("label",{class:"sbadge no filebtn",title:can?"악보 사진이나 PDF를 골라 넣어요":"",htmlFor:`snew-${s.id}`},can?"악보 없음 · 넣기":"악보 없음",
+          can?h("input",{type:"file",id:`snew-${s.id}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
+            const pages=[];toast("악보를 올리는 중이에요…");const n=await uploadInto(pages,files,()=>{});if(!n)return;const vs=clone(vers(s));vs.push({vid:uid(6),name:`악보 ${vs.length+1}`,key:s.key||"",pages,by:S.myId||null,at:Date.now()});
+            if(await saveVersions(s,vs))toast(`악보(${n}장)를 넣었어요. 「자세히 보기」에서 편집할 수 있어요`);}}):null),
         h("button",{type:"button",class:"sbadge"+(s.lyrics?" ok":" no"),title:s.lyrics?"가사 보기 · 고치기":"가사 넣기",onclick:()=>lyricsModal({songId:s.id,title:s.title},()=>{})},s.lyrics?"가사 ✓":"가사 없음 · 넣기"),
         used?h("span",{class:"hint",text:`부른 횟수 ${used}회`}):null),
       h("div",{class:"row"},addBtn,(s.yt||[])[0]?h("a",{class:"btn sm",href:ytUrl(s.yt[0]),target:"_blank",rel:"noopener",text:"▶ 듣기"}):null))),
@@ -1783,13 +1786,14 @@ const basicRoster=()=>teamCfg().basicRoster||{};
 function basicRosterSheet(){const lead=canLead()&&!!S.db;const br=basicRoster();const posList=[...new Set([...POSITIONS,...Object.keys(br)])];
   const ins={};
   const rows=posList.map(pos=>{const names=(br[pos]||[]).map(resolveName);
-    if(lead){ins[pos]=h("input",{type:"text",id:`br-${pos}`,value:names.join(", "),placeholder:"이름 (쉼표로 여러 명)"});return h("div",{class:"pinfo-row"},h("dt",{text:pos}),h("dd",{},ins[pos]));}
+    if(lead){const slot={pos,people:names.map(n=>{const mb=S.members.find(x=>normName(x.name)===normName(n));return mb?{id:mb.id,name:mb.name,tier:mb.tier}:{id:null,name:n,tier:""};})};
+      return h("div",{class:"pinfo-row"},h("dt",{text:pos}),h("dd",{},h("span",{class:"pchips"},names.map(n=>h("span",{class:"pchip",text:n})),
+        h("button",{class:"btn sm add",text:names.length?"바꾸기":"+ 고르기",onclick:()=>openPicker(slot,async()=>{const next={...basicRoster()};const v=slot.people.map(p=>p.name);if(v.length)next[pos]=v;else delete next[pos];
+          if(await saveTeamCfg({basicRoster:next})){toast(`기본 편성 「${pos}」을(를) 저장했어요`);render();}},null)}))));}
     return names.length?h("div",{class:"pinfo-row"},h("dt",{text:pos}),h("dd",{},h("span",{class:"pchips"},names.map(n=>h("span",{class:"pchip",text:n}))))):null;}).filter(Boolean);
-  return h("div",{class:"sheet"},h("h2",{},"기본 편성",h("span",{class:"sub",text:"콘티 참여자 칸의 「기본 편성 불러오기」로 한 번에 채워져요"})),
+  return h("div",{class:"sheet"},h("h2",{},"기본 편성",h("span",{class:"sub",text:"편성표와 콘티 참여자에 미리 채워져요"})),
     rows.length?h("dl",{class:"pinfo",style:"max-width:none"},rows):h("div",{class:"empty",text:"아직 기본 편성이 없어요."}),
-    lead?h("div",{class:"row",style:"margin-top:10px"},h("span",{class:"spacer"}),h("button",{class:"btn primary",text:"기본 편성 저장",onclick:async()=>{const next={};
-      for(const[pos,el]of Object.entries(ins)){const v=el.value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean).map(resolveName);if(v.length)next[pos]=v;}
-      if(await saveTeamCfg({basicRoster:next})){toast("기본 편성을 저장했어요");render();}}})):null);}
+    lead?h("p",{class:"hint",style:"margin:8px 0 0",text:"「고르기」를 누르면 그 자리를 맡은 멤버가 위에 먼저 나와요. 고르고 「적용」하면 바로 저장돼요."}):null);}
 function fillBasicRoster(c,quiet){const br=basicRoster();if(!Object.keys(br).length)return quiet?null:toast("우리 팀 → 멤버에서 기본 편성을 먼저 정해 주세요");
   for(const[pos,names]of Object.entries(br)){let slot=c.roster.find(r=>r.pos===pos);if(!slot){slot={pos,people:[]};c.roster.push(slot);}
     slot.people=names.map(n=>{const full=resolveName(n);const mb=S.members.find(x=>normName(x.name)===normName(full));return mb?{id:mb.id,name:mb.name,tier:mb.tier}:{id:null,name:full,tier:""};});}}
