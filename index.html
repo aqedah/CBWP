@@ -415,6 +415,19 @@ header.top{border-top:4px solid var(--team,transparent)}
 @media (max-width:520px){.vrow{grid-template-columns:1fr}.vrow .vact{grid-column:1}}
 .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .mcard{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--sheet);min-width:0}
+.profile{display:flex;flex-direction:column;gap:16px}
+.phead{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.pphoto{position:relative;width:96px;height:96px}
+.pphoto .avatar.big{width:96px;height:96px;font-size:2.2rem;border-radius:50%;box-shadow:0 0 0 3px var(--sheet),0 0 0 5px var(--team,var(--accent))}
+.pcam{position:absolute;right:-4px;bottom:-4px;width:34px;height:34px;border-radius:50%;border:2px solid var(--sheet);background:var(--ink);color:var(--sheet);display:grid;place-items:center;cursor:pointer;padding:0}
+.pcam svg{width:18px;height:18px}
+.phead .pname{margin:4px 0 0;font-family:var(--font-display);font-size:1.4rem}
+.pinfo{margin:0;width:100%;max-width:560px;align-self:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.pinfo-row{display:grid;grid-template-columns:92px 1fr;align-items:center;min-height:46px}
+.pinfo-row+.pinfo-row{border-top:1px solid var(--line)}
+.pinfo dt{align-self:stretch;display:flex;align-items:center;padding:0 14px;background:var(--soft);color:var(--ink2);font-size:.84rem;font-weight:700}
+.pinfo dd{margin:0;padding:10px 14px;font-weight:600;min-width:0}
+.pchips{display:flex;flex-wrap:wrap;gap:6px}.pchip{font-size:.84rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--sheet)}
 .cropcv{width:min(300px,100%);aspect-ratio:1;touch-action:none;cursor:grab;border-radius:12px;background:#222;flex:none}
 #crop-zoom{flex:1}
 .avatar.hasphoto{background-size:cover;background-position:center;color:transparent}
@@ -1997,21 +2010,23 @@ function renderMe(m){const me=normName(myName());const today=todayStr();const ca
   const year=today.slice(0,4);const thisYear=done.filter(x=>x.c.date.startsWith(year)).length;
   const wrote=S.contis.filter(isAuthor).length;
   const row=x=>h("button",{type:"button",class:"uprow k-service",onclick:()=>viewConti(x.c)},h("span",{class:"when",text:fmtDate(x.c.date)}),h("span",{class:"chipc k-service",text:wtypeOf(x.c)}),h("span",{text:x.pos.join(" · ")}));
-  /* 1. who I am */
-  const posList=(mb&&mb.positions)||[];
-  m.append(h("div",{class:"sheet"},
-    h("div",{class:"row",style:"flex-wrap:nowrap;gap:14px"},(()=>{const has=!!photoOf(myName());
-      const fin=h("input",{type:"file",accept:"image/*",id:"me-photo",onchange:e=>{const f=e.target.files[0];e.target.value="";if(!f)return;cropModal(f,d=>savePhoto(myName(),d));}});
-      return h("div",{class:"mephoto"},avatarEl(myName(),"avatar big"),can?h("div",{class:"row",style:"gap:4px;justify-content:center"},h("label",{class:"btn sm filebtn",htmlFor:"me-photo"},has?"사진 바꾸기":"사진 넣기",fin),
-        has?h("button",{class:"btn sm ghost danger",text:"지우기",onclick:()=>savePhoto(myName(),null)}):null):null);})(),
-      h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"},
-        h("div",{class:"row",style:"gap:6px"},mb&&mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,mb&&mb.tier?h("span",{class:`tier t${mb.tier}`,text:mb.tier}):null),
-        h("h2",{style:"margin:0;font-family:var(--font-display);font-size:1.3rem",text:mb?mbName(mb):myName()}),
-        h("span",{class:"hint",text:teamName(S.team)}))),
-    h("div",{class:"lab",style:"margin-top:14px",text:"맡은 자리"}),
-    posList.length?h("div",{class:"vw-roster"},posList.map(p=>h("span",{},h("b",{text:p})))):
-      h("p",{class:"hint",text:mb?"멤버 명단에 맡은 자리가 아직 없어요. 리더에게 말해 주세요.":"멤버 명단에 내 이름이 아직 없어요. 리더에게 등록을 부탁해 주세요."}),
-));
+  /* 1. who I am: 사진 · 이름 가운데, 아래에 정보 표 */
+  const posList=(mb&&mb.positions)||[];const has=!!photoOf(myName());
+  const fin=h("input",{type:"file",accept:"image/*",id:"me-photo",hidden:true,onchange:e=>{const f=e.target.files[0];e.target.value="";if(!f)return;cropModal(f,d=>savePhoto(myName(),d));}});
+  const photoMenu=()=>{if(!has)return fin.click();const md=modal("프로필 사진",h("div",{class:"panel-body"},h("div",{style:"display:flex;flex-direction:column;gap:8px"},
+      h("button",{class:"btn primary",text:"새 사진 고르기",onclick:()=>{md.close();fin.click();}}),h("button",{class:"btn danger",text:"사진 지우기",onclick:()=>{md.close();savePhoto(myName(),null);}}))),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);};
+  const inf=(k,v)=>h("div",{class:"pinfo-row"},h("dt",{text:k}),h("dd",{},v));
+  m.append(h("div",{class:"sheet profile"},
+    h("div",{class:"phead"},
+      h("div",{class:"pphoto"},avatarEl(myName(),"avatar big"),can?h("button",{type:"button",class:"pcam","aria-label":has?"프로필 사진 바꾸기 · 지우기":"프로필 사진 넣기",title:has?"사진 바꾸기 · 지우기":"사진 넣기",onclick:photoMenu},
+        (()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<path d="M4 8h3l2-2.5h6L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.3" fill="none" stroke="currentColor" stroke-width="1.8"/>';return sv;})()):null,fin),
+      h("h2",{class:"pname",text:mb?mbName(mb):myName()}),
+      mb&&mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null),
+    h("dl",{class:"pinfo"},
+      inf("소속",teamName(S.team)),
+      inf("구분",mb&&mb.tier?mb.tier:"-"),
+      inf("맡은 자리",posList.length?h("span",{class:"pchips"},posList.map(p=>h("span",{class:"pchip",text:p}))):h("span",{class:"hint",text:mb?"아직 없어요 · 리더에게 말해 주세요":"멤버 명단에 아직 없어요 · 리더에게 등록을 부탁해 주세요"})))));
   /* 2. activity */
   m.append(h("div",{class:"sheet"},h("h2",{},"활동 이력"),
     h("div",{class:"kpis"},h("div",{class:"kpi"},h("b",{text:done.length}),h("span",{text:"지금까지 섬긴 예배"})),h("div",{class:"kpi"},h("b",{text:thisYear}),h("span",{text:`${year}년에 섬긴 예배`})),
