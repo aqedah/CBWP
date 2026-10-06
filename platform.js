@@ -47,6 +47,7 @@
     canWrite:team=>unlocked.has(team)||unlocked.has("admin"),
     isAdmin:()=>unlocked.has("admin"),
     myName:()=>ls.get(NAME,""),
+    async setName(name){name=String(name||"").trim();if(!name)return;ls.set(NAME,name);try{await init();await fs.doc(`users/${uid}`).set({name,at:Date.now()},{merge:true});}catch(e){}},
     unlock,
     lock(team){unlocked.delete(team);ls.set(LS,[...unlocked]);}
   };

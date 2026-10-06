@@ -234,6 +234,18 @@ body.fb-pad{padding-bottom:72px}
 .notices{display:flex;flex-direction:column;gap:8px}.notice{border:1px solid var(--line);border-left:4px solid var(--team,var(--accent));border-radius:8px;padding:10px 12px;background:var(--sheet)}
 .notice.pin{background:var(--accent-soft)}.notice .ntext{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.notice .nmeta{margin-top:6px;gap:8px}
 .verse.homeverse{margin:6px auto 2px}.homeverse blockquote{font-size:clamp(1.05rem,3.4vw,1.35rem)}.homeverse blockquote::before{margin-bottom:10px}.uprow.today .when{color:var(--team,var(--accent));font-weight:700}.k-hol{--kc:#d64545}
+.ticker{position:relative;overflow:hidden;border-radius:10px;background:var(--ink);color:var(--sheet);padding:10px 0;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.ticker-track{display:inline-flex;gap:48px;white-space:nowrap;padding-left:100%;animation:tick linear infinite;will-change:transform}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.tick{display:inline-flex;gap:8px;align-items:baseline;font-weight:600}.tick-n{font-weight:500;opacity:.7;font-size:.85em}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.ticker{overflow-x:auto}.ticker-track{animation:none!important;padding-left:12px}}
+.talklist{display:flex;flex-direction:column;gap:6px;margin-top:10px}.talkrow{border-bottom:1px dashed var(--line);padding-bottom:6px;flex-wrap:nowrap}
+.myserve{border:2px solid var(--team,var(--accent))}.servecard h3{margin:2px 0}.serve-pos{font-size:.95rem}.serve-pos b{color:var(--team,var(--accent))}.dday{color:var(--team,var(--accent))}
+.btn.yt{background:#e1251b;border-color:#e1251b;color:#fff;text-decoration:none}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;background:var(--soft)}.seg button{border:0;background:none;padding:6px 14px;border-radius:999px;font-weight:600;color:var(--ink2);cursor:pointer}.seg button.on{background:var(--sheet);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.posts{display:flex;flex-direction:column;gap:8px}.post{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--sheet)}.post.prayer{border-left:4px solid #8a4fc4}.post.share{border-left:4px solid #1f8a5e}
+.post .ptext{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.post .pname{font-size:.85rem}.btn.on{background:var(--accent-soft);border-color:var(--accent)}
 .duplist{margin:6px 0;padding-left:1.2em}
 .tag{font-size:.74rem;font-weight:600;border-radius:4px;padding:1px 7px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
 
@@ -420,10 +432,10 @@ function joinTitle(base,hymn,arr){base=(base||"").trim();if(!hymn)return base;re
 
 /* ---------- state ---------- */
 const S={db:null,user:null,downloads:null,myId:null,isOwner:false,canWrite:true,ready:false,dbFailed:false,team:null,teamCfgs:{},allEvents:[],events:[],
-  allMembers:[],allContis:[],members:[],songs:[],contis:[],catalogs:[],tab:"home",cur:null,curId:null,dirty:false,names:{}};
+  allMembers:[],allContis:[],posts:[],members:[],songs:[],contis:[],catalogs:[],tab:"home",cur:null,curId:null,dirty:false,names:{}};
 try{const t=localStorage.getItem(TEAM_KEY);if(TEAMS.some(x=>x.id===t))S.team=t;}catch(e){}
 if(window.CBWP&&S.team&&!window.CBWP.canWrite(S.team))S.team=null;
-function applyTeam(){S.contis=S.allContis.filter(c=>teamOf(c)===S.team);S.members=S.allMembers.filter(mb=>teamOf(mb)===S.team);S.events=S.allEvents.filter(e=>e.team===S.team);}
+function applyTeam(){S.contis=S.allContis.filter(c=>teamOf(c)===S.team);S.members=S.allMembers.filter(mb=>teamOf(mb)===S.team);const te=S.allEvents.filter(e=>e.team===S.team);S.events=te.filter(e=>!e.post);S.posts=te.filter(e=>e.post);}
 const imgCache=new Map(), imgInflight=new Map();
 
 /* ---------- helpers ---------- */
@@ -1655,7 +1667,60 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
     up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:"uprow"+(x.d===today?" today":""),onclick:()=>x.ev?eventModal(x.ev):x.c?openConti(x.c):setTab("cal")},
       h("span",{class:"when",text:x.d===today?"오늘":fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":x.k==="hol"?"공휴일":evKindName(x.k,x.ev)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):
       h("div",{class:"empty",text:"2주 안에 잡힌 일정이 없어요."}));
-  m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),svc,nbox,sch);}
+  m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),myServeSheet(),svc,nbox,boardSheet(),sch);}
+/* home: my serving, one-line board, prayer & sharing */
+const myName=()=>((window.CBWP&&window.CBWP.myName&&window.CBWP.myName())||S.meName||"").trim();
+const POSTK={talk:"한마디",prayer:"기도제목",share:"나눔"};
+async function addPost(kind,text){if(!S.db)return toast("저장소에 연결되지 않았어요");const name=myName();
+  try{await S.db.collection("events").add({team:S.team,post:kind,text,by:S.myId||null,name,prayed:[],createdAt:Date.now(),updatedAt:Date.now()});return true;}catch(e){toast("올리지 못했어요");return false;}}
+async function delPost(p){try{await S.db.doc(`events/${p.id}`).delete();toast("지웠어요");}catch(e){toast("지우지 못했어요");}}
+const postMine=p=>S.isOwner||(p.by&&p.by===S.myId);
+const agoLabel=t=>{const m=Math.round((Date.now()-(t||0))/6e4);return m<1?"방금":m<60?`${m}분 전`:m<1440?`${Math.round(m/60)}시간 전`:m<10080?`${Math.round(m/1440)}일 전`:fmtDate(ymd(new Date(t)));};
+function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"내 이름 (콘티 참여자에 넣은 이름과 같게)",value:myName(),style:"max-width:260px"});
+  return h("div",{class:"row"},inp,h("button",{class:"btn sm primary",text:"이름 저장",onclick:async()=>{const v=inp.value.trim();if(!v)return inp.focus();
+    if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
+function myServeSheet(){const me=normName(myName());const today=todayStr();
+  if(!me)return h("div",{class:"sheet myserve"},h("h2",{},"나의 섬김",h("span",{class:"sub",text:"이름을 넣으면 내가 들어간 콘티가 여기 나와요"})),nameBox());
+  const mine=S.contis.filter(c=>!c.past&&!c.noService&&c.date&&c.date>=today).map(c=>({c,pos:(c.roster||[]).filter(r=>(r.people||[]).some(p=>normName(p.name)===me)).map(r=>r.pos)}))
+    .filter(x=>x.pos.length).sort((a,b)=>a.c.date.localeCompare(b.c.date)).slice(0,3);
+  const head=h("h2",{},`${myName()} 님의 섬김`,h("button",{class:"btn sm ghost",text:"이름 바꾸기",onclick:e=>{e.currentTarget.replaceWith(nameBox());}}));
+  if(!mine.length)return h("div",{class:"sheet myserve"},head,h("div",{class:"empty",text:"다가오는 콘티에 아직 이름이 없어요."}));
+  return h("div",{class:"sheet myserve"},head,h("div",{class:"cards"},mine.map(({c,pos})=>{const ids=refIds(c);
+    return h("div",{class:"card servecard"},
+      h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),h("span",{class:"spacer"}),h("b",{class:"dday",text:ddayLabel(c.date)})),
+      h("h3",{text:c.sermonTitle?`「${c.sermonTitle}」`:wtypeOf(c)}),
+      h("div",{class:"serve-pos"},"맡은 자리: ",h("b",{text:pos.join(" · ")}),leaderOf(c)?h("span",{class:"hint",text:` · 인도 ${leaderOf(c)}`}):null),
+      songsBlock(c),
+      h("div",{class:"row"},ids.length?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`,target:"_blank",rel:"noopener",text:`▶ 레퍼런스 재생목록 (${ids.length}곡)`}):h("span",{class:"hint",text:"아직 곡에 유튜브 주소가 없어요"}),
+        c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:"유튜브 재생목록"}):null,
+        h("button",{class:"btn sm",text:"콘티 열기",onclick:()=>openConti(c)}),h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)})));})));}
+function tickerSheet(){const can=S.canWrite&&!!S.db;const talks=S.posts.filter(p=>p.post==="talk").sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,20);
+  const track=h("div",{class:"ticker-track"});const items=talks.length?talks:[{text:"오늘 한마디를 남겨 보세요 — 응원, 감사, 연습 후기 무엇이든 좋아요",name:""}];
+  const mk=()=>items.map(p=>h("span",{class:"tick"},h("span",{class:"tick-t",text:p.text}),p.name?h("span",{class:"tick-n",text:`— ${p.name}`}):null));
+  track.append(...mk());track.style.animationDuration=`${Math.max(18,items.reduce((n,p)=>n+p.text.length+(p.name||"").length,0)*0.32+items.length*2)}s`;
+  const inp=h("input",{type:"text",id:"talk-new",maxLength:60,placeholder:"한 줄 남기기 (60자까지)"});
+  const go=async()=>{const t=inp.value.trim();if(!t)return inp.focus();if(await addPost("talk",t)){inp.value="";toast("한마디를 올렸어요");}};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)go();});
+  let open=false;const all=h("div",{class:"talklist"});all.hidden=true;
+  all.append(...talks.map(p=>h("div",{class:"row talkrow"},h("span",{style:"flex:1;min-width:0;overflow-wrap:anywhere",text:p.text}),h("span",{class:"hint",text:`${p.name||""} · ${agoLabel(p.createdAt)}`}),can&&postMine(p)?h("button",{class:"btn sm ghost danger",text:"지우기",onclick:()=>delPost(p)}):null)));
+  return h("div",{class:"sheet tickersheet"},h("h2",{},"한마디",talks.length?h("button",{class:"btn sm ghost",text:"모두 보기",onclick:e=>{open=!open;all.hidden=!open;e.currentTarget.textContent=open?"접기":"모두 보기";}}):null),
+    h("div",{class:"ticker","aria-label":"팀원 한마디"},track),all,
+    can?h("div",{class:"row",style:"margin-top:10px;flex-wrap:nowrap"},inp,h("button",{class:"btn primary",text:"올리기",onclick:go})):null);}
+function boardSheet(){const can=S.canWrite&&!!S.db;if(!S.boardTab)S.boardTab="prayer";const k=S.boardTab;
+  const list=S.posts.filter(p=>p.post===k).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const ta=h("textarea",{id:"board-new",placeholder:k==="prayer"?"함께 기도할 제목을 나눠 주세요":"요즘 받은 은혜, 감사한 일, 나누고 싶은 이야기",style:"min-height:70px"});
+  const addB=h("button",{class:"btn primary",text:k==="prayer"?"기도제목 올리기":"나눔 올리기",onclick:async()=>{const t=ta.value.trim();if(!t)return ta.focus();addB.disabled=true;if(await addPost(k,t)){ta.value="";toast("올렸어요");}addB.disabled=false;}});
+  const tabs=h("div",{class:"seg",role:"tablist"},["prayer","share"].map(x=>h("button",{type:"button",role:"tab","aria-selected":String(x===k),class:x===k?"on":"",text:`${POSTK[x]} ${S.posts.filter(p=>p.post===x).length||""}`.trim(),onclick:()=>{S.boardTab=x;render();}})));
+  const card=p=>{const prayed=p.prayed||[];const me=S.myId;const did=me&&prayed.includes(me);
+    return h("div",{class:"post "+k},h("div",{class:"ptext",text:p.text}),
+      h("div",{class:"row nmeta"},h("b",{class:"pname",text:p.name||"이름 없음"}),h("span",{class:"hint",text:agoLabel(p.createdAt)}),h("span",{class:"spacer"}),
+        k==="prayer"?h("button",{class:"btn sm"+(did?" on":""),disabled:!can||!me,title:"함께 기도해요",text:`🙏 함께 기도해요${prayed.length?" "+prayed.length:""}`,onclick:async()=>{
+          const next=did?prayed.filter(x=>x!==me):[...prayed,me];try{await S.db.doc(`events/${p.id}`).update({prayed:next,updatedAt:Date.now()});}catch(e){toast("저장하지 못했어요");}}}):null,
+        can&&postMine(p)?h("button",{class:"btn sm ghost danger",text:"지우기",onclick:()=>delPost(p)}):null));};
+  return h("div",{class:"sheet"},h("h2",{},"기도제목 · 나눔"),tabs,
+    can?h("div",{class:"field",style:"margin-block:10px"},ta,h("div",{class:"row"},h("span",{class:"hint",text:myName()?`${myName()} 님 이름으로 올라가요`:"이름 없이 올라가요 (위 「나의 섬김」에서 이름을 넣을 수 있어요)"}),h("span",{class:"spacer"}),addB)):null,
+    list.length?h("div",{class:"posts"},list.slice(0,S.boardMore||10).map(card),list.length>(S.boardMore||10)?h("button",{class:"btn sm",text:"더 보기",onclick:()=>{S.boardMore=(S.boardMore||10)+10;render();}}):null):
+      h("div",{class:"empty",text:k==="prayer"?"아직 올라온 기도제목이 없어요.":"아직 올라온 나눔이 없어요."}));}
 function ddayLabel(ds){const a=parseD(todayStr()),b=parseD(ds);if(!a||!b)return "";const n=Math.round((b-a)/864e5);return n===0?"오늘":n===1?"내일":`${n}일 뒤`;}
 
 /* =========================================================
@@ -1908,7 +1973,7 @@ function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
   RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
-  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(S.tab==="cal")RR.rerender();},RR.onErr));
+  RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(S.tab==="cal"||S.tab==="home")RR.rerender();},RR.onErr));
   RR.offs.push(db.doc(`teams/${team}`).onSnapshot(d=>{S.teamCfgs=d.exists?{[team]:clone(d.data())}:{};if(S.tab!=="write")RR.rerender();},RR.onErr));}
 render();
 (async()=>{
@@ -1931,7 +1996,7 @@ render();
     if(S.team&&!window.CBWP.canWrite(S.team))S.team=null;
     S.ready=true;if(S.team){startShared();startTeam(S.team);}render();return;}
   let f1=0,f2=0,f3=0,f4=0,f5=0,f6=0;
-  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(S.tab==="cal")rerender();},onErr);
+  db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(S.tab==="cal"||S.tab==="home")rerender();},onErr);
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
   db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
