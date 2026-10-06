@@ -6,6 +6,7 @@ service cloud.firestore {
     function hasUnlock(key) { return exists(/databases/$(database)/documents/unlocks/$(request.auth.uid + '_' + key)); }
     function canTeam(team) { return signedIn() && (hasUnlock(team) || hasUnlock('admin')); }
     function canShared() { return signedIn() && (hasUnlock('any') || hasUnlock('admin')); }
+    function canLead(team) { return signedIn() && (hasUnlock(team + '_lead') || hasUnlock('admin')); }
 
     // 팀 비밀번호: 콘솔에서만 보고 고칠 수 있어요
     match /secrets/{doc} { allow read, write: if false; }
@@ -33,10 +34,11 @@ service cloud.firestore {
       allow create, update: if canTeam(request.resource.data.team);
       allow delete: if canTeam(resource.data.team);
     }
+    // 멤버 명단: 보기는 팀원 누구나, 등록·고치기·빼기는 팀 리더 비밀번호(또는 관리자)
     match /members/{id} {
       allow read: if canTeam(resource.data.team);
-      allow create, update: if canTeam(request.resource.data.team);
-      allow delete: if canTeam(resource.data.team);
+      allow create, update: if canLead(request.resource.data.team);
+      allow delete: if canLead(resource.data.team);
     }
     match /events/{id} {
       allow read: if canTeam(resource.data.team);

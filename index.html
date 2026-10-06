@@ -261,6 +261,7 @@ button.sbadge{cursor:pointer}.sbadge.ok{border-color:color-mix(in srgb,var(--ok)
 details.songmore{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}details.songmore>summary{cursor:pointer;font-size:.82rem;color:var(--ink2);font-weight:600;padding:4px 0;list-style:none}
 details.songmore>summary::before{content:"▸ ";color:var(--team,var(--accent))}details.songmore[open]>summary::before{content:"▾ "}details.songmore>summary::-webkit-details-marker{display:none}
 .songmore-in{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.ro .mcard .ma{display:none}
 .duplist{margin:6px 0;padding-left:1.2em}
 .tag{font-size:.74rem;font-weight:600;border-radius:4px;padding:1px 7px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
 
@@ -659,20 +660,21 @@ function render(){const m=$("#main");m.replaceChildren();document.body.classList
   if(!S.team){renderTeamPick(m);return;}
   ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
-function unlockModal(team,after){const isAdmin=team==="admin";
+function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lead$/.test(team);const tn=isLead?`${teamName(team.replace(/_lead$/,""))} 리더`:teamName(team);
   const nameIn=h("input",{type:"text",id:"ul-name",placeholder:"이름 (콘티 작성자로 보여요)",value:window.CBWP.myName()||""});
-  const codeIn=h("input",{type:"password",id:"ul-code",placeholder:isAdmin?"관리자 비밀번호":`${teamName(team)} 팀 비밀번호`,autocomplete:"off"});
+  const codeIn=h("input",{type:"password",id:"ul-code",placeholder:isAdmin?"관리자 비밀번호":`${tn} 비밀번호`,autocomplete:"off"});
   const msg=h("p",{class:"hint",style:"color:var(--danger)"});
-  const go=async()=>{const name=nameIn.value.trim();if(!isAdmin&&!name){nameIn.focus();msg.textContent="이름을 써 주세요";return;}
+  const go=async()=>{const name=nameIn.value.trim();if(!isAdmin&&!isLead&&!name){nameIn.focus();msg.textContent="이름을 써 주세요";return;}
     btn.disabled=true;msg.textContent="";try{await window.CBWP.unlock(team,codeIn.value,name);md.close();
-      if(isAdmin){S.isOwner=true;}S.canWrite=!!S.team&&window.CBWP.canWrite(S.team);if(after)return after();render();toast(isAdmin?"관리자로 들어왔어요. 모든 콘티를 고칠 수 있어요":`이제 ${teamName(team)} 팀 콘티를 쓸 수 있어요`,3200);}
+      if(isAdmin){S.isOwner=true;}S.canWrite=!!S.team&&window.CBWP.canWrite(S.team);if(after)return after();render();toast(isAdmin?"관리자로 들어왔어요. 모든 콘티를 고칠 수 있어요":isLead?`${tn}로 들어왔어요. 멤버를 등록하고 고칠 수 있어요`:`이제 ${teamName(team)} 팀 콘티를 쓸 수 있어요`,3200);}
     catch(e){btn.disabled=false;msg.textContent=e.message==="wrong"?"비밀번호가 맞지 않아요":"확인하지 못했어요. 인터넷 연결을 확인해 주세요";codeIn.select();}};
   codeIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)go();});
   const btn=h("button",{class:"btn primary",text:"확인",onclick:go});
-  const md=modal(isAdmin?"관리자 비밀번호":`${teamName(team)} 팀 비밀번호`,h("div",{class:"panel-body"},
-    h("p",{class:"hint",text:isAdmin?"관리자는 모든 팀의 콘티를 고치고, 저장된 자료를 옮길 수 있어요.":`${teamName(team)} 팀 멤버만 들어갈 수 있어요. 비밀번호는 인도자나 목사님께 물어보세요. 한 번 넣으면 이 기기에서는 다시 묻지 않아요.`}),
-    isAdmin?null:h("div",{class:"field"},h("label",{htmlFor:"ul-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"ul-code",text:"비밀번호"}),codeIn),msg),
-    [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),btn]);setTimeout(()=>(isAdmin||nameIn.value?codeIn:nameIn).focus(),0);}
+  const md=modal(isAdmin?"관리자 비밀번호":`${tn} 비밀번호`,h("div",{class:"panel-body"},
+    h("p",{class:"hint",text:isAdmin?"관리자는 모든 팀의 콘티를 고치고, 저장된 자료를 옮길 수 있어요.":isLead?`${tn} 비밀번호를 넣으면 이 기기에서 ${teamName(team.replace(/_lead$/,""))} 팀 멤버를 등록하고 고칠 수 있어요.`:`${teamName(team)} 팀 멤버만 들어갈 수 있어요. 비밀번호는 인도자나 목사님께 물어보세요. 한 번 넣으면 이 기기에서는 다시 묻지 않아요.`}),
+    isAdmin||isLead?null:h("div",{class:"field"},h("label",{htmlFor:"ul-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"ul-code",text:"비밀번호"}),codeIn),msg),
+    [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),btn]);setTimeout(()=>(isAdmin||isLead||nameIn.value?codeIn:nameIn).focus(),0);}
+const canLead=()=>window.CBWP?(window.CBWP.isAdmin()||window.CBWP.canWrite(`${S.team}_lead`)&&!!S.team):(S.isOwner||S.canWrite);
 function statusBanner(){
   if(!S.ready)return h("div",{class:"banner",text:"팀 저장소에 연결하는 중이에요…"});
   if(S.dbFailed)return h("div",{class:"banner warn"},h("b",{text:"팀 저장소에 연결되지 않았어요. "}),window.CBWP?"인터넷 연결을 확인하고 새로고침해 주세요. 그동안 쓴 내용은 이 기기에만 남아요.":"이 화면에서 쓴 내용은 이 기기에만 임시로 남고 팀원에게 보이지 않아요. claude.ai에 로그인한 상태로 열어 주세요.");
@@ -1475,7 +1477,7 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
   const roleSel=h("select",{id:"mb-role",style:"width:auto",onchange:()=>{dutyIn.hidden=roleSel.value!=="직접입력";if(!dutyIn.hidden)dutyIn.focus();}},[["","없음"],...ROLES.map(x=>[x,x]),["직접입력","직접입력"]].map(([v,t])=>h("option",{value:v,text:t})));
   const dutyIn=h("input",{type:"text",id:"mb-duty",placeholder:"역할 이름 (예: 악보 담당, 음향)",style:"max-width:240px"});dutyIn.hidden=true;
   const posBox=h("div",{class:"row"});const extra=h("input",{type:"text",id:"mb-extra",placeholder:"다른 자리 (예: 바이올린)",style:"max-width:200px"});
-  const saveBtn=h("button",{class:"btn primary",disabled:!S.canWrite||!S.db,text:"멤버 등록"});const cancelBtn=h("button",{class:"btn",text:"취소"});cancelBtn.hidden=true;
+  const saveBtn=h("button",{class:"btn primary",disabled:!canLead()||!S.db,text:"멤버 등록"});const cancelBtn=h("button",{class:"btn",text:"취소"});cancelBtn.hidden=true;
   const allPos=()=>[...new Set([...POSITIONS,...S.members.flatMap(mb=>mb.positions||[])])];
   function drawPos(){posBox.replaceChildren(...[...new Set([...allPos(),...f.positions])].map(p=>h("button",{type:"button",class:"lbtn","aria-pressed":String(f.positions.includes(p)),text:p,onclick:()=>{f.positions=f.positions.includes(p)?f.positions.filter(x=>x!==p):[...f.positions,p];drawPos();}})));}
   function reset(){editId=null;f.name="";f.tier="정규";f.positions=[];nameIn.value="";tierSel.value="정규";titleSel.value="";roleSel.value="";dutyIn.value="";dutyIn.hidden=true;saveBtn.textContent="멤버 등록";cancelBtn.hidden=true;drawPos();}
@@ -1488,13 +1490,16 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
     catch(e){toast("저장하지 못했어요");}};
   cancelBtn.onclick=reset;
   const listBox=h("div",{class:"tablewrap"});
-  m.append(h("div",{class:"sheet"},h("h2",{},"멤버 슬롯",h("span",{class:"sub",text:"여기 등록한 사람이 콘티 참여자 칸에서 바로 떠요"})),
+  const lead=canLead();
+  if(!lead)listBox.classList.add("ro");
+  if(!lead)m.append(h("div",{class:"banner"},h("b",{text:"멤버 등록과 고치기는 팀 리더나 관리자만 할 수 있어요. "}),window.CBWP?h("button",{class:"btn sm primary",text:"리더 비밀번호 넣기",onclick:()=>unlockModal(`${S.team}_lead`)}):null));
+  m.append(lead?h("div",{class:"sheet"},h("h2",{},"멤버 슬롯",h("span",{class:"sub",text:"여기 등록한 사람이 콘티 참여자 칸에서 바로 떠요"})),
     h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"mb-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"mb-tier",text:"구분"}),tierSel),
       h("div",{class:"field"},h("label",{htmlFor:"mb-title",text:"직분 (선택)"}),titleSel),
       h("div",{class:"field"},h("label",{htmlFor:"mb-role",text:"역할 (선택)"}),h("div",{class:"row",style:"gap:6px"},roleSel,dutyIn))),
     h("div",{class:"lab",style:"margin-top:12px",text:"맡는 자리 (여러 개 고를 수 있어요)"}),posBox,
-    h("div",{class:"row",style:"margin-top:8px"},extra,h("span",{class:"spacer"}),cancelBtn,saveBtn)),
-    h("div",{class:"sheet"},h("h2",{},"멤버 명단",h("span",{class:"sub",text:`${teamName(S.team)} · ${S.members.length}명`})),listBox));
+    h("div",{class:"row",style:"margin-top:8px"},extra,h("span",{class:"spacer"}),cancelBtn,saveBtn)):"");
+  m.append(h("div",{class:"sheet"},h("h2",{},"멤버 명단",h("span",{class:"sub",text:`${teamName(S.team)} · ${S.members.length}명`})),listBox));
   drawPos();
   function draw(){listBox.replaceChildren();
     if(!S.members.length){listBox.append(h("div",{class:"empty",text:"아직 멤버가 없어요. 위에서 첫 팀원을 등록하세요."}));return;}
@@ -1502,14 +1507,14 @@ function renderMembers(m){const f={name:"",tier:"정규",positions:[]};let editI
     for(const g of Object.values(groups)){if(g.filter(mb=>!mb.distinct).length<2)continue;const first=g[0];
       listBox.append(h("div",{class:"banner warn",style:"margin-bottom:10px"},h("b",{text:`같은 이름이 ${g.length}명 있어요: ${first.name} `}),
         `(${g.map(mb=>(mb.positions||[]).join("·")||"자리 없음").join(" / ")}) `,
-        h("button",{class:"btn sm",disabled:!S.canWrite,text:"통합할까요?",onclick:()=>{const rest=g.slice(1);
+        h("button",{class:"btn sm",disabled:!canLead(),text:"통합할까요?",onclick:()=>{const rest=g.slice(1);
           askSameName(first.name,[first],{name:first.name,tier:rest[0].tier,positions:[...new Set(rest.flatMap(x=>x.positions||[]))]},null,()=>{},rest);}})));}
     const rk=mb=>mb.role==="리더"?0:mb.role?1+(ROLES.indexOf(mb.role)<0?ROLES.length:ROLES.indexOf(mb.role))/10:9;const arr=S.members.slice().sort((a,b)=>rk(a)-rk(b)||TIERS.indexOf(a.tier)-TIERS.indexOf(b.tier)||a.name.localeCompare(b.name,"ko"));
     const lead=S.contis.reduce((o,c)=>{for(const r of c.roster||[])for(const p of r.people||[])if(p.id)o[p.id]=(o[p.id]||0)+1;return o;},{});
-    listBox.append(h("div",{class:"mcards"},arr.map(mb=>{let armed=false;const del=h("button",{class:"btn sm danger",disabled:!S.canWrite,text:"빼기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말?";setTimeout(()=>{armed=false;del.textContent="빼기";},3000);return;}try{await S.db.doc(`members/${mb.id}`).delete();toast("명단에서 뺐어요");}catch(e){toast("빼지 못했어요");}}});
+    listBox.append(h("div",{class:"mcards"},arr.map(mb=>{let armed=false;const del=h("button",{class:"btn sm danger",disabled:!canLead(),text:"빼기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말?";setTimeout(()=>{armed=false;del.textContent="빼기";},3000);return;}try{await S.db.doc(`members/${mb.id}`).delete();toast("명단에서 뺐어요");}catch(e){toast("빼지 못했어요");}}});
         return h("div",{class:"mcard"+(mb.role==="리더"?" lead":"")},h("span",{class:"avatar","aria-hidden":"true",text:[...mb.name][0]||"?"}),
           h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",""].filter(Boolean).join("  ·  ")})),
-          h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!S.canWrite,text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=mb.tier;titleSel.value=mb.title||"";roleSel.value=mb.role==="담당자"?"직접입력":(mb.role||"");dutyIn.value=mb.duty||"";dutyIn.hidden=roleSel.value!=="직접입력";f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));})));}
+          h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!canLead(),text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=mb.tier;titleSel.value=mb.title||"";roleSel.value=mb.role==="담당자"?"직접입력":(mb.role||"");dutyIn.value=mb.duty||"";dutyIn.hidden=roleSel.value!=="직접입력";f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));})));}
   draw();renderMembers.redraw=draw;}
 
 const bdayLabel=b=>{const[m,d]=(b||"").split("-").map(Number);return m&&d?`${m}.${d}`:"";};
@@ -1732,7 +1737,7 @@ function myServeSheet(){const me=normName(myName());const today=todayStr();
   if(!me)return h("div",{class:"sheet myserve"},h("h2",{},"나의 섬김",h("span",{class:"sub",text:"이름을 넣으면 내가 들어간 콘티가 여기 나와요"})),nameBox());
   const mine=S.contis.filter(c=>!c.past&&!c.noService&&c.date&&c.date>=today).map(c=>({c,pos:(c.roster||[]).filter(r=>(r.people||[]).some(p=>normName(p.name)===me)).map(r=>r.pos)}))
     .filter(x=>x.pos.length).sort((a,b)=>a.c.date.localeCompare(b.c.date)).slice(0,3);
-  const head=h("h2",{},`${myName()} 님의 섬김`,h("button",{class:"btn sm ghost",text:"이름 바꾸기",onclick:e=>{e.currentTarget.replaceWith(nameBox());}}));
+  const head=h("h2",{text:`${myName()} 님의 섬김`});
   if(!mine.length)return h("div",{class:"sheet myserve"},head,h("div",{class:"empty",text:"다가오는 콘티에 아직 이름이 없어요."}));
   return h("div",{class:"sheet myserve"},head,h("div",{class:"cards"},mine.map(({c,pos})=>{const ids=refIds(c);
     return h("div",{class:"card servecard"},
