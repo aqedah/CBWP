@@ -50,14 +50,18 @@ button,input,select,textarea{font:inherit;color:inherit}
 /* header */
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--sheet);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:12px 6px;position:relative;padding-right:170px}
-.brand .links{position:absolute;right:0;top:12px}
-.brand h1{font-family:var(--font-display);font-size:1.45rem;margin:0;letter-spacing:-.01em;display:flex;align-items:baseline;gap:10px}
-.brand h1 small{font-family:var(--font-body);font-size:.78rem;color:var(--muted);font-weight:500}
+.brand .links{position:absolute;right:0;top:12px;height:42px;display:flex;align-items:center}
+.brand h1{font-family:var(--font-display);font-size:1.45rem;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;min-height:42px}
+.brand h1 small{font-family:var(--font-body);font-size:.78rem;color:var(--muted);font-weight:500;display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.homelink{display:inline-flex;align-items:center;gap:10px}.brandlogo{height:42px;width:auto;flex:none;display:block}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .brandlogo,:root:not([data-theme="light"]) .bigLogo{filter:invert(1) brightness(1.6)}}:root[data-theme="dark"] .brandlogo,:root[data-theme="dark"] .bigLogo{filter:invert(1) brightness(1.6)}
+.bigLogo{display:block;height:110px;width:auto;margin:18px auto 0}
 .links{display:flex;gap:8px;flex-wrap:wrap}
 .links a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:.85rem;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;background:var(--soft)}
+.links a{height:34px;box-sizing:border-box}
 .links a:hover{border-color:var(--accent);color:var(--ink)}
 .links svg{width:16px;height:16px;flex:none}
-@media (max-width:700px){.brand{padding-right:52px}.links a{padding:8px;border-radius:999px}.links a .ytlabel{display:none}.links svg{width:20px;height:20px}}
+@media (max-width:700px){.brand{padding-right:52px}.brandlogo{height:34px}.brand h1{font-size:1.25rem}.links a{padding:8px;border-radius:999px}.links a .ytlabel{display:none}.links svg{width:20px;height:20px}}
 nav.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-block:4px 10px}
 nav.tabs button{--tc:var(--accent);border:1px solid color-mix(in srgb,var(--tc) 30%,transparent);background:color-mix(in srgb,var(--tc) 10%,var(--sheet));padding:7px 14px;border-radius:999px;font-weight:700;color:color-mix(in srgb,var(--tc) 80%,var(--ink));cursor:pointer;white-space:nowrap;flex:none}
 nav.tabs button:hover{background:color-mix(in srgb,var(--tc) 18%,var(--sheet))}
@@ -248,6 +252,9 @@ body.fb-pad{padding-bottom:72px}
 .post .ptext{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.post .pname{font-size:.85rem}.btn.on{background:var(--accent-soft);border-color:var(--accent)}
 .rolebadge{font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap}.rolebadge.lead{background:var(--team,var(--accent));color:#fff}.rolebadge.duty{background:var(--accent-soft);color:var(--ink);border:1px solid var(--line)}
 .mcard.lead{border-color:var(--team,var(--accent));box-shadow:0 0 0 1px var(--team,var(--accent)) inset}
+.pptprev{flex:none;container-type:inline-size;width:100%;max-width:560px;margin:0 auto;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:5% 6%;box-sizing:border-box;overflow:hidden}
+.pptprev .pp-t{white-space:pre-line;text-align:center;line-height:1.35}
+.btn.hasly{border-color:var(--ok);color:var(--ok)}
 .duplist{margin:6px 0;padding-left:1.2em}
 .tag{font-size:.74rem;font-weight:600;border-radius:4px;padding:1px 7px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
 
@@ -339,10 +346,10 @@ footer.foot a{color:var(--ink2)}
 .teambtn b{font-family:var(--font-display);font-size:1.5rem;color:var(--ink)}
 .teambtn small{font-size:.7rem;font-weight:600;letter-spacing:.08em;color:var(--muted)}
 .teambtn>span:last-child{font-size:.82rem;color:var(--ink2);margin-top:6px}
-.teamchip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:.8rem;font-weight:600;color:#fff;background:var(--team,var(--accent));border-radius:999px;padding:2px 10px}
+.teamchip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:.8rem;font-weight:600;color:#fff;background:var(--team,var(--accent));border-radius:999px;padding:0 12px;height:28px;line-height:1;box-sizing:border-box}
 .teamchip button{color:#fff!important;opacity:.85}
 .homelink{color:inherit;text-decoration:none}.homelink:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
-.lockchip{font-family:var(--font-body);font-size:.74rem;font-weight:600;border:1px solid var(--line);background:var(--soft);color:var(--ink2);border-radius:999px;padding:2px 10px;cursor:pointer}
+.lockchip{display:inline-flex;align-items:center;height:28px;line-height:1;box-sizing:border-box;font-family:var(--font-body);font-size:.76rem;font-weight:600;border:1px solid var(--line);background:var(--soft);color:var(--ink2);border-radius:999px;padding:0 12px;cursor:pointer}
 .lockchip.on{cursor:default;color:var(--ok);border-color:currentColor;background:transparent}
 header.top{border-top:4px solid var(--team,transparent)}
 .secno{display:inline-grid;place-items:center;min-width:26px;height:22px;padding:0 6px;border-radius:6px;background:var(--team,var(--accent));color:#fff;font-family:var(--font-body);font-size:.72rem;font-weight:700;margin-right:8px;font-variant-numeric:tabular-nums;vertical-align:middle}
@@ -366,7 +373,7 @@ header.top{border-top:4px solid var(--team,transparent)}
 .mcard .mi small{color:var(--muted);overflow-wrap:anywhere}
 .mcard .ma{display:flex;flex-direction:column;gap:4px}
 .songthumb{width:54px;height:70px;flex:none;border-radius:6px;border:1px solid var(--line);background:#fff center/cover no-repeat;display:grid;place-items:center;color:var(--muted);font-size:1.2rem}
-.teamchip button{border:0;background:none;color:var(--ink2);font-size:.76rem;cursor:pointer;text-decoration:underline;padding:0}
+.teamchip button{border:0;background:none;color:var(--ink2);font-size:.76rem;cursor:pointer;text-decoration:underline;padding:0;line-height:1;font-family:inherit}
 .brand h1{flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -377,7 +384,7 @@ header.top{border-top:4px solid var(--team,transparent)}
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <h1><a href="#" id="homeLink" class="homelink" title="처음 화면 (팀 고르기)">Central Bible Worship Planner</a> <small id="teamName"></small></h1>
+      <h1><a href="#" id="homeLink" class="homelink" title="처음 화면 (팀 고르기)"><img class="brandlogo" alt="중앙성서교회" src="data:image/png;base64,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"><span>Central Bible Worship Planner</span></a> <small id="teamName"></small></h1>
       <div class="links" id="topLinks"></div>
     </div>
     <nav class="tabs" role="tablist" id="tabsNav">
@@ -616,7 +623,7 @@ function pickTeam(id){if(window.CBWP&&!window.CBWP.canWrite(id)){unlockModal(id,
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab==="home")));render();window.scrollTo({top:0});}
 function switchTeam(){saveDraft();S.team=null;try{localStorage.removeItem(TEAM_KEY);}catch(e){}render();window.scrollTo({top:0});}
 const VERSE=["호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야","시편 150:6"];
-function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:window.CBWP?"팀 비밀번호를 넣으면 그 팀의 콘티 · 멤버 · 결산이 열려요.":"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
+function renderTeamPick(m){m.append(h("img",{class:"bigLogo",alt:"중앙성서교회 로고",src:$(".brandlogo").src}));m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:window.CBWP?"팀 비밀번호를 넣으면 그 팀의 콘티 · 멤버 · 결산이 열려요.":"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
   h("div",{class:"teampick"},TEAMS.map(t=>{const n=S.allContis.filter(c=>teamOf(c)===t.id).length;
     const i=TEAMS.indexOf(t)+1;
     return h("button",{type:"button",class:"teambtn",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:String(i).padStart(2,"0")}),
@@ -732,7 +739,9 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   m.append(fs);
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"출력"}),h("span",{class:"sub",text:"다 썼으면 PDF로 뽑아 나눠요"})),
     h("div",{class:"row"},h("button",{class:"btn",onclick:()=>exportPdf(S.cur),text:"PDF 출력"}),
-      h("button",{class:"btn",onclick:()=>exportCompact(S.cur),title:"모든 악보를 A3 한 장에 모아요",text:"압축버전 (A3)"}))));
+      h("button",{class:"btn",onclick:()=>exportCompact(S.cur),title:"모든 악보를 A3 가로 한두 장에 모아요",text:"압축버전 (A3)"}),
+      h("button",{class:"btn",onclick:()=>exportLyricsPpt(S.cur),title:"곡마다 넣어 둔 가사로 팀 템플릿 PPT를 만들어요",text:"가사 PPT"}),
+      h("button",{class:"btn ghost",onclick:pptTemplateModal,text:"PPT 템플릿"}))));
   [...fs.querySelectorAll(".sheet > h2")].forEach((h2,i)=>{const first=h2.firstChild;const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updateStatus();updUndo();}
 /* bring songs (and optionally the roster) from an earlier conti into the one being written */
@@ -885,6 +894,7 @@ function renderSetlist(key){const box=$(`#list-${key}`);if(!box)return;box.repla
           h("button",{class:"btn sm primary",text:"악보 선택",onclick:()=>openScorePicker(it,song,key)}),
           h("button",{class:"btn sm",text:"악보 편집",disabled:!it.pages.length,title:it.pages.length?"고른 악보에 구간 · 형광펜 표시":"먼저 「악보 선택」에서 악보를 고르세요",
             onclick:()=>openScoreEditor({title:`${it.title}${cur?` · ${cur.name||""}`:""}`,pages:it.pages,songId:it.songId,verId:cur?it.verId:"",onDone:(pages,vid)=>{it.pages=pages;if(vid)it.verId=vid;markDirty();renderSetlist(key);}})}),
+          h("button",{class:"btn sm"+(lyricsOf(it).trim()?" hasly":""),text:lyricsOf(it).trim()?"가사 ✓":"가사",title:"PPT에 들어갈 가사",onclick:()=>lyricsModal(it,()=>renderSetlist(key))}),
           h("span",{class:"spacer"}),
           h("button",{class:"btn sm ghost","aria-label":"위로",text:"↑",disabled:i===0,onclick:()=>mv(-1)}),
           h("button",{class:"btn sm ghost","aria-label":"아래로",text:"↓",disabled:i===arr.length-1,onclick:()=>mv(1)}),
@@ -1315,7 +1325,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
       c.past||c.note?noteRow(c,c.date,mine):null,
       h("div",{class:"row"},h("button",{class:"btn sm primary",text:mine?"열어서 고치기":"열어 보기",onclick:()=>openConti(c)}),
         c.past&&mine?h("button",{class:"btn sm",text:"빠르게 고치기",onclick:()=>{S.pastOpen=true;editPast(c);}}):null,
-        h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),
+        h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn sm",text:"가사 PPT",onclick:()=>exportLyricsPpt(c)}),
         S.canWrite?h("button",{class:"btn sm",text:"복제",onclick:()=>duplicateConti(c)}):null,h("span",{class:"spacer"}),mine?delBtn(c):null));};
   function draw(){box.replaceChildren();let placed=false;const qq=q.trim();
     const match=c=>{if(!qq)return true;const hay=[c.date,wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),c.note,...allItems(c).map(i=>i.title)].join(" ");return hay.includes(qq)||matchRank(hay,qq)>-1;};
@@ -1414,7 +1424,7 @@ function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canW
     h("div",{class:"row"},ytIn,(s.yt||[])[0]?h("a",{class:"btn sm",href:ytUrl(s.yt[0]),target:"_blank",rel:"noopener",text:"듣기"}):null),
     h("div",{class:"row"},ccIn,auIn,s.ccli?h("a",{class:"btn sm",href:ssSong(s.ccli),target:"_blank",rel:"noopener",text:"CCLI 곡 보기"}):h("a",{class:"btn sm",href:ssSearch(s.title),target:"_blank",rel:"noopener",text:"SongSelect에서 찾기"})),
     versionsBox(s,can),
-    h("div",{class:"row"},h("span",{class:"hint",text:`부른 횟수 ${used}회 · 악보 ${vers(s).length}가지`}),h("span",{class:"spacer"}),
+    h("div",{class:"row"},h("span",{class:"hint",text:`부른 횟수 ${used}회 · 악보 ${vers(s).length}가지${s.lyrics?" · 가사 있음":""}`}),h("button",{class:"btn sm"+(s.lyrics?" hasly":""),text:s.lyrics?"가사 ✓":"가사 넣기",onclick:()=>lyricsModal({songId:s.id,title:s.title},()=>{})}),h("span",{class:"spacer"}),
       h("button",{class:"btn sm primary",disabled:!can,text:"정보 저장",onclick:save}),del));}
 /* several score versions per song (key / arrangement); each team picks its own default */
 function versionsBox(s,can){const vs=clone(vers(s));const mine=teamVer(s);const st=h("span",{class:"hint"});
@@ -1929,6 +1939,102 @@ async function exportPdf(c){if(!c)return;
       catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else{toast("이 화면에서는 파일 저장이 막혀 있어요. 미리보기를 보여드릴게요.");showPreview(canvases);}}}
     else{md.close();showPreview(canvases);}
   }catch(e){md.close();toast("PDF를 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");console.error(e);}}
+/* =========================================================
+   LYRICS → PPT  (가사는 곡에 한 번 넣어 두고, 팀 템플릿으로 슬라이드를 만들어요)
+   ========================================================= */
+const PPTX_URL="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js";
+const JSZIP_URL="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+const PPT_FONTS=["맑은 고딕","나눔고딕","나눔스퀘어","나눔명조","본고딕","Noto Sans KR","굴림","바탕"];
+const PPT_DEF={bgId:"",bgColor:"#000000",color:"#FFFFFF",font:"맑은 고딕",size:40,lines:2,valign:"middle",titleSlide:true,ratio:"16:9",bold:true,shadow:true};
+const pptCfg=()=>({...PPT_DEF,...(teamCfg().ppt||{})});
+const SEC_LABEL=/^\s*(\[.*\]|\(.*\)|\d+\s*절|후렴|브릿지|간주|bridge|chorus|verse\s*\d*|pre-?chorus|tag|ending|intro|outro)\s*:?\s*$/i;
+function lyricSlides(text,per){const out=[];
+  for(const para of String(text||"").replace(/\r/g,"").split(/\n\s*\n/)){const lines=para.split("\n").map(l=>l.trim()).filter(l=>l&&!SEC_LABEL.test(l));
+    for(let i=0;i<lines.length;i+=per)out.push(lines.slice(i,i+per));}
+  return out;}
+const songOf=it=>S.songs.find(s=>s.id===it.songId);
+const lyricsOf=it=>{const s=songOf(it);return (s&&s.lyrics)||it.lyrics||"";};
+function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
+  const ta=h("textarea",{id:"ly-text",value:lyricsOf(it),placeholder:"가사를 붙여 넣으세요.\n\n빈 줄을 두면 거기서 다음 장으로 넘어가요.\n[1절] [후렴] 같은 표시 줄은 슬라이드에 나오지 않아요.",style:"min-height:320px;font-size:1rem;line-height:1.6"});
+  const cnt=h("span",{class:"hint"});const upd=()=>{cnt.textContent=`슬라이드 ${lyricSlides(ta.value,per).length}장 (한 장에 ${per}줄까지)`;};ta.addEventListener("input",upd);upd();
+  const can=S.canWrite&&!!S.db;
+  const md=modal(`가사 · ${it.title}`,h("div",{class:"panel-body"},
+    h("p",{class:"hint",text:song&&!song.id.startsWith("local-")?"곡에 저장돼서 다음에 이 곡을 넣을 때도 그대로 쓰여요. 교회 전체가 함께 써요.":"이 콘티에만 저장돼요."}),ta,cnt),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can||!song?h("button",{class:"btn primary",text:"가사 저장",onclick:async()=>{const v=ta.value.replace(/\r/g,"").trim();
+      if(song&&!song.id.startsWith("local-")&&S.db){try{await S.db.doc(`songs/${song.id}`).update({lyrics:v,updatedAt:Date.now()});song.lyrics=v;}catch(e){return toast("저장하지 못했어요");}}
+      else{it.lyrics=v;if(typeof markDirty==="function"&&S.cur&&allItems(S.cur).includes(it))markDirty();}
+      md.close();toast("가사를 저장했어요");onSaved&&onSaved();}}):null]);
+  setTimeout(()=>ta.focus(),50);}
+async function bgDataUrl(cfg){if(!cfg.bgId)return null;const u=await getImg(cfg.bgId);return u||null;}
+async function exportLyricsPpt(c){if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");
+  const missing=items.filter(it=>!lyricsOf(it).trim());
+  const go=async()=>{const md=modal("가사 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"ppt-st",text:"준비하고 있어요…"})),null);const st=$("#ppt-st",md.el);
+    try{await loadScript(PPTX_URL);const cfg=pptCfg();const bg=await bgDataUrl(cfg);
+      const pp=new window.PptxGenJS();pp.layout=cfg.ratio==="4:3"?"LAYOUT_4x3":"LAYOUT_16x9";const W=10,H=cfg.ratio==="4:3"?7.5:5.625;
+      pp.title=`${fmtDate(c.date)} ${wtypeOf(c)}`;
+      const back=bg?{data:bg}:{color:cfg.bgColor.replace("#","")};const col=cfg.color.replace("#","");
+      const txt=(sl,t,o)=>sl.addText(t,{x:.4,w:W-.8,fontFace:cfg.font,color:col,bold:cfg.bold,align:"center",fit:"shrink",
+        shadow:cfg.shadow?{type:"outer",color:"000000",blur:3,offset:2,angle:45,opacity:.6}:undefined,...o});
+      let n=0;
+      for(const it of items){const s=pp.addSlide();s.background=back;n++;
+        if(cfg.titleSlide){txt(s,it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)"),{y:H*.35,h:H*.3,fontSize:Math.round(cfg.size*1.15),valign:"middle"});}
+        const slides=lyricSlides(lyricsOf(it),cfg.lines);
+        if(!cfg.titleSlide&&!slides.length)txt(s,it.title,{y:H*.35,h:H*.3,fontSize:cfg.size,valign:"middle"});
+        slides.forEach((lines,i)=>{const sl=(i===0&&!cfg.titleSlide)?s:pp.addSlide();if(sl!==s){sl.background=back;n++;}
+          const bottom=cfg.valign==="bottom";txt(sl,lines.join("\n"),{y:bottom?H*.62:H*.12,h:bottom?H*.32:H*.76,fontSize:cfg.size,valign:bottom?"bottom":"middle",lineSpacingMultiple:1.15});});
+        st.textContent=`슬라이드 ${n}장 만드는 중…`;}
+      const blob=await pp.write({outputType:"blob"});const fname=`${teamName(teamOf(c))}_가사_${c.date||"날짜미정"}.pptx`;md.close();
+      if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});toast(`가사 PPT를 저장했어요 (${n}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
+      else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.append(a);a.click();a.remove();}
+    }catch(e){md.close();console.error(e);toast("PPT를 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");}};
+  if(!missing.length)return go();
+  askConfirm("가사가 없는 곡이 있어요",[h("p",{text:"아래 곡은 가사가 없어서 제목 장만 들어가요. 곡 옆 「가사」 단추로 넣을 수 있어요."}),h("ul",{class:"duplist"},missing.map(it=>h("li",{text:it.title}))),],"그대로 만들기",go);}
+/* team template: background (image or taken from a .pptx), colors, font, size, lines per slide */
+function pptTemplateModal(){const can=S.canWrite&&!!S.db;const cfg=pptCfg();
+  const prev=h("div",{class:"pptprev"});const ttl=h("div",{class:"pp-t"});
+  const draw=async()=>{prev.style.aspectRatio=cfg.ratio==="4:3"?"4/3":"16/9";prev.style.background=cfg.bgColor;prev.style.backgroundSize="cover";prev.style.backgroundPosition="center";
+    if(cfg.bgId){const u=await getImg(cfg.bgId);if(u)prev.style.backgroundImage=`url("${u}")`;}else prev.style.backgroundImage="none";
+    prev.style.justifyContent=cfg.valign==="bottom"?"flex-end":"center";
+    ttl.style.color=cfg.color;ttl.style.fontFamily=`"${cfg.font}",sans-serif`;ttl.style.fontWeight=cfg.bold?"700":"400";ttl.style.fontSize=`${(cfg.size*(cfg.ratio==="4:3"?.139:.139)).toFixed(2)}cqw`;ttl.style.textShadow=cfg.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none";
+    ttl.textContent=["주 품에 품으소서","능력의 팔로 덮으소서","주의 이름을 높이며","그 사랑 노래하네"].slice(0,cfg.lines).join("\n");};
+  prev.append(ttl);
+  const fld=(id,l,el)=>h("div",{class:"field"},h("label",{htmlFor:id,text:l}),el);
+  const inp=(id,type,key,extra={})=>h("input",{type,id,value:cfg[key],...extra,oninput:e=>{cfg[key]=type==="number"?+e.target.value:e.target.value;draw();}});
+  const sel=(id,key,opts)=>h("select",{id,onchange:e=>{const v=e.target.value;cfg[key]=v==="true"?true:v==="false"?false:/^\d+$/.test(v)?+v:v;draw();}},opts.map(([v,t])=>h("option",{value:String(v),text:t,selected:String(cfg[key])===String(v)})));
+  const fontIn=h("input",{type:"text",id:"pp-font",value:cfg.font,list:"pp-fonts",oninput:e=>{cfg.font=e.target.value;draw();}});
+  const st=h("span",{class:"hint"});
+  const useImage=async file=>{st.textContent="배경을 올리는 중…";try{const url=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});
+      const im=await loadImg(url);const jp=toJpeg(im,im.naturalWidth,im.naturalHeight);cfg.bgId=await storeImage(jp);st.textContent="배경을 넣었어요";draw();}catch(e){st.textContent="이미지를 읽지 못했어요";}};
+  const usePptx=async file=>{st.textContent="PPT에서 배경을 찾는 중…";try{await loadScript(JSZIP_URL);const zip=await window.JSZip.loadAsync(await file.arrayBuffer());
+      const media=Object.values(zip.files).filter(f=>/^ppt\/media\/.+\.(png|jpe?g)$/i.test(f.name));
+      let best=null;for(const f of media){const b=await f.async("uint8array");if(!best||b.length>best.b.length)best={f,b};}
+      const xml=await (zip.file("ppt/slides/slide1.xml")||zip.file("ppt/slideMasters/slideMaster1.xml"))?.async("string")||"";
+      const ea=(xml.match(/<a:ea typeface="([^"+][^"]*)"/)||[])[1]||(xml.match(/<a:latin typeface="([^"+][^"]*)"/)||[])[1];if(ea){cfg.font=ea;fontIn.value=ea;}
+      const clr=(xml.match(/<a:solidFill><a:srgbClr val="([0-9A-Fa-f]{6})"/)||[])[1];if(clr){cfg.color="#"+clr.toUpperCase();colorIn.value=cfg.color;}
+      const sz=(xml.match(/<a:rPr[^>]*\ssz="(\d+)"/)||[])[1];if(sz){cfg.size=Math.round(+sz/100);sizeIn.value=cfg.size;}
+      const pres=await zip.file("ppt/presentation.xml")?.async("string")||"";const m=pres.match(/<p:sldSz cx="(\d+)" cy="(\d+)"/);if(m)cfg.ratio=(+m[1]/+m[2])<1.5?"4:3":"16:9";
+      if(best){const ext=/png$/i.test(best.f.name)?"png":"jpeg";let bin="";for(let i=0;i<best.b.length;i+=0x8000)bin+=String.fromCharCode.apply(null,best.b.subarray(i,i+0x8000));
+        const url=`data:image/${ext};base64,${btoa(bin)}`;const im=await loadImg(url);cfg.bgId=await storeImage(toJpeg(im,im.naturalWidth,im.naturalHeight));}
+      st.textContent=best?"PPT에서 배경과 글꼴을 가져왔어요. 아래에서 확인하고 저장하세요.":"PPT에 배경 그림이 없어서 글꼴과 색만 가져왔어요";draw();}
+    catch(e){console.error(e);st.textContent="PPT를 읽지 못했어요";}};
+  const fileIn=h("input",{type:"file",accept:".pptx,image/*",onchange:e=>{const f=e.target.files[0];if(!f)return;/\.pptx$/i.test(f.name)?usePptx(f):useImage(f);e.target.value="";}});
+  const colorIn=inp("pp-color","color","color");const bgcIn=inp("pp-bgc","color","bgColor");const sizeIn=inp("pp-size","number","size",{min:16,max:96,style:"width:90px"});
+  const body=h("div",{class:"panel-body"},
+    h("p",{class:"hint",text:`${teamName(S.team)} 팀이 쓰는 가사 화면 모양이에요. 지금 쓰는 PPT 파일(.pptx)을 올리면 배경 그림과 글꼴을 가져오고, 배경 그림만 올려도 돼요.`}),
+    prev,
+    h("div",{class:"row",style:"margin-block:8px"},h("span",{class:"btn filebtn"},"PPT 파일 · 배경 그림 올리기",fileIn),cfg.bgId?h("button",{class:"btn sm ghost",text:"배경 그림 빼기",onclick:e=>{cfg.bgId="";e.currentTarget.remove();draw();}}):null,st),
+    h("div",{class:"grid"},fld("pp-bgc","배경색 (그림이 없을 때)",bgcIn),fld("pp-color","글자색",colorIn),
+      fld("pp-font","글꼴 (발표하는 컴퓨터에 깔린 글꼴)",h("div",{},fontIn,h("datalist",{id:"pp-fonts"},PPT_FONTS.map(f=>h("option",{value:f}))))),
+      fld("pp-size","글자 크기",sizeIn),
+      fld("pp-lines","한 장에 줄 수",sel("pp-lines","lines",[[1,"1줄"],[2,"2줄"],[3,"3줄"],[4,"4줄"]])),
+      fld("pp-valign","글자 위치",sel("pp-valign","valign",[["middle","가운데"],["bottom","아래 (자막처럼)"]])),
+      fld("pp-ratio","화면 비율",sel("pp-ratio","ratio",[["16:9","16:9 (와이드)"],["4:3","4:3"]])),
+      fld("pp-title","곡 제목 장",sel("pp-title","titleSlide",[[true,"곡마다 제목 장 넣기"],[false,"넣지 않기"]])),
+      fld("pp-bold","굵게",sel("pp-bold","bold",[[true,"굵게"],[false,"보통"]])),
+      fld("pp-shadow","글자 그림자",sel("pp-shadow","shadow",[[true,"넣기"],[false,"빼기"]]))));
+  const md=modal("가사 PPT 템플릿",body,[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),
+    can?h("button",{class:"btn primary",text:"팀 템플릿으로 저장",onclick:async()=>{try{await S.db.doc(`teams/${S.team}`).set({...teamCfg(),ppt:{...cfg},updatedAt:Date.now()});S.teamCfgs[S.team]={...teamCfg(),ppt:{...cfg}};md.close();toast("팀 PPT 템플릿을 저장했어요");}catch(e){toast("저장하지 못했어요");}}}):null]);
+  draw();}
 /* 압축버전: 모든 악보를 A3 한 장에 */
 function drawMarks(x,p,dx,dy,dw,dh){x.save();x.globalCompositeOperation="multiply";x.globalAlpha=.55;for(const mk of p.marks||[])if(mk.k==="H"){x.fillStyle=VCOL[(mk.v||1)-1];x.fillRect(dx+mk.x*dw,dy+mk.y*dh,mk.w*dw,mk.h*dh);}x.restore();
   const fs=Math.max(9,dw*.023);x.font=`700 ${fs}px ${FB}`;x.textBaseline="top";
