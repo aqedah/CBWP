@@ -678,7 +678,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"}),
       h("button",{class:"btn",disabled:!editable,onclick:openLoadPast,text:"지난 콘티 불러오기"}),
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
-      S.curId?h("button",{class:"btn",onclick:()=>duplicateConti(S.cur),text:"복제해서 새로 쓰기"}):null,
+      S.curId?h("button",{class:"btn",onclick:()=>dupConti(S.cur),text:"복제해서 새로 쓰기"}):null,
       h("span",{class:"spacer"}),h("span",{class:"status",id:"saveStatus"})));
   if(S.curId){const a=$("#authorLine",head);a.append("작성: ",authorEl(c.authorId));resolveNames([c.authorId]);}
   m.append(head);
@@ -1069,12 +1069,23 @@ async function saveConti(){if(!curEditable())return;const c=S.cur;
     else{const old=S.contis.find(x=>x.id===S.curId);body.authorId=old?.authorId??c.authorId??S.myId??null;body.createdAt=old?.createdAt||c.createdAt||Date.now();await S.db.doc(`contis/${S.curId}`).set(body);S.cur=body;}
     H.owner=S.cur;H.last=JSON.stringify(S.cur);S.dirty=false;saveDraft();toast("저장했어요. 팀원 모두에게 보여요.");render();
   }catch(e){toast(e&&e.code==="invalid_argument"?"저장 권한이 없어요":"저장하지 못했어요. 다시 눌러 주세요.");btn.disabled=false;btn.textContent="저장";}}
-function newConti(){if(S.dirty&&!newConti.armed){newConti.armed=true;toast("저장하지 않은 내용이 있어요. 한 번 더 누르면 새 콘티로 넘어가요.");setTimeout(()=>newConti.armed=false,4000);return;}
-  newConti.armed=false;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();setTab("write");}
-function duplicateConti(c){const n=clone(c);delete n.authorId;delete n.createdAt;delete n.updatedAt;delete n.id;n.date=nextSunday();
+/* is there really unsaved work in the write tab? (empty drafts and drafts identical to the saved conti don't count) */
+const draftSig=c=>JSON.stringify([c.date,c.wtype,c.wtypeCustom||"",c.sermonTitle||"",c.passage||"",c.preacher||"",c.memo||"",
+  (c.roster||[]).map(r=>[r.pos,(r.people||[]).map(p=>p.name)]).filter(r=>r[1].length),...SECTIONS.map(([k])=>(c[k]||[]).map(i=>[i.title,i.key||"",i.yt||"",(i.pages||[]).length]))]);
+function hasUnsaved(){if(!S.dirty||!S.cur)return false;const c=S.cur;
+  if(S.curId){const saved=S.contis.find(x=>x.id===S.curId);if(saved&&draftSig(fixConti(clone(saved)))===draftSig(c))return false;return true;}
+  const blank=!allItems(c).length&&!c.sermonTitle&&!c.passage&&!c.preacher&&!c.memo&&!(c.roster||[]).some(r=>(r.people||[]).length);
+  return !blank;}
+function guardDraft(go){if(!hasUnsaved())return go();const c=S.cur;
+  askConfirm("저장하지 않은 콘티가 있어요",[h("p",{},"「콘티 작성」 탭에 아직 저장하지 않은 내용이 있어요."),
+    h("p",{class:"hint",text:`${fmtDate(c.date)} · ${wtypeOf(c)}${c.sermonTitle?` · 「${c.sermonTitle}」`:""} · 곡 ${allItems(c).length}개`}),
+    h("p",{},"그 내용을 버리고 넘어갈까요? 남기려면 「취소」를 누르고 「콘티 작성」 탭에서 저장하세요.")],"버리고 넘어가기",go);}
+function newConti(){guardDraft(()=>{S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();setTab("write");});}
+function duplicateConti(c){guardDraft(()=>dupConti(c));}
+function dupConti(c){const n=clone(c);delete n.authorId;delete n.createdAt;delete n.updatedAt;delete n.id;n.date=nextSunday();
   fixConti(n);n.team=S.team;for(const[k]of SECTIONS)n[k].forEach(it=>it.uid=uid(8));S.cur=n;S.curId=null;S.dirty=true;saveDraft();setTab("write");toast("복제했어요. 날짜와 내용을 고친 뒤 저장하세요.");}
-function openConti(c){if(S.dirty&&!openConti.armed){openConti.armed=c.id;toast("작성 중인 콘티가 저장되지 않았어요. 한 번 더 누르면 열어요.");setTimeout(()=>openConti.armed=false,4000);return;}
-  openConti.armed=false;S.cur=fixConti(clone(c));delete S.cur.id;S.curId=c.id;S.dirty=false;saveDraft();setTab("write");}
+function openConti(c){if(S.curId===c.id&&S.dirty){setTab("write");return;}
+  guardDraft(()=>{S.cur=fixConti(clone(c));delete S.cur.id;S.curId=c.id;S.dirty=false;saveDraft();setTab("write");});}
 
 document.addEventListener("keydown",e=>{if(S.tab!=="write"||!(e.ctrlKey||e.metaKey)||e.key.toLowerCase()!=="z"||e.shiftKey)return;const a=document.activeElement;
   if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;if(document.querySelector(".modal"))return;e.preventDefault();undoConti();});
