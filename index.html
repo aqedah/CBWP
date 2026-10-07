@@ -446,6 +446,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .attoff{padding:22px 14px;text-align:center;color:var(--ink2);display:flex;flex-direction:column;align-items:center;gap:8px}.attoff b{font-size:1.05rem;color:var(--ink)}
 .yeart{width:auto;border-collapse:collapse}.yeart th,.yeart td{border:1px solid var(--line);padding:5px 8px}.yeart thead th{background:var(--soft)}.yeart th.g{color:#fff}.yeart th.g.ok{background:#2f9e5b}.yeart th.g.late{background:#e09a1a}.yeart th.g.exc{background:#5a7fc0}.yeart th.g.abs{background:#d0473e}.yeart tr.sub th{font-size:.72rem;color:var(--ink2)}.yeart .tot{font-weight:700;background:color-mix(in srgb,var(--soft) 60%,var(--sheet))}.yeart tbody th{text-align:left;white-space:nowrap}
 .pdfjobs{display:flex;flex-direction:column;gap:12px}.pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}.pdfpg{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:8px;padding:6px}.pdfpg.start{border:2px solid var(--accent);padding:5px}.pdfpg img{width:100%;aspect-ratio:.72;object-fit:cover;object-position:top;border-radius:4px;background:#fff}.pdfpg input[type=text]{font-size:.85rem;height:32px}
+.pmtabs{display:flex;width:100%}.pmtabs button{flex:1}
 .pptgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.pptcell{display:flex;flex-direction:column;gap:3px}.pptcell.t .tpv{outline:2px solid var(--accent)}.card.pmrow{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;text-align:left;gap:10px;flex-wrap:wrap}
 .tplgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.tplcard{display:flex;flex-direction:column;gap:6px}.tplcard.def{border-color:var(--accent)}
 .tpv{position:relative;width:100%;container-type:size;background-size:cover;background-position:center;border-radius:6px;overflow:hidden}.tpv-t{position:absolute;display:flex;flex-direction:column;white-space:pre-line;box-sizing:border-box;padding:0 2%}
@@ -2451,7 +2452,10 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
   const out=h("div",{class:"bibout"});
   /* 1. 예배 정보 (카톡에서 받은 것) */
   if(writer){const set=(k,v)=>{c[k]=v;markDirty();saveDraft();};
-    const kt=h("textarea",{id:"kk-text",placeholder:"설교자가 카톡방에 보낸 글을 그대로 붙여 넣으세요.\n예) 10/11 주일2부예배 / 요 15:1-8 / 참포도나무 / 설교 후 찬양: 나의 영혼이 잠잠히",style:"min-height:84px"});
+    const kt=h("textarea",{id:"kk-text",placeholder:"설교자가 카톡방에 보낸 글이나 사진을 그대로 붙여 넣으세요 (사진은 복사 후 Ctrl+V).\n예) 10/11 주일2부예배 / 요 15:1-8 / 참포도나무 / 설교 후 찬양: 나의 영혼이 잠잠히",style:"min-height:84px"});
+    const ocrPhoto=async f=>{toast("사진 글자를 읽는 중… (처음엔 한글 인식 자료를 내려받아 조금 걸려요)",6000);try{const url=URL.createObjectURL(f);const im=await loadImg(url);const cv=document.createElement("canvas");const k=Math.min(1,2000/im.naturalWidth);cv.width=im.naturalWidth*k;cv.height=im.naturalHeight*k;cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(url);
+      const w=await getOcr();const r=await w.recognize(cv);kt.value=tidyOcr(r.data.text).replace(/\n{2,}/g,"\n");fill(true);}catch(err){console.error(err);toast("사진을 읽지 못했어요");}};
+    kt.addEventListener("paste",e=>{const f=pastedImage(e);if(f){e.preventDefault();ocrPhoto(f);}});
     const dateIn=h("input",{type:"date",id:"kk-date",value:c.date||"",disabled:!can,onchange:e=>{set("date",e.target.value);if(!c.wtypeTouched){const g=guessWtype(c.date);c.wtype=g.wtype;c.wtypeCustom=g.custom;}render();}});
     const wsel=h("select",{id:"kk-wtype",disabled:!can,onchange:e=>{c.wtypeTouched=true;set("wtype",e.target.value);render();}},WTYPES.map(w=>h("option",{value:w,text:w==="직접쓰기"?"직접 쓰기":w,selected:c.wtype===w})));
     const wc=c.wtype==="직접쓰기"?h("input",{type:"text",id:"kk-wcustom",value:c.wtypeCustom||"",disabled:!can,placeholder:"예배 이름",oninput:e=>set("wtypeCustom",e.target.value)}):null;
@@ -2471,9 +2475,7 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
         const re=new RegExp([...c.sermonTitle].map(ch=>ch.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s*"));const m=txt.match(re);if(m){c.sermonTitle=m[0];markDirty();saveDraft();}}).catch(()=>{});
       if(photo===true&&r.songs&&r.songs.length)setTab("write");else render();};
     m.append(h("div",{class:"sheet"},h("h2",{},"예배 정보",h("span",{class:"sub",text:can?`콘티 작성 「1. 예배 정보」와 같이 바뀌어요`:"지금 열린 콘티는 고칠 수 없어요"})),
-      can?h("div",{class:"field"},h("label",{htmlFor:"kk-text",text:"카톡에서 받은 글"}),kt,h("div",{class:"row"},h("span",{class:"hint",text:"날짜 · 예배 · 본문 · 제목 · 설교자 · 설교 후 찬양을 알아서 나눠 넣어요"}),h("span",{class:"spacer"}),h("span",{class:"btn filebtn",title:"설교자가 보낸 사진(본문·찬양 목록)을 글자로 읽어요"},"📷 사진으로 넣기",h("input",{type:"file",accept:"image/*",onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
-          toast("사진 글자를 읽는 중… (처음엔 한글 인식 자료를 내려받아 조금 걸려요)",6000);try{const url=URL.createObjectURL(f);const im=await loadImg(url);const cv=document.createElement("canvas");const k=Math.min(1,2000/im.naturalWidth);cv.width=im.naturalWidth*k;cv.height=im.naturalHeight*k;cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(url);
-            const w=await getOcr();const r=await w.recognize(cv);kt.value=tidyOcr(r.data.text).replace(/\n{2,}/g,"\n");fill(true);}catch(err){console.error(err);toast("사진을 읽지 못했어요");}}})),
+      can?h("div",{class:"field"},h("label",{htmlFor:"kk-text",text:"카톡에서 받은 글"}),kt,h("div",{class:"row"},h("span",{class:"hint",text:"날짜 · 예배 · 본문 · 제목 · 설교자 · 설교 후 찬양을 알아서 나눠 넣어요"}),h("span",{class:"spacer"}),h("span",{class:"btn filebtn",title:"설교자가 보낸 사진(본문·찬양 목록)을 글자로 읽어요"},"📷 사진으로 넣기",h("input",{type:"file",accept:"image/*",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)ocrPhoto(f);}})),
         h("button",{class:"btn primary",text:"칸에 채우기",onclick:()=>fill()}))):null,
       h("div",{class:"grid",style:"margin-top:8px"},h("div",{class:"field"},h("label",{htmlFor:"kk-date",text:"날짜"}),dateIn),h("div",{class:"field"},h("label",{htmlFor:"kk-wtype",text:"예배"}),h("div",{style:"display:flex;flex-direction:column;gap:6px"},wsel,wc)),
         h("div",{class:"field"},h("label",{htmlFor:"kk-passage",text:"본문"}),pIn),h("div",{class:"field"},h("label",{htmlFor:"kk-title",text:"설교 제목"}),tIn),h("div",{class:"field"},h("label",{htmlFor:"kk-preacher",text:"설교자"}),prIn)),
@@ -2946,7 +2948,10 @@ function pptDbSheet(){if(!S.pptF)S.pptF={f:"has",q:""};const F=S.pptF;const box=
   draw();
   return h("div",{class:"sheet"},h("h2",{},"곡별 PPT",h("span",{class:"sub",text:"곡마다 가사 슬라이드를 모아 두는 곳"})),q,h("div",{style:"height:8px"}),chips,h("div",{style:"height:10px"}),box);}
 /* 콘티 → PPT 만들기 */
-function renderPptMake(m){const list=pptTpls();const today=todayStr();
+function renderPptMake(m){const T=S.pmTab||"conti";
+  m.append(h("div",{class:"subtabs pmtabs",role:"tablist"},[["conti","콘티로 PPT 만들기"],["free","콘티 없이 PPT 만들기"]].map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(T===k),class:T===k?"on":"",text:l,onclick:()=>{S.pmTab=k;render();}}))));
+  if(T==="free"){m.append(adhocPptSheet());return;}
+  const list=pptTpls();const today=todayStr();
   const cur=S.cur&&allItems(S.cur).length?S.cur:null;
   const cs=[...S.contis.filter(c=>!c.noService&&c.date>=today&&(!cur||c.id!==S.curId)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3),...S.contis.filter(c=>!c.noService&&c.date<today).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6)];
   const row=(c,label)=>{const items=allItems(c);const miss=items.filter(it=>!lyricsOf(it).trim()).length;const auto=tplFor(c);
@@ -2955,8 +2960,7 @@ function renderPptMake(m){const list=pptTpls();const today=todayStr();
   m.append(h("div",{class:"sheet"},h("h2",{},"가사 PPT 만들기",h("span",{class:"sub",text:"미리 보고 받아요 · 템플릿은 예배 종류에 맞춰 저절로"})),
     h("div",{class:"cards"},cur?row(cur,`지금 쓰는 콘티 · ${fmtDate(cur.date)} · ${wtypeOf(cur)}`):null,cs.map(c=>row(c))),
     !cur&&!cs.length?h("div",{class:"empty",text:"콘티가 없어요."}):null,
-    h("p",{class:"hint",style:"margin-top:10px"},"템플릿과 가사 모으기는 ",h("a",{href:"#",onclick:e=>{e.preventDefault();setTab("ppt");},text:"찬양 → PPT 라이브러리"}),"에서 해요.")));
-  m.append(adhocPptSheet());}
+    h("p",{class:"hint",style:"margin-top:10px"},"템플릿과 가사 모으기는 ",h("a",{href:"#",onclick:e=>{e.preventDefault();setTab("ppt");},text:"찬양 → PPT 라이브러리"}),"에서 해요.")));}
 /* 콘티 없이: 곡 제목 글 · 사진 · 콘티 PDF로 가사 PPT */
 function titlesFromText(t){const lines=String(t||"").replace(/\r/g,"").split("\n").map(x=>x.trim()).filter(Boolean);const NUM=/^\d{1,2}\s*[.)]\s*/;
   const split=ln=>ln.replace(NUM,"").replace(/\([^)]*\)/g," ").split(/\s*[+,/]\s*|\s*→\s*/).map(x=>x.replace(/\s+/g," ").trim()).filter(v=>v.length>=2&&v.length<=40);
@@ -2964,8 +2968,11 @@ function titlesFromText(t){const lines=String(t||"").replace(/\r/g,"").split("\n
     const groups=[];let open=false;for(const ln of lines){if(NUM.test(ln)){groups.push(ln);open=true;continue;}if(/^[-–—•·]/.test(ln)){open=false;continue;}if(open&&groups.length)groups[groups.length-1]+=" "+ln;}
     return groups.flatMap(split);}
   return lines.filter(ln=>!/^[-–—•·]/.test(ln)&&!/^\[.*\]$/.test(ln)&&!(/^\d{1,3}\s+\S/.test(ln)&&ln.length>22)&&!(ln.length>24&&/(니라|리라|더라|하라|이라|하시고|하며)$/.test(ln))).flatMap(split);}
+/* 카톡 등에서 복사한 사진을 Ctrl+V로 붙여 넣기 */
+function pastedImage(e){const it=[...((e.clipboardData||{}).items||[])].find(x=>x.kind==="file"&&/^image\//.test(x.type));return it?it.getAsFile():null;}
 function adhocPptSheet(){if(!S.adhoc)S.adhoc={text:"",rows:[]};const A=S.adhoc;const st=h("p",{class:"hint"});const list=h("div",{class:"cards"});
   const ta=h("textarea",{id:"adhoc-text",style:"min-height:110px",value:A.text,placeholder:"곡 제목을 한 줄에 하나씩 쓰거나 붙여 넣으세요.\n예)\n1. 다 와서 찬양해 + 난 예수가 좋다오\n2. 이 세상은 날이 갈수록\n은혜",oninput:e=>{A.text=e.target.value;}});
+  ta.addEventListener("paste",e=>{const f=pastedImage(e);if(f){e.preventDefault();readFile(f);}});
   const match=()=>{titlePool=null;A.rows=titlesFromText(A.text).map(t=>{const g=guessTitle([{text:t,h:0}]);const lib=g&&g.songId?S.songs.find(x=>x.id===g.songId):S.songs.find(x=>norm(x.title)===norm(t));
       return{raw:t,songId:lib?lib.id:null,title:lib?lib.title:(g?g.title:t)};});draw();};
   function draw(){list.replaceChildren(...A.rows.map((r,i)=>{const lib=r.songId&&S.songs.find(x=>x.id===r.songId);const has=!!(lib&&((lib.lyrics||"").trim()||(lib.ppt&&(lib.ppt.slides||[]).length)));
@@ -2987,11 +2994,13 @@ function adhocPptSheet(){if(!S.adhoc)S.adhoc={text:"",rows:[]};const A=S.adhoc;c
   draw();
   return h("div",{class:"sheet"},h("h2",{},"콘티 없이 가사 PPT 만들기",h("span",{class:"sub",text:"곡 제목 글 · 사진 · 콘티 PDF"})),
     h("p",{class:"hint",text:"곡 제목을 쓰거나 붙여 넣고, 또는 곡 목록 사진이나 콘티 악보 PDF를 불러오면 라이브러리 곡과 맞춰 가사 PPT를 만들어요. 「+」로 이어진 곡, 번호, (메모), 「–」 설명 줄, 성경 구절 줄은 알아서 정리해요."}),
-    ta,h("div",{class:"row",style:"margin-top:8px"},h("span",{class:"btn filebtn"},"📷 사진 · PDF 불러오기",fin),h("button",{class:"btn",text:"곡 찾기",onclick:match}),h("span",{class:"spacer"}),
-      h("button",{class:"btn sm ghost",text:"비우기",onclick:()=>{A.text="";A.rows=[];ta.value="";draw();}}),
+    ta,h("div",{class:"row",style:"margin-top:8px"},h("span",{class:"btn filebtn"},"📷 사진 · PDF 불러오기",fin),h("button",{class:"btn",text:"곡 찾기",onclick:match}),
+      h("span",{class:"hint",text:"카톡 사진은 복사해서 위 칸에 Ctrl+V(휴대폰은 길게 눌러 붙여넣기)로 바로 넣을 수 있어요"})),st,list,
+    h("div",{class:"row",style:"margin-top:12px"},h("span",{class:"spacer"}),
+      h("button",{class:"btn ghost",text:"비우기",onclick:()=>{A.text="";A.rows=[];ta.value="";draw();}}),
       h("button",{class:"btn primary",text:"미리보기",onclick:()=>{if(!A.rows.length)match();if(!A.rows.length)return toast("곡 제목이 없어요");
         const items=A.rows.filter(r=>r.title.trim()).map(r=>{const lib=r.songId&&S.songs.find(x=>x.id===r.songId);return lib?itemFromSong(lib):{uid:uid(8),songId:null,title:r.title.trim(),key:"",yt:"",memo:"",pages:[]};});
-        previewLyricsPpt({date:todayStr(),wtype:"",opening:[],before:items,after:[]});}})),st,list);}
+        previewLyricsPpt({date:todayStr(),wtype:"",opening:[],before:items,after:[]});}})));}
 function slidesFor(it,cfg){const sg=songOf(it);if(sg&&sg.ppt&&(sg.ppt.slides||[]).length&&!it.lyrics)return sg.ppt.slides.map(x=>Array.isArray(x)?x.slice():String(x).split("\n"));return lyricSlides(lyricsOf(it),cfg.lines);}
 function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
     if(cfg.titleSlide)out.push({kind:"title",lines:[t],song:it});const sl=slidesFor(it,cfg);if(!cfg.titleSlide&&!sl.length)out.push({kind:"title",lines:[it.title],song:it});
