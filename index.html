@@ -2457,16 +2457,22 @@ function parseKakao(text){const out={};const t=(text||"").replace(/\r/g,"").repl
   if(dm){let y=dm[1]?+dm[1]:+today.slice(0,4);const mo=+dm[2],d=+dm[3];if(mo>=1&&mo<=12&&d>=1&&d<=31){if(!dm[1]&&`${y}-${pad(mo)}-${pad(d)}`<addDays(today,-60))y++;out.date=`${y}-${pad(mo)}-${pad(d)}`;}}
   const flat=t.replace(/\s+/g,"");const wt=WTYPES.filter(w=>w!=="직접쓰기").sort((a,b)=>b.length-a.length).find(w=>flat.includes(w.replace(/\s+/g,"")));
   const al=WT_ALIAS.find(([re])=>re.test(t));if(al)out.wtype=al[1];else if(wt)out.wtype=wt;else if(/2부/.test(t))out.wtype="주일2부예배";else if(/오후/.test(t))out.wtype="주일오후예배";
-  const parts=t.split(/\n|\/(?!\d)|(?<!\d)\/|·|\|/).map(x=>x.replace(/^\s*[-*•▶▷]?\s*/,"").trim()).filter(Boolean);
+  const parts=t.split(/\n|\/(?!\d)|(?<!\d)\/|·|\|/).map(x=>x.replace(/^\s*[-*•▶▷]?\s*/,"").trim()).filter(x=>x&&!/^특\s*송/.test(x));
   const lab=(re,x)=>{const m=x.match(re);return m?m[1].trim():null;};
   const afterRe=/설교\s*후\s*(?:찬양|찬송)?\s*[:：]?\s*(.*)$/;let afterIdx=-1;
+  /* 특송: “곡” - 부르는 사람 / 특송 부르는 사람 */
+  {const sl=t.split("\n").map(x=>x.trim()).find(x=>/^특\s*송/.test(x));if(sl){const v=sl.replace(/^특\s*송\s*[:：]?\s*/,"").trim();const q=v.match(/[“"'‘「『](.+?)[”"'’」』]/);
+    let song=q?q[1].trim():"",by=(q?v.replace(q[0],""):v).replace(/^\s*[-–—:·,]\s*|\s*[-–—:·,]\s*$/g,"").trim();
+    if(!q&&/\s[-–—]\s/.test(v)){const[a,...b]=v.split(/\s[-–—]\s/);song=a.trim();by=b.join(" ").trim();}
+    else if(!q&&by&&S.songs.some(x=>norm(x.title)===norm(by))){song=by;by="";}
+    if(song)out.special=song;if(by)out.specialBy=by;}}
   for(let i=0;i<parts.length;i++){const x=parts[i];
     if(!out.passage){const v=lab(/(?:본문|말씀)\s*[:：]\s*(.+)$/,x)||x;const r=parseRef(v.replace(/[()]/g," ").trim());if(r&&typeof BIB!=="undefined"&&(!BIB||BIB[r.b]))out.passage=v.trim();}
     if(!out.sermonTitle){const v=lab(/(?:제목|설교\s*제목)\s*[:：]\s*(.+)$/,x)||lab(/[「『"“](.+?)[」』"”]/,x);if(v)out.sermonTitle=v;}
     if(!out.preacher){const v=lab(/설교자?\s*[:：]\s*(.+)$/,x)||lab(/([가-힣]{2,4}\s*(?:목사|전도사|강도사))/,x);if(v&&!/후/.test(v))out.preacher=v;}
     if(afterIdx<0&&afterRe.test(x)){afterIdx=i;const v=x.match(afterRe)[1];out.after=v?v.split(/[,，、]/).map(y=>y.trim()).filter(Boolean):[];}}
   if(afterIdx>=0&&!out.after.length)out.after=parts.slice(afterIdx+1).filter(x=>!/[:：]/.test(x)).slice(0,3);
-  if(!out.sermonTitle){const first=(t.trim().split("\n")[0]||"");const m=first.match(/\s[-–—]\s*(.+)$/);if(m&&!/[:：]/.test(m[1]))out.sermonTitle=m[1].trim();}
+  if(!out.sermonTitle){const first=(t.trim().split("\n")[0]||"");const m=/^특\s*송/.test(first)?null:first.match(/\s[-–—]\s*(.+)$/);if(m&&!/[:：]/.test(m[1]))out.sermonTitle=m[1].trim();}
   /* 번호 붙은 찬양 목록: 1. 곡 + 곡 (메모) / - 설명 */
   {const lines=t.split("\n").map(x=>x.trim()).filter(Boolean);const groups=[];let last=null;
     for(const ln of lines){const m=ln.match(/^(\d{1,2})\s*[.)]\s*(.+)$/);if(m){last={kind:"song",text:m[2],memo:[]};groups.push(last);continue;}
@@ -2492,11 +2498,17 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
     const pIn=h("input",{type:"text",id:"kk-passage",value:c.passage||"",disabled:!can,placeholder:"예: 요 15:1-8",onchange:e=>{set("passage",e.target.value.trim());bibQ=c.passage;q.value=bibQ;go();}});
     const tIn=h("input",{type:"text",id:"kk-title",value:c.sermonTitle||"",disabled:!can,placeholder:"예: 참포도나무",oninput:e=>set("sermonTitle",e.target.value)});
     const prIn=h("input",{type:"text",id:"kk-preacher",value:c.preacher||"",disabled:!can,placeholder:"예: 이삭 목사",oninput:e=>set("preacher",e.target.value)});
+    /* 특송: 곡명은 모르면 비워 둬도 돼요 */
+    const setSpecial=t=>{t=(t||"").trim();const cur=(c.special||[])[0];c.special=t?[cur&&cur.title===t?cur:itemByTitle(t)]:[];markDirty();saveDraft();};
+    const spIn=h("input",{type:"text",id:"kk-spsong",list:"kk-spdl",value:((c.special||[])[0]||{}).title||"",disabled:!can,placeholder:"모르면 비워 두세요",onchange:e=>setSpecial(e.target.value)});
+    const spDl=h("datalist",{id:"kk-spdl"},S.songs.slice(0,4000).map(x=>h("option",{value:x.title})));
+    const sbIn=h("input",{type:"text",id:"kk-spby",value:c.specialBy||"",disabled:!can,placeholder:"예: 베드로 남선교회",oninput:e=>set("specialBy",e.target.value)});
     const afterBox=h("div",{class:"pchips"});const drawAfter=()=>afterBox.replaceChildren(...(c.after||[]).map((it,i)=>h("span",{class:"pchip"},it.title,it.key?` (${it.key})`:"",can?h("button",{type:"button",class:"chipx","aria-label":`${it.title} 빼기`,text:"✕",onclick:()=>{c.after.splice(i,1);markDirty();saveDraft();drawAfter();}}):null)),
       (c.after||[]).length?"":h("span",{class:"hint",text:"아직 없어요"}));drawAfter();
     const fill=photo=>{const r=parseKakao(kt.value);const got=[];if(!can)return toast("지금 열린 콘티는 고칠 수 없어요");
       if(r.date){c.date=r.date;got.push("날짜");}if(r.wtype){c.wtype=r.wtype;c.wtypeTouched=true;got.push("예배");}else if(r.date&&!c.wtypeTouched){const g=guessWtype(c.date);c.wtype=g.wtype;c.wtypeCustom=g.custom;}
       if(r.passage){c.passage=r.passage;got.push("본문");bibQ=r.passage;}if(r.sermonTitle){c.sermonTitle=r.sermonTitle;got.push("제목");}if(r.preacher){c.preacher=r.preacher;got.push("설교자");}
+      if(r.specialBy){c.specialBy=r.specialBy;got.push("특송");}if(r.special){c.special=[itemByTitle(r.special)];if(!got.includes("특송"))got.push("특송");}
       if(r.after&&r.after.length){c.after=r.after.map(itemByTitle);got.push(`설교 후 찬양 ${r.after.length}곡`);}
       if(r.songs&&r.songs.length){titlePool=null;const items=[];for(const sg of r.songs)sg.titles.forEach((tt,i)=>{const g=guessTitle([{text:tt,h:0}]);const lib=g&&g.songId?S.songs.find(x=>x.id===g.songId):null;
           const it=lib?itemFromSong(lib):g?itemByTitle(g.title):itemByTitle(tt);if(i===0&&sg.memo)it.memo=sg.memo;else if(i>0)it.memo="(앞 곡과 이어서)";items.push(it);});
@@ -2505,10 +2517,11 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
         const re=new RegExp([...c.sermonTitle].map(ch=>ch.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s*"));const m=txt.match(re);if(m){c.sermonTitle=m[0];markDirty();saveDraft();}}).catch(()=>{});
       if(photo===true&&r.songs&&r.songs.length)setTab("write");else render();};
     m.append(h("div",{class:"sheet"},h("h2",{},"예배 정보",h("span",{class:"sub",text:can?`콘티 작성 「1. 예배 정보」와 같이 바뀌어요`:"지금 열린 콘티는 고칠 수 없어요"})),
-      can?h("div",{class:"field"},h("label",{htmlFor:"kk-text",text:"카톡에서 받은 글"}),kt,h("div",{class:"row"},h("span",{class:"hint",text:"날짜 · 예배 · 본문 · 제목 · 설교자 · 설교 후 찬양을 알아서 나눠 넣어요"}),h("span",{class:"spacer"}),h("span",{class:"btn filebtn",title:"설교자가 보낸 사진(본문·찬양 목록)을 글자로 읽어요"},"📷 사진으로 넣기",h("input",{type:"file",accept:"image/*",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)ocrPhoto(f);}})),
+      can?h("div",{class:"field"},h("label",{htmlFor:"kk-text",text:"카톡에서 받은 글"}),kt,h("div",{class:"row"},h("span",{class:"hint",text:"날짜 · 예배 · 본문 · 제목 · 설교자 · 특송 · 설교 후 찬양을 알아서 나눠 넣어요"}),h("span",{class:"spacer"}),h("span",{class:"btn filebtn",title:"설교자가 보낸 사진(본문·찬양 목록)을 글자로 읽어요"},"📷 사진으로 넣기",h("input",{type:"file",accept:"image/*",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)ocrPhoto(f);}})),
         h("button",{class:"btn primary",text:"칸에 채우기",onclick:()=>fill()}))):null,
       h("div",{class:"grid",style:"margin-top:8px"},h("div",{class:"field"},h("label",{htmlFor:"kk-date",text:"날짜"}),dateIn),h("div",{class:"field"},h("label",{htmlFor:"kk-wtype",text:"예배"}),h("div",{style:"display:flex;flex-direction:column;gap:6px"},wsel,wc)),
-        h("div",{class:"field"},h("label",{htmlFor:"kk-passage",text:"본문"}),pIn),h("div",{class:"field"},h("label",{htmlFor:"kk-title",text:"설교 제목"}),tIn),h("div",{class:"field"},h("label",{htmlFor:"kk-preacher",text:"설교자"}),prIn)),
+        h("div",{class:"field"},h("label",{htmlFor:"kk-passage",text:"본문"}),pIn),h("div",{class:"field"},h("label",{htmlFor:"kk-title",text:"설교 제목"}),tIn),h("div",{class:"field"},h("label",{htmlFor:"kk-preacher",text:"설교자"}),prIn),
+        h("div",{class:"field"},h("label",{htmlFor:"kk-spsong",text:"특송 곡명"}),spIn,spDl),h("div",{class:"field"},h("label",{htmlFor:"kk-spby",text:"특송 부르는 사람"}),sbIn)),
       h("div",{class:"lab",style:"margin-top:10px",text:"설교 후 찬양"}),afterBox,can?h("div",{style:"margin-top:8px"},songSearch("kkafter",item=>{c.after.push(item);markDirty();saveDraft();drawAfter();})):null));}
   /* 2. 본문 */
   const q=h("input",{type:"search",id:"bib-q",placeholder:"요 15:1-8 · 시 23 · 창 1:1-5",value:bibQ,autocomplete:"off",style:"flex:1;min-width:0",
@@ -3253,7 +3266,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   const fix=(xml,i,vs)=>{let x=xml;const nr=vs?refOf(vs):newRef;
     if(d)x=editPara(x,t=>DATE_RE.test(t)?t.replace(DATE_RE,(m,y,a,mo,b2,da,e)=>`${d.getFullYear()}${a}${mo.length===2?String(d.getMonth()+1).padStart(2,"0"):d.getMonth()+1}${b2}${da.length===2?String(d.getDate()).padStart(2,"0"):d.getDate()}${e||""}`):null);
     if(A.ref&&nr)x=editPara(x,t=>t.includes(A.ref.str)?t.replace(A.ref.str,nr).replace(/\s*\((구약|신약)\s*p\.?\s*\d+\)/,""):null);
-    if(A.special&&i===A.special.i&&A.special.line){const sp=(c.special||[])[0];if(sp){const by=(c.specialBy||"").trim();const m=A.special.line.match(/^\s*([“"'‘])(.*?)([”"'’])\s*(?:([-–—])\s*(.*))?$/);
+    if(A.special&&i===A.special.i&&A.special.line){const sp=(c.special||[])[0];const by0=(c.specialBy||"").trim();if(!sp&&by0)x=editPara(x,t=>t.trim()===A.special.line?by0:null);if(sp){const by=by0;const m=A.special.line.match(/^\s*([“"'‘])(.*?)([”"'’])\s*(?:([-–—])\s*(.*))?$/);
       const nl=m?`${m[1]}${sp.title}${m[3]}${by?` ${m[4]||"-"} ${by}`:""}`:`"${sp.title}"${by?` - ${by}`:""}`;x=editPara(x,t=>t.trim()===A.special.line?nl:null);}}
     if(A.sermon&&i===A.sermon.i){const T=(c.sermonTitle||"").trim(),P=(c.preacher||"").trim();
       x=editPara(x,t=>{const tt=t.trim();if(T&&(tt===A.sermon.title||tt.replace(/^[“"'‘]|[”"'’]$/g,"").trim()===A.sermon.title))return t.replace(A.sermon.title,T);
@@ -3269,7 +3282,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
       for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>setShapeLines(lB.sps[0].sp,ls))});}
     regions.push({idx:s.idx,gen,what:`찬양 ${si+1}`,n:songs.length});});
   /* 특송이 없으면 특송 안내 장을 빼요 */
-  if(A.special&&!(c.special||[]).length&&!regions.some(r=>r.idx.includes(A.special.i)))regions.push({idx:[A.special.i],gen:[],what:"특송 없음"});
+  if(A.special&&!(c.special||[]).length&&!(c.specialBy||"").trim()&&!regions.some(r=>r.idx.includes(A.special.i)))regions.push({idx:[A.special.i],gen:[],what:"특송 없음"});
   if(A.body.length&&R&&BIB&&BIB[R.b]){const rows=refRows(R);const b0=A.body[0];const chunks=verseSlides(rows,b0.s,Math.max(1,Math.round(A.body.reduce((n,b)=>n+b.nv,0)/A.body.length)));
     regions.push({idx:A.body.map(b=>b.i),gen:chunks.map(ch=>({base:A.order[b0.i],vs:ch.vs,edit:x=>x.replace(b0.s.sp,()=>setShapeLines(b0.s.sp,ch.lines))})),what:"본문"});}
   /* 3) 꾸러미(zip) 고치기 */
