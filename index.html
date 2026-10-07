@@ -3214,7 +3214,7 @@ function verseSlides(rows,proto,per){per=per||99;const numbered=/^\s*\d+\s*[.)]/
   return out.map(o=>({lines:avg?o.lines:[o.lines.join(" ")],vs:o.vs}));}
 /* 곡 제목 장 꾸미기: 왼쪽 정렬 · 한 줄(옆으로 늘어남) · 음표 그림이 없으면 왼쪽에 ♪ 넣기 */
 let FULL_W=0,FULL_H=0;
-function titleDress(x,oldSp,sp){const xf=(sp.match(/<p:spPr[^>]*>\s*<a:xfrm[^>]*>\s*<a:off x="(-?\d+)" y="(-?\d+)"\/>\s*<a:ext cx="(\d+)" cy="(\d+)"\/>/)||[]);
+function titleDress(x,oldSp,sp,k=1){const xf=(sp.match(/<p:spPr[^>]*>\s*<a:xfrm[^>]*>\s*<a:off x="(-?\d+)" y="(-?\d+)"\/>\s*<a:ext cx="(\d+)" cy="(\d+)"\/>/)||[]);
   const hasNote=[...x.matchAll(/<p:pic>[\s\S]*?<\/p:pic>/g)].some(m=>{const e=m[0].match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/);return e&&+e[1]<FULL_W*.15;});
   let ns=sp.replace(/<a:bodyPr([^>]*?)(\/?)>/,(m,a,cl)=>`<a:bodyPr${a.replace(/\s(wrap|anchor)="[^"]*"/g,"")} wrap="none" anchor="ctr"${cl}>`).replace(/<a:normAutofit[^>]*\/>|<a:spAutoFit\/>/g,"")
     .replace(/<a:pPr([^>]*?)\salgn="\w+"/g,"<a:pPr$1").replace(/<a:pPr(?=[\s>\/])/g,'<a:pPr algn="l"').replace(/<a:p>(?!<a:pPr)/g,'<a:p><a:pPr algn="l"/>');
@@ -3224,7 +3224,7 @@ function titleDress(x,oldSp,sp){const xf=(sp.match(/<p:spPr[^>]*>\s*<a:xfrm[^>]*
     cx=Math.max(cx,FULL_W-ox-Math.round(FULL_W*.02));
     /* 한 줄에 들어가게 글자 크기 줄이기 (한글 한 글자 ≈ 글자 크기 폭) */
     const tlen=[...pText(ns)].reduce((n,ch)=>n+(/[가-힣]/.test(ch)?1:/\s/.test(ch)?.35:.6),0);const maxSz=Math.floor(cx/(Math.max(1,tlen)*12700*1.15))*100;
-    ns=ns.replace(/(<a:(?:rPr|endParaRPr|defRPr)[^>]*?\s)sz="(\d+)"/g,(m,a,z)=>`${a}sz="${Math.max(1200,Math.min(+z,maxSz))}"`);
+    ns=ns.replace(/(<a:(?:rPr|endParaRPr|defRPr)[^>]*?\s)sz="(\d+)"/g,(m,a,z)=>`${a}sz="${Math.max(1200,Math.min(Math.round(+z*k/100)*100,maxSz))}"`);
     ns=ns.replace(/(<p:spPr[^>]*>\s*<a:xfrm[^>]*>\s*)<a:off x="-?\d+" y="-?\d+"\/>\s*<a:ext cx="\d+" cy="\d+"\/>/,(m,a)=>`${a}<a:off x="${ox}" y="${oy}"/><a:ext cx="${cx}" cy="${cy}"/>`);}
   let out=x.replace(oldSp,()=>ns);if(pic)out=out.replace("</p:spTree>",()=>pic+"</p:spTree>");return out;}
 async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL);onSt&&onSt("틀 파일을 여는 중…");const zip=await window.JSZip.loadAsync(blob);const A=await fullAnalyze(zip);
@@ -3252,7 +3252,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   A.slots.forEach((s,si)=>{const keys=slotMap&&slotMap[si]!==undefined?slotMap[si]:fullSlotMap(A.slots.map(x=>x.idx[0]),A.sermon?A.sermon.i:-1,c,A.slots.map(x=>x.idx.length))[si];if(keys===null)return;const songs=keys.flatMap(items);const gen=[];
     const tB=s.t!=null?A.order[s.t]:null,lB=A.order[s.l];
     for(const it of songs){const ttl=it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
-      const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,setShapeLines(tb.sps[0].sp,[ttl]))});
+      const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,setShapeLines(tb.sps[0].sp,[ttl]),tB?1:.8)});
       for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>setShapeLines(lB.sps[0].sp,ls))});}
     regions.push({idx:s.idx,gen,what:`찬양 ${si+1}`,n:songs.length});});
   if(A.body.length&&R&&BIB&&BIB[R.b]){const rows=refRows(R);const b0=A.body[0];const chunks=verseSlides(rows,b0.s,Math.max(1,Math.round(A.body.reduce((n,b)=>n+b.nv,0)/A.body.length)));
