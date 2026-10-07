@@ -680,6 +680,21 @@ function resetConti(btn){if(!S.curId&&!curEditable())return;if(!btn.dataset.arme
   S.cur=b;H.owner=b;H.list.push(H.last);H.last=JSON.stringify(b);S.dirty=true;saveDraft();render();toast("내용을 비웠어요. 「실행 취소」로 되돌릴 수 있어요",3200);}
 
 /* ---------- permissions ---------- */
+/* 콘티 넘기기: 관리자나 작성자가 만들어 둔 콘티를 실제 인도자 이름으로 넘겨요 (그 사람 기기에서 작성자로 열려요) */
+function handoverModal(c){if(!c||!c.id)return;const lead=S.members.filter(mb=>mb.tier!=="휴면").sort((a,b)=>{const r=mb=>mb.role==="리더"?0:(mb.positions||[]).includes("인도자")?1:2;return r(a)-r(b)||a.name.localeCompare(b.name,"ko");});
+  const lr=(c.roster||[]).find(r=>r.pos==="인도자");const sug=lr&&(lr.people||[])[0]&&lr.people[0].name||"";
+  const nameIn=h("input",{type:"text",id:"ho-name",value:sug,placeholder:"넘겨받을 사람 이름 (그 사람이 앱에 넣은 이름과 같게)"});
+  const chips=h("div",{class:"pchips"},lead.slice(0,24).map(mb=>h("button",{type:"button",class:"lchip"+(mb.name===sug?" ok":""),text:mb.name+(mb.role==="리더"?" · 리더":(mb.positions||[]).includes("인도자")?" · 인도자":""),onclick:e=>{nameIn.value=mb.name;[...chips.children].forEach(b=>b.classList.remove("ok"));e.currentTarget.classList.add("ok");}})));
+  const msg=h("p",{class:"hint"});
+  const md=modal("콘티 넘기기",h("div",{class:"panel-body"},
+    h("p",{text:`${fmtDate(c.date)} ${wtypeOf(c)} 콘티를 다른 사람에게 넘겨요. 넘겨받은 사람이 앱에서 같은 이름으로 들어오면 「콘티 작성」에서 자기 콘티로 열리고, 고치고 지울 수 있어요.`}),
+    lead.length?chips:null,h("div",{class:"field"},h("label",{htmlFor:"ho-name",text:"넘겨받을 사람"}),nameIn),
+    h("p",{class:"hint",text:S.isOwner?"관리자는 넘긴 뒤에도 계속 고칠 수 있어요.":"넘기면 나는 더 이상 이 콘티의 작성자가 아니에요."}),msg),
+    [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"넘기기",onclick:async()=>{const name=nameIn.value.trim();if(!name){msg.textContent="이름을 써 주세요";return nameIn.focus();}
+      const patch={authorId:"",authorName:name,handedBy:myName()||"",handedAt:Date.now(),updatedAt:Date.now()};
+      try{await S.db.doc(`contis/${c.id}`).update(patch);Object.assign(c,patch);const sc=S.contis.find(x=>x.id===c.id);if(sc&&sc!==c)Object.assign(sc,patch);
+        if(S.curId===c.id&&S.cur){Object.assign(S.cur,{authorId:"",authorName:name});if(!S.isOwner){S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();}}
+        md.close();toast(`${name}님께 콘티를 넘겼어요`);render();}catch(e){console.error(e);msg.textContent="넘기지 못했어요. 인터넷 연결을 확인해 주세요";}}})]);}
 function canEditConti(c,id){if(!id)return S.canWrite;if(S.isOwner)return true;if(c&&c.past&&isWriter())return true;return isAuthor(c);}
 const curEditable=()=>S.canWrite&&canEditConti(S.cur,S.curId);
 
@@ -898,7 +913,8 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       S.curId&&isWriter()?h("button",{class:"btn"+(editable?"":" primary"),onclick:newConti,title:"빈 콘티를 새로 시작해요",text:"+ 새 콘티 만들기"}):null,
       h("span",{class:"spacer"}),h("span",{class:"status",id:"saveStatus"})));
-  if(S.curId){const a=$("#authorLine",head);a.append("콘티 제작 - ",authorEl(c.authorId,c.authorName));resolveNames([c.authorId]);}
+  if(S.curId){const a=$("#authorLine",head);a.append("콘티 제작 - ",authorEl(c.authorId,c.authorName));resolveNames([c.authorId]);
+    const sv=S.contis.find(x=>x.id===S.curId);if(sv&&S.db&&S.canWrite&&(isAuthor(sv)||S.isOwner))a.append(" ",h("button",{class:"btn sm ghost",text:"↪ 넘기기",title:"이 콘티를 다른 인도자에게 넘겨요",onclick:()=>handoverModal(sv)}));}
   m.append(head);
 
   if(S.curId&&!editable&&S.canWrite)m.append(h("div",{class:"banner"},h("b",{text:"다른 사람이 쓴 콘티예요. "}),"고치기는 작성자만 할 수 있어요. 보기와 PDF 출력은 할 수 있어요. 내 콘티를 쓰려면 ",isWriter()?h("button",{class:"btn sm primary",text:"+ 새 콘티 만들기",onclick:newConti}):"「새 콘티 만들기」",h("span",{text:" 를 눌러 주세요."})));
@@ -1525,6 +1541,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
       h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),
         c.past?h("span",{class:"stbadge draft",text:"지난 콘티"}):h("span",{class:`stbadge ${statusOf(c)}`,text:statusOf(c)==="final"?"확정":"작성 중"}),
         h("span",{class:"spacer"}),c.past?null:h("span",{class:"hint"},"콘티 제작 - ",authorEl(c.authorId,c.authorName)),
+        !c.past&&c.id&&S.db&&S.canWrite&&(isAuthor(c)||S.isOwner)?h("button",{class:"btn sm ghost",text:"↪ 넘기기",title:"이 콘티를 다른 인도자에게 넘겨요",onclick:()=>handoverModal(c)}):null,
         c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:/watch\?v=/.test(c.playlist)?"예배 영상":"재생목록"}):null),
       c.sermonTitle||c.passage||c.preacher?h("div",{},c.sermonTitle?h("h3",{text:c.sermonTitle}):null,h("div",{class:"hint",text:[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`].filter(Boolean).join(" · ")})):null,
       h("div",{class:"row"},gbtn(c,"인도자"),gbtn(c,"싱어"),gbtn(c,"악기")),
@@ -2656,7 +2673,7 @@ const PPT_DEF={bgId:"",bgColor:"#000000",color:"#FFFFFF",font:"맑은 고딕",si
 /* 곡 제목 장 꾸밈: 띠·그림(음표) · 글자 그라데이션 */
 const NOTE_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><g fill="#fff" stroke="#A5A5A5" stroke-width="1.5"><ellipse cx="21" cy="70" rx="9" ry="6.5" transform="rotate(-20 21 70)"/><path d="M27.5 18h4v52h-4z"/><path d="M31.5 18c6 6 15 9 14 21-3-6-8-8-14-9z"/><ellipse cx="57" cy="78" rx="9" ry="6.5" transform="rotate(-20 57 78)"/><ellipse cx="83" cy="70" rx="9" ry="6.5" transform="rotate(-20 83 70)"/><path d="M63.5 36h4v42h-4zM89.5 28h4v42h-4zM63.5 36 93.5 28v8l-30 8z"/></g></svg>';
 const NOTE_DECO=()=>({titleDeco:[{kind:"shape",prst:"roundRect",x:0,y:.724,w:1,h:.279,hex:"000000",alpha:.85},{kind:"img",x:.002,y:.811,w:.0484,h:.0861,src:"data:image/svg+xml;base64,"+btoa(NOTE_SVG)}],
-  titleBox:{x:.048,y:.8035,w:.635,h:.121},titleAlign:"left",titleAnchor:"ctr",titleColor:"#FFFFFF",titleGrad:{ang:0,stops:[{pos:0,hex:"D9D9D9"},{pos:.26,hex:"FFFFFF"},{pos:1,hex:"D9D9D9"}]},titleShadow:false,titleDecoKind:"note"});
+  titleBox:{x:.048,y:.8035,w:.93,h:.121},titleAlign:"left",titleAnchor:"ctr",titleColor:"#FFFFFF",titleGrad:{ang:0,stops:[{pos:0,hex:"D9D9D9"},{pos:.26,hex:"FFFFFF"},{pos:1,hex:"D9D9D9"}]},titleShadow:false,titleDecoKind:"note"});
 async function svgToPng(src,px=256){const im=await loadImg(src);const ar=(im.naturalWidth||1)/(im.naturalHeight||1);const c=document.createElement("canvas");c.width=Math.round(ar>=1?px:px*ar);c.height=Math.round(ar>=1?px/ar:px);
   c.getContext("2d").drawImage(im,0,0,c.width,c.height);return c.toDataURL("image/png");}
 const SCHEME_CLR={tx1:"000000",dk1:"000000",bg1:"FFFFFF",lt1:"FFFFFF",tx2:"44546A",dk2:"44546A",bg2:"E7E6E6",lt2:"E7E6E6",accent1:"4472C4",accent2:"ED7D31",accent3:"A5A5A5",accent4:"FFC000",accent5:"5B9BD5",accent6:"70AD47"};
@@ -2729,8 +2746,10 @@ async function exportLyricsPpt(c,tplOverride,skipAsk){if(!c)return;const items=a
       for(const it of items){const s=pp.addSlide();s.background=back;n++;
         const tb=cfg.titleBox;if(cfg.titleSlide){for(const d of deco){if(d.kind==="shape")s.addShape(d.prst||"rect",{x:d.x*W,y:d.y*H,w:d.w*W,h:d.h*H,fill:{color:d.hex,transparency:Math.round((1-(d.alpha??1))*100)},line:{type:"none"},rectRadius:d.prst==="roundRect"?Math.min(d.w*W,d.h*H)*.1667:undefined});
             else if(d.png)s.addImage({data:d.png,x:d.x*W,y:d.y*H,w:d.w*W,h:d.h*H});}
-          const tOpt={fontFace:cfg.titleFont||cfg.font,bold:cfg.titleBold??cfg.bold,align:cfg.titleAlign||cfg.align||"center",color:cfg.titleGrad?GMARK:(cfg.titleColor||cfg.color).replace("#",""),...(cfg.titleShadow===false?{shadow:undefined}:{})};
-          txt(s,it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)"),tb?{x:tb.x*W,y:tb.y*H,w:tb.w*W,h:tb.h*H,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:VA[cfg.titleAnchor]||"middle",...tOpt}:{y:H*.35,h:H*.3,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:"middle",...tOpt});}
+          const tW=(tb?(((cfg.titleAlign||cfg.align)==="left")?Math.max(tb.w,.98-tb.x):tb.w):(W-.8)/W)*W;const tLen=[...it.title].reduce((n,ch)=>n+(/[가-힣]/.test(ch)?1:/\s/.test(ch)?.35:.6),0);
+          const tFs=Math.max(12,Math.min(cfg.titleSize||Math.round(cfg.size*1.15),Math.floor(tW*72/(tLen*1.15))));
+          const tOpt={wrap:false,fontSize:tFs,fontFace:cfg.titleFont||cfg.font,bold:cfg.titleBold??cfg.bold,align:cfg.titleAlign||cfg.align||"center",color:cfg.titleGrad?GMARK:(cfg.titleColor||cfg.color).replace("#",""),...(cfg.titleShadow===false?{shadow:undefined}:{})};
+          txt(s,it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)"),tb?{x:tb.x*W,y:tb.y*H,w:(tOpt.align==="left"?Math.max(tb.w,.98-tb.x):tb.w)*W,h:tb.h*H,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:VA[cfg.titleAnchor]||"middle",...tOpt}:{y:H*.35,h:H*.3,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:"middle",...tOpt});}
         const slides=slidesFor(it,cfg);
         if(!cfg.titleSlide&&!slides.length)txt(s,it.title,{y:H*.35,h:H*.3,fontSize:cfg.size,valign:"middle"});
         slides.forEach((lines,i)=>{const sl=(i===0&&!cfg.titleSlide)?s:pp.addSlide();if(sl!==s){sl.background=back;n++;}
@@ -3193,6 +3212,21 @@ function verseSlides(rows,proto,per){per=per||99;const numbered=/^\s*\d+\s*[.)]/
   const wrap=s=>{if(!avg)return[s];const out=[];let line="";for(const w of s.split(" ")){if(line&&(line+" "+w).length>avg+3){out.push(line);line=w;}else line=line?line+" "+w:w;}if(line)out.push(line);return out;};
   const out=[];let cur=[],len=0,vs=[];for(const[ch,v,t]of rows){const txt=(numbered?`${v}. `:"")+t;if(cur.length&&(len+txt.length>cap||vs.length>=per)){out.push({lines:cur,vs});cur=[];len=0;vs=[];}cur.push(...wrap(txt));vs.push([ch,v]);len+=txt.length;}if(cur.length)out.push({lines:cur,vs});
   return out.map(o=>({lines:avg?o.lines:[o.lines.join(" ")],vs:o.vs}));}
+/* 곡 제목 장 꾸미기: 왼쪽 정렬 · 한 줄(옆으로 늘어남) · 음표 그림이 없으면 왼쪽에 ♪ 넣기 */
+let FULL_W=0,FULL_H=0;
+function titleDress(x,oldSp,sp){const xf=(sp.match(/<p:spPr[^>]*>\s*<a:xfrm[^>]*>\s*<a:off x="(-?\d+)" y="(-?\d+)"\/>\s*<a:ext cx="(\d+)" cy="(\d+)"\/>/)||[]);
+  const hasNote=[...x.matchAll(/<p:pic>[\s\S]*?<\/p:pic>/g)].some(m=>{const e=m[0].match(/<a:ext cx="(\d+)" cy="(\d+)"\/>/);return e&&+e[1]<FULL_W*.15;});
+  let ns=sp.replace(/<a:bodyPr([^>]*?)(\/?)>/,(m,a,cl)=>`<a:bodyPr${a.replace(/\s(wrap|anchor)="[^"]*"/g,"")} wrap="none" anchor="ctr"${cl}>`).replace(/<a:normAutofit[^>]*\/>|<a:spAutoFit\/>/g,"")
+    .replace(/<a:pPr([^>]*?)\salgn="\w+"/g,"<a:pPr$1").replace(/<a:pPr(?=[\s>\/])/g,'<a:pPr algn="l"').replace(/<a:p>(?!<a:pPr)/g,'<a:p><a:pPr algn="l"/>');
+  let pic="";
+  if(xf.length){let ox=+xf[1],oy=+xf[2],cx=+xf[3],cy=+xf[4];const nh=Math.round(Math.min(cy*.6,FULL_H*.09)),gap=Math.round(FULL_W*.012);
+    if(!hasNote){const nx=Math.round(FULL_W*.02);ox=nx+nh+gap;pic=`<p:pic><p:nvPicPr><p:cNvPr id="9901" name="cbwp note"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdCbwpNote"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${nx}" y="${Math.round(oy+cy/2-nh/2)}"/><a:ext cx="${nh}" cy="${nh}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;}
+    cx=Math.max(cx,FULL_W-ox-Math.round(FULL_W*.02));
+    /* 한 줄에 들어가게 글자 크기 줄이기 (한글 한 글자 ≈ 글자 크기 폭) */
+    const tlen=[...pText(ns)].reduce((n,ch)=>n+(/[가-힣]/.test(ch)?1:/\s/.test(ch)?.35:.6),0);const maxSz=Math.floor(cx/(Math.max(1,tlen)*12700*1.15))*100;
+    ns=ns.replace(/(<a:(?:rPr|endParaRPr|defRPr)[^>]*?\s)sz="(\d+)"/g,(m,a,z)=>`${a}sz="${Math.max(1200,Math.min(+z,maxSz))}"`);
+    ns=ns.replace(/(<p:spPr[^>]*>\s*<a:xfrm[^>]*>\s*)<a:off x="-?\d+" y="-?\d+"\/>\s*<a:ext cx="\d+" cy="\d+"\/>/,(m,a)=>`${a}<a:off x="${ox}" y="${oy}"/><a:ext cx="${cx}" cy="${cy}"/>`);}
+  let out=x.replace(oldSp,()=>ns);if(pic)out=out.replace("</p:spTree>",()=>pic+"</p:spTree>");return out;}
 async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL);onSt&&onSt("틀 파일을 여는 중…");const zip=await window.JSZip.loadAsync(blob);const A=await fullAnalyze(zip);
   const rd=async p=>{const f=zip.file(p);return f?await f.async("string"):"";};
   const relsOf=p=>p.replace(/([^/]+)$/,"_rels/$1.rels");
@@ -3218,8 +3252,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   A.slots.forEach((s,si)=>{const keys=slotMap&&slotMap[si]!==undefined?slotMap[si]:fullSlotMap(A.slots.map(x=>x.idx[0]),A.sermon?A.sermon.i:-1,c,A.slots.map(x=>x.idx.length))[si];if(keys===null)return;const songs=keys.flatMap(items);const gen=[];
     const tB=s.t!=null?A.order[s.t]:null,lB=A.order[s.l];
     for(const it of songs){const ttl=it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
-      if(tB)gen.push({base:tB,edit:x=>x.replace(tB.sps[0].sp,()=>setShapeLines(tB.sps[0].sp,[ttl]))});
-      else gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>setShapeLines(lB.sps[0].sp,[ttl]))});
+      const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,setShapeLines(tb.sps[0].sp,[ttl]))});
       for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>setShapeLines(lB.sps[0].sp,ls))});}
     regions.push({idx:s.idx,gen,what:`찬양 ${si+1}`,n:songs.length});});
   if(A.body.length&&R&&BIB&&BIB[R.b]){const rows=refRows(R);const b0=A.body[0];const chunks=verseSlides(rows,b0.s,Math.max(1,Math.round(A.body.reduce((n,b)=>n+b.nv,0)/A.body.length)));
@@ -3227,6 +3260,9 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   /* 3) 꾸러미(zip) 고치기 */
   onSt&&onSt("슬라이드를 만드는 중…");
   let ct=await rd("[Content_Types].xml");let prels=await rd("ppt/_rels/presentation.xml.rels");let pres=await rd("ppt/presentation.xml");
+  {const m=pres.match(/<p:sldSz cx="(\d+)" cy="(\d+)"/);FULL_W=m?+m[1]:12192000;FULL_H=m?+m[2]:6858000;}
+  let noteAdded=false;const addNoteMedia=async()=>{if(noteAdded)return;noteAdded=true;const u=await svgToPng("data:image/svg+xml;base64,"+btoa(NOTE_SVG),256);zip.file("ppt/media/cbwp_note.png",u.split(",")[1],{base64:true});
+    if(!/Extension="png"/i.test(ct))ct=ct.replace(/(<Types[^>]*>)/,'$1<Default Extension="png" ContentType="image/png"/>');};
   let maxN=Math.max(0,...Object.keys(zip.files).map(f=>+((f.match(/^ppt\/slides\/slide(\d+)\.xml$/)||[])[1]||0)));
   let maxId=Math.max(255,...A.order.map(o=>o.id));let maxR=Math.max(0,...[...prels.matchAll(/Id="rId(\d+)"/g)].map(m=>+m[1]));
   const startOf=new Map();const drop=new Set();for(const r of regions){startOf.set(r.idx[0],r);r.idx.forEach(i=>drop.add(i));}
@@ -3235,7 +3271,8 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
     if(startOf.has(i)){const r=startOf.get(i);const ids=[];
       for(const g of r.gen){maxN++;maxId++;maxR++;const path=`ppt/slides/slide${maxN}.xml`;let x=fix(g.edit(g.base.xml),A.order.indexOf(g.base),g.vs);
         zip.file(path,x);const rp=relsOf(g.base.path);if(relCache[rp]===undefined)relCache[rp]=await rd(rp);
-        zip.file(relsOf(path),relCache[rp].replace(/<Relationship [^>]*notesSlide[^>]*\/>/g,""));
+        let rx=relCache[rp].replace(/<Relationship [^>]*notesSlide[^>]*\/>/g,"");if(x.includes('r:embed="rIdCbwpNote"')){await addNoteMedia();rx=rx.replace("</Relationships>",'<Relationship Id="rIdCbwpNote" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/cbwp_note.png"/></Relationships>');}
+        zip.file(relsOf(path),rx);
         ct=ct.replace("</Types>",`<Override PartName="/${path}" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/></Types>`);
         prels=prels.replace("</Relationships>",`<Relationship Id="rId${maxR}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${maxN}.xml"/></Relationships>`);
         newTags.push(`<p:sldId id="${maxId}" r:id="rId${maxR}"/>`);ids.push(maxId);made++;}
