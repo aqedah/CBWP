@@ -26,7 +26,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js?v=33906a90"></script>
-<script src="platform.js?v=c2cf3a32"></script>
+<script src="platform.js?v=7c5c8fc4"></script>
 <title>Central Bible Worship Planner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -455,6 +455,21 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .pcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.pcal-w{text-align:center;font-size:.8rem;font-weight:700;color:var(--ink2)}.pcal-w.sun{color:#c0392b}.pcal-w.sat{color:#2f62d6}
 .pcal-c{min-height:84px;border:1px solid var(--line);border-radius:8px;padding:4px;font-size:.78rem;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}.pcal-c.past{opacity:.55}.pcal-c.today{outline:2px solid var(--accent)}.pcal-c.has{cursor:pointer;background:var(--soft)}
 .pcal-d{display:flex;gap:4px;align-items:baseline;flex-wrap:wrap}.pcal-hol{color:#c0392b;font-size:.7rem}.pcal-e{display:flex;flex-direction:column;gap:1px}.pcal-p{font-weight:700;overflow-wrap:anywhere}.pcal-s{color:var(--accent);overflow-wrap:anywhere}
+.pmode{position:fixed;inset:0;z-index:9999;background:#111;color:#f5f5f5;display:flex;flex-direction:column;overflow:auto;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.pmode .btn:not(.primary){color:#222}.pmode .btn:disabled{opacity:.45}
+.pm-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#1d1d1f;border-bottom:1px solid #333}
+.pm-title{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pm-title b{font-size:1.1rem}.pm-key{background:#f5c542;color:#222;border-radius:6px;padding:1px 8px;font-weight:800}
+.pm-memo{padding:6px 14px;background:#2a2a2d;color:#ffd98a;font-size:.95rem}
+.pm-body{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;overflow:auto}.pm-page{max-width:none;background:#fff;border-radius:4px;height:auto}
+.pm-lyrics{white-space:pre-line;font-size:clamp(1.2rem,3vw,2rem);line-height:1.7;text-align:center;max-width:900px;padding:16px}.pm-empty{padding:40px;color:#aaa}
+.pm-foot{position:sticky;bottom:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;background:#1d1d1f;border-top:1px solid #333}
+.pm-dots{display:flex;gap:6px}.pm-dot{width:12px;height:12px;border-radius:50%;border:0;background:#555;padding:0;cursor:pointer}.pm-dot.on{background:#f5c542}
+body.wb-on .wrap{max-width:1560px}
+.wb{display:grid;grid-template-columns:minmax(300px,1fr) minmax(420px,1.5fr) minmax(300px,1fr);gap:16px;align-items:start}.wb-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.wb-r{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px)}.wb-lib{max-height:calc(100vh - 100px);overflow:auto}
+.wb-word{max-height:45vh;overflow:auto;line-height:1.75;font-size:.95rem}.wb-word p{margin:0 0 4px}.wb-word sup{color:var(--muted);font-size:.7rem}
+.wb-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}.wb-song{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid var(--line);border-radius:8px}.wb-st{flex:1;min-width:0;overflow-wrap:anywhere}
+body.wb-on .wb-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 4px 12px rgb(0 0 0 / .06)}
 .tplpair{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tplone{display:flex;flex-direction:column;gap:3px;max-width:320px;margin-top:6px}
 .tpv{position:relative;width:100%;container-type:size;background-size:cover;background-position:center;border-radius:6px;overflow:hidden}.tpv-t{position:absolute;display:flex;flex-direction:column;white-space:pre-line;box-sizing:border-box;padding:0 2%}
 .availlist{display:flex;flex-direction:column;gap:8px}
@@ -792,7 +807,14 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
 const NAVG={home:[["home","홈"]],conti:[["bible","말씀 · 묵상"],["write","콘티 작성"],["pptmake","PPT 만들기"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"],["ppt","PPT 라이브러리"]],team:[["cal","일정"],["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bylaws","회칙"]],me:[["me","나"]]};
 const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
 const PROJ_G=["home","conti","songs","team"];const PROJ_TEAM=["members"];
-const subsOf=g=>{const w=isWriter()||!!S.curId;const l=NAVG[g].filter(([k])=>(k!=="write"||w)&&!(g==="team"&&isProject()&&!PROJ_TEAM.includes(k)));return g==="conti"&&!w?l.slice().sort((a,b)=>(a[0]==="list"?-1:0)-(b[0]==="list"?-1:0)):l;};
+/* 역할: admin(관리자) · lead(리더 비밀번호) · writer(인도자·리더·작성자) · clerk(서기) · member(팀원)
+   팀원에게는 「홈 · 일정 · 나」만, 서기에게는 운영(편성·출결·멤버·결산)만 보여요. 기능은 그대로, 보이는 메뉴만 달라요 */
+function role(){if(!window.CBWP)return"admin";if(S.isOwner||window.CBWP.isAdmin())return"admin";if(S.memberOnly)return"member";if(canLead())return"lead";if(isWriter())return"writer";
+  const me=normName(myName());const mb=me&&S.members.find(x=>normName(x.name)===me);if(mb&&mb.role==="서기")return"clerk";return"member";}
+const ROLE_TABS={member:{home:1,team:["cal"],me:1},clerk:{home:1,team:["cal","members","lineup","attend","stats","bylaws"],me:1}};
+function tabAllowed(g,k){const r=ROLE_TABS[role()];if(isProject()){if(!PROJ_G.includes(g))return false;if(g==="team"&&!PROJ_TEAM.includes(k))return false;}
+  if(!r)return true;const a=r[g];if(!a)return false;return a===1||a.includes(k);}
+const subsOf=g=>{const w=isWriter()||!!S.curId;const l=NAVG[g].filter(([k])=>(k!=="write"||w)&&tabAllowed(g,k));return g==="conti"&&!w?l.slice().sort((a,b)=>(a[0]==="list"?-1:0)-(b[0]==="list"?-1:0)):l;};
 S.lastSub={};
 document.querySelectorAll(".bnav button").forEach(b=>b.addEventListener("click",()=>{const g=b.dataset.group;const subs=subsOf(g).map(x=>x[0]);
   if(groupOf(S.tab)===g&&subs.length>1){window.scrollTo({top:0,behavior:"smooth"});return;}
@@ -801,8 +823,9 @@ function goTab(k){if((k==="write"||(k==="bible"&&isWriter()))&&S.team){const sav
     const keep=(saved&&(isAuthor(saved)||S.isOwner)&&!isPastConti(saved))||(!S.curId&&isMineDraft()&&!!S.cur);
     if(!keep){S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();}}
   setTab(k);}
-function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;const pj=isProject();document.querySelectorAll(".bnav button").forEach(b=>{b.setAttribute("aria-current",b.dataset.group===g?"page":"false");b.hidden=pj&&!PROJ_G.includes(b.dataset.group);});
-  $(".bnav-in").style.gridTemplateColumns=pj?`repeat(${PROJ_G.length},1fr)`:"";
+function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;const pj=isProject();let shown=0;document.querySelectorAll(".bnav button").forEach(b=>{const gg=b.dataset.group;b.setAttribute("aria-current",gg===g?"page":"false");b.hidden=!!S.team&&!subsOf(gg).length;if(!b.hidden)shown++;
+    const lb=b.querySelector("span");if(lb&&gg==="team"){const only=subsOf("team");lb.textContent=only.length===1&&only[0][0]==="cal"?"일정":"우리 팀";}});
+  $(".bnav-in").style.gridTemplateColumns=shown&&shown<5?`repeat(${shown},1fr)`:"";
   const on=!!S.team;$("#tabsNav").hidden=!on;document.body.classList.toggle("has-bnav",on);}
 function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)return null;
   return h("div",{class:"subtabs",role:"tablist","aria-label":"작은 메뉴"},subs.map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(k===S.tab),text:l,onclick:()=>{if(k!==S.tab)goTab(k);}})));}
@@ -811,23 +834,27 @@ function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)
 $("#homeLink").addEventListener("click",e=>{e.preventDefault();if(S.team)switchTeam();else window.scrollTo({top:0});});
 function setTab(t){S.tab=t;render();window.scrollTo({top:0});}
 /* who writes contis: admin, team leader password, a member marked 리더 or 인도자 (by the name given on this device), or someone who already wrote one */
-function isWriter(){if(!S.canWrite)return false;if(!window.CBWP||isProject())return true;if(window.CBWP.isAdmin()||canLead())return true;
+function isWriter(){if(!S.canWrite||S.memberOnly)return false;if(!window.CBWP||isProject())return true;if(window.CBWP.isAdmin()||canLead())return true;
   if(S.contis.some(c=>isAuthor(c)&&!c.past))return true;const me=normName(myName());if(!me)return false;
   return S.members.some(mb=>normName(mb.name)===me&&(mb.role==="리더"||(mb.positions||[]).includes("인도자")));}
 function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   
   const tc=(ALLT.find(t=>t.id===S.team)||{}).color;if(tc)document.documentElement.style.setProperty("--team",tc);else document.documentElement.style.removeProperty("--team");
   if(S.team)nm.append(h("span",{class:"teamchip"},teamName(S.team),h("button",{type:"button",text:"팀 바꾸기",onclick:switchTeam})));
-  if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.canWrite?(S.isOwner?h("button",{type:"button",class:"lockchip on",title:"눌러서 관리자 로그아웃",text:"관리자 ✕",onclick:adminLogout}):h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:"쓰기 가능"})):
+  if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.memberOnly?h("button",{type:"button",class:"lockchip",title:"인도자·리더 비밀번호를 넣으면 콘티를 쓰고 고칠 수 있어요",text:"팀원 · 인도자 비밀번호",onclick:()=>unlockModal(S.team)}):S.canWrite?(S.isOwner?h("button",{type:"button",class:"lockchip on",title:"눌러서 관리자 로그아웃",text:"관리자 ✕",onclick:adminLogout}):h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:"쓰기 가능"})):
     h("button",{type:"button",class:"lockchip",title:"팀 비밀번호를 넣으면 콘티를 쓸 수 있어요",text:"🔒 보기 전용",onclick:()=>unlockModal(S.team)}));
   if(S.team&&window.CBWP&&S.canWrite)nm.append(h("button",{type:"button",class:"lockchip",title:"이 기기에서 로그아웃",text:"로그아웃",onclick:logoutModal}));
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
   const inst=!isStandalone()?h("button",{type:"button",class:"lockchip",title:"홈 화면에 앱처럼 추가해요",text:IN_KAKAO?"🌐 브라우저로 열기":"📲 홈 화면에 추가",onclick:installHelp}):null;
   const links=[inst,h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
   $("#topLinks").replaceChildren(...links.filter(Boolean));}
-function pickTeam(id){if(window.CBWP&&!window.CBWP.canWrite(id)){unlockModal(id,()=>pickTeam(id));return;}
+/* 팀원 비밀번호(보기 · 참여 응답)로 들어온 기기인지 */
+const canIn=id=>!window.CBWP||window.CBWP.canWrite(id)||!!(window.CBWP.canRead&&window.CBWP.canRead(id));
+const memberOnlyOf=id=>!!window.CBWP&&!window.CBWP.canWrite(id)&&!!(window.CBWP.canRead&&window.CBWP.canRead(id));
+function setAccess(){if(!window.CBWP)return;S.canWrite=!!S.team&&canIn(S.team);S.memberOnly=!!S.team&&memberOnlyOf(S.team);}
+function pickTeam(id){if(window.CBWP&&!canIn(id)){unlockModal(id,()=>pickTeam(id));return;}
   if(window.CBWP){startShared();startTeam(id);}
-  S.team=id;try{localStorage.setItem(TEAM_KEY,id);}catch(e){}applyTeam();if(window.CBWP)S.canWrite=window.CBWP.canWrite(id);
+  S.team=id;try{localStorage.setItem(TEAM_KEY,id);}catch(e){}applyTeam();setAccess();
   if(!loadDraft()){S.cur=blankConti();S.curId=null;S.dirty=false;}S.past=null;S.tab="home";
   render();window.scrollTo({top:0});}
 function switchTeam(){saveDraft();S.team=null;try{localStorage.removeItem(TEAM_KEY);}catch(e){}render();window.scrollTo({top:0});}
@@ -853,10 +880,10 @@ function renderTeamPick(m){m.append(h("img",{class:"bigLogo",alt:"중앙성서�
   h("div",{class:"teampick"},TEAMS.map(t=>{const n=S.allContis.filter(c=>teamOf(c)===t.id).length;
     const i=TEAMS.indexOf(t)+1;
     return h("button",{type:"button",class:"teambtn",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:String(i).padStart(2,"0")}),
-      h("span",{class:"tnote","aria-hidden":"true",text:"♪"}),h("b",{text:t.name}),h("small",{text:t.en}),h("span",{text:window.CBWP?(window.CBWP.canWrite(t.id)?"들어가기 →":"🔒 비밀번호로 들어가기"):(S.ready&&!S.dbFailed?`저장된 콘티 ${n}개`:"들어가기")}));}))));
+      h("span",{class:"tnote","aria-hidden":"true",text:"♪"}),h("b",{text:t.name}),h("small",{text:t.en}),h("span",{text:window.CBWP?(canIn(t.id)?"들어가기 →":"🔒 비밀번호로 들어가기"):(S.ready&&!S.dbFailed?`저장된 콘티 ${n}개`:"들어가기")}));}))));
   m.append(h("div",{class:"sheet"},h("h2",{},"프로젝트",h("span",{class:"sub",text:"행사 찬양을 준비해요 · 본문 · 콘티 · PPT만 간단히"})),
     h("div",{class:"teampick"},PROJECTS.map(t=>h("button",{type:"button",class:"teambtn proj",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:"P"}),
-      h("span",{class:"tnote","aria-hidden":"true",text:"✦"}),h("b",{text:t.name}),h("small",{text:t.note}),h("span",{text:window.CBWP&&!window.CBWP.canWrite(t.id)?"🔒 팀 비밀번호로 들어가기":"들어가기 →"}))))));}
+      h("span",{class:"tnote","aria-hidden":"true",text:"✦"}),h("b",{text:t.name}),h("small",{text:t.note}),h("span",{text:window.CBWP&&!canIn(t.id)?"🔒 팀 비밀번호로 들어가기":"들어가기 →"}))))));}
 function drawAdminRow(){const r=$("#adminRow");if(!r)return;r.hidden=!window.CBWP;if(!window.CBWP)return;
   r.replaceChildren(...(S.isOwner?[h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}),h("button",{class:"btn sm",text:"관리자 로그아웃",onclick:adminLogout})]:[]));if(S.isOwner)return;r.append(h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
 function logoutModal(){if(!window.CBWP)return;if(!window.CBWP.logoutKeys)return toast("앱이 예전 버전이에요. 새로고침(PC는 Ctrl+Shift+R)한 뒤 다시 눌러 주세요",4000);const t=S.team;
@@ -867,7 +894,7 @@ function logoutModal(){if(!window.CBWP)return;if(!window.CBWP.logoutKeys)return 
   const md=modal("로그아웃",h("div",{class:"panel-body"},
     h("p",{text:"이 기기에서 비밀번호로 열어 둔 것을 닫아요. 다시 들어오려면 비밀번호를 넣어야 해요."}),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},
-      t?h("button",{class:"btn",text:`${teamName(t)} 팀에서만 로그아웃`,onclick:()=>run([t,`${t}_lead`],false,`${teamName(t)} 팀에서 로그아웃했어요`)}):null,
+      t?h("button",{class:"btn",text:`${teamName(t)} 팀에서만 로그아웃`,onclick:()=>run([t,`${t}_lead`,`${t}_member`],false,`${teamName(t)} 팀에서 로그아웃했어요`)}):null,
       h("button",{class:"btn danger",text:"모든 팀에서 로그아웃 (이름도 지워요)",onclick:()=>run([],true,"모든 팀에서 로그아웃했어요")}))),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()})]);}
 function adminLogout(){if(!window.CBWP||!window.CBWP.logoutAdmin)return;
@@ -895,14 +922,14 @@ function importModal(){const st=h("p",{class:"hint"});
     catch(err){console.error(err);st.textContent=`${done}개까지 옮기고 멈췄어요. 다시 고르면 이어서 덮어써요. (${(err&&(err.code||err.message))||"알 수 없는 문제"})`;}}});
   const md=modal("자료 가져오기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"Claude에서 내보낸 자료 파일(.json)을 고르면 콘티 · 곡 · 악보 · 멤버가 이 앱으로 옮겨져요. 같은 자료를 다시 넣으면 덮어써요."}),
     h("span",{class:"btn primary filebtn"},"자료 파일 고르기",fin),st),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
-function render(){const m=$("#main");m.replaceChildren();document.body.classList.remove("fb-pad");drawChrome();drawAdminRow();
+function render(){const m=$("#main");m.replaceChildren();document.body.classList.remove("fb-pad","wb-on");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
   if(S.tab==="write"&&S.team&&!S.curId&&!isWriter())S.tab="list";
   syncNav();
   if(DEEP&&!deepDone&&!S.deepTeam&&S.ready&&DEEP.t!==S.team&&ALLT.some(x=>x.id===DEEP.t)){S.deepTeam=true;setTimeout(()=>pickTeam(DEEP.t),0);}
   if(!S.team){renderTeamPick(m);return;}
   setTimeout(tryDeep,0);
-  if(isProject()&&(!PROJ_G.includes(groupOf(S.tab))||(groupOf(S.tab)==="team"&&!PROJ_TEAM.includes(S.tab)))){S.tab="home";syncNav();}
+  if(!tabAllowed(groupOf(S.tab),S.tab)&&!(S.tab==="write"&&S.curId)){S.tab="home";syncNav();}
   const st=subTabs();if(st)m.append(st);
   ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend,lineup:renderLineup,ppt:renderPpt,pptmake:renderPptMake})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
@@ -911,13 +938,13 @@ function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lea
   const codeIn=h("input",{type:"password",id:"ul-code",placeholder:isAdmin?"관리자 비밀번호":projOf(team)?"내 찬양팀 비밀번호":`${tn} 비밀번호`,autocomplete:"off"});
   const msg=h("p",{class:"hint",style:"color:var(--danger)"});
   const go=async()=>{const name=nameIn.value.trim();if(!isAdmin&&!isLead&&!name){nameIn.focus();msg.textContent="이름을 써 주세요";return;}
-    btn.disabled=true;msg.textContent="";try{await window.CBWP.unlock(team,codeIn.value,name);md.close();
-      if(isAdmin){S.isOwner=true;}S.canWrite=!!S.team&&window.CBWP.canWrite(S.team);if(after)return after();render();toast(isAdmin?"관리자로 들어왔어요. 모든 콘티를 고칠 수 있어요":isLead?`${tn}로 들어왔어요. 멤버를 등록하고 고칠 수 있어요`:projOf(team)?`${teamName(team)}에 들어왔어요`:`이제 ${teamName(team)} 팀 콘티를 쓸 수 있어요`,3200);}
+    btn.disabled=true;msg.textContent="";try{try{await window.CBWP.unlock(team,codeIn.value,name);}catch(e1){if(e1.message!=="wrong"||isAdmin||isLead||projOf(team))throw e1;await window.CBWP.unlock(`${team}_member`,codeIn.value,name);}md.close();
+      if(isAdmin){S.isOwner=true;}setAccess();if(after)return after();render();toast(isAdmin?"관리자로 들어왔어요. 모든 콘티를 고칠 수 있어요":isLead?`${tn}로 들어왔어요. 멤버를 등록하고 고칠 수 있어요`:projOf(team)?`${teamName(team)}에 들어왔어요`:`이제 ${teamName(team)} 팀 콘티를 쓸 수 있어요`,3200);}
     catch(e){btn.disabled=false;msg.textContent=e.message==="wrong"?"비밀번호가 맞지 않아요":"확인하지 못했어요. 인터넷 연결을 확인해 주세요";codeIn.select();}};
   codeIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)go();});
   const btn=h("button",{class:"btn primary",text:"확인",onclick:go});
   const md=modal(isAdmin?"관리자 비밀번호":`${tn} 비밀번호`,h("div",{class:"panel-body"},
-    h("p",{class:"hint",text:isAdmin?"관리자는 모든 팀의 콘티를 고치고, 저장된 자료를 옮길 수 있어요.":isLead?`${tn} 비밀번호를 넣으면 이 기기에서 ${teamName(team.replace(/_lead$/,""))} 팀 멤버를 등록하고 고칠 수 있어요.`:projOf(team)?`${teamName(team)}은 찬양팀 누구나 함께 써요. 내 찬양팀 비밀번호를 넣으면 들어가요.`:`${teamName(team)} 팀 멤버만 들어갈 수 있어요. 비밀번호는 인도자나 목사님께 물어보세요. 한 번 넣으면 이 기기에서는 다시 묻지 않아요.`}),
+    h("p",{class:"hint",text:isAdmin?"관리자는 모든 팀의 콘티를 고치고, 저장된 자료를 옮길 수 있어요.":isLead?`${tn} 비밀번호를 넣으면 이 기기에서 ${teamName(team.replace(/_lead$/,""))} 팀 멤버를 등록하고 고칠 수 있어요.`:projOf(team)?`${teamName(team)}은 찬양팀 누구나 함께 써요. 내 찬양팀 비밀번호를 넣으면 들어가요.`:`${teamName(team)} 팀만 들어갈 수 있어요. 팀원은 「팀원 비밀번호」(보기 · 참여 응답), 인도자 · 서기는 「팀 비밀번호」(콘티 쓰기 · 편성 · 출결)를 넣으세요. 한 번 넣으면 이 기기에서는 다시 묻지 않아요.`}),
     isAdmin||isLead?null:h("div",{class:"field"},h("label",{htmlFor:"ul-name",text:"이름"}),nameIn),h("div",{class:"field"},h("label",{htmlFor:"ul-code",text:"비밀번호"}),codeIn),msg),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),btn]);setTimeout(()=>(isAdmin||isLead||nameIn.value?codeIn:nameIn).focus(),0);}
 const canLead=()=>window.CBWP?(window.CBWP.isAdmin()||window.CBWP.canWrite(`${S.team}_lead`)&&!!S.team):(S.isOwner||S.canWrite);
@@ -933,7 +960,7 @@ function statusBanner(){
    WRITE TAB
    ========================================================= */
 function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();initHist();
-  const head=h("div",{class:"sheet"},
+  const head=h("div",{class:"sheet wb-head"},
     h("h2",{},h("span",{text:S.curId?"콘티 고치기":"새 콘티"}),h("span",{class:"sub",id:"authorLine"})),
     h("div",{class:"savebar"},
       h("select",{id:"f-status",style:"width:auto",disabled:!editable,"aria-label":"콘티 상태",onchange:e=>{c.status=e.target.value;markDirty();}},
@@ -943,6 +970,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("button",{class:"btn",disabled:!editable,onclick:openLoadPast,text:"지난 콘티 불러오기"}),
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       S.curId&&isWriter()?h("button",{class:"btn"+(editable?"":" primary"),onclick:newConti,title:"빈 콘티를 새로 시작해요",text:"+ 새 콘티 만들기"}):null,
+      isWide()?h("button",{class:"btn",onclick:()=>outputModal(S.cur),text:"🖨 출력"}):null,isWide()?h("button",{class:"btn",onclick:()=>previewLyricsPpt(S.cur),text:"PPT"}):null,isWide()?h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 공지"}):null,
       h("span",{class:"spacer"}),h("span",{class:"status",id:"saveStatus"})));
   if(S.curId){const a=$("#authorLine",head);a.append("콘티 제작 - ",authorEl(c.authorId,c.authorName));resolveNames([c.authorId]);
     const sv=S.contis.find(x=>x.id===S.curId);if(sv&&S.db&&S.canWrite&&(isAuthor(sv)||S.isOwner))a.append(" ",h("button",{class:"btn sm ghost",text:"↪ 넘기기",title:"이 콘티를 다른 인도자에게 넘겨요",onclick:()=>handoverModal(sv)}));}
@@ -998,7 +1026,31 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
     h("div",{class:"row",style:"margin-top:10px"},h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축을 PDF나 이미지로 저장해요",text:"🖨 콘티 출력"}),
       h("button",{class:"btn",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"PPT 만들기"}),h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}))));
   [...fs.querySelectorAll(".sheet > h2")].forEach((h2,i)=>{const first=h2.firstChild;const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
+  if(isWide())workbench(fs,c,editable);else document.body.classList.remove("wb-on");
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updateStatus();updUndo();}
+/* PC 작업대: 넓은 화면(1200px~)에서 콘티 작성을 3단으로 — 예배 정보 · 참여자 · 말씀 | 콘티 | 곡 찾기 */
+const isWide=()=>window.innerWidth>=1200;
+{let wasWide=isWide(),t=null;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(()=>{const w=isWide();if(w!==wasWide){wasWide=w;if(S.tab==="write")render();}},250);});}
+function workbench(fs,c,editable){document.body.classList.add("wb-on");const sh=[...fs.children];const nSec=SECTIONS.length;
+  const colL=h("div",{class:"wb-col wb-l"}),colC=h("div",{class:"wb-col wb-c"}),colR=h("div",{class:"wb-col wb-r"});
+  colL.append(sh[0],sh[1],wordPanel(c,editable));colC.append(...sh.slice(2,2+nSec),...sh.slice(2+nSec));colR.append(libPanel(c,editable));
+  fs.replaceChildren(h("div",{class:"wb"},colL,colC,colR));}
+function wordPanel(c,editable){const box=h("div",{class:"wb-word"});const r=parseRef((c.passage||"").trim());
+  const memo=h("textarea",{id:"wb-med",value:c.meditation||"",placeholder:"묵상 메모 (콘티 공지에 함께 들어가요)",style:"min-height:80px",disabled:!editable,oninput:e=>{c.meditation=e.target.value;markDirty();}});
+  if(r)loadBible().then(()=>{if(!BIB[r.b]||!BIB[r.b][r.ch-1])return box.replaceChildren(h("div",{class:"hint",text:"본문을 찾지 못했어요"}));
+    box.replaceChildren(...refRows(r).map(([ch,v,t])=>h("p",{},h("sup",{text:`${ch}:${v} `}),...[].concat(glossMark(t)))));}).catch(()=>{});
+  else box.append(h("div",{class:"hint",text:"「예배 정보」에 본문을 넣으면 여기서 함께 읽어요."}));
+  return h("div",{class:"sheet"},h("h2",{},"말씀",h("span",{class:"sub",text:r?refLabel(r.b,r.ch,r.v1,r.ch2,r.v2):""})),box,h("div",{class:"field",style:"margin-top:8px"},h("label",{htmlFor:"wb-med",text:"묵상 메모"}),memo));}
+function libPanel(c,editable){let key="before";const tgt=h("select",{style:"width:auto","aria-label":"넣을 칸",onchange:e=>{key=e.target.value;}},SECTIONS.map(([k,l])=>h("option",{value:k,text:l,selected:k===key})));
+  const add=it=>{if(!editable)return toast("지금 열린 콘티는 고칠 수 없어요");(c[key]=c[key]||[]).push(it);markDirty();renderSetlist(key);toast(`「${it.title}」 → ${SECTIONS.find(x=>x[0]===key)[1]}`);};
+  const row=sg=>h("div",{class:"wb-song"},h("span",{class:"wb-st",text:sg.title}),sg.key?h("span",{class:"hint",text:sg.key}):null,(sg.pages||[]).length?h("span",{class:"hint",title:"악보 있음",text:"🎼"}):null,
+    h("button",{type:"button",class:"btn sm",text:"+",title:"이 곡 넣기",disabled:!editable,onclick:()=>add(itemFromSong(sg))}));
+  const recent=[];const seen=new Set();for(const x of S.contis.filter(x=>!x.noService&&x.date).sort((a,b)=>b.date.localeCompare(a.date)))for(const it of allItems(x)){const sg=songOf(it);if(sg&&!seen.has(sg.id)){seen.add(sg.id);recent.push(sg);}if(recent.length>=15)break;}
+  let favs=[];try{favs=JSON.parse(localStorage.getItem("cbwp-fav")||"[]");}catch(e){}const fav=S.songs.filter(x=>favs.includes(x.id)).slice(0,20);
+  return h("div",{class:"sheet wb-lib"},h("h2",{},"곡 찾기",h("span",{class:"sub",text:"골라서 바로 넣어요"})),
+    h("div",{class:"row",style:"gap:6px;margin-bottom:6px"},h("span",{class:"hint",text:"넣을 칸"}),tgt),songSearch("wb",add),
+    fav.length?h("details",{open:true,style:"margin-top:10px"},h("summary",{class:"hint",text:`★ 즐겨찾기 ${fav.length}`}),h("div",{class:"wb-list"},fav.map(row))):null,
+    recent.length?h("details",{open:true,style:"margin-top:10px"},h("summary",{class:"hint",text:"최근 부른 곡"}),h("div",{class:"wb-list"},recent.map(row))):null);}
 /* bring songs (and optionally the roster) from an earlier conti into the one being written */
 function openLoadPast(){let q="";const box=h("div",{class:"cards"});
   const search=h("input",{type:"search",id:"lp-q",placeholder:"날짜 · 곡 · 인도자로 찾기 (초성 가능)",oninput:e=>{q=e.target.value;draw();}});
@@ -2221,7 +2273,7 @@ const EVKINDS=[["practice","찬양 연습"],["group","소모임"],["service","�
 const evKindName=(k,e)=>k==="custom"?((e&&e.kindName)||"직접 입력"):k==="etc"?"기타":(EVKINDS.find(x=>x[0]===k)||EVKINDS[3])[1];
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const addDays=(ds,n)=>{const d=parseD(ds)||new Date();d.setDate(d.getDate()+n);return ymd(d);};
-function eventModal(ev,preset={}){const can=S.canWrite&&!!S.db;const e=ev?clone(ev):{date:preset.date||todayStr(),time:preset.time||"",title:preset.title||"",kind:preset.kind||"practice",place:preset.place||"",memo:preset.memo||""};
+function eventModal(ev,preset={}){const can=S.canWrite&&!S.memberOnly&&!!S.db;const e=ev?clone(ev):{date:preset.date||todayStr(),time:preset.time||"",title:preset.title||"",kind:preset.kind||"practice",place:preset.place||"",memo:preset.memo||""};
   if(e.kind==="etc"){e.kind="custom";e.kindName=e.kindName||"기타";}
   const kindName=h("input",{type:"text",id:"ev-kindname",placeholder:"종류 이름 (예: 수련회, 회의)",value:e.kindName||"",disabled:!can,oninput:x=>{if(!titleIn.value.trim()||titleIn.value===titleIn.dataset.auto){titleIn.value=x.target.value;titleIn.dataset.auto=x.target.value;}}});
   kindName.hidden=e.kind!=="custom";
@@ -2259,7 +2311,7 @@ function dayModal(ds){const {evs,cs,bds}=dayItems(ds);const hol=HOLIDAYS[ds];
         h("button",{class:"btn sm",text:"콘티 보기",onclick:()=>{md.close();viewConti(c);}})))),
       evs.map(e=>h("button",{type:"button",class:`card evcard k-${e.kind}`,onclick:()=>{md.close();eventModal(e);}},h("div",{class:"row"},h("span",{class:"tag",text:evKindName(e.kind,e)}),evSpan(e)?h("span",{class:"hint",text:evSpan(e)}):null,e.time?h("b",{text:e.time}):null,h("b",{text:e.title}),e.place?h("span",{class:"hint",text:`@ ${e.place}`}):null),
         e.memo?h("div",{class:"hint",style:"white-space:pre-wrap;text-align:left",text:e.memo}):null))):h("div",{class:"empty",text:"이 날은 아직 일정이 없어요."}));
-  const md=modal(fmtDate(ds),body,[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),S.canWrite&&S.db?h("button",{class:"btn primary",text:"+ 이 날 일정 추가",onclick:()=>{md.close();eventModal(null,{date:ds});}}):null]);}
+  const md=modal(fmtDate(ds),body,[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),S.canWrite&&!S.memberOnly&&S.db?h("button",{class:"btn primary",text:"+ 이 날 일정 추가",onclick:()=>{md.close();eventModal(null,{date:ds});}}):null]);}
 function renderCal(m){const today=todayStr();if(!S.calMonth)S.calMonth=today.slice(0,7);
   const [Y,M]=S.calMonth.split("-").map(Number);const first=new Date(Y,M-1,1);const start=new Date(Y,M-1,1-first.getDay());
   const go=n=>{const d=new Date(Y,M-1+n,1);S.calMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;render();};
@@ -2340,27 +2392,28 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
   const addBtn=h("button",{class:"btn primary",text:"공지 올리기",onclick:async()=>{const t=ta.value.trim();if(!t)return ta.focus();addBtn.disabled=true;
     const n={id:uid(8),text:t,by:S.myId||null,name:(window.CBWP&&window.CBWP.myName&&window.CBWP.myName())||"",at:Date.now(),pin:false};
     if(await saveNotices([n,...notices()].slice(0,30))){toast("공지를 올렸어요");render();}else addBtn.disabled=false;}});
-  const mineN=n=>S.isOwner||(n.by&&n.by===S.myId);
+  const mineN=n=>S.isOwner||(n.by&&n.by===S.myId);const canN=can&&!S.memberOnly;
   const nbox=h("div",{class:"sheet homenote"},h("h2",{},"공지",h("span",{class:"sub",text:list.length?`${list.length}개`:"팀원에게 알릴 일을 남겨요"})),
     list.length?h("div",{class:"notices"},list.map(n=>{let armed=false;const del=h("button",{class:"btn sm ghost danger",text:"지우기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말 지울까요?";setTimeout(()=>{armed=false;del.textContent="지우기";},3000);return;}
         if(await saveNotices(notices().filter(x=>x.id!==n.id))){toast("공지를 지웠어요");render();}}});
       return h("div",{class:"notice"+(n.pin?" pin":"")},h("div",{class:"ntext",text:n.text}),
         h("div",{class:"row nmeta"},n.pin?h("span",{class:"tag",text:"📌 고정"}):null,h("span",{class:"hint",text:fmtDate(ymd(new Date(n.at||Date.now())))}),
           n.name?h("span",{class:"hint",text:n.name}):n.by?h("span",{class:"hint"},authorEl(n.by)):null,h("span",{class:"spacer"}),
-          can&&mineN(n)?h("button",{class:"btn sm ghost",text:n.pin?"고정 풀기":"맨 위 고정",onclick:async()=>{if(await saveNotices(notices().map(x=>x.id===n.id?{...x,pin:!x.pin}:x)))render();}}):null,
-          can&&mineN(n)?del:null));})):h("div",{class:"empty",text:"아직 공지가 없어요."}),
-    can?h("div",{class:"field",style:"margin-top:12px"},h("label",{htmlFor:"notice-new",text:"새 공지"}),ta,h("div",{class:"row"},h("span",{class:"spacer"}),addBtn)):null);
+          canN&&mineN(n)?h("button",{class:"btn sm ghost",text:n.pin?"고정 풀기":"맨 위 고정",onclick:async()=>{if(await saveNotices(notices().map(x=>x.id===n.id?{...x,pin:!x.pin}:x)))render();}}):null,
+          canN&&mineN(n)?del:null));})):h("div",{class:"empty",text:"아직 공지가 없어요."}),
+    canN?h("div",{class:"field",style:"margin-top:12px"},h("label",{htmlFor:"notice-new",text:"새 공지"}),ta,h("div",{class:"row"},h("span",{class:"spacer"}),addBtn)):null);
   /* 3. two weeks of schedule */
   const end=addDays(today,14);
   const up=[...S.events.filter(e=>e.date<=end&&evEnd(e)>=today).map(e=>({d:e.date<today?today:e.date,t:e.time||"",k:e.kind,label:e.title+(evSpan(e)?` (${evSpan(e)})`:"")+(e.place?` @ ${e.place}`:""),ev:e})),
     ...S.contis.filter(c=>c.date>=today&&c.date<=end&&!c.noService).map(c=>({d:c.date,t:"",k:"service",label:wtypeOf(c)+(leaderOf(c)?` · 인도 ${leaderOf(c)}`:""),c})),
     ...Object.entries(HOLIDAYS).filter(([d])=>d>=today&&d<=end).map(([d,n])=>({d,t:"",k:"hol",label:n}))].sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));
-  const sch=h("div",{class:"sheet"},h("h2",{},"앞으로 2주 일정",h("span",{class:"row",style:"gap:6px"},can?h("button",{class:"btn sm",text:"+ 일정",onclick:()=>eventModal(null,{date:today})}):null,h("button",{class:"btn sm",text:"달력 보기",onclick:()=>setTab("cal")}))),
+  const sch=h("div",{class:"sheet"},h("h2",{},"앞으로 2주 일정",h("span",{class:"row",style:"gap:6px"},canN?h("button",{class:"btn sm",text:"+ 일정",onclick:()=>eventModal(null,{date:today})}):null,h("button",{class:"btn sm",text:"달력 보기",onclick:()=>setTab("cal")}))),
     up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:`uprow k-${x.k}`+(x.d===today?" today":""),onclick:()=>x.ev?eventModal(x.ev):x.c?viewConti(x.c):setTab("cal")},
       h("span",{class:"when",text:x.d===today?"오늘":fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":x.k==="hol"?"공휴일":evKindName(x.k,x.ev)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):
       h("div",{class:"empty",text:"2주 안에 잡힌 일정이 없어요."}));
   if(isProject())return m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),projectListSheet(),myServeSheet(),nbox,projectCalSheet());
-  m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),myServeSheet(),availSheet()||"",nbox,boardSheet(),sch);}
+  /* 팀원이 앱을 열면 먼저 「이번 주 내가 할 일」: 나의 섬김 → 참여 응답 → 공지 → 일정 → 한마디 · 나눔 */
+  m.append(myServeSheet(),availSheet()||"",nbox,sch,tickerSheet(),boardSheet(),h("figure",{class:"verse homeverse",style:"margin-top:8px"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));}
 /* home: my serving, one-line board, prayer & sharing */
 const myName=()=>((window.CBWP&&window.CBWP.myName&&window.CBWP.myName())||S.meName||"").trim();
 const POSTK={talk:"한마디",prayer:"기도제목",share:"나눔"};
@@ -2388,10 +2441,12 @@ function myServeSheet(){const me=normName(myName());const today=todayStr();
       h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),h("span",{class:"spacer"}),h("b",{class:"dday",text:ddayLabel(c.date)})),
       h("h3",{text:c.sermonTitle?`「${c.sermonTitle}」`:wtypeOf(c)}),
       h("div",{class:"serve-pos"},"맡은 자리: ",h("b",{text:pos.join(" · ")}),leaderOf(c)?h("span",{class:"hint",text:` · 인도 ${leaderOf(c)}`}):null),
+      (()=>{const pl=planOf(c.date);if(!pl)return null;const pa=pl.practiceAt;const txt=pa&&pa.date?`${dLabel(pa.date)}${pa.time?` ${pa.time}`:""}${pa.place?` · ${pa.place}`:""}`:pl.practice;if(!txt)return null;
+        const ro=rosterOn(c.date,myName());return h("div",{class:"serve-pos"},"🎵 연습: ",h("b",{text:txt}),ro&&!ro.p?h("span",{class:"hint",text:" · 이번 연습 명단에는 없어요"}):null);})(),
       songsBlock(c),
       h("div",{class:"row"},ids.length?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`,target:"_blank",rel:"noopener",text:`▶ 레퍼런스 재생목록 (${ids.length}곡)`}):h("span",{class:"hint",text:"아직 곡에 유튜브 주소가 없어요"}),
         c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:"유튜브 재생목록"}):null,
-        h("button",{class:"btn sm primary",text:"콘티 · 악보 보기",onclick:()=>viewConti(c)})));})));}
+        h("button",{class:"btn sm primary",text:"콘티 · 악보 보기",onclick:()=>viewConti(c)}),allItems(c).length?h("button",{class:"btn sm",text:"🎼 연습 모드",onclick:()=>practiceMode(c)}):null));})));}
 function tickerSheet(){const can=S.canWrite&&!!S.db;const talks=S.posts.filter(p=>p.post==="talk").sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,20);
   const track=h("div",{class:"ticker-track"});const items=talks.length?talks:[{text:"오늘 한마디를 남겨 보세요 — 응원, 감사, 연습 후기 무엇이든 좋아요",name:""}];
   const mk=()=>items.map(p=>h("span",{class:"tick"},h("span",{class:"tick-t",text:p.text}),p.name?h("span",{class:"tick-n",text:`— ${p.name}`}):null));
@@ -3541,6 +3596,30 @@ function songPptModal(sg){const list=pptTpls();let tpl=tplFor(null);const grid=h
       p.fileId?h("button",{class:"btn",text:"원본 PPT 받기",onclick:async()=>{const u=await getImg(p.fileId);if(!u)return toast("원본을 불러오지 못했어요");const a=document.createElement("a");a.href=u;a.download=p.from||`${sg.title}.pptx`;document.body.append(a);a.click();a.remove();}}):null,
       h("button",{class:"btn primary",text:"⬇ 템플릿으로 받기",onclick:()=>{md.close();exportLyricsPpt({...fake,date:sg.title},tpl&&tpl.id?tpl:null,true);}})],"editor");}
 /* 악보만 보기 (라이브러리) */
+/* 연습 모드: 태블릿을 악보대처럼 · 곡마다 한 화면 · 이전/다음 곡 · 화면 꺼짐 방지 */
+async function practiceMode(c){const songs=[];for(const[k,l]of SECTIONS)for(const it of c[k]||[])songs.push({it,sec:l});if(!songs.length)return toast("콘티에 곡이 없어요");
+  let i=0,show="score",z=1,lock=null;const ov=h("div",{class:"pmode",role:"dialog","aria-label":"연습 모드"});document.body.append(ov);document.body.style.overflow="hidden";
+  const wake=async()=>{try{if(navigator.wakeLock)lock=await navigator.wakeLock.request("screen");}catch(e){}};wake();const vis=()=>{if(document.visibilityState==="visible")wake();};document.addEventListener("visibilitychange",vis);
+  const close=()=>{ov.remove();document.body.style.overflow="";document.removeEventListener("keydown",key);document.removeEventListener("visibilitychange",vis);try{lock&&lock.release();}catch(e){}};
+  const go=n=>{const j=Math.max(0,Math.min(songs.length-1,i+n));if(j!==i){i=j;draw();}};
+  const key=e=>{if(e.key==="ArrowRight"||e.key==="PageDown")go(1);else if(e.key==="ArrowLeft"||e.key==="PageUp")go(-1);else if(e.key==="Escape")close();};document.addEventListener("keydown",key);
+  let tx=null;ov.addEventListener("touchstart",e=>{if(e.touches.length===1)tx=e.touches[0].clientX;},{passive:true});ov.addEventListener("touchend",e=>{if(tx==null||z>1)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>80)go(dx<0?1:-1);},{passive:true});
+  function draw(){const{it,sec}=songs[i];const y=ytId(it.yt);const ly=lyricsOf(it).trim();const pages=it.pages||[];
+    const body=h("div",{class:"pm-body"});
+    if(show==="score"){if(!pages.length)body.append(h("div",{class:"pm-empty",text:"이 곡은 악보가 없어요. 「가사」를 눌러 보세요."}));
+      for(const p of pages){const cv=h("canvas",{class:"pm-page"});cv.style.width=`${z*100}%`;body.append(cv);
+        getImg(p.imgId).then(async u=>{if(!u)return;try{const im=await loadImg(u);cv.width=im.naturalWidth;cv.height=im.naturalHeight;const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0);drawMarks(x,p,0,0,cv.width,cv.height);}catch(e){}});}}
+    else body.append(h("div",{class:"pm-lyrics",text:ly||"가사가 아직 없어요."}));
+    ov.replaceChildren(...[
+      h("div",{class:"pm-top"},h("button",{class:"btn sm",text:"✕ 닫기",onclick:close}),h("div",{class:"pm-title"},h("b",{text:`${i+1} / ${songs.length} · ${it.title}`}),it.key?h("span",{class:"pm-key",text:it.key}):null,h("span",{class:"hint",text:sec})),
+        h("button",{class:"btn",text:"← 이전 곡",disabled:i===0,onclick:()=>go(-1)}),h("button",{class:"btn primary",text:"다음 곡 →",disabled:i===songs.length-1,onclick:()=>go(1)})),
+      it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,body,
+      h("div",{class:"pm-foot"},h("button",{class:"btn sm"+(show==="score"?" primary":""),text:"악보",onclick:()=>{show="score";draw();}}),h("button",{class:"btn sm"+(show==="ly"?" primary":""),text:"가사",onclick:()=>{show="ly";draw();}}),
+        show==="score"?h("button",{class:"btn sm",text:"－",title:"작게",onclick:()=>{z=Math.max(1,z-.25);draw();}}):null,show==="score"?h("button",{class:"btn sm",text:"＋",title:"크게",onclick:()=>{z=Math.min(3,z+.25);draw();}}):null,
+        y?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch?v=${y}`,target:"_blank",rel:"noopener",text:"▶ 레퍼런스"}):null,
+        h("span",{class:"spacer"}),h("div",{class:"pm-dots"},songs.map((x,j)=>h("button",{type:"button",class:"pm-dot"+(j===i?" on":""),title:x.it.title,"aria-label":`${j+1}번 곡`,onclick:()=>{i=j;draw();}}))))].filter(Boolean));
+    ov.scrollTop=0;}
+  draw();}
 function viewPages(title,pages){const body=h("div",{class:"panel-body",style:"align-items:center"});
   pages.forEach((p,pi)=>{const cv=h("canvas",{class:"vw-page",role:"img","aria-label":`${title} 악보 ${pi+1}쪽`});cv.style.setProperty("--ar",`${(p.w||1)/(p.h||1.414)}`);body.append(cv);
     if(pages.length>1)body.append(h("div",{class:"vw-pn",text:`${pi+1} / ${pages.length}쪽`}));
@@ -3596,7 +3675,7 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
     try{await S.db.doc(`contis/${c.id}`).delete();if(S.curId===c.id){S.curId=null;S.dirty=true;saveDraft();}md.close();toast("콘티를 지웠어요");}catch(e){toast("지우지 못했어요");}}});
   if(c.authorId)resolveNames([c.authorId]);
   const md=modal(`${fmtDate(c.date)} · ${wtypeOf(c)}`,body,[
-    h("button",{class:"btn",text:"🖨 출력",title:"콘티 · A3 압축을 PDF나 이미지로",onclick:()=>outputModal(c)}),h("button",{class:"btn",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
+    allItems(c).length?h("button",{class:"btn primary",text:"🎼 연습 모드",title:"태블릿을 악보대처럼 · 곡마다 한 화면",onclick:()=>{md.close();practiceMode(c);}}):null,    h("button",{class:"btn",text:"🖨 출력",title:"콘티 · A3 압축을 PDF나 이미지로",onclick:()=>outputModal(c)}),h("button",{class:"btn",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
     h("span",{class:"spacer"}),canDelV?delV:null,editable?h("button",{class:"btn primary",text:"고치기",onclick:()=>{md.close();openConti(c);}}):null],"viewer");}
 /* 압축버전: 모든 악보를 A3 한 장에 */
 function drawMarks(x,p,dx,dy,dw,dh){x.save();x.globalCompositeOperation="multiply";x.globalAlpha=.55;for(const mk of p.marks||[])if(mk.k==="H"){x.fillStyle=VCOL[(mk.v||1)-1];x.fillRect(dx+mk.x*dw,dy+mk.y*dh,mk.w*dw,mk.h*dh);}x.restore();
@@ -3691,7 +3770,7 @@ render();
   const [db,user,downloads]=claude?await Promise.all([claude.use("db"),claude.use("user"),claude.use("downloads")]):[null,null,null];
   S.db=db;S.user=user;S.downloads=downloads;
   if(user){S.myId=await user.id();S.isOwner=await user.isOwner();const cw=await user.can("data.write");S.canWrite=cw!==false;}
-  if(window.CBWP)S.canWrite=!!S.team&&window.CBWP.canWrite(S.team);
+  setAccess();
   if(!db){S.dbFailed=true;S.ready=true;render();return;}
   let got=0;const done=()=>{if(++got===6){S.ready=true;render();}};
   const onErr=e=>{console.warn(e);if(e&&e.code!=="unavailable"){S.dbFailed=true;S.ready=true;render();}};

@@ -20,15 +20,19 @@
       for(const k of [...unlocked]){try{const d=await fs.doc(`unlocks/${uid}_${k}`).get();if(!d.exists)unlocked.delete(k);}catch(e){}}
       ls.set(LS,[...unlocked]);
     })();return ready;}
+  /* 비밀번호 종류: 팀(인도자·리더용, 콘티 쓰기) · 팀_member(팀원용, 보기와 참여 응답) · 팀_lead · admin
+     any = 어느 팀이든 쓰기 비밀번호로 열린 기기 (곡·악보 고치기), anyread = 팀원 비밀번호로 열린 기기 (곡·악보 보기) */
+  const TEAM_IDS=["worship","shema","gideon","kairos"];
+  async function mk(key,data){if(unlocked.has(key))return true;
+    try{await fs.doc(`unlocks/${uid}_${key}`).set({...data,team:key});unlocked.add(key);return true;}
+    catch(e){const d=await fs.doc(`unlocks/${uid}_${key}`).get().catch(()=>null);if(d&&d.exists){unlocked.add(key);return true;}return false;}}
   async function unlock(team,code,name){await init();code=String(code||"").trim();if(!code)throw new Error("empty");
-    const base={uid,code,name:name||"",at:Date.now()};
-    if(PROJ.includes(team)){if(!unlocked.has("any")){try{await fs.doc(`unlocks/${uid}_any`).set({...base,team:"any"});}catch(e){const d=await fs.doc(`unlocks/${uid}_any`).get().catch(()=>null);if(!(d&&d.exists))throw new Error("wrong");}}
-      unlocked.add("any");ls.set(LS,[...unlocked]);if(name){ls.set(NAME,name);try{await fs.doc(`users/${uid}`).set({name,at:Date.now()},{merge:true});}catch(e){}}return true;}
-    try{
-      if(!unlocked.has(team))await fs.doc(`unlocks/${uid}_${team}`).set({...base,team});
-      if(!unlocked.has("any"))await fs.doc(`unlocks/${uid}_any`).set({...base,team:"any"}).catch(()=>{});
-    }catch(e){const d=await fs.doc(`unlocks/${uid}_${team}`).get().catch(()=>null);if(!(d&&d.exists))throw new Error("wrong");}
-    unlocked.add(team);unlocked.add("any");ls.set(LS,[...unlocked]);
+    const base={uid,code,name:name||"",at:Date.now()};let ok=false;
+    if(PROJ.includes(team)){for(const t of TEAM_IDS){if(await mk("any",{...base,src:t})){ok=true;break;}}
+      if(!ok)for(const t of TEAM_IDS){if(await mk("anyread",{...base,src:t+"_member"})){ok=true;break;}}}
+    else if(/_member$/.test(team)){ok=await mk(team,base);if(ok)await mk("anyread",{...base,src:team});}
+    else{ok=await mk(team,base);if(ok&&team!=="admin")await mk("any",{...base,src:team});}
+    ls.set(LS,[...unlocked]);if(!ok)throw new Error("wrong");
     if(name){ls.set(NAME,name);try{await fs.doc(`users/${uid}`).set({name,at:Date.now()},{merge:true});}catch(e){}}
     return true;}
   const db={collection:c=>fsProxy().collection(c),doc:p=>fsProxy().doc(p)};
@@ -48,6 +52,7 @@
   window.CBWP={
     standalone:true,
     canWrite:team=>unlocked.has(team)||unlocked.has("admin")||(PROJ.includes(team)&&unlocked.has("any")),
+    canRead:team=>unlocked.has(team)||unlocked.has("admin")||unlocked.has(team+"_member")||(PROJ.includes(team)&&(unlocked.has("any")||unlocked.has("anyread"))),
     isAdmin:()=>unlocked.has("admin"),
     myName:()=>ls.get(NAME,""),
     async setName(name){name=String(name||"").trim();if(!name)return;ls.set(NAME,name);try{await init();await fs.doc(`users/${uid}`).set({name,at:Date.now()},{merge:true});}catch(e){}},
@@ -55,7 +60,7 @@
     lock(team){unlocked.delete(team);ls.set(LS,[...unlocked]);},
     /* log out: the unlock marks live on this device's sign-in, so start a fresh sign-in and re-open only what should stay open */
     async logoutKeys(drop,all){await init();const name=ls.get(NAME,"");const keep=[];
-      if(!all)for(const k of [...unlocked]){if(k==="any"||drop.includes(k))continue;try{const d=await fs.doc(`unlocks/${uid}_${k}`).get();if(d.exists&&d.data().code)keep.push([k,d.data().code]);}catch(e){}}
+      if(!all)for(const k of [...unlocked]){if(k==="any"||k==="anyread"||drop.includes(k))continue;try{const d=await fs.doc(`unlocks/${uid}_${k}`).get();if(d.exists&&d.data().code)keep.push([k,d.data().code]);}catch(e){}}
       await auth.signOut();uid=null;unlocked.clear();ls.set(LS,[]);if(all){try{localStorage.removeItem(NAME);}catch(e){}}
       await new Promise((res,rej)=>{const off=auth.onAuthStateChanged(u=>{if(u){uid=u.uid;off();res();}});auth.signInAnonymously().catch(rej);});
       for(const [k,code] of keep){try{await unlock(k,code,name);}catch(e){}}
