@@ -446,7 +446,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .attoff{padding:22px 14px;text-align:center;color:var(--ink2);display:flex;flex-direction:column;align-items:center;gap:8px}.attoff b{font-size:1.05rem;color:var(--ink)}
 .yeart{width:auto;border-collapse:collapse}.yeart th,.yeart td{border:1px solid var(--line);padding:5px 8px}.yeart thead th{background:var(--soft)}.yeart th.g{color:#fff}.yeart th.g.ok{background:#2f9e5b}.yeart th.g.late{background:#e09a1a}.yeart th.g.exc{background:#5a7fc0}.yeart th.g.abs{background:#d0473e}.yeart tr.sub th{font-size:.72rem;color:var(--ink2)}.yeart .tot{font-weight:700;background:color-mix(in srgb,var(--soft) 60%,var(--sheet))}.yeart tbody th{text-align:left;white-space:nowrap}
 .pdfjobs{display:flex;flex-direction:column;gap:12px}.pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}.pdfpg{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:8px;padding:6px}.pdfpg.start{border:2px solid var(--accent);padding:5px}.pdfpg img{width:100%;aspect-ratio:.72;object-fit:cover;object-position:top;border-radius:4px;background:#fff}.pdfpg input[type=text]{font-size:.85rem;height:32px}
-.pmtabs{display:flex;width:100%}.pmtabs button{flex:1}
+.intabs{display:flex;gap:20px;border-bottom:2px solid var(--line);padding:0 4px;margin-top:2px;overflow-x:auto;scrollbar-width:none}.intabs button{border:0;background:none;padding:10px 2px;margin-bottom:-2px;border-bottom:3px solid transparent;font:inherit;font-size:.95rem;font-weight:600;color:var(--ink2);cursor:pointer;white-space:nowrap}.intabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:800}.intabs button:hover{color:var(--ink)}.pmtabs button{flex:1}
 .pptgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.pptcell{display:flex;flex-direction:column;gap:3px}.pptcell.t .tpv{outline:2px solid var(--accent)}.card.pmrow{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;text-align:left;gap:10px;flex-wrap:wrap}
 .tplgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.tplcard{display:flex;flex-direction:column;gap:6px}.tplcard.def{border-color:var(--accent)}
 .tplpair{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tplone{display:flex;flex-direction:column;gap:3px;max-width:320px;margin-top:6px}
@@ -3008,7 +3008,7 @@ function pptDbSheet(){if(!S.pptF)S.pptF={f:"has",q:""};const F=S.pptF;const box=
   return h("div",{class:"sheet"},h("h2",{},"곡별 PPT",h("span",{class:"sub",text:"곡마다 가사 슬라이드를 모아 두는 곳"})),q,h("div",{style:"height:8px"}),chips,h("div",{style:"height:10px"}),box);}
 /* 콘티 → PPT 만들기 */
 function renderPptMake(m){const T=S.pmTab||"conti";
-  m.append(h("div",{class:"subtabs pmtabs",role:"tablist"},[["conti","콘티로 PPT 만들기"],["free","콘티 없이 PPT 만들기"]].map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(T===k),class:T===k?"on":"",text:l,onclick:()=>{S.pmTab=k;render();}}))));
+  m.append(h("div",{class:"intabs",role:"tablist"},[["conti","콘티로 PPT 만들기"],["free","콘티 없이 PPT 만들기"]].map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(T===k),class:T===k?"on":"",text:l,onclick:()=>{S.pmTab=k;render();}}))));
   if(T==="free"){m.append(adhocPptSheet());return;}
   const list=pptTpls();const today=todayStr();
   const cur=S.cur&&allItems(S.cur).length?S.cur:null;
