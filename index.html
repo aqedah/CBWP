@@ -906,7 +906,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
     h("div",{class:"savebar"},
       h("select",{id:"f-status",style:"width:auto",disabled:!editable,"aria-label":"콘티 상태",onchange:e=>{c.status=e.target.value;markDirty();}},
         h("option",{value:"draft",text:"작성 중",selected:statusOf(c)==="draft"}),h("option",{value:"final",text:"확정",selected:statusOf(c)==="final"})),
-      h("button",{class:"btn primary",id:"saveBtn",disabled:!editable,onclick:saveConti,text:"저장"}),
+      h("button",{class:"btn primary",id:"saveBtn",disabled:!editable,onclick:()=>saveConti(),text:"저장"}),
       h("button",{class:"btn",id:"undoBtn",disabled:!editable,onclick:undoConti,title:"방금 한 일을 한 단계씩 되돌려요",text:"↶ 실행 취소"}),
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"}),
       h("button",{class:"btn",disabled:!editable,onclick:openLoadPast,text:"지난 콘티 불러오기"}),
@@ -959,7 +959,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
     h("textarea",{id:"f-memo",placeholder:"리허설 시간, 전달 사항 등",value:c.memo||"",oninput:e=>{c.memo=e.target.value;markDirty();}})));
   m.append(fs);
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 출력"}),h("span",{class:"status",id:"saveStatus2"})),
-    h("div",{class:"row"},h("button",{class:"btn primary",disabled:!editable,onclick:saveConti,text:"콘티 저장"}),
+    h("div",{class:"row"},h("button",{class:"btn primary",disabled:!editable,onclick:()=>saveConti(),text:"콘티 저장"}),
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       h("button",{class:"btn",id:"undoBtn2",disabled:!editable,onclick:undoConti,title:"방금 한 일을 한 단계씩 되돌려요",text:"↶ 실행 취소"}),
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"})),
@@ -1294,8 +1294,15 @@ async function uploadInto(pages,files,onStatus){if(!S.db)toast("팀 저장소에
     catch(e){toast(e.message||`${f.name}을(를) 넣지 못했어요`);}}
   return added;}
 
-async function saveConti(){if(!curEditable())return;const c=S.cur;
+async function saveConti(mode){if(!curEditable())return;const c=S.cur;
   if(!S.db){S.dirty=false;saveDraft();updateStatus();toast("팀 저장소에 연결되지 않아 이 기기에만 남겼어요");return;}
+  /* 저장해 둔 콘티의 날짜나 예배를 바꿨으면: 새 콘티로 따로 저장할지, 그 콘티를 옮길지 물어요 (그냥 덮어써서 앞 콘티가 사라지지 않게) */
+  if(S.curId&&!mode){const old=S.contis.find(x=>x.id===S.curId);if(old&&old.date&&(old.date!==c.date||(wtypeOf(old)!==wtypeOf(c))))return (()=>{const was=`${fmtDate(old.date)} ${wtypeOf(old)}`,now=`${fmtDate(c.date)} ${wtypeOf(c)}`;
+    const md=modal("날짜·예배가 바뀌었어요",h("div",{class:"panel-body"},h("p",{text:`저장해 둔 「${was}」 콘티를 고치는 중인데, 날짜나 예배가 「${now}」(으)로 바뀌었어요.`}),
+      h("div",{style:"display:flex;flex-direction:column;gap:8px"},
+        h("button",{class:"btn primary",style:"white-space:normal;text-align:left",text:`새 콘티로 따로 저장 (추천) — 「${was}」는 그대로 두고 「${now}」를 새로 만들어요`,onclick:()=>{md.close();S.curId=null;S.cur.authorId=null;delete S.cur.createdAt;saveConti("new");}}),
+        h("button",{class:"btn",style:"white-space:normal;text-align:left",text:`이 콘티를 옮기기 — 「${was}」 콘티가 「${now}」(으)로 바뀌어요`,onclick:()=>{md.close();saveConti("move");}}))),
+      [h("button",{class:"btn",text:"취소",onclick:()=>md.close()})]);})();}
   const btn=$("#saveBtn");btn.disabled=true;btn.textContent="저장 중…";
   const body={...clone(c),team:c.team||S.team,status:$("#f-status")?$("#f-status").value:statusOf(c),updatedAt:Date.now()};
   try{
