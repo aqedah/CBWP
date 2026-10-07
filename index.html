@@ -1044,8 +1044,18 @@ function modal(title,body,foot,cls=""){const panel=h("div",{class:"panel",role:"
   document.body.append(wrap);return{close,el:wrap};}
 
 /* song search box */
+/* 여러 줄 곡 목록(번호 있어도 없어도)을 곡으로: 날짜·요일 줄은 건너뛰고, (후렴) 같은 괄호는 메모로 */
+function songsFromText(text){const r=parseKakao(text);let groups=r.songs&&r.songs.length?r.songs:null;
+  if(!groups){const lines=String(text||"").replace(/\r/g,"").split("\n").map(x=>x.replace(/^\s*[-*•▶▷·]\s*/,"").trim()).filter(x=>x&&!/^\d{1,4}\s*[.\/월-]\s*\d{1,2}/.test(x)&&!/^[월화수목금토일](요일)?$/.test(x)&&!/^(\(.\)|예배|찬양|콘티)/.test(x));
+    groups=lines.map(x=>{const notes=[...x.matchAll(/\(([^)]+)\)/g)].map(m=>m[1].trim());return{titles:x.replace(/\([^)]*\)/g," ").split(/\s*\+\s*/).map(y=>y.replace(/\s+/g," ").trim()).filter(Boolean),memo:notes.join(" · ")};});}
+  titlePool=null;const items=[];for(const sg of groups)sg.titles.forEach((tt,i)=>{const g=guessTitle([{text:tt,h:0}]);const lib=g&&g.songId?S.songs.find(x=>x.id===g.songId):null;
+    const it=lib?itemFromSong(lib):g?itemByTitle(g.title):itemByTitle(tt);if(i===0&&sg.memo)it.memo=sg.memo;else if(i>0)it.memo="(앞 곡과 이어서)";items.push(it);});return items;}
 function songSearch(key,onPick){let pendingYt=null,sel=-1,opts=[];
-  const input=h("input",{type:"search",id:`q-${key}`,placeholder:"곡 제목 · 초성(ㅈㄴㅇㄱ) · 찬송가 장 번호 · 유튜브 주소",autocomplete:"off"});
+  const input=h("input",{type:"search",id:`q-${key}`,placeholder:"곡 제목 · 초성(ㅈㄴㅇㄱ) · 찬송가 장 번호 · 유튜브 주소 · 곡 목록 여러 줄 붙여넣기",autocomplete:"off"});
+  if(!onPick)input.addEventListener("paste",e=>{const t=(e.clipboardData||window.clipboardData).getData("text")||"";if(t.replace(/\r/g,"").split("\n").filter(x=>x.trim()).length<2)return;
+    e.preventDefault();if(!curEditable||!curEditable())return toast("지금 열린 콘티는 고칠 수 없어요");const items=songsFromText(t);if(!items.length)return toast("곡 제목을 찾지 못했어요");
+    const arr=S.cur[key]=S.cur[key]||[];const have=new Set(arr.map(x=>norm(x.title)));const add=items.filter(x=>!have.has(norm(x.title)));arr.push(...add);markDirty();renderSetlist(key);input.value="";
+    const unk=add.filter(x=>!x.songId).length;toast(`${add.length}곡을 넣었어요${items.length>add.length?` (이미 있던 ${items.length-add.length}곡은 뺐어요)`:""}${unk?` · 라이브러리에 없는 곡 ${unk}곡은 제목만 들어갔어요`:""}`,3800);});
   const list=h("div",{class:"suggest",role:"listbox"});list.hidden=true;
   const pend=h("div",{class:"pending"});
   const showPend=()=>{pend.replaceChildren();if(!pendingYt)return;const known=S.songs.find(s=>(s.yt||[]).includes(pendingYt));
@@ -2525,8 +2535,7 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
       if(r.passage){c.passage=r.passage;got.push("본문");bibQ=r.passage;}if(r.sermonTitle){c.sermonTitle=r.sermonTitle;got.push("제목");}if(r.preacher){c.preacher=r.preacher;got.push("설교자");}
       if(r.specialBy){c.specialBy=r.specialBy;got.push("특송");}if(r.special){c.special=[itemByTitle(r.special)];if(!got.includes("특송"))got.push("특송");}
       if(r.after&&r.after.length){c.after=r.after.map(itemByTitle);got.push(`설교 후 찬양 ${r.after.length}곡`);}
-      if(r.songs&&r.songs.length){titlePool=null;const items=[];for(const sg of r.songs)sg.titles.forEach((tt,i)=>{const g=guessTitle([{text:tt,h:0}]);const lib=g&&g.songId?S.songs.find(x=>x.id===g.songId):null;
-          const it=lib?itemFromSong(lib):g?itemByTitle(g.title):itemByTitle(tt);if(i===0&&sg.memo)it.memo=sg.memo;else if(i>0)it.memo="(앞 곡과 이어서)";items.push(it);});
+      if(r.songs&&r.songs.length){const items=songsFromText(kt.value);
         c.before=items;got.push(`예배 찬양 ${items.length}곡`);}
       markDirty();saveDraft();toast(got.length?`${got.join(" · ")}을(를) 채웠어요. 맞는지 확인해 주세요`:"알아본 내용이 없어요. 아래 칸에 직접 써 주세요",3500);if(photo===true&&c.sermonTitle&&c.passage&&!/\s/.test(c.sermonTitle))loadBible().then(()=>{const rr=parseRef(c.passage);if(!rr)return;const txt=refRows(rr).map(x=>x[2]).join(" ");
         const re=new RegExp([...c.sermonTitle].map(ch=>ch.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s*"));const m=txt.match(re);if(m){c.sermonTitle=m[0];markDirty();saveDraft();}}).catch(()=>{});
