@@ -567,8 +567,8 @@ const CHUNK=190000;
 const draftKey=()=>"cbwp-draft-"+(S.team||"none");
 const teamOf=d=>d.team||"gideon";
 const teamName=id=>(ALLT.find(t=>t.id===id)||{}).name||"";
-const SECTIONS=[["opening","여는 찬양","고정된 시작 찬양 · 없으면 비워 두세요"],["before","예배 찬양","예배 시작 ~ 설교 전"],["after","설교 후 찬양",""]];
-const allItems=c=>[...(c.opening||[]),...(c.before||[]),...(c.after||[])];
+const SECTIONS=[["opening","여는 찬양","고정된 시작 찬양 · 없으면 비워 두세요"],["before","예배 찬양","예배 시작 ~ 설교 전"],["special","특송","특송이 있을 때만 · 없으면 비워 두세요"],["after","설교 후 찬양",""]];
+const allItems=c=>[...(c.opening||[]),...(c.before||[]),...(c.special||[]),...(c.after||[])];
 /* hymn titles look like "제목 (찬송가 79장)" or "제목 (찬송가 79장, 팀이름 편곡)" */
 const HYMN_RE=/\s*\(찬송가\s*(\d{1,3})장(?:\s*,\s*([^)]*?)\s*편곡)?\)\s*$/;
 function splitTitle(t){const m=(t||"").match(HYMN_RE);return m?{base:t.slice(0,m.index).trim(),hymn:+m[1],arr:m[2]||""}:{base:(t||"").trim(),hymn:null,arr:""};}
@@ -951,7 +951,8 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       fixed.length?`새 콘티에 고정 여는 찬양 자동 추가 (지금: ${fixed.map(i=>i.title).join(", ")})`:"새 콘티에 이 여는 찬양을 자동으로 넣기 (팀 고정)"):null;
     const fileFill=key==="before"&&editable?h("div",{class:"row",style:"margin-top:8px"},h("button",{type:"button",class:"btn sm",text:"📄 콘티 파일(PDF · 사진)로 채우기",onclick:()=>contiImportModal("before")})):null;
     fs.append(h("div",{class:"sheet"},h("h2",{},h("span",{},label,h("span",{class:"cnt",id:`cnt-${key}`})),h("span",{class:"sub",text:sub})),
-      songSearch(key),fixBox,fileFill,key==="before"?h("div",{id:"songHelpHolder",style:"margin-top:10px"}):null,h("div",{class:"setlist",id:`list-${key}`,style:"margin-top:10px"})));}
+      songSearch(key),fixBox,fileFill,key==="special"?h("div",{class:"field",style:"margin-top:8px"},h("label",{htmlFor:"f-specby",text:"특송 하는 사람 · 팀"}),
+        h("input",{type:"text",id:"f-specby",value:c.specialBy||"",placeholder:"예: 베드로 남선교회, 임마누엘 성가대",disabled:!editable,oninput:e=>{c.specialBy=e.target.value;markDirty();}})):null,key==="before"?h("div",{id:"songHelpHolder",style:"margin-top:10px"}):null,h("div",{class:"setlist",id:`list-${key}`,style:"margin-top:10px"})));}
   {const holder=$("#songHelpHolder",fs)||h("div");const put=(rows,label)=>{const el=songHelpSheet(rows,label);holder.replaceChildren(el);};put(null,"");
     if((c.passage||"").trim())loadBible().then(()=>{const r=parseRef(c.passage.trim());if(r&&BIB[r.b]&&BIB[r.b][r.ch-1])put(refRows(r),refLabel(r.b,r.ch,r.v1,r.ch2,r.v2));}).catch(()=>{});}
   fs.append(h("div",{class:"sheet"},h("h2",{text:"메모"}),
@@ -1099,7 +1100,7 @@ function itemFromSong(song,yt){const v=teamVer(song);return{uid:uid(8),songId:so
 
 function renderSetlist(key){const box=$(`#list-${key}`);if(!box)return;box.replaceChildren();const arr=S.cur[key];box.dataset.key=key;
   const cn=$(`#cnt-${key}`);if(cn)cn.textContent=`${arr.length}곡`;
-  if(!arr.length){box.append(h("div",{class:"empty dropzone"+(key==="before"?" withicon":""),text:key==="opening"?"매주 같은 곡으로 여는 경우에만 넣으세요. 비워 두어도 괜찮아요. 다른 칸의 곡을 ⠿로 끌어와도 돼요.":"위 검색칸에서 곡을 찾아 넣거나, 다른 칸의 곡을 ⠿로 끌어오세요."}));return;}
+  if(!arr.length){box.append(h("div",{class:"empty dropzone"+(key==="before"?" withicon":""),text:key==="opening"?"매주 같은 곡으로 여는 경우에만 넣으세요. 비워 두어도 괜찮아요. 다른 칸의 곡을 ⠿로 끌어와도 돼요.":key==="special"?"특송이 있으면 곡을 넣으세요. 없으면 비워 두어도 괜찮아요.":"위 검색칸에서 곡을 찾아 넣거나, 다른 칸의 곡을 ⠿로 끌어오세요."}));return;}
   arr.forEach((it,i)=>{
     const keyIn=h("input",{type:"text",class:"key",id:`k-${it.uid}`,"aria-label":"키",placeholder:"Key",value:it.key||"",oninput:e=>{it.key=e.target.value;markDirty();}});
     const memo=h("input",{type:"text",class:"memo",id:`m-${it.uid}`,"aria-label":"곡 메모",placeholder:"메모 (예: 2절 후 브릿지 2번, 후렴 반키업)",value:it.memo||"",oninput:e=>{it.memo=e.target.value;markDirty();}});
@@ -3125,10 +3126,17 @@ function previewLyricsPpt(c){if(!c)return;const items=allItems(c);if(!items.leng
   const can=S.canWrite&&!!S.db;const saveBtn=h("button",{class:"btn sm",text:"이 꾸밈을 템플릿에 저장",onclick:async()=>{if(!base.id)return toast("기본 화면은 저장할 수 없어요. PPT 라이브러리에서 템플릿을 만들어 주세요.");
     const nt=withDeco(base,deco.value);const l2=pptTpls().map(t=>t.id===base.id?nt:t);if(await saveTpls(l2)){base=nt;tpl=nt;syncDeco();toast("템플릿에 저장했어요. 다음부터 저절로 들어가요.");draw();}}});
   sel.onchange=()=>{base=list.find(t=>t.id===sel.value)||base;syncDeco();tpl=withDeco(base,deco.value);draw();};syncDeco();
-  const fullBox=h("div");let fmap=null;const decoLbl=h("span",{class:"hint",text:"제목 장"});
-  const drawFull=()=>{if(base.kind!=="full"){fullBox.replaceChildren();fmap=null;return;}const fs=(base.full||{}).slots||[];fmap=fullSlotMap(fs.map(x=>+String(x).split("-")[0]-1),(base.full||{}).sermon??-1,c,fs.map(x=>{const[a,b]=String(x).split("-").map(Number);return (b||a)-a+1;}));
-    const OPTS=[["keep","틀에 있던 곡 그대로"],["opening","여는 찬양"],["before","예배 찬양"],["after","설교 후 찬양"],["opening,before","여는 + 예배 찬양"],["opening,before,after","모든 곡"],["","비우기 (이 자리 빼기)"]];
-    fullBox.replaceChildren(h("div",{class:"banner",style:"margin-top:8px"},h("b",{text:"예배 전체 틀로 만들어요. "}),"순서 장은 틀 그대로 두고 날짜 · 성경봉독 · 본문 · 설교 제목 · 설교자 · 찬양만 바꿔 넣어요. 아래 그림은 찬양 장 미리보기예요.",
+  const fullBox=h("div");let fmap=null;
+  /* 특송: PPT 만들 때 곡과 하는 사람을 고를 수 있어요 (콘티 특송 칸이 기본) */
+  let specT=((c.special||[])[0]||{}).title||"",specBy=c.specialBy||"";
+  const curC=()=>{const t=specT.trim();const it=t?(allItems(c).find(x=>x.title===t)||itemByTitle(t)):null;return{...c,special:it?[it]:[],specialBy:specBy};};const decoLbl=h("span",{class:"hint",text:"제목 장"});
+  const drawFull=()=>{if(base.kind!=="full"){fullBox.replaceChildren();fmap=null;return;}const fs=(base.full||{}).slots||[];fmap=fullSlotMap(fs.map(x=>+String(x).split("-")[0]-1),(base.full||{}).sermon??-1,curC(),fs.map(x=>{const[a,b]=String(x).split("-").map(Number);return (b||a)-a+1;}),(base.full||{}).special??-1);
+    const OPTS=[["keep","틀에 있던 곡 그대로"],["opening","여는 찬양"],["before","예배 찬양"],["special","특송"],["after","설교 후 찬양"],["opening,before","여는 + 예배 찬양"],["opening,before,after","모든 곡"],["","비우기 (이 자리 빼기)"]];
+    fullBox.replaceChildren(h("div",{class:"banner",style:"margin-top:8px"},h("b",{text:"예배 전체 틀로 만들어요. "}),"순서 장은 틀 그대로 두고 날짜 · 성경봉독 · 본문 · 설교 제목 · 설교자 · 특송 · 찬양만 바꿔 넣어요. 아래 그림은 찬양 장 미리보기예요.",
+      h("div",{class:"row",style:"margin-top:8px;gap:6px;flex-wrap:wrap"},h("b",{text:"특송"}),
+        h("input",{type:"text",list:"spec-dl","aria-label":"특송 곡",value:specT,placeholder:"특송 곡 (없으면 비워 두세요)",style:"width:auto;min-width:220px;flex:1",onchange:e=>{specT=e.target.value;drawFull();}}),
+        h("input",{type:"text","aria-label":"특송 하는 사람",value:specBy,placeholder:"하는 사람 · 팀",style:"width:auto;min-width:150px",oninput:e=>{specBy=e.target.value;}}),
+        h("datalist",{id:"spec-dl"},S.songs.slice(0,4000).map(x=>h("option",{value:x.title})))),
       h("div",{class:"pchips",style:"margin-top:6px"},((base.full||{}).slots||[]).map((sl,i)=>h("label",{class:"row",style:"gap:4px"},h("span",{class:"hint",text:`찬양 자리 ${i+1} (${slotLbl(sl)})`}),
         h("select",{style:"width:auto",onchange:e=>{const v=e.target.value;fmap[i]=v==="keep"?null:v?v.split(","):[];}},OPTS.map(([v,l])=>h("option",{value:v,text:l,selected:fmap[i]===null?v==="keep":fmap[i].join(",")===v}))))))));};
   function draw(){drawFull();saveBtn.hidden=!can||deco.value==="keep"||base.kind==="full";deco.hidden=decoLbl.hidden=base.kind==="full";
@@ -3139,7 +3147,7 @@ function previewLyricsPpt(c){if(!c)return;const items=allItems(c);if(!items.leng
     grid.replaceChildren(...slides.map((sl,i)=>h("div",{class:"pptcell"+(sl.kind==="title"?" t":"")},tplPreview(tv,sl.lines,sl.kind),h("span",{class:"hint",text:`${i+1}${sl.kind==="title"?" · 제목":""}`}))));}
   draw();
   const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel,decoLbl,deco,saveBtn),fullBox,info,grid),
-    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();if(base.kind==="full")return exportFullPpt(c,base,fmap);exportLyricsPpt(c,tpl&&(tpl.id||deco.value!=="keep")?tpl:null,true);}})],"editor");}
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();if(base.kind==="full")return exportFullPpt(curC(),base,fmap);exportLyricsPpt(c,tpl&&(tpl.id||deco.value!=="keep")?tpl:null,true);}})],"editor");}
 /* =========================================================
    예배 전체 틀  (예배 순서가 다 들어 있는 PPT를 그대로 두고, 날짜·본문·설교·찬양만 바꿔 넣어요)
    파일이 커서(수십 MB) 교회 저장소가 아니라 이 기기(브라우저)에 보관해요.
@@ -3195,17 +3203,20 @@ async function fullAnalyze(zip){const rd=async p=>{const f=zip.file(p);return f?
   let sermon=null;order.forEach((o,i)=>{if(sermon||o.sps.some(s=>/축\s*도|benediction/i.test(s.t)))return;const pr=o.sps.flatMap(s=>s.ps).find(p=>/^[가-힣\s]{2,12}(담임)?\s*(목사|전도사|강도사|선교사)$/.test(p.t));if(!pr)return;
     const all=o.sps.flatMap(s=>s.ps).filter(p=>p!==pr);const q=all.find(p=>/^[“"'‘].+[”"'’]$/.test(p.t));
     const big=all.filter(p=>!/설교|sermon|말씀|교회$|^\d+$/i.test(p.t)).sort((a,b)=>b.sz-a.sz)[0];const tt=q?q.t.slice(1,-1).trim():big&&big.t;if(tt)sermon={i,title:tt,preacher:pr.t};});
-  return{order,lsz,lines,slots,dates,ref:ref&&{i:ref.i,str:ref.str,ko:ref.ko},body,sermon};}
+  /* 특송 안내 장: 「특송」 글자와 곡 제목(“곡” - 하는 사람) */
+  let special=null;order.forEach((o,i)=>{if(special)return;const ps=o.sps.flatMap(s=>s.ps);if(!ps.some(p=>/^특\s*송$/.test(p.t)))return;const q=ps.find(p=>!/^특\s*송$/.test(p.t)&&p.t.length<=60);special={i,line:q?q.t:null};});
+  return{order,lsz,lines,slots,dates,ref:ref&&{i:ref.i,str:ref.str,ko:ref.ko},body,sermon,special};}
 /* 찬양 자리마다 넣을 칸: 자리 수에 맞춰 여는 찬양 · 예배 찬양 · 설교 후 찬양을 나눠요 */
 /* null = 틀에 있던 곡 그대로 두기, [] = 이 자리 빼기 */
 /* starts: 찬양 자리마다 시작 장 번호(0부터), ser: 설교 장 번호(없으면 -1) */
-function fullSlotMap(starts,ser,c,lens){lens=lens||starts.map(()=>1);const n=starts.length;const has=k=>(c[k]||[]).length>0;const m=Array.from({length:n},()=>null);if(!n)return m;
-  const pre=starts.map((x,i)=>i).filter(i=>ser<0||starts[i]<ser);const post=starts.map((x,i)=>i).filter(i=>ser>=0&&starts[i]>ser);
+function fullSlotMap(starts,ser,c,lens,sp){lens=lens||starts.map(()=>1);const n=starts.length;const has=k=>(c[k]||[]).length>0;const m=Array.from({length:n},()=>null);if(!n)return m;
+  const sIdx=sp!=null&&sp>=0?starts.findIndex(x=>x>sp&&x<=sp+2):-1;if(sIdx>=0)m[sIdx]=has("special")?["special"]:[];
+  const pre=starts.map((x,i)=>i).filter(i=>i!==sIdx&&(ser<0||starts[i]<ser));const post=starts.map((x,i)=>i).filter(i=>i!==sIdx&&ser>=0&&starts[i]>ser);
   /* 예배 찬양: 설교 전 자리 중 가장 긴 곳(같으면 앞) · 여는 찬양이 있으면 맨 앞 자리를 여는 찬양에 */
   const big=a=>a.reduce((x,i)=>x===null||lens[i]>lens[x]?i:x,null);
   const oIdx=has("opening")&&pre.length>1?pre[0]:null;const bIdx=pre.length?big(oIdx===null?pre:pre.slice(1)):0;const aIdx=post.length?post[0]:(ser<0&&n>1?n-1:bIdx);
   const put=(i,k)=>{if(!has(k))return;m[i]=(m[i]||[]).concat(k);};
-  put(oIdx===null?bIdx:oIdx,"opening");if(oIdx===null&&m[bIdx]){m[bIdx]=["opening"];}m[bIdx]=(m[bIdx]||[]).concat("before");put(aIdx,"after");return m;}
+  put(oIdx===null?bIdx:oIdx,"opening");if(oIdx===null&&m[bIdx]){m[bIdx]=["opening"];}m[bIdx]=(m[bIdx]||[]).concat("before");put(aIdx,"after");if(sIdx<0&&has("special"))put(bIdx,"special");return m;}
 /* 성경 본문을 장마다 나눠요 (틀의 본문 장과 같은 모양 · 길이) */
 function verseSlides(rows,proto,per){per=per||99;const numbered=/^\s*\d+\s*[.)]/.test(proto.t);const plines=proto.t.split("\n");const avg=plines.length>1?Math.max(10,Math.round(plines.reduce((n,l)=>n+l.length,0)/plines.length)):0;
   const cap=Math.max(40,Math.round(proto.t.replace(/\n/g,"").length*1.15));
@@ -3242,6 +3253,8 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   const fix=(xml,i,vs)=>{let x=xml;const nr=vs?refOf(vs):newRef;
     if(d)x=editPara(x,t=>DATE_RE.test(t)?t.replace(DATE_RE,(m,y,a,mo,b2,da,e)=>`${d.getFullYear()}${a}${mo.length===2?String(d.getMonth()+1).padStart(2,"0"):d.getMonth()+1}${b2}${da.length===2?String(d.getDate()).padStart(2,"0"):d.getDate()}${e||""}`):null);
     if(A.ref&&nr)x=editPara(x,t=>t.includes(A.ref.str)?t.replace(A.ref.str,nr).replace(/\s*\((구약|신약)\s*p\.?\s*\d+\)/,""):null);
+    if(A.special&&i===A.special.i&&A.special.line){const sp=(c.special||[])[0];if(sp){const by=(c.specialBy||"").trim();const m=A.special.line.match(/^\s*([“"'‘])(.*?)([”"'’])\s*(?:([-–—])\s*(.*))?$/);
+      const nl=m?`${m[1]}${sp.title}${m[3]}${by?` ${m[4]||"-"} ${by}`:""}`:`"${sp.title}"${by?` - ${by}`:""}`;x=editPara(x,t=>t.trim()===A.special.line?nl:null);}}
     if(A.sermon&&i===A.sermon.i){const T=(c.sermonTitle||"").trim(),P=(c.preacher||"").trim();
       x=editPara(x,t=>{const tt=t.trim();if(T&&(tt===A.sermon.title||tt.replace(/^[“"'‘]|[”"'’]$/g,"").trim()===A.sermon.title))return t.replace(A.sermon.title,T);
         if(P&&tt===A.sermon.preacher){const sp=/^([가-힣] ){2,}/.test(tt);const nm=P.replace(/\s*(담임)?\s*(목사|전도사|강도사|선교사)\s*$/,"");if(nm.replace(/\s/g,"")===tt.replace(/\s*(담임)?\s*(목사|전도사|강도사|선교사)\s*$/,"").replace(/\s/g,""))return null;const role=(P.match(/(목사|전도사|강도사|선교사)\s*$/)||tt.match(/((담임)?\s*(목사|전도사|강도사|선교사))$/)||["","목사"])[1];
@@ -3249,12 +3262,14 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
     return x;};
   /* 2) 다시 만들 자리: 찬양 자리들 + 본문 장 */
   const regions=[];const items=k=>(c[k]||[]);
-  A.slots.forEach((s,si)=>{const keys=slotMap&&slotMap[si]!==undefined?slotMap[si]:fullSlotMap(A.slots.map(x=>x.idx[0]),A.sermon?A.sermon.i:-1,c,A.slots.map(x=>x.idx.length))[si];if(keys===null)return;const songs=keys.flatMap(items);const gen=[];
+  A.slots.forEach((s,si)=>{const keys=slotMap&&slotMap[si]!==undefined?slotMap[si]:fullSlotMap(A.slots.map(x=>x.idx[0]),A.sermon?A.sermon.i:-1,c,A.slots.map(x=>x.idx.length),A.special?A.special.i:-1)[si];if(keys===null)return;const songs=keys.flatMap(items);const gen=[];
     const tB=s.t!=null?A.order[s.t]:null,lB=A.order[s.l];
     for(const it of songs){const ttl=it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
       const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,setShapeLines(tb.sps[0].sp,[ttl]),tB?1:.8)});
       for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>setShapeLines(lB.sps[0].sp,ls))});}
     regions.push({idx:s.idx,gen,what:`찬양 ${si+1}`,n:songs.length});});
+  /* 특송이 없으면 특송 안내 장을 빼요 */
+  if(A.special&&!(c.special||[]).length&&!regions.some(r=>r.idx.includes(A.special.i)))regions.push({idx:[A.special.i],gen:[],what:"특송 없음"});
   if(A.body.length&&R&&BIB&&BIB[R.b]){const rows=refRows(R);const b0=A.body[0];const chunks=verseSlides(rows,b0.s,Math.max(1,Math.round(A.body.reduce((n,b)=>n+b.nv,0)/A.body.length)));
     regions.push({idx:A.body.map(b=>b.i),gen:chunks.map(ch=>({base:A.order[b0.i],vs:ch.vs,edit:x=>x.replace(b0.s.sp,()=>setShapeLines(b0.s.sp,ch.lines))})),what:"본문"});}
   /* 3) 꾸러미(zip) 고치기 */
@@ -3317,13 +3332,14 @@ async function fullTplModal(file,style,A0){const st=h("p",{class:"hint",text:"�
     li("찬양 자리",A.slots.length?A.slots.map(s=>s.idx.length>1?`${n1(s.idx[0])}~${n1(s.idx[s.idx.length-1])}장`:`${n1(s.idx[0])}장`).join(", ")+" → 콘티 곡 가사로 바꿔요":"찾지 못했어요"),
     li("날짜",A.dates.length?`${A.dates.map(n1).join(", ")}장`:"없음"),
     li("성경봉독",A.ref?`${A.ref.str} (${n1(A.ref.i)}장)${A.body.length?` · 본문 ${A.body.map(b=>n1(b.i)).join(", ")}장`:""}`:"찾지 못했어요"),
+    li("특송",A.special?`${n1(A.special.i)}장${A.special.line?` (${A.special.line})`:""} → 콘티 특송으로 바꿔요`:"없음"),
     li("설교",A.sermon?`「${A.sermon.title}」 · ${A.sermon.preacher} (${n1(A.sermon.i)}장)`:"찾지 못했어요"));
   const md=modal("예배 전체 틀",h("div",{class:"panel-body"},
     h("p",{class:"hint",text:"예배 순서 PPT를 그대로 두고, 아래 자리만 콘티 내용으로 바꿔 넣어요. 나머지 장(기도, 광고 등)은 그대로예요."}),info,st,
     h("div",{class:"field"},h("label",{text:"템플릿 이름"}),nameIn),h("div",{class:"field"},h("label",{text:"이 틀을 쓰는 예배"}),wtBox),
     h("p",{class:"hint",text:`파일이 커서(${(file.size/1048576).toFixed(0)}MB) 교회 저장소가 아니라 이 기기에 보관해요. 다른 컴퓨터에서는 처음 한 번 파일을 골라 주면 돼요.`})),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"템플릿 저장",onclick:async()=>{
-      cfg.id=uid(6);cfg.name=(cfg.name||"").trim()||"예배 틀";cfg.wtypes=[...wt];cfg.full={fileName:file.name,size:file.size,slides:A.order.length,slots:A.slots.map(s=>`${n1(s.idx[0])}-${n1(s.idx[s.idx.length-1])}`),sermon:A.sermon?A.sermon.i:-1};
+      cfg.id=uid(6);cfg.name=(cfg.name||"").trim()||"예배 틀";cfg.wtypes=[...wt];cfg.full={fileName:file.name,size:file.size,slides:A.order.length,slots:A.slots.map(s=>`${n1(s.idx[0])}-${n1(s.idx[s.idx.length-1])}`),sermon:A.sermon?A.sermon.i:-1,special:A.special?A.special.i:-1};
       try{await idb.put(fullKey(cfg),file);}catch(e){toast("이 기기에 파일을 보관하지 못했어요. 만들 때마다 파일을 골라야 해요",4000);}
       const list=pptTpls().filter(t=>t.id!==cfg.id).map(t=>({...t,wtypes:(t.wtypes||[]).filter(w=>!wt.has(w))}));list.push(cfg);
       if(await saveTpls(list,teamCfg().pptDefault||cfg.id)){md.close();toast("예배 전체 틀을 저장했어요");render();}}})]);
