@@ -1025,15 +1025,23 @@ function renderRoster(){const box=$("#rosterBox");if(!box)return;box.replaceChil
 function openPicker(slot,onApply,roster,badge){const chosen=new Map(slot.people.map(p=>[p.id||("x:"+p.name),p]));
   const mine=S.members.filter(mb=>(mb.positions||[]).includes(slot.pos)),others=S.members.filter(mb=>!(mb.positions||[]).includes(slot.pos));
   const sortM=a=>a.slice().sort((x,y)=>TIERS.indexOf(x.tier)-TIERS.indexOf(y.tier)||x.name.localeCompare(y.name,"ko"));
-  const row=mb=>{const id=`pk-${mb.id}`;return h("label",{class:"pick",htmlFor:id},
-    h("input",{type:"checkbox",id,checked:chosen.has(mb.id),onchange:e=>{e.target.checked?chosen.set(mb.id,{id:mb.id,name:mb.name,tier:mb.tier}):chosen.delete(mb.id);}}),
+  const row=mb=>{const id=`pk-${mb.id}`;return h("label",{class:"pick",htmlFor:id,"data-name":mb.name},
+    h("input",{type:"checkbox",id,checked:chosen.has(mb.id),onchange:e=>{e.target.checked?chosen.set(mb.id,{id:mb.id,name:mb.name,tier:mb.tier}):chosen.delete(mb.id);updCnt();}}),
     h("span",{text:mbName(mb)}),mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier}),badge?badge(mb):null,h("span",{class:"pos",text:(mb.positions||[]).join(" · ")}));};
   const quick=h("input",{type:"text",id:"pk-quick",placeholder:"명단에 없는 이름 (게스트로 들어가요)"});
+  /* 이름 찾기 (초성 가능): 맞는 사람만 보여요 · Enter로 첫 사람 고르기 */
+  const cnt=h("span",{class:"hint",style:"white-space:nowrap"});const updCnt=()=>{cnt.textContent=`${chosen.size}명 골랐어요`;};updCnt();
+  const find=h("input",{type:"search",id:"pk-find",placeholder:"이름 찾기 (초성 가능 · 예: ㄱㄷㅎ)",autocomplete:"off",oninput:()=>filt(),onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();
+      const first=[...body.querySelectorAll(".pick")].find(l=>!l.hidden);if(first){const cb=first.querySelector("input");cb.checked=!cb.checked;cb.dispatchEvent(new Event("change"));find.select();}}}});
+  const filt=()=>{const q=find.value.trim();for(const l of body.querySelectorAll(".pick"))l.hidden=!!q&&matchRank(l.dataset.name||"",q)<0;
+    for(const lab of body.querySelectorAll(".picklist")){const any=[...lab.children].some(x=>!x.hidden);lab.hidden=!any;if(lab.previousElementSibling&&lab.previousElementSibling.classList.contains("lab"))lab.previousElementSibling.hidden=!any;}};
   const body=h("div",{class:"panel-body"},
+    S.members.length?h("div",{class:"row",style:"position:sticky;top:0;background:var(--sheet);z-index:2;padding-bottom:6px;flex-wrap:nowrap"},find,cnt):null,
     S.members.length?null:h("div",{class:"empty"},"아직 등록된 멤버가 없어요. 「멤버」 탭에서 팀원을 등록하면 여기서 바로 고를 수 있어요."),
     mine.length?h("div",{class:"lab",text:`${slot.pos} 담당`}):null,h("div",{class:"picklist"},sortM(mine).map(row)),
     others.length?h("div",{class:"lab",text:"다른 멤버"}):null,h("div",{class:"picklist"},sortM(others).map(row)),
     h("div",{class:"lab",text:"바로 넣기"}),h("div",{class:"row"},quick,h("button",{class:"btn sm",text:"추가",onclick:()=>{const v=quick.value.trim();if(!v)return;chosen.set("x:"+v,{id:null,name:v,tier:"게스트"});quick.value="";toast(`${v} 님을 넣었어요`);}})));
+  setTimeout(()=>find.focus(),50);
   const md=modal(`${slot.pos} 고르기`,body,[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),
     h("button",{class:"btn primary",text:"적용",onclick:()=>{
       const seen=new Set(),picked=[];for(const p of chosen.values()){const k=normName(p.name);if(seen.has(k))continue;seen.add(k);picked.push(p);}
