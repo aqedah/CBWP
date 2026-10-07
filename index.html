@@ -449,6 +449,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .pmtabs{display:flex;width:100%}.pmtabs button{flex:1}
 .pptgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.pptcell{display:flex;flex-direction:column;gap:3px}.pptcell.t .tpv{outline:2px solid var(--accent)}.card.pmrow{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;text-align:left;gap:10px;flex-wrap:wrap}
 .tplgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.tplcard{display:flex;flex-direction:column;gap:6px}.tplcard.def{border-color:var(--accent)}
+.tplpair{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tplone{display:flex;flex-direction:column;gap:3px;max-width:320px;margin-top:6px}
 .tpv{position:relative;width:100%;container-type:size;background-size:cover;background-position:center;border-radius:6px;overflow:hidden}.tpv-t{position:absolute;display:flex;flex-direction:column;white-space:pre-line;box-sizing:border-box;padding:0 2%}
 .availlist{display:flex;flex-direction:column;gap:8px}
 .availrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
@@ -2641,6 +2642,23 @@ const PPTX_URL="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundl
 const JSZIP_URL="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 const PPT_FONTS=["맑은 고딕","나눔고딕","나눔스퀘어","나눔명조","본고딕","Noto Sans KR","굴림","바탕"];
 const PPT_DEF={bgId:"",bgColor:"#000000",color:"#FFFFFF",font:"맑은 고딕",size:40,lines:2,valign:"middle",titleSlide:true,ratio:"16:9",bold:true,shadow:true};
+/* 곡 제목 장 꾸밈: 띠·그림(음표) · 글자 그라데이션 */
+const NOTE_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><g fill="#fff" stroke="#A5A5A5" stroke-width="1.5"><ellipse cx="21" cy="70" rx="9" ry="6.5" transform="rotate(-20 21 70)"/><path d="M27.5 18h4v52h-4z"/><path d="M31.5 18c6 6 15 9 14 21-3-6-8-8-14-9z"/><ellipse cx="57" cy="78" rx="9" ry="6.5" transform="rotate(-20 57 78)"/><ellipse cx="83" cy="70" rx="9" ry="6.5" transform="rotate(-20 83 70)"/><path d="M63.5 36h4v42h-4zM89.5 28h4v42h-4zM63.5 36 93.5 28v8l-30 8z"/></g></svg>';
+const NOTE_DECO=()=>({titleDeco:[{kind:"shape",prst:"roundRect",x:0,y:.724,w:1,h:.279,hex:"000000",alpha:.85},{kind:"img",x:.002,y:.811,w:.0484,h:.0861,src:"data:image/svg+xml;base64,"+btoa(NOTE_SVG)}],
+  titleBox:{x:.048,y:.8035,w:.635,h:.121},titleAlign:"left",titleAnchor:"ctr",titleColor:"#FFFFFF",titleGrad:{ang:0,stops:[{pos:0,hex:"D9D9D9"},{pos:.26,hex:"FFFFFF"},{pos:1,hex:"D9D9D9"}]},titleShadow:false,titleDecoKind:"note"});
+async function svgToPng(src,px=256){const im=await loadImg(src);const ar=(im.naturalWidth||1)/(im.naturalHeight||1);const c=document.createElement("canvas");c.width=Math.round(ar>=1?px:px*ar);c.height=Math.round(ar>=1?px/ar:px);
+  c.getContext("2d").drawImage(im,0,0,c.width,c.height);return c.toDataURL("image/png");}
+const SCHEME_CLR={tx1:"000000",dk1:"000000",bg1:"FFFFFF",lt1:"FFFFFF",tx2:"44546A",dk2:"44546A",bg2:"E7E6E6",lt2:"E7E6E6",accent1:"4472C4",accent2:"ED7D31",accent3:"A5A5A5",accent4:"FFC000",accent5:"5B9BD5",accent6:"70AD47"};
+function ooxClr(x){const m=(x||"").match(/<a:(srgbClr|schemeClr|prstClr) val="(\w+)"\s*(?:\/>|>([\s\S]*?)<\/a:\1>)/);if(!m)return null;
+  const hex=m[1]==="srgbClr"?m[2]:m[1]==="schemeClr"?(SCHEME_CLR[m[2]]||"000000"):({white:"FFFFFF",black:"000000"}[m[2]]||"000000");const inner=m[3]||"";
+  const g=k=>{const r=inner.match(new RegExp("<a:"+k+' val="(\\d+)"'));return r?+r[1]/100000:null;};
+  let [r,gg,b]=[0,2,4].map(i=>parseInt(hex.substr(i,2),16)/255);const lm=g("lumMod"),lo=g("lumOff"),sh=g("shade"),ti=g("tint"),al=g("alpha");
+  if(lm!==null||lo!==null){const mx=Math.max(r,gg,b),mn=Math.min(r,gg,b);let l=(mx+mn)/2,hh=0,ss=0;if(mx!==mn){const d=mx-mn;ss=l>.5?d/(2-mx-mn):d/(mx+mn);hh=mx===r?(gg-b)/d+(gg<b?6:0):mx===gg?(b-r)/d+2:(r-gg)/d+4;hh/=6;}
+    l=Math.min(1,Math.max(0,l*(lm??1)+(lo??0)));const q=l<.5?l*(1+ss):l+ss-l*ss,pp=2*l-q;const f=t=>{t<0&&(t+=1);t>1&&(t-=1);return t<1/6?pp+(q-pp)*6*t:t<1/2?q:t<2/3?pp+(q-pp)*(2/3-t)*6:pp;};
+    [r,gg,b]=ss?[f(hh+1/3),f(hh),f(hh-1/3)]:[l,l,l];}
+  if(sh!==null){r*=sh;gg*=sh;b*=sh;}if(ti!==null){r+=(1-r)*(1-ti);gg+=(1-gg)*(1-ti);b+=(1-b)*(1-ti);}
+  return{hex:[r,gg,b].map(v=>Math.round(v*255).toString(16).padStart(2,"0")).join("").toUpperCase(),alpha:al??1};}
+const gradCss=g=>`linear-gradient(${(g.ang||0)+90}deg,${g.stops.map(x=>`#${x.hex} ${Math.round(x.pos*100)}%`).join(",")})`;
 const pptTpls=()=>{const c=teamCfg();let l=(c.pptTemplates||[]).slice();if(!l.length&&c.ppt)l=[{id:"base",name:"기본",...c.ppt}];return l.map(t=>({...PPT_DEF,...t}));};
 function tplFor(c){const l=pptTpls();const w=c?wtypeOf(c):"";return (w&&l.find(t=>(t.wtypes||[]).includes(w)))||l.find(t=>t.id===teamCfg().pptDefault)||l[0]||{...PPT_DEF,id:"",name:"기본 (검은 화면)"};}
 const pptCfg=()=>tplFor(null);
@@ -2673,6 +2691,12 @@ function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
       md.close();toast("가사를 저장했어요");onSaved&&onSaved();}}):null]);
   setTimeout(()=>ta.focus(),50);}
 async function bgDataUrl(cfg){if(!cfg.bgId)return null;const u=await getImg(cfg.bgId);return u||null;}
+/* PptxGenJS는 글자 그라데이션을 못 넣어서, 표시해 둔 색을 파일 안에서 그라데이션으로 바꿔요 */
+async function gradTitles(blob,g,mark){try{await loadScript(JSZIP_URL);const zip=await window.JSZip.loadAsync(blob);
+  const gx=`<a:gradFill><a:gsLst>${g.stops.map(x=>`<a:gs pos="${Math.round(x.pos*100000)}"><a:srgbClr val="${x.hex}"/></a:gs>`).join("")}</a:gsLst><a:lin ang="${Math.round((g.ang||0)*60000)}" scaled="1"/></a:gradFill>`;
+  const re=new RegExp(`<a:solidFill><a:srgbClr val="${mark}"\\s*(?:/>|>[\\s\\S]*?</a:srgbClr>)</a:solidFill>`,"g");
+  for(const f of Object.values(zip.files).filter(f=>/^ppt\/slides\/slide\d+\.xml$/.test(f.name))){const x=await f.async("string");if(x.includes(mark))zip.file(f.name,x.replace(re,gx));}
+  return await zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});}catch(e){console.error(e);return blob;}}
 async function exportLyricsPpt(c,tplOverride,skipAsk){if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");
   const missing=items.filter(it=>!lyricsOf(it).trim());
   const go=async()=>{const md=modal("가사 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"ppt-st",text:"준비하고 있어요…"})),null);const st=$("#ppt-st",md.el);
@@ -2681,18 +2705,22 @@ async function exportLyricsPpt(c,tplOverride,skipAsk){if(!c)return;const items=a
       if(cfg.slideW&&cfg.slideH){W=cfg.slideW;H=cfg.slideH;pp.defineLayout({name:"TPL",width:W,height:H});pp.layout="TPL";}else pp.layout=cfg.ratio==="4:3"?"LAYOUT_4x3":"LAYOUT_16x9";
       const VA={ctr:"middle",b:"bottom",t:"top"};
       pp.title=`${fmtDate(c.date)} ${wtypeOf(c)}`;
-      const back=bg?{data:bg}:{color:cfg.bgColor.replace("#","")};const col=cfg.color.replace("#","");
+      const back=bg?{data:bg}:{color:cfg.bgColor.replace("#","")};const col=cfg.color.replace("#","");const GMARK="FEFDFC";
+      const deco=[];for(const d of (cfg.titleSlide&&cfg.titleDeco)||[]){if(d.kind!=="img"){deco.push(d);continue;}try{deco.push({...d,png:/^data:image\/svg/.test(d.src)?await svgToPng(d.src,320):d.src});}catch(e){}}
       const txt=(sl,t,o)=>sl.addText(t,{x:.4,w:W-.8,fontFace:cfg.font,color:col,bold:cfg.bold,align:cfg.align||"center",fit:"shrink",
         shadow:cfg.shadow?{type:"outer",color:"000000",blur:3,offset:2,angle:45,opacity:.6}:undefined,...o});
       let n=0;
       for(const it of items){const s=pp.addSlide();s.background=back;n++;
-        const tb=cfg.titleBox;if(cfg.titleSlide){txt(s,it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)"),tb?{x:tb.x*W,y:tb.y*H,w:tb.w*W,h:tb.h*H,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:VA[cfg.titleAnchor]||"middle",color:(cfg.titleColor||cfg.color).replace("#","")}:{y:H*.35,h:H*.3,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:"middle"});}
+        const tb=cfg.titleBox;if(cfg.titleSlide){for(const d of deco){if(d.kind==="shape")s.addShape(d.prst||"rect",{x:d.x*W,y:d.y*H,w:d.w*W,h:d.h*H,fill:{color:d.hex,transparency:Math.round((1-(d.alpha??1))*100)},line:{type:"none"},rectRadius:d.prst==="roundRect"?Math.min(d.w*W,d.h*H)*.1667:undefined});
+            else if(d.png)s.addImage({data:d.png,x:d.x*W,y:d.y*H,w:d.w*W,h:d.h*H});}
+          const tOpt={fontFace:cfg.titleFont||cfg.font,bold:cfg.titleBold??cfg.bold,align:cfg.titleAlign||cfg.align||"center",color:cfg.titleGrad?GMARK:(cfg.titleColor||cfg.color).replace("#",""),...(cfg.titleShadow===false?{shadow:undefined}:{})};
+          txt(s,it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)"),tb?{x:tb.x*W,y:tb.y*H,w:tb.w*W,h:tb.h*H,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:VA[cfg.titleAnchor]||"middle",...tOpt}:{y:H*.35,h:H*.3,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:"middle",...tOpt});}
         const slides=slidesFor(it,cfg);
         if(!cfg.titleSlide&&!slides.length)txt(s,it.title,{y:H*.35,h:H*.3,fontSize:cfg.size,valign:"middle"});
         slides.forEach((lines,i)=>{const sl=(i===0&&!cfg.titleSlide)?s:pp.addSlide();if(sl!==s){sl.background=back;n++;}
           const bottom=cfg.valign==="bottom";const bx=cfg.box;txt(sl,lines.join("\n"),bx?{x:bx.x*W,y:bx.y*H,w:bx.w*W,h:bx.h*H,fontSize:cfg.size,valign:VA[cfg.anchor]||(bottom?"bottom":"middle"),lineSpacingMultiple:cfg.lnSpc||1.15}:{y:bottom?H*.62:H*.12,h:bottom?H*.32:H*.76,fontSize:cfg.size,valign:bottom?"bottom":"middle",lineSpacingMultiple:cfg.lnSpc||1.15});});
         st.textContent=`슬라이드 ${n}장 만드는 중…`;}
-      const blob=await pp.write({outputType:"blob"});const fname=`${teamName(teamOf(c))}_가사_${c.date||"날짜미정"}.pptx`;md.close();
+      let blob=await pp.write({outputType:"blob"});if(cfg.titleSlide&&cfg.titleGrad)blob=await gradTitles(blob,cfg.titleGrad,GMARK);const fname=`${teamName(teamOf(c))}_가사_${c.date||"날짜미정"}.pptx`;md.close();
       if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});toast(`가사 PPT를 저장했어요 (${n}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
       else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.append(a);a.click();a.remove();}
     }catch(e){md.close();console.error(e);toast("PPT를 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");}};
@@ -2712,8 +2740,17 @@ function pptTemplateModal(tpl){if(tpl&&tpl.isTrusted!==undefined)tpl=null;if(!tp
     if(cfg.bgId){const u=await getImg(cfg.bgId);if(u)prev.style.backgroundImage=`url("${u}")`;}else prev.style.backgroundImage="none";
     prev.style.justifyContent=cfg.valign==="bottom"?"flex-end":"center";
     ttl.style.color=cfg.color;ttl.style.fontFamily=`"${cfg.font}",sans-serif`;ttl.style.fontWeight=cfg.bold?"700":"400";ttl.style.fontSize=`${(cfg.size*(cfg.ratio==="4:3"?.139:.139)).toFixed(2)}cqw`;ttl.style.textShadow=cfg.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none";
-    ttl.textContent=["주 품에 품으소서","능력의 팔로 덮으소서","주의 이름을 높이며","그 사랑 노래하네"].slice(0,cfg.lines).join("\n");};
-  prev.append(ttl);
+    ttl.textContent=["주 품에 품으소서","능력의 팔로 덮으소서","주의 이름을 높이며","그 사랑 노래하네"].slice(0,cfg.lines).join("\n");
+    tprev.replaceChildren(...(cfg.titleSlide?[h("div",{class:"hint",text:"곡 제목 장"}),tplPreview(cfg,["태산을 넘어 험곡에 가도"],"title")]:[]));};
+  prev.append(ttl);const tprev=h("div",{class:"tplone"});
+  const DK=["titleDeco","titleGrad","titleDecoKind","titleBox","titleAlign","titleAnchor","titleColor","titleShadow","titleSize"];const orig={};for(const k of DK)if(cfg[k]!==undefined)orig[k]=clone(cfg[k]);
+  const decoSel=h("select",{id:"pp-deco",onchange:e=>{const v=e.target.value;for(const k of DK)delete cfg[k];
+      if(v==="note"){const H=cfg.slideH||(cfg.ratio==="4:3"?7.5:5.625);Object.assign(cfg,NOTE_DECO(),{titleSize:Math.round(40*H/7.5)});}
+      else if(v==="pptx")Object.assign(cfg,clone(orig));
+      else if(orig.titleDecoKind!=="pptx"&&orig.titleDecoKind!=="note")Object.assign(cfg,clone(orig));
+      else{for(const k of ["titleBox","titleAnchor","titleSize"])if(orig[k]!==undefined&&orig.titleDecoKind==="pptx")cfg[k]=clone(orig[k]);}
+      draw();}},
+    []);const syncDeco=()=>decoSel.replaceChildren(...[["none","꾸밈 없음 (글자만)"],["note","♪ 음표 + 아래 검은 띠"],...(orig.titleDecoKind==="pptx"?[["pptx","올린 PPT 모양 그대로"]]:[])].map(([v,t])=>h("option",{value:v,text:t,selected:(cfg.titleDecoKind||"none")===v})));syncDeco();
   const fld=(id,l,el)=>h("div",{class:"field"},h("label",{htmlFor:id,text:l}),el);
   const inp=(id,type,key,extra={})=>h("input",{type,id,value:cfg[key],...extra,oninput:e=>{cfg[key]=type==="number"?+e.target.value:e.target.value;draw();}});
   const sel=(id,key,opts)=>h("select",{id,onchange:e=>{const v=e.target.value;cfg[key]=v==="true"?true:v==="false"?false:/^\d+$/.test(v)?+v:v;draw();}},opts.map(([v,t])=>h("option",{value:String(v),text:t,selected:String(cfg[key])===String(v)})));
@@ -2721,7 +2758,7 @@ function pptTemplateModal(tpl){if(tpl&&tpl.isTrusted!==undefined)tpl=null;if(!tp
   const st=h("span",{class:"hint"});
   const useImage=async file=>{st.textContent="배경을 올리는 중…";try{const url=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});
       const im=await loadImg(url);const jp=toJpeg(im,im.naturalWidth,im.naturalHeight);cfg.bgId=await storeImage(jp);st.textContent="배경을 넣었어요";draw();}catch(e){st.textContent="이미지를 읽지 못했어요";}};
-  const usePptx=async file=>{st.textContent="PPT에서 모양을 읽는 중…";try{const t=await tplFromPptx(file);Object.assign(cfg,t);fontIn.value=cfg.font;colorIn.value=cfg.color;sizeIn.value=cfg.size;st.textContent="PPT에서 배경·글꼴·글자 위치를 가져왔어요. 확인하고 저장하세요.";draw();return;}catch(e){console.error(e);}
+  const usePptx=async file=>{st.textContent="PPT에서 모양을 읽는 중…";try{const t=await tplFromPptx(file);for(const k of DK)delete cfg[k];Object.assign(cfg,t);for(const k of DK){delete orig[k];if(cfg[k]!==undefined)orig[k]=clone(cfg[k]);}syncDeco();fontIn.value=cfg.font;colorIn.value=cfg.color;sizeIn.value=cfg.size;st.textContent="PPT에서 배경·글꼴·글자 위치를 가져왔어요. 확인하고 저장하세요.";draw();return;}catch(e){console.error(e);}
     st.textContent="PPT에서 배경을 찾는 중…";try{await loadScript(JSZIP_URL);const zip=await window.JSZip.loadAsync(await file.arrayBuffer());
       const media=Object.values(zip.files).filter(f=>/^ppt\/media\/.+\.(png|jpe?g)$/i.test(f.name));
       let best=null;for(const f of media){const b=await f.async("uint8array");if(!best||b.length>best.b.length)best={f,b};}
@@ -2738,7 +2775,7 @@ function pptTemplateModal(tpl){if(tpl&&tpl.isTrusted!==undefined)tpl=null;if(!tp
   const colorIn=inp("pp-color","color","color");const bgcIn=inp("pp-bgc","color","bgColor");const sizeIn=inp("pp-size","number","size",{min:16,max:96,style:"width:90px"});
   const body=h("div",{class:"panel-body"},
     h("p",{class:"hint",text:`${teamName(S.team)} 팀이 쓰는 가사 화면 모양이에요. 지금 쓰는 PPT 파일(.pptx)을 올리면 배경 그림과 글꼴을 가져오고, 배경 그림만 올려도 돼요.`}),
-    prev,
+    prev,tprev,
     h("div",{class:"row",style:"margin-block:8px"},h("span",{class:"btn filebtn"},"PPT 파일 · 배경 그림 올리기",fileIn),cfg.bgId?h("button",{class:"btn sm ghost",text:"배경 그림 빼기",onclick:e=>{cfg.bgId="";e.currentTarget.remove();draw();}}):null,st),
     h("div",{class:"grid"},fld("pp-bgc","배경색 (그림이 없을 때)",bgcIn),fld("pp-color","글자색",colorIn),
       fld("pp-font","글꼴 (발표하는 컴퓨터에 깔린 글꼴)",h("div",{},fontIn,h("datalist",{id:"pp-fonts"},PPT_FONTS.map(f=>h("option",{value:f}))))),
@@ -2747,6 +2784,7 @@ function pptTemplateModal(tpl){if(tpl&&tpl.isTrusted!==undefined)tpl=null;if(!tp
       fld("pp-valign","글자 위치",sel("pp-valign","valign",[["middle","가운데"],["bottom","아래 (자막처럼)"]])),
       fld("pp-ratio","화면 비율",sel("pp-ratio","ratio",[["16:9","16:9 (와이드)"],["4:3","4:3"]])),
       fld("pp-title","곡 제목 장",sel("pp-title","titleSlide",[[true,"곡마다 제목 장 넣기"],[false,"넣지 않기"]])),
+      fld("pp-deco","제목 장 꾸밈",decoSel),
       fld("pp-bold","굵게",sel("pp-bold","bold",[[true,"굵게"],[false,"보통"]])),
       fld("pp-shadow","글자 그림자",sel("pp-shadow","shadow",[[true,"넣기"],[false,"빼기"]]))));
   const nameIn=h("input",{type:"text",id:"pp-name",value:cfg.name||"",placeholder:"예: 주일 2부, 오후 찬양",oninput:e=>{cfg.name=e.target.value;}});
@@ -2785,7 +2823,23 @@ async function tplFromPptx(file){await loadScript(JSZIP_URL);const zip=await win
       lnSpc:((xx.match(/<a:lnSpc><a:spcPct val="(\d+)"/)||[])[1]||0)/100000||1,shadow:/outerShdw/.test(xx)};};
   const st=styleOf(x);const out={...st,font:st.font||"맑은 고딕",box:boxOf(sample),lines:Math.min(4,Math.max(1,mode(lyr.map(s=>s.shapes[0].paras.reduce((n,p)=>n+p.lines,0)))||2)),
     slideW:CX/914400,slideH:CY/914400,ratio:CX/CY<1.5?"4:3":"16:9",titleSlide:ttl.length>0,valign:(st.anchor==="b"?"bottom":"middle")};
-  if(ttl.length){const ts=styleOf(ttl[0].shapes[0].xml);out.titleBox=boxOf(ttl[0].shapes[0]);out.titleSize=ts.size;out.titleColor=ts.color;out.titleAnchor=ts.anchor;}
+  if(ttl.length){const tsh=ttl[0].shapes[0];const ts=styleOf(tsh.xml);out.titleBox=boxOf(tsh);out.titleSize=ts.size;out.titleAnchor=ts.anchor;out.titleAlign=ts.align;out.titleBold=ts.bold;out.titleShadow=ts.shadow;if(ts.font)out.titleFont=ts.font;
+    const rpr=(tsh.xml.match(/<a:rPr[^>]*>[\s\S]*?<\/a:rPr>/)||[""])[0];const gf=(rpr.match(/<a:gradFill>[\s\S]*?<\/a:gradFill>/)||[""])[0];
+    if(gf){const stops=[...gf.matchAll(/<a:gs pos="(\d+)">([\s\S]*?)<\/a:gs>/g)].map(m=>({pos:+m[1]/100000,hex:(ooxClr(m[2])||{hex:"FFFFFF"}).hex})).sort((a,b)=>a.pos-b.pos);
+      if(stops.length>=2){out.titleGrad={ang:+((gf.match(/<a:lin ang="(\d+)"/)||[])[1]||0)/60000,stops};out.titleColor="#"+stops[Math.floor(stops.length/2)].hex;}}
+    if(!out.titleGrad){const sf=(rpr.match(/<a:solidFill>[\s\S]*?<\/a:solidFill>/)||[""])[0];const cc=ooxClr(sf);out.titleColor=cc?"#"+cc.hex:ts.color;}
+    /* 제목 장의 띠·그림(음표 등) */
+    const deco=[];const xml=ttl[0].xml;const rels=await relsOf(ttl[0].p);
+    for(const m of xml.matchAll(/<p:sp>[\s\S]*?<\/p:sp>|<p:pic>[\s\S]*?<\/p:pic>/g)){const el=m[0];if(deco.length>=5)break;
+      const sp=(el.match(/<p:spPr[^>]*>[\s\S]*?<\/p:spPr>/)||[""])[0];const o=sp.match(/<a:off x="(-?\d+)" y="(-?\d+)"\/>\s*<a:ext cx="(\d+)" cy="(\d+)"/);if(!o)continue;
+      const g={x:+o[1]/CX,y:+o[2]/CY,w:+o[3]/CX,h:+o[4]/CY};
+      if(el.startsWith("<p:pic>")){if(g.w>=.9&&g.h>=.9)continue;const id=(el.match(/svgBlip[^>]*r:embed="([^"]+)"/)||el.match(/r:embed="([^"]+)"/)||[])[1];const r=id&&rels[id];if(!r||!zip.file(r.p))continue;
+        try{if(/\.svg$/i.test(r.p)){const src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(await zip.file(r.p).async("string"))));deco.push({kind:"img",...g,src:await svgToPng(src,320)});}
+          else if(/\.(png|jpe?g|gif)$/i.test(r.p)){const b=await zip.file(r.p).async("base64");const im=await loadImg(`data:image/${/png$/i.test(r.p)?"png":"jpeg"};base64,${b}`);
+            const c=document.createElement("canvas");const sc=Math.min(1,400/Math.max(im.naturalWidth,im.naturalHeight));c.width=Math.round(im.naturalWidth*sc);c.height=Math.round(im.naturalHeight*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);deco.push({kind:"img",...g,src:c.toDataURL("image/png")});}}catch(e){console.warn(e);}continue;}
+      if(/<a:t>[^<]|<a:t [^>]*>[^<]/.test(el)||/<p:ph /.test(el))continue;const prst=(sp.match(/<a:prstGeom prst="(\w+)"/)||[])[1];if(!/^(rect|roundRect)$/.test(prst||""))continue;
+      const fill=(sp.match(/<a:solidFill>[\s\S]*?<\/a:solidFill>/)||[""])[0];const cc=ooxClr(fill);if(!cc)continue;deco.push({kind:"shape",prst,...g,hex:cc.hex,alpha:Math.round(cc.alpha*100)/100});}
+    if(deco.length){out.titleDeco=deco;out.titleDecoKind="pptx";}}
   /* 배경: 가사 슬라이드 → 레이아웃 → 마스터 순서로 그림 배경, 화면을 덮는 그림, 단색을 찾아요 */
   const findBg=async path=>{const xml=await rd(path);const rels=await relsOf(path);
     const bg=(xml.match(/<p:bg>[\s\S]*?<\/p:bg>/)||[""])[0];let emb=(bg.match(/r:embed="([^"]+)"/)||[])[1];
@@ -2911,12 +2965,17 @@ function tplPreview(t,lines,kind){const ar=t.slideW&&t.slideH?t.slideW/t.slideH:
   Object.assign(tx.style,{left:b.x*100+"%",top:b.y*100+"%",width:b.w*100+"%",height:b.h*100+"%",color:t.color,fontFamily:`"${t.font}",sans-serif`,fontWeight:t.bold?"700":"400",
     fontSize:`${((isT?(t.titleSize||Math.round(t.size*1.15)):t.size)/(t.slideH?t.slideH*72:405)*100).toFixed(2)}cqh`,color:isT?(t.titleColor||t.color):t.color,textAlign:t.align||"center",justifyContent:{t:"flex-start",b:"flex-end"}[isT?(t.titleAnchor||"ctr"):t.anchor]||(t.valign==="bottom"?"flex-end":"center"),
     lineHeight:String(1.15*(t.lnSpc||1)),textShadow:t.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none"});
+  if(isT&&t.titleGrad){Object.assign(tx.style,{backgroundImage:gradCss(t.titleGrad),webkitBackgroundClip:"text",backgroundClip:"text",color:"transparent",webkitTextFillColor:"transparent",textShadow:"none"});tx.style.setProperty("-webkit-background-clip","text");}
+  if(isT){Object.assign(tx.style,{fontFamily:`"${t.titleFont||t.font}",sans-serif`,fontWeight:(t.titleBold??t.bold)?"700":"400",textAlign:t.titleAlign||t.align||"center"});if(t.titleShadow===false)tx.style.textShadow="none";
+    for(const d of t.titleDeco||[]){const el=d.kind==="img"?h("img",{src:d.src,alt:""}):h("div");Object.assign(el.style,{position:"absolute",left:d.x*100+"%",top:d.y*100+"%",width:d.w*100+"%",height:d.h*100+"%",objectFit:"contain"});
+      if(d.kind!=="img"){const c=d.hex||"000000";el.style.background=`rgba(${parseInt(c.substr(0,2),16)},${parseInt(c.substr(2,2),16)},${parseInt(c.substr(4,2),16)},${d.alpha??1})`;if(d.prst==="roundRect")el.style.borderRadius=`${Math.min(d.h,d.w*ar)*16.67}cqh`;}
+      box.append(el);}}
   box.append(tx);return box;}
 function renderPpt(m){const can=S.canWrite&&!!S.db;const list=pptTpls();const defId=teamCfg().pptDefault||(list[0]||{}).id;
   const sample=["찬양 찬양 크신 나의 하나님","너와 날 만드시고 자녀 삼으셨네","주님 안에 서로 사랑할 때에","세상은 우릴 통해 아버지를 보리라"];
   const fin=h("input",{type:"file",accept:".pptx",onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;toast("PPT에서 모양을 읽는 중…");
     try{const t=await tplFromPptx(f);const g=tplNameOf(f.name);t.name=g.name;t.wtypes=g.wtypes;pptTemplateModal(t);}catch(err){console.error(err);toast(err.message||"PPT에서 가사 화면을 찾지 못했어요",3500);}}});
-  const cards=list.map(t=>h("div",{class:"card tplcard"+(t.id===defId?" def":"")},tplPreview(t,sample),
+  const cards=list.map(t=>h("div",{class:"card tplcard"+(t.id===defId?" def":"")},h("div",{class:"tplpair"},tplPreview(t,sample),t.titleSlide?tplPreview(t,["곡 제목"],"title"):null),
     h("div",{class:"row"},h("b",{text:t.name||"기본"}),t.id===defId?h("span",{class:"tag",text:"기본"}):null),
     h("div",{class:"hint",text:(t.wtypes||[]).length?`쓰는 예배: ${t.wtypes.join(", ")}`:"쓰는 예배: (정하지 않음 · 기본일 때 모든 예배)"}),
     h("div",{class:"hint",text:`${t.font} · ${t.size}pt · 한 장 ${t.lines}줄${t.titleSlide?" · 곡 제목 장":""}${t.box?" · 글자 위치 PPT 그대로":""}`}),
