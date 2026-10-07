@@ -446,6 +446,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .attoff{padding:22px 14px;text-align:center;color:var(--ink2);display:flex;flex-direction:column;align-items:center;gap:8px}.attoff b{font-size:1.05rem;color:var(--ink)}
 .yeart{width:auto;border-collapse:collapse}.yeart th,.yeart td{border:1px solid var(--line);padding:5px 8px}.yeart thead th{background:var(--soft)}.yeart th.g{color:#fff}.yeart th.g.ok{background:#2f9e5b}.yeart th.g.late{background:#e09a1a}.yeart th.g.exc{background:#5a7fc0}.yeart th.g.abs{background:#d0473e}.yeart tr.sub th{font-size:.72rem;color:var(--ink2)}.yeart .tot{font-weight:700;background:color-mix(in srgb,var(--soft) 60%,var(--sheet))}.yeart tbody th{text-align:left;white-space:nowrap}
 .pdfjobs{display:flex;flex-direction:column;gap:12px}.pdfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}.pdfpg{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:8px;padding:6px}.pdfpg.start{border:2px solid var(--accent);padding:5px}.pdfpg img{width:100%;aspect-ratio:.72;object-fit:cover;object-position:top;border-radius:4px;background:#fff}.pdfpg input[type=text]{font-size:.85rem;height:32px}
+.pptgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.pptcell{display:flex;flex-direction:column;gap:3px}.pptcell.t .tpv{outline:2px solid var(--accent)}.pmrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .tplgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.tplcard{display:flex;flex-direction:column;gap:6px}.tplcard.def{border-color:var(--accent)}
 .tpv{position:relative;width:100%;container-type:size;background-size:cover;background-position:center;border-radius:6px;overflow:hidden}.tpv-t{position:absolute;display:flex;flex-direction:column;white-space:pre-line;box-sizing:border-box;padding:0 2%}
 .availlist{display:flex;flex-direction:column;gap:8px}
@@ -754,7 +755,7 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
   try{await S.db.doc(`songs/${song.id}`).update({yt:[...(song.yt||[]),yid],updatedAt:Date.now()});}catch(e){}}
 
 /* ---------- tabs ---------- */
-const NAVG={home:[["home","홈"]],conti:[["bible","말씀 · 묵상"],["write","콘티 작성"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"],["ppt","가사 PPT"]],team:[["cal","일정"],["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bylaws","회칙"]],me:[["me","나"]]};
+const NAVG={home:[["home","홈"]],conti:[["bible","말씀 · 묵상"],["write","콘티 작성"],["pptmake","PPT 만들기"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"],["ppt","PPT 자료"]],team:[["cal","일정"],["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bylaws","회칙"]],me:[["me","나"]]};
 const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
 const subsOf=g=>{const w=isWriter()||!!S.curId;const l=NAVG[g].filter(([k])=>k!=="write"||w);return g==="conti"&&!w?l.slice().sort((a,b)=>(a[0]==="list"?-1:0)-(b[0]==="list"?-1:0)):l;};
 S.lastSub={};
@@ -844,7 +845,7 @@ function render(){const m=$("#main");m.replaceChildren();document.body.classList
   syncNav();
   if(!S.team){renderTeamPick(m);return;}
   const st=subTabs();if(st)m.append(st);
-  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend,lineup:renderLineup,ppt:renderPpt})[S.tab](m);}
+  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend,lineup:renderLineup,ppt:renderPpt,pptmake:renderPptMake})[S.tab](m);}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
 function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lead$/.test(team);const tn=isLead?`${teamName(team.replace(/_lead$/,""))} 리더`:teamName(team);
   const nameIn=h("input",{type:"text",id:"ul-name",placeholder:"이름 (콘티 작성자로 보여요)",value:window.CBWP.myName()||""});
@@ -935,8 +936,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"})),
     h("div",{class:"row",style:"margin-top:10px"},h("button",{class:"btn",onclick:()=>exportPdf(S.cur),text:"PDF 출력"}),
       h("button",{class:"btn",onclick:()=>exportCompact(S.cur),title:"모든 악보를 A3 가로 한두 장에 모아요",text:"압축버전 (A3)"}),
-      h("button",{class:"btn",onclick:()=>exportLyricsPpt(S.cur),title:"곡마다 넣어 둔 가사로 팀 템플릿 PPT를 만들어요",text:"가사 PPT"}),
-      h("button",{class:"btn",onclick:pptTemplateModal,text:"PPT 템플릿"}),h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}))));
+      h("button",{class:"btn",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"PPT 만들기"}),h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}))));
   [...fs.querySelectorAll(".sheet > h2")].forEach((h2,i)=>{const first=h2.firstChild;const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updateStatus();updUndo();}
 /* bring songs (and optionally the roster) from an earlier conti into the one being written */
@@ -1521,7 +1521,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
       h("div",{class:"row"},h("button",{class:"btn sm primary",text:"보기",onclick:()=>viewConti(c)}),mine?h("button",{class:"btn sm",text:"열어서 고치기",onclick:()=>openConti(c)}):null,
         c.past&&mine?h("button",{class:"btn sm",text:"빠르게 고치기",onclick:()=>{S.pastOpen=true;editPast(c);}}):null,
         (mine||isWriter())&&S.db?h("button",{class:"btn sm",text:"📄 악보 PDF 넣기",title:"이 콘티에 악보 PDF를 올려 곡과 악보를 채워요",onclick:()=>pdfPastModal(c)}):null,
-        h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn sm",text:"가사 PPT",onclick:()=>exportLyricsPpt(c)}),
+        h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn sm",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
         h("span",{class:"spacer"}),canDel?delBtn(c):null));};
   function draw(){box.replaceChildren();let placed=false;const qq=q.trim();
     const match=c=>{if(!qq)return true;const hay=[c.date,wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),c.note,...allItems(c).map(i=>i.title)].join(" ");return hay.includes(qq)||matchRank(hay,qq)>-1;};
@@ -2648,7 +2648,7 @@ function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
       md.close();toast("가사를 저장했어요");onSaved&&onSaved();}}):null]);
   setTimeout(()=>ta.focus(),50);}
 async function bgDataUrl(cfg){if(!cfg.bgId)return null;const u=await getImg(cfg.bgId);return u||null;}
-async function exportLyricsPpt(c,tplOverride){if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");
+async function exportLyricsPpt(c,tplOverride,skipAsk){if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");
   const missing=items.filter(it=>!lyricsOf(it).trim());
   const go=async()=>{const md=modal("가사 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"ppt-st",text:"준비하고 있어요…"})),null);const st=$("#ppt-st",md.el);
     try{await loadScript(PPTX_URL);const cfg=tplOverride||tplFor(c);const bg=await bgDataUrl(cfg);
@@ -2671,7 +2671,7 @@ async function exportLyricsPpt(c,tplOverride){if(!c)return;const items=allItems(
       if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});toast(`가사 PPT를 저장했어요 (${n}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
       else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.append(a);a.click();a.remove();}
     }catch(e){md.close();console.error(e);toast("PPT를 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");}};
-  if(!missing.length)return go();
+  if(!missing.length||skipAsk)return go();
   const okBtn=h("button",{class:"btn primary",text:"그대로 만들기",onclick:()=>{lm.close();go();}});
   const persist=async it=>{if(songOf(it)||!c.id||!S.db||!S.canWrite||!canEditConti(c,c.id))return;
     try{await S.db.doc(`contis/${c.id}`).update({opening:clone(c.opening||[]),before:clone(c.before||[]),after:clone(c.after||[]),updatedAt:Date.now()});}catch(e){}};
@@ -2878,13 +2878,13 @@ function lyricsDbModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를
 /* =========================================================
    가사 PPT 탭: 템플릿(예배마다) · 콘티로 PPT 만들기 · 가사 모으기
    ========================================================= */
-function tplPreview(t,lines){const ar=t.slideW&&t.slideH?t.slideW/t.slideH:(t.ratio==="4:3"?4/3:16/9);
+function tplPreview(t,lines,kind){const ar=t.slideW&&t.slideH?t.slideW/t.slideH:(t.ratio==="4:3"?4/3:16/9);
   const box=h("div",{class:"tpv"});box.style.aspectRatio=String(ar);box.style.background=t.bgColor||"#000";
   if(t.bgId)getImg(t.bgId).then(u=>{if(u){box.style.backgroundImage=`url("${u}")`;}});else if(t.bgPreview)box.style.backgroundImage=`url("${t.bgPreview}")`;
-  const b=t.box||(t.valign==="bottom"?{x:.04,y:.62,w:.92,h:.32}:{x:.04,y:.12,w:.92,h:.76});
-  const tx=h("div",{class:"tpv-t",text:lines.slice(0,t.lines||2).join("\n")});
+  const isT=kind==="title";const b=(isT?(t.titleBox||{x:.04,y:.35,w:.92,h:.3}):null)||t.box||(t.valign==="bottom"?{x:.04,y:.62,w:.92,h:.32}:{x:.04,y:.12,w:.92,h:.76});
+  const tx=h("div",{class:"tpv-t",text:isT?lines.join(" "):lines.slice(0,kind==="lyric"?99:(t.lines||2)).join("\n")});
   Object.assign(tx.style,{left:b.x*100+"%",top:b.y*100+"%",width:b.w*100+"%",height:b.h*100+"%",color:t.color,fontFamily:`"${t.font}",sans-serif`,fontWeight:t.bold?"700":"400",
-    fontSize:`${(t.size/(t.slideH?t.slideH*72:405)*100).toFixed(2)}cqh`,textAlign:t.align||"center",justifyContent:{t:"flex-start",b:"flex-end"}[t.anchor]||(t.valign==="bottom"?"flex-end":"center"),
+    fontSize:`${((isT?(t.titleSize||Math.round(t.size*1.15)):t.size)/(t.slideH?t.slideH*72:405)*100).toFixed(2)}cqh`,color:isT?(t.titleColor||t.color):t.color,textAlign:t.align||"center",justifyContent:{t:"flex-start",b:"flex-end"}[isT?(t.titleAnchor||"ctr"):t.anchor]||(t.valign==="bottom"?"flex-end":"center"),
     lineHeight:String(1.15*(t.lnSpc||1)),textShadow:t.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none"});
   box.append(tx);return box;}
 function renderPpt(m){const can=S.canWrite&&!!S.db;const list=pptTpls();const defId=teamCfg().pptDefault||(list[0]||{}).id;
@@ -2897,22 +2897,41 @@ function renderPpt(m){const can=S.canWrite&&!!S.db;const list=pptTpls();const de
     h("div",{class:"hint",text:`${t.font} · ${t.size}pt · 한 장 ${t.lines}줄${t.titleSlide?" · 곡 제목 장":""}${t.box?" · 글자 위치 PPT 그대로":""}`}),
     can?h("div",{class:"row"},h("button",{class:"btn sm",text:"고치기",onclick:()=>pptTemplateModal(t)}),t.id!==defId?h("button",{class:"btn sm",text:"기본으로",onclick:async()=>{if(await saveTpls(pptTpls(),t.id)){toast("기본 템플릿으로 정했어요");render();}}}):null,
       h("span",{class:"spacer"}),h("button",{class:"btn sm ghost danger",text:"지우기",onclick:async()=>{if(await saveTpls(pptTpls().filter(x=>x.id!==t.id),defId===t.id?"":defId)){toast("템플릿을 지웠어요");render();}}})):null));
-  m.append(h("div",{class:"sheet"},h("h2",{},"가사 PPT 템플릿",h("span",{class:"sub",text:"예배마다 다른 모양을 쓸 수 있어요"})),
-    h("p",{class:"hint",text:"실제로 쓰는 예배 PPT(.pptx)를 올리면 배경, 글꼴, 글자 크기·색, 글자 상자 위치, 한 장 줄 수, 곡 제목 장 모양을 그대로 읽어 템플릿으로 만들어요. 「쓰는 예배」를 정해 두면 콘티의 예배 종류에 맞춰 저절로 골라져요."}),
-    can?h("div",{class:"row",style:"margin-bottom:10px"},h("span",{class:"btn primary filebtn"},"+ 예배 PPT로 템플릿 만들기",fin),h("button",{class:"btn",text:"+ 빈 템플릿",onclick:()=>pptTemplateModal({...PPT_DEF,id:"",name:"",wtypes:[]})})):null,
-    list.length?h("div",{class:"tplgrid"},cards):h("div",{class:"empty",text:"아직 템플릿이 없어요. 지금은 검은 바탕에 흰 글씨로 만들어져요."})));
-  /* 콘티로 만들기 */
-  const today=todayStr();const cs=[...S.contis.filter(c=>!c.noService&&c.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3),...S.contis.filter(c=>!c.noService&&c.date<today).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5)];
-  m.append(h("div",{class:"sheet"},h("h2",{},"콘티로 가사 PPT 만들기",h("span",{class:"sub",text:"다가오는 3개 · 지난 5개"})),
-    cs.length?h("div",{class:"cards"},cs.map(c=>{const items=allItems(c);const miss=items.filter(it=>!lyricsOf(it).trim()).length;const auto=tplFor(c);
-      const sel=h("select",{style:"width:auto"},list.length?list.map(t=>h("option",{value:t.id,text:t.name+(t.id===auto.id?" (자동)":""),selected:t.id===auto.id})):[h("option",{value:"",text:"기본 (검은 화면)"})]);
-      return h("div",{class:"card row",style:"flex-wrap:wrap"},h("div",{style:"flex:1;min-width:200px"},h("b",{text:`${fmtDate(c.date)} · ${wtypeOf(c)}`}),h("div",{class:"hint",text:`${items.length}곡${miss?` · 가사 없는 곡 ${miss}개`:" · 가사 모두 있음"}`})),
-        sel,h("button",{class:"btn primary",text:"PPT 만들기",onclick:()=>exportLyricsPpt(c,list.find(t=>t.id===sel.value)||null)}));})):h("div",{class:"empty",text:"콘티가 없어요."})));
-  /* 가사 모으기 */
-  const nLy=S.songs.filter(x=>(x.lyrics||"").trim()).length;
-  m.append(h("div",{class:"sheet"},h("h2",{},"가사 모으기",h("span",{class:"sub",text:`가사 있는 곡 ${nLy} / ${S.songs.length}`})),
-    h("p",{class:"hint",text:"방송실에 쌓아 둔 곡별 가사 PPT나, 한 예배 전체가 든 PPT를 그대로 올리세요. 예배 PPT는 곡 제목 장을 찾아 곡마다 가사를 나눠 넣어요. 「1|」 같은 절 표시는 그대로 남아요."}),
-    S.canWrite?h("button",{class:"btn",text:"📂 가사 PPT 올리기",onclick:lyricsDbModal}):null));}
+  const nLy=S.songs.filter(x=>(x.lyrics||"").trim()).length;const fold=!!S.tplFold;
+  m.append(h("div",{class:"sheet"},h("h2",{},"PPT 자료",h("span",{class:"sub",text:`가사 있는 곡 ${nLy} / ${S.songs.length} · 템플릿 ${list.length}개`})),
+    h("div",{class:"row"},S.canWrite?h("button",{class:"btn primary",text:"📂 가사 PPT 올리기",title:"곡별 가사 PPT나 예배 전체 PPT를 올려 곡마다 가사를 넣어요 (「1|」 절 표시는 그대로)",onclick:lyricsDbModal}):null,
+      can?h("span",{class:"btn filebtn"},"+ 예배 PPT로 템플릿 만들기",fin):null,can?h("button",{class:"btn",text:"+ 빈 템플릿",onclick:()=>pptTemplateModal({...PPT_DEF,id:"",name:"",wtypes:[]})}):null,
+      h("span",{class:"spacer"}),h("button",{class:"btn sm",text:"콘티로 PPT 만들기 →",onclick:()=>setTab("pptmake")}))));
+  m.append(h("div",{class:"sheet"},h("h2",{},"가사 PPT 템플릿",list.length?h("button",{class:"btn sm ghost",text:fold?`펼치기 (${list.length}개)`:"접기",onclick:()=>{S.tplFold=!fold;render();}}):null),
+    fold?h("div",{class:"pchips"},list.map(t=>h("span",{class:"pchip",text:`${t.name||"기본"}${t.id===defId?" · 기본":""}${(t.wtypes||[]).length?` · ${t.wtypes.join(", ")}`:""}`}))):
+    h("div",{},h("p",{class:"hint",text:"실제로 쓰는 예배 PPT를 올리면 배경, 글꼴, 글자 크기·색, 글자 상자 위치, 한 장 줄 수, 곡 제목 장 모양을 그대로 읽어 템플릿으로 만들어요. 「쓰는 예배」를 정해 두면 콘티의 예배 종류에 맞춰 저절로 골라져요."}),
+      list.length?h("div",{class:"tplgrid"},cards):h("div",{class:"empty",text:"아직 템플릿이 없어요. 지금은 검은 바탕에 흰 글씨로 만들어져요."}))));}
+/* 콘티 → PPT 만들기 */
+function renderPptMake(m){const list=pptTpls();const today=todayStr();
+  const cur=S.cur&&allItems(S.cur).length?S.cur:null;
+  const cs=[...S.contis.filter(c=>!c.noService&&c.date>=today&&(!cur||c.id!==S.curId)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3),...S.contis.filter(c=>!c.noService&&c.date<today).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6)];
+  const row=(c,label)=>{const items=allItems(c);const miss=items.filter(it=>!lyricsOf(it).trim()).length;const auto=tplFor(c);
+    return h("div",{class:"card pmrow"},h("div",{style:"flex:1;min-width:200px"},h("b",{text:label||`${fmtDate(c.date)} · ${wtypeOf(c)}`}),h("div",{class:"hint",text:`${items.length}곡${miss?` · 가사 없는 곡 ${miss}개`:" · 가사 모두 있음"} · 템플릿 「${auto.name||"기본"}」`})),
+      h("button",{class:"btn primary",text:"미리보기",onclick:()=>previewLyricsPpt(c)}));};
+  m.append(h("div",{class:"sheet"},h("h2",{},"가사 PPT 만들기",h("span",{class:"sub",text:"미리 보고 받아요 · 템플릿은 예배 종류에 맞춰 저절로"})),
+    h("div",{class:"cards"},cur?row(cur,`지금 쓰는 콘티 · ${fmtDate(cur.date)} · ${wtypeOf(cur)}`):null,cs.map(c=>row(c))),
+    !cur&&!cs.length?h("div",{class:"empty",text:"콘티가 없어요."}):null,
+    h("p",{class:"hint",style:"margin-top:10px"},"템플릿과 가사 모으기는 ",h("a",{href:"#",onclick:e=>{e.preventDefault();setTab("ppt");},text:"찬양 → PPT 자료"}),"에서 해요.")));}
+function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
+    if(cfg.titleSlide)out.push({kind:"title",lines:[t],song:it});const sl=lyricSlides(lyricsOf(it),cfg.lines);if(!cfg.titleSlide&&!sl.length)out.push({kind:"title",lines:[it.title],song:it});
+    for(const l of sl)out.push({kind:"lyric",lines:l,song:it});}return out;}
+function previewLyricsPpt(c){if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");const list=pptTpls();let tpl=tplFor(c);
+  const grid=h("div",{class:"pptgrid"});const info=h("div");
+  const sel=h("select",{style:"width:auto"},list.length?list.map(t=>h("option",{value:t.id,text:t.name+(t.id===tplFor(c).id?" (자동)":""),selected:t.id===tpl.id})):[h("option",{value:"",text:"기본 (검은 화면)"})]);
+  sel.onchange=()=>{tpl=list.find(t=>t.id===sel.value)||tpl;draw();};
+  function draw(){const slides=pptSlidesOf(c,tpl);const miss=items.filter(it=>!lyricsOf(it).trim());
+    info.replaceChildren(h("div",{class:"hint",text:`슬라이드 ${slides.length}장 · ${items.length}곡`}),
+      miss.length?h("div",{class:"banner warn",style:"margin-top:6px"},h("b",{text:"가사가 없는 곡: "}),...miss.map(it=>h("button",{class:"btn sm",style:"margin:2px",text:`${it.title} · 가사 넣기`,onclick:()=>lyricsModal(it,()=>draw())})),
+        h("div",{class:"hint",text:"가사가 없으면 제목 장만 들어가요."})):null);
+    grid.replaceChildren(...slides.map((sl,i)=>h("div",{class:"pptcell"+(sl.kind==="title"?" t":"")},tplPreview(tpl,sl.lines,sl.kind),h("span",{class:"hint",text:`${i+1}${sl.kind==="title"?" · 제목":""}`}))));}
+  draw();
+  const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel),info,grid),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();exportLyricsPpt(c,tpl&&tpl.id?tpl:null,true);}})],"editor");}
 /* 악보만 보기 (라이브러리) */
 function viewPages(title,pages){const body=h("div",{class:"panel-body",style:"align-items:center"});
   pages.forEach((p,pi)=>{const cv=h("canvas",{class:"vw-page",role:"img","aria-label":`${title} 악보 ${pi+1}쪽`});cv.style.setProperty("--ar",`${(p.w||1)/(p.h||1.414)}`);body.append(cv);
@@ -2965,7 +2984,7 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
     try{await S.db.doc(`contis/${c.id}`).delete();if(S.curId===c.id){S.curId=null;S.dirty=true;saveDraft();}md.close();toast("콘티를 지웠어요");}catch(e){toast("지우지 못했어요");}}});
   if(c.authorId)resolveNames([c.authorId]);
   const md=modal(`${fmtDate(c.date)} · ${wtypeOf(c)}`,body,[
-    h("button",{class:"btn",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn",text:"가사 PPT",onclick:()=>exportLyricsPpt(c)}),
+    h("button",{class:"btn",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
     h("span",{class:"spacer"}),canDelV?delV:null,editable?h("button",{class:"btn primary",text:"고치기",onclick:()=>{md.close();openConti(c);}}):null],"viewer");}
 /* 압축버전: 모든 악보를 A3 한 장에 */
 function drawMarks(x,p,dx,dy,dw,dh){x.save();x.globalCompositeOperation="multiply";x.globalAlpha=.55;for(const mk of p.marks||[])if(mk.k==="H"){x.fillStyle=VCOL[(mk.v||1)-1];x.fillRect(dx+mk.x*dw,dy+mk.y*dh,mk.w*dw,mk.h*dh);}x.restore();
