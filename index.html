@@ -21,7 +21,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="CB 워십">
+<meta name="apple-mobile-web-app-title" content="워십플래너">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -822,8 +822,9 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
     h("button",{type:"button",class:"lockchip",title:"팀 비밀번호를 넣으면 콘티를 쓸 수 있어요",text:"🔒 보기 전용",onclick:()=>unlockModal(S.team)}));
   if(S.team&&window.CBWP&&S.canWrite)nm.append(h("button",{type:"button",class:"lockchip",title:"이 기기에서 로그아웃",text:"로그아웃",onclick:logoutModal}));
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
-  const links=[h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
-  $("#topLinks").replaceChildren(...links);}
+  const inst=!isStandalone()?h("button",{type:"button",class:"lockchip",title:"홈 화면에 앱처럼 추가해요",text:IN_KAKAO?"🌐 브라우저로 열기":"📲 홈 화면에 추가",onclick:installHelp}):null;
+  const links=[inst,h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
+  $("#topLinks").replaceChildren(...links.filter(Boolean));}
 function pickTeam(id){if(window.CBWP&&!window.CBWP.canWrite(id)){unlockModal(id,()=>pickTeam(id));return;}
   if(window.CBWP){startShared();startTeam(id);}
   S.team=id;try{localStorage.setItem(TEAM_KEY,id);}catch(e){}applyTeam();if(window.CBWP)S.canWrite=window.CBWP.canWrite(id);
@@ -831,6 +832,23 @@ function pickTeam(id){if(window.CBWP&&!window.CBWP.canWrite(id)){unlockModal(id,
   render();window.scrollTo({top:0});}
 function switchTeam(){saveDraft();S.team=null;try{localStorage.removeItem(TEAM_KEY);}catch(e){}render();window.scrollTo({top:0});}
 const VERSE=["호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야","시편 150:6"];
+/* 링크로 들어왔을 때 (#t=팀&c=콘티) : 팀을 열고 데이터가 오면 그 콘티를 보여 줘요 */
+const DEEP=(()=>{try{const q=new URLSearchParams((location.hash||"").replace(/^#/,""));const t=q.get("t");if(!t)return null;return{t,c:q.get("c"),d:q.get("d")};}catch(e){return null;}})();
+let deepDone=false;
+function tryDeep(){if(!DEEP||deepDone||!S.team||S.team!==DEEP.t)return;const c=(DEEP.c&&S.contis.find(x=>x.id===DEEP.c))||(DEEP.d&&S.contis.find(x=>x.date===DEEP.d&&!x.noService));if(!c)return;
+  deepDone=true;try{history.replaceState(null,"",location.pathname);}catch(e){}setTimeout(()=>viewConti(c),50);}
+/* 카카오톡 안 브라우저 → 휴대폰 기본 브라우저로 (홈 화면 추가 · 알림이 되게) */
+const IN_KAKAO=/KAKAOTALK/i.test(navigator.userAgent);
+function openOutside(){location.href="kakaotalk://web/openExternal?url="+encodeURIComponent(location.href);}
+if(IN_KAKAO){try{if(!sessionStorage.getItem("cbwp-kx")){sessionStorage.setItem("cbwp-kx","1");setTimeout(openOutside,300);}}catch(e){}}
+/* 홈 화면에 추가 */
+let installEvt=null;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;try{drawChrome();}catch(_){}});
+const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function installHelp(){if(IN_KAKAO)return openOutside();if(installEvt){installEvt.prompt();installEvt.userChoice.finally(()=>{installEvt=null;drawChrome();});return;}
+  const md=modal("홈 화면에 추가",h("div",{class:"panel-body"},isIOS?h("ol",{style:"line-height:1.9"},h("li",{text:"사파리(Safari)에서 이 페이지를 열어요."}),h("li",{text:"아래쪽 가운데 공유 버튼(□↑)을 눌러요."}),h("li",{text:"「홈 화면에 추가」를 누르고 「추가」를 눌러요."})):
+    h("ol",{style:"line-height:1.9"},h("li",{text:"크롬(Chrome)이나 삼성 인터넷에서 이 페이지를 열어요."}),h("li",{text:"오른쪽 위(삼성 인터넷은 아래) 메뉴 ⋮ 를 눌러요."}),h("li",{text:"「홈 화면에 추가」 또는 「앱 설치」를 눌러요."})),
+    h("p",{class:"hint",text:"홈 화면에 「워십플래너」 아이콘이 생겨요. 누르면 앱처럼 바로 열려요."})),[h("button",{class:"btn primary",text:"확인",onclick:()=>md.close()})]);}
 function renderTeamPick(m){m.append(h("img",{class:"bigLogo",alt:"중앙성서교회 로고",src:$(".brandlogo").src}));m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:window.CBWP?"팀 비밀번호를 넣으면 그 팀의 콘티 · 멤버 · 결산이 열려요.":"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
   h("div",{class:"teampick"},TEAMS.map(t=>{const n=S.allContis.filter(c=>teamOf(c)===t.id).length;
     const i=TEAMS.indexOf(t)+1;
@@ -881,7 +899,9 @@ function render(){const m=$("#main");m.replaceChildren();document.body.classList
   const ban=statusBanner();if(ban)m.append(ban);
   if(S.tab==="write"&&S.team&&!S.curId&&!isWriter())S.tab="list";
   syncNav();
+  if(DEEP&&!deepDone&&!S.deepTeam&&S.ready&&DEEP.t!==S.team&&ALLT.some(x=>x.id===DEEP.t)){S.deepTeam=true;setTimeout(()=>pickTeam(DEEP.t),0);}
   if(!S.team){renderTeamPick(m);return;}
+  setTimeout(tryDeep,0);
   if(isProject()&&(!PROJ_G.includes(groupOf(S.tab))||(groupOf(S.tab)==="team"&&!PROJ_TEAM.includes(S.tab)))){S.tab="home";syncNav();}
   const st=subTabs();if(st)m.append(st);
   ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend,lineup:renderLineup,ppt:renderPpt,pptmake:renderPptMake})[S.tab](m);}
@@ -2688,16 +2708,20 @@ function meditSheet(){const c=S.cur;const can=!!c&&curEditable();
   return h("div",{class:"sheet"},h("h2",{},"묵상 메모",h("span",{class:"sub",text:can?"지금 쓰는 콘티에 함께 저장돼요":"콘티를 쓰는 인도자만 적을 수 있어요"})),ta,
     can?h("div",{class:"row",style:"margin-top:8px"},h("span",{class:"hint",text:"「콘티 작성」에서 「콘티 저장」을 눌러야 팀에 올라가요"}),h("span",{class:"spacer"}),h("button",{class:"btn sm primary",text:"콘티 작성으로 →",onclick:()=>setTab("write")})):null);}
 /* 콘티 공지: 본문 · 묵상 · 곡 순서 · 재생목록 · 악보 보기 */
+/* 카톡에 공유할 링크: 누르면 그 팀 · 그 콘티가 바로 열려요 */
+const contiLink=c=>`${location.origin}${location.pathname}#t=${encodeURIComponent(teamOf(c)||S.team||"")}${c.id?`&c=${c.id}`:""}${c.date?`&d=${c.date}`:""}`;
+async function shareText(text,title){try{if(navigator.share){await navigator.share({title:title||"워십플래너",text});return true;}}catch(e){if(e&&e.name==="AbortError")return false;}
+  try{await navigator.clipboard.writeText(text);toast("복사했어요. 카톡방에 붙여 넣으세요");return true;}catch(e){toast("복사하지 못했어요. 글을 길게 눌러 복사해 주세요");return false;}}
 function contiNotice(c){if(!c)return;const ids=refIds(c);let n=0;
   const lines=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 콘티`,
     c.passage||c.sermonTitle?`말씀: ${[c.passage,c.sermonTitle&&`「${c.sermonTitle}」`].filter(Boolean).join(" ")}`:"",c.preacher?`설교: ${c.preacher}`:"",
     c.meditation?`\n${c.meditation.trim()}\n`:"",
     ...SECTIONS.filter(([k])=>(c[k]||[]).length).flatMap(([k,l])=>[`<${l}>`,...c[k].map(it=>`${++n}. ${it.title}${it.key?` (${it.key})`:""}${it.memo?` - ${it.memo}`:""}`)]),
     ids.length?`\n▶ 레퍼런스 재생목록: https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`:"",c.playlist?`▶ 재생목록: ${c.playlist}`:"",
-    `\n악보는 앱에서 보세요: ${location.origin}${location.pathname}`].filter(Boolean);
+    `\n👉 콘티 · 악보 보기 / 참여 응답: ${contiLink(c)}`].filter(Boolean);
   const ta=h("textarea",{id:"cn-text",style:"min-height:260px;font-size:.92rem;line-height:1.6",value:lines.join("\n")});
-  const md=modal("콘티 공지",h("div",{class:"panel-body"},ta,h("p",{class:"hint",text:"고쳐서 쓸 수 있어요. 「복사」해서 카톡방에 붙이거나 「공지로 올리기」로 홈 공지 맨 위에 올려요."})),
-    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn",text:"복사",onclick:async()=>{try{await navigator.clipboard.writeText(ta.value);toast("복사했어요");}catch(e){ta.select();toast("글을 길게 눌러 복사해 주세요");}}}),
+  const md=modal("콘티 공지",h("div",{class:"panel-body"},ta,h("p",{class:"hint",text:"고쳐서 쓸 수 있어요. 「📤 카톡으로 보내기」를 누르면 카톡을 골라 바로 보낼 수 있어요(PC는 복사돼요). 링크를 누른 팀원은 콘티를 보고 참여 여부를 바로 눌러요."})),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"📤 카톡으로 보내기",onclick:()=>shareText(ta.value,`${dLabel(c.date)} 콘티`)}),h("button",{class:"btn",text:"복사",onclick:async()=>{try{await navigator.clipboard.writeText(ta.value);toast("복사했어요");}catch(e){ta.select();toast("글을 길게 눌러 복사해 주세요");}}}),
       S.canWrite&&S.db?h("button",{class:"btn primary",text:"공지로 올리기",onclick:async()=>{const nn={id:uid(8),text:ta.value.trim(),by:S.myId||null,name:myName(),at:Date.now(),pin:true};
         if(await saveNotices([nn,...notices().map(x=>({...x,pin:false}))].slice(0,30))){md.close();toast("홈 공지 맨 위에 올렸어요");}}}):null]);}
 /* =========================================================
@@ -3500,6 +3524,10 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
     [c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`].filter(Boolean).length?h("div",{class:"hint",text:[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`].filter(Boolean).join(" · ")}):null,
     roster.length?h("div",{class:"vw-roster"},roster.flatMap(r=>(r.people||[]).map(p=>h("span",{class:me&&normName(p.name)===me?"me":""},h("b",{text:r.pos}),p.name)))):null,
     c.authorId?h("div",{class:"hint"},"콘티 제작 - ",authorEl(c.authorId,c.authorName)):null,
+    c.date&&c.date>=todayStr()&&S.canWrite&&S.db&&myName()?(()=>{const r=respOf(c.date,myName());return h("div",{class:"row vw-avail",style:"margin-top:6px;gap:6px"},h("b",{text:"참여"}),
+      h("button",{class:"btn sm"+(r&&r.ok?" primary":""),text:r&&r.ok?"✓ 참여 가능":"참여 가능",onclick:async e=>{await setAvail(c.date,true,"");e.currentTarget.textContent="✓ 참여 가능";e.currentTarget.classList.add("primary");}}),
+      h("button",{class:"btn sm"+(r&&!r.ok?" danger":""),text:r&&!r.ok?"✓ 어려워요":"어려워요",onclick:async e=>{await setAvail(c.date,false,"");e.currentTarget.textContent="✓ 어려워요";e.currentTarget.classList.add("danger");}}),
+      h("span",{class:"hint",text:r?(r.ok?"참여로 알렸어요":"불참으로 알렸어요"):"리더가 편성할 때 봐요"}));})():null,
     c.memo?h("div",{class:"vw-memo",text:c.memo}):null,
     h("div",{class:"row"},ids.length?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`,target:"_blank",rel:"noopener",text:`▶ 레퍼런스 재생목록 (${ids.length}곡)`}):null,
       c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:"유튜브 재생목록"}):null,editable?h("button",{class:"btn sm",text:"📣 콘티 공지",onclick:()=>contiNotice(c)}):null),
