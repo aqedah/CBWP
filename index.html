@@ -470,6 +470,8 @@ body.wb-on .wrap{max-width:1560px}
 .wb-word{max-height:45vh;overflow:auto;line-height:1.75;font-size:.95rem}.wb-word p{margin:0 0 4px}.wb-word sup{color:var(--muted);font-size:.7rem}
 .wb-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}.wb-song{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid var(--line);border-radius:8px}.wb-st{flex:1;min-width:0;overflow-wrap:anywhere}
 body.wb-on .wb-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 4px 12px rgb(0 0 0 / .06)}
+.serve-me{display:inline-flex;align-items:center;gap:12px;border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.avatar.serve-av{width:52px;height:52px;border-radius:50%;font-size:1.3rem;box-shadow:0 0 0 3px var(--sheet),0 0 0 5px var(--team,var(--accent))}
 .tplpair{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tplone{display:flex;flex-direction:column;gap:3px;max-width:320px;margin-top:6px}
 .tpv{position:relative;width:100%;container-type:size;background-size:cover;background-position:center;border-radius:6px;overflow:hidden}.tpv-t{position:absolute;display:flex;flex-direction:column;white-space:pre-line;box-sizing:border-box;padding:0 2%}
 .availlist{display:flex;flex-direction:column;gap:8px}
@@ -2435,7 +2437,8 @@ function myServeSheet(){const me=normName(myName());const today=todayStr();
   if(!me)return h("div",{class:"sheet myserve"},h("h2",{},"나의 섬김",h("span",{class:"sub",text:"이름을 넣으면 내가 들어간 콘티가 여기 나와요"})),nameBox(),nextSvc());
   const mine=S.contis.filter(c=>!c.past&&!c.noService&&c.date&&c.date>=today).map(c=>({c,pos:(c.roster||[]).filter(r=>(r.people||[]).some(p=>normName(p.name)===me)).map(r=>r.pos)}))
     .filter(x=>x.pos.length).sort((a,b)=>a.c.date.localeCompare(b.c.date)).slice(0,3);
-  const head=h("h2",{text:`${myName()} 님의 섬김`});
+  /* 「나」 탭처럼 프로필 사진과 함께 · 누르면 「나」로 */
+  const head=h("h2",{},h("button",{type:"button",class:"serve-me",title:"내 프로필 보기",onclick:()=>setTab("me")},avatarEl(myName(),"avatar serve-av"),h("span",{text:`${myName()} 님의 섬김`})));
   if(!mine.length)return h("div",{class:"sheet myserve"},head,h("p",{class:"hint",text:"다가오는 콘티에 아직 이름이 없어요."}),nextSvc());
   return h("div",{class:"sheet myserve"},head,h("div",{class:"cards"},mine.map(({c,pos})=>{const ids=refIds(c);
     return h("div",{class:"card servecard"},
