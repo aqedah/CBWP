@@ -2955,7 +2955,43 @@ function renderPptMake(m){const list=pptTpls();const today=todayStr();
   m.append(h("div",{class:"sheet"},h("h2",{},"가사 PPT 만들기",h("span",{class:"sub",text:"미리 보고 받아요 · 템플릿은 예배 종류에 맞춰 저절로"})),
     h("div",{class:"cards"},cur?row(cur,`지금 쓰는 콘티 · ${fmtDate(cur.date)} · ${wtypeOf(cur)}`):null,cs.map(c=>row(c))),
     !cur&&!cs.length?h("div",{class:"empty",text:"콘티가 없어요."}):null,
-    h("p",{class:"hint",style:"margin-top:10px"},"템플릿과 가사 모으기는 ",h("a",{href:"#",onclick:e=>{e.preventDefault();setTab("ppt");},text:"찬양 → PPT 자료"}),"에서 해요.")));}
+    h("p",{class:"hint",style:"margin-top:10px"},"템플릿과 가사 모으기는 ",h("a",{href:"#",onclick:e=>{e.preventDefault();setTab("ppt");},text:"찬양 → PPT 라이브러리"}),"에서 해요.")));
+  m.append(adhocPptSheet());}
+/* 콘티 없이: 곡 제목 글 · 사진 · 콘티 PDF로 가사 PPT */
+function titlesFromText(t){const lines=String(t||"").replace(/\r/g,"").split("\n").map(x=>x.trim()).filter(Boolean);const NUM=/^\d{1,2}\s*[.)]\s*/;
+  const split=ln=>ln.replace(NUM,"").replace(/\([^)]*\)/g," ").split(/\s*[+,/]\s*|\s*→\s*/).map(x=>x.replace(/\s+/g," ").trim()).filter(v=>v.length>=2&&v.length<=40);
+  if(lines.some(l=>NUM.test(l))){/* 번호 목록이 있으면 번호 줄(과 이어지는 줄)만 곡으로 */
+    const groups=[];let open=false;for(const ln of lines){if(NUM.test(ln)){groups.push(ln);open=true;continue;}if(/^[-–—•·]/.test(ln)){open=false;continue;}if(open&&groups.length)groups[groups.length-1]+=" "+ln;}
+    return groups.flatMap(split);}
+  return lines.filter(ln=>!/^[-–—•·]/.test(ln)&&!/^\[.*\]$/.test(ln)&&!(/^\d{1,3}\s+\S/.test(ln)&&ln.length>22)&&!(ln.length>24&&/(니라|리라|더라|하라|이라|하시고|하며)$/.test(ln))).flatMap(split);}
+function adhocPptSheet(){if(!S.adhoc)S.adhoc={text:"",rows:[]};const A=S.adhoc;const st=h("p",{class:"hint"});const list=h("div",{class:"cards"});
+  const ta=h("textarea",{id:"adhoc-text",style:"min-height:110px",value:A.text,placeholder:"곡 제목을 한 줄에 하나씩 쓰거나 붙여 넣으세요.\n예)\n1. 다 와서 찬양해 + 난 예수가 좋다오\n2. 이 세상은 날이 갈수록\n은혜",oninput:e=>{A.text=e.target.value;}});
+  const match=()=>{titlePool=null;A.rows=titlesFromText(A.text).map(t=>{const g=guessTitle([{text:t,h:0}]);const lib=g&&g.songId?S.songs.find(x=>x.id===g.songId):S.songs.find(x=>norm(x.title)===norm(t));
+      return{raw:t,songId:lib?lib.id:null,title:lib?lib.title:(g?g.title:t)};});draw();};
+  function draw(){list.replaceChildren(...A.rows.map((r,i)=>{const lib=r.songId&&S.songs.find(x=>x.id===r.songId);const has=!!(lib&&((lib.lyrics||"").trim()||(lib.ppt&&(lib.ppt.slides||[]).length)));
+      const inp=h("input",{type:"text",list:"adhoc-titles",value:r.title,oninput:e=>{r.title=e.target.value;const sg=S.songs.find(x=>norm(x.title)===norm(r.title));r.songId=sg?sg.id:null;}});
+      return h("div",{class:"card pmrow"},h("b",{class:"vw-no",text:String(i+1).padStart(2,"0")}),h("div",{style:"flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px"},inp,
+          h("span",{class:"hint",text:`${r.raw!==r.title?`읽은 글: ${r.raw} · `:""}${lib?(has?"가사 있음":"가사 없음 (제목 장만 들어가요)"):"라이브러리에 없는 곡 (제목 장만 들어가요)"}`})),
+        lib&&!has?h("button",{class:"btn sm",text:"가사 넣기",onclick:()=>lyricsModal({songId:lib.id,title:lib.title},()=>draw())}):null,
+        h("button",{class:"btn sm ghost",text:"↑",disabled:i===0,onclick:()=>{A.rows.splice(i-1,0,A.rows.splice(i,1)[0]);draw();}}),
+        h("button",{class:"btn sm ghost danger",text:"✕",onclick:()=>{A.rows.splice(i,1);draw();}}));}),
+      h("datalist",{id:"adhoc-titles"},S.songs.map(x=>h("option",{value:x.title}))));}
+  const readFile=async f=>{st.textContent="글자를 읽는 중… (처음엔 한글 인식 자료를 내려받아 조금 걸려요)";
+    try{const isPdf=/pdf$/i.test(f.type)||/\.pdf$/i.test(f.name);const w=await getOcr();let text="";
+      if(isPdf){titlePool=null;const ims=await fileToImages(f);const got=[];for(let i=0;i<ims.length;i++){st.textContent=`콘티 PDF에서 곡 제목 찾는 중… ${i+1}/${ims.length}쪽`;const g=guessTitle(await readTop(ims[i]));if(g&&!got.includes(g.title))got.push(g.title);}text=got.join("\n");}
+      else{const url=URL.createObjectURL(f);const im=await loadImg(url);const cv=document.createElement("canvas");const k=Math.min(1,2000/im.naturalWidth);cv.width=im.naturalWidth*k;cv.height=im.naturalHeight*k;cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(url);
+        const r=await w.recognize(cv);text=tidyOcr(r.data.text);}
+      A.text=(A.text.trim()?A.text.trim()+"\n":"")+text.trim();ta.value=A.text;st.textContent=text.trim()?"읽었어요. 아래 목록을 확인하세요.":"글자를 찾지 못했어요.";match();}
+    catch(e){console.error(e);st.textContent="파일을 읽지 못했어요";}};
+  const fin=h("input",{type:"file",accept:"image/*,.pdf,application/pdf",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)readFile(f);}});
+  draw();
+  return h("div",{class:"sheet"},h("h2",{},"콘티 없이 가사 PPT 만들기",h("span",{class:"sub",text:"곡 제목 글 · 사진 · 콘티 PDF"})),
+    h("p",{class:"hint",text:"곡 제목을 쓰거나 붙여 넣고, 또는 곡 목록 사진이나 콘티 악보 PDF를 불러오면 라이브러리 곡과 맞춰 가사 PPT를 만들어요. 「+」로 이어진 곡, 번호, (메모), 「–」 설명 줄, 성경 구절 줄은 알아서 정리해요."}),
+    ta,h("div",{class:"row",style:"margin-top:8px"},h("span",{class:"btn filebtn"},"📷 사진 · PDF 불러오기",fin),h("button",{class:"btn",text:"곡 찾기",onclick:match}),h("span",{class:"spacer"}),
+      h("button",{class:"btn sm ghost",text:"비우기",onclick:()=>{A.text="";A.rows=[];ta.value="";draw();}}),
+      h("button",{class:"btn primary",text:"미리보기",onclick:()=>{if(!A.rows.length)match();if(!A.rows.length)return toast("곡 제목이 없어요");
+        const items=A.rows.filter(r=>r.title.trim()).map(r=>{const lib=r.songId&&S.songs.find(x=>x.id===r.songId);return lib?itemFromSong(lib):{uid:uid(8),songId:null,title:r.title.trim(),key:"",yt:"",memo:"",pages:[]};});
+        previewLyricsPpt({date:todayStr(),wtype:"",opening:[],before:items,after:[]});}})),st,list);}
 function slidesFor(it,cfg){const sg=songOf(it);if(sg&&sg.ppt&&(sg.ppt.slides||[]).length&&!it.lyrics)return sg.ppt.slides.map(x=>Array.isArray(x)?x.slice():String(x).split("\n"));return lyricSlides(lyricsOf(it),cfg.lines);}
 function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
     if(cfg.titleSlide)out.push({kind:"title",lines:[t],song:it});const sl=slidesFor(it,cfg);if(!cfg.titleSlide&&!sl.length)out.push({kind:"title",lines:[it.title],song:it});
