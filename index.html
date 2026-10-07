@@ -798,9 +798,8 @@ document.querySelectorAll(".bnav button").forEach(b=>b.addEventListener("click",
   if(groupOf(S.tab)===g&&subs.length>1){window.scrollTo({top:0,behavior:"smooth"});return;}
   const last=S.lastSub[g];goTab(subs.includes(last)?last:subs[0]);}));
 function goTab(k){if((k==="write"||(k==="bible"&&isWriter()))&&S.team){const saved=S.curId&&S.contis.find(x=>x.id===S.curId);
-    const keep=(saved&&isAuthor(saved))||(hasUnsaved()&&isMineDraft());
-    if(!keep){const own=S.contis.filter(c=>isAuthor(c)&&!isPastConti(c)).sort((a,b)=>(a.date||"").localeCompare(b.date||""))[0];
-      S.draftOwner=null;if(own){S.cur=fixConti(clone(own));delete S.cur.id;S.curId=own.id;}else{S.cur=blankConti();S.curId=null;}S.dirty=false;saveDraft();}}
+    const keep=(saved&&(isAuthor(saved)||S.isOwner)&&!isPastConti(saved))||(!S.curId&&isMineDraft()&&!!S.cur);
+    if(!keep){S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();}}
   setTab(k);}
 function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;const pj=isProject();document.querySelectorAll(".bnav button").forEach(b=>{b.setAttribute("aria-current",b.dataset.group===g?"page":"false");b.hidden=pj&&!PROJ_G.includes(b.dataset.group);});
   $(".bnav-in").style.gridTemplateColumns=pj?`repeat(${PROJ_G.length},1fr)`:"";
@@ -1350,6 +1349,13 @@ function hasUnsaved(){if(!S.dirty||!S.cur)return false;const c=S.cur;
   if(S.curId){const saved=S.contis.find(x=>x.id===S.curId);if(saved&&draftSig(fixConti(clone(saved)))===draftSig(c))return false;return true;}
   const blank=!allItems(c).length&&!c.sermonTitle&&!c.passage&&!c.preacher&&!c.memo&&!(c.roster||[]).some(r=>(r.people||[]).length);
   return !blank;}
+/* 예배 정보에 날짜를 넣으면: 그 날짜 콘티가 있으면 그 콘티를 열고, 없으면 새 콘티를 시작해요
+   (열려 있던 다른 날짜 콘티를 덮어쓰지 않게) */
+function needSwitch(date){const c=S.cur;if(!c||!date||c.date===date)return false;return !!S.curId||S.contis.some(x=>x.date===date&&!x.noService);}
+function switchToDate(date,wt,then){guardDraft(()=>{const cands=S.contis.filter(x=>x.date===date&&!x.noService);const t=(wt&&cands.find(x=>wtypeOf(x)===wt))||cands[0];
+  if(t){S.cur=fixConti(clone(t));delete S.cur.id;S.curId=t.id;S.dirty=false;toast(`${fmtDate(date)} ${wtypeOf(t)} 콘티를 열었어요`);}
+  else{S.cur=blankConti();S.cur.date=date;if(!isProject()){const g=guessWtype(date);S.cur.wtype=g.wtype;S.cur.wtypeCustom=g.custom;}S.curId=null;S.dirty=true;toast(`${fmtDate(date)} 새 콘티를 시작해요`);}
+  S.draftOwner=null;if(typeof H!=="undefined"){H.owner=S.cur;H.last=JSON.stringify(S.cur);H.list=[];}saveDraft();then&&then();});}
 function guardDraft(go){if(!hasUnsaved())return go();const c=S.cur;
   askConfirm("저장하지 않은 콘티가 있어요",[h("p",{},"「콘티 작성」 탭에 아직 저장하지 않은 내용이 있어요."),
     h("p",{class:"hint",text:`${fmtDate(c.date)} · ${wtypeOf(c)}${c.sermonTitle?` · 「${c.sermonTitle}」`:""} · 곡 ${allItems(c).length}개`}),
@@ -2572,7 +2578,7 @@ function parseKakao(text){const out={};const t=(text||"").replace(/\r/g,"").repl
   if(typeof isProject==="function"&&isProject()){const pj=projOf(S.team);if(pj)out.wtype=pj.wtype;}
   return out;}
 function itemByTitle(t){const n=norm(t);const sg=S.songs.find(x=>norm(x.title)===n)||S.songs.find(x=>norm(splitTitle(x.title).base)===n);return sg?itemFromSong(sg):{uid:uid(8),songId:null,title:t,key:"",yt:"",memo:"",pages:[]};}
-function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=!!c&&writer&&curEditable();
+function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!c&&writer&&curEditable();
   const out=h("div",{class:"bibout"});
   /* 1. 예배 정보 (카톡에서 받은 것) */
   if(writer){const set=(k,v)=>{c[k]=v;markDirty();saveDraft();};
@@ -2580,7 +2586,7 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
     const ocrPhoto=async f=>{toast("사진 글자를 읽는 중… (처음엔 한글 인식 자료를 내려받아 조금 걸려요)",6000);try{const url=URL.createObjectURL(f);const im=await loadImg(url);const cv=document.createElement("canvas");const k=Math.min(1,2000/im.naturalWidth);cv.width=im.naturalWidth*k;cv.height=im.naturalHeight*k;cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(url);
       const w=await getOcr();const r=await w.recognize(cv);kt.value=tidyOcr(r.data.text).replace(/\n{2,}/g,"\n");fill(true);}catch(err){console.error(err);toast("사진을 읽지 못했어요");}};
     kt.addEventListener("paste",e=>{const f=pastedImage(e);if(f){e.preventDefault();ocrPhoto(f);}});
-    const dateIn=h("input",{type:"date",id:"kk-date",value:c.date||"",disabled:!can,onchange:e=>{set("date",e.target.value);if(!c.wtypeTouched){const g=guessWtype(c.date);c.wtype=g.wtype;c.wtypeCustom=g.custom;}render();}});
+    const dateIn=h("input",{type:"date",id:"kk-date",value:c.date||"",disabled:!can,onchange:e=>{const v=e.target.value;if(v&&needSwitch(v))return switchToDate(v,null,()=>render());set("date",v);if(!c.wtypeTouched){const g=guessWtype(c.date);c.wtype=g.wtype;c.wtypeCustom=g.custom;}render();}});
     const wsel=h("select",{id:"kk-wtype",disabled:!can,onchange:e=>{c.wtypeTouched=true;set("wtype",e.target.value);render();}},WTYPES.map(w=>h("option",{value:w,text:w==="직접쓰기"?"직접 쓰기":w,selected:c.wtype===w})));
     const wc=c.wtype==="직접쓰기"?h("input",{type:"text",id:"kk-wcustom",value:c.wtypeCustom||"",disabled:!can,placeholder:"예배 이름",oninput:e=>set("wtypeCustom",e.target.value)}):null;
     const pIn=h("input",{type:"text",id:"kk-passage",value:c.passage||"",disabled:!can,placeholder:"예: 요 15:1-8",onchange:e=>{set("passage",e.target.value.trim());bibQ=c.passage;q.value=bibQ;go();}});
@@ -2593,7 +2599,8 @@ function renderBible(m){const writer=S.team&&isWriter();const c=S.cur;const can=
     const sbIn=h("input",{type:"text",id:"kk-spby",value:c.specialBy||"",disabled:!can,placeholder:"예: 베드로 남선교회",oninput:e=>set("specialBy",e.target.value)});
     const afterBox=h("div",{class:"pchips"});const drawAfter=()=>afterBox.replaceChildren(...(c.after||[]).map((it,i)=>h("span",{class:"pchip"},it.title,it.key?` (${it.key})`:"",can?h("button",{type:"button",class:"chipx","aria-label":`${it.title} 빼기`,text:"✕",onclick:()=>{c.after.splice(i,1);markDirty();saveDraft();drawAfter();}}):null)),
       (c.after||[]).length?"":h("span",{class:"hint",text:"아직 없어요"}));drawAfter();
-    const fill=photo=>{const r=parseKakao(kt.value);const got=[];if(!can)return toast("지금 열린 콘티는 고칠 수 없어요");
+    const fill=photo=>{const r=parseKakao(kt.value);if(r.date&&needSwitch(r.date))return switchToDate(r.date,r.wtype,()=>{c=S.cur;fillWith(photo,r);});fillWith(photo,r);};
+    const fillWith=(photo,r)=>{const got=[];if(!can)return toast("지금 열린 콘티는 고칠 수 없어요");
       if(r.date){c.date=r.date;got.push("날짜");}if(r.wtype){c.wtype=r.wtype;c.wtypeTouched=true;got.push("예배");}else if(r.date&&!c.wtypeTouched){const g=guessWtype(c.date);c.wtype=g.wtype;c.wtypeCustom=g.custom;}
       if(r.passage){c.passage=r.passage;got.push("본문");bibQ=r.passage;}if(r.sermonTitle){c.sermonTitle=r.sermonTitle;got.push("제목");}if(r.preacher){c.preacher=r.preacher;got.push("설교자");}
       if(r.specialBy){c.specialBy=r.specialBy;got.push("특송");}if(r.special){c.special=[itemByTitle(r.special)];if(!got.includes("특송"))got.push("특송");}
