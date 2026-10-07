@@ -2324,7 +2324,7 @@ function renderMe(m){const me=normName(myName());const today=todayStr();const ca
     Object.keys(byPos).length?h("div",{class:"vw-roster",style:"margin-top:12px"},Object.entries(byPos).sort((a,b)=>b[1]-a[1]).map(([p,n])=>h("span",{},h("b",{text:p}),`${n}회`))):null,
     up.length?[h("div",{class:"lab",style:"margin-top:14px",text:"다가오는 섬김"}),h("div",{class:"uplist"},up.map(row))]:null,
     h("div",{class:"lab",style:"margin-top:14px",text:"지난 섬김"}),
-    done.length?h("div",{class:"uplist"},done.slice(0,S.meMore||5).map(row),done.length>(S.meMore||5)?h("button",{class:"btn sm",text:`더 보기 (${done.length-(S.meMore||5)}건 더)`,onclick:()=>{S.meMore=(S.meMore||5)+5;render();}}):null):
+    done.length?h("div",{class:"uplist"},done.slice(0,S.meMore||5).map(row),(done.length>(S.meMore||5)||(S.meMore||5)>5)?h("div",{class:"row",style:"justify-content:center;gap:6px;margin-top:4px"},done.length>(S.meMore||5)?h("button",{class:"btn sm",text:`더 보기 (${done.length-(S.meMore||5)}건 더)`,onclick:()=>{S.meMore=(S.meMore||5)+5;render();}}):null,(S.meMore||5)>5?h("button",{class:"btn sm ghost",text:"접기",onclick:()=>{S.meMore=5;render();}}):null):null):
       h("p",{class:"hint",text:"아직 기록된 섬김이 없어요. 콘티 참여자에 내 이름이 들어가면 여기 쌓여요."})));
   /* 2-1. 내 출석 (올해) */
   {const yd=attYearDocs(year);if(yd.length){const c=attCount(yd,myName());
