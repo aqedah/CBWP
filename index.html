@@ -602,6 +602,9 @@ loadScript.done={};
 const pad=n=>String(n).padStart(2,"0");
 function todayStr(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
 function nextSunday(){const d=new Date();d.setDate(d.getDate()+((7-d.getDay())%7));return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+/* 검색용 날짜 표기: 2026-10-26 → 10/26 · 10.26 · 10월 26일 · 1026 · 2026.10.26 … */
+function dateKeys(ds){const m=(ds||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return ds||"";const[,y,mm,dd]=m,mo=+mm,d=+dd;
+  return[ds,`${mo}/${d}`,`${mm}/${dd}`,`${mo}.${d}`,`${mm}.${dd}`,`${mo}월 ${d}일`,`${mo}월${d}일`,`${mm}${dd}`,`${y}.${mm}.${dd}`,`${y}. ${mo}. ${d}`,`${y}/${mo}/${d}`,`${y.slice(2)}${mm}${dd}`].join(" ");}
 function parseD(s){const[y,m,d]=(s||"").split("-").map(Number);return y?new Date(y,m-1,d):null;}
 function fmtDate(s){const d=parseD(s);if(!d)return "날짜 미정";return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()} (${"주일,월,화,수,목,금,토".split(",")[d.getDay()]})`;}
 /* guess the worship from the date (church calendar); always editable */
@@ -981,7 +984,7 @@ function openLoadPast(){let q="";const box=h("div",{class:"cards"});
     markDirty();md.close();render();toast(`${fmtDate(c.date)} 콘티의 ${full?"곡과 참여자를":"곡을"} 불러왔어요. 「실행 취소」로 되돌릴 수 있어요`,3600);};
   function draw(){box.replaceChildren();
     const arr=S.contis.filter(c=>c.id!==S.curId&&!c.noService&&allItems(c).length).sort((a,b)=>(b.date||"").localeCompare(a.date||""))
-      .filter(c=>{if(!q.trim())return true;const hay=[c.date,wtypeOf(c),c.sermonTitle,leaderOf(c),...allItems(c).map(i=>i.title)].join(" ");return hay.includes(q.trim())||matchRank(hay,q)>-1;}).slice(0,60);
+      .filter(c=>{if(!q.trim())return true;const hay=[dateKeys(c.date),wtypeOf(c),c.sermonTitle,leaderOf(c),...allItems(c).map(i=>i.title)].join(" ");return hay.includes(q.trim())||matchRank(hay,q)>-1;}).slice(0,60);
     if(!arr.length){box.append(h("div",{class:"empty",text:"불러올 콘티가 없어요."}));return;}
     for(const c of arr)box.append(h("div",{class:"card"},h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),leaderOf(c)?h("span",{class:"hint",text:`인도 ${leaderOf(c)}`}):null),
       h("div",{class:"songs",text:SECTIONS.filter(([k])=>(c[k]||[]).length).map(([k,l])=>`${l}: `+c[k].map(i=>i.title).join(", ")).join("  |  ")}),
@@ -1431,7 +1434,7 @@ function renderList(m){let q="";
   m.append(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`이 프로그램으로 쓴 콘티 ${S.contis.length-nPast}개${nPast?` · 지난 콘티 ${nPast}개는 「지난 콘티 입력」에 있어요`:""}`})),search,h("div",{style:"height:12px"}),box));
   function draw(){box.replaceChildren();
     const arr=S.contis.filter(c=>!c.past).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.updatedAt||0)-(a.updatedAt||0))
-      .filter(c=>{if(!q.trim())return true;const hay=[c.date,wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),...allItems(c).map(i=>i.title)].join(" ");return hay.includes(q.trim())||matchRank(hay,q)>-1;});
+      .filter(c=>{if(!q.trim())return true;const hay=[dateKeys(c.date),wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),...allItems(c).map(i=>i.title)].join(" ");return hay.includes(q.trim())||matchRank(hay,q)>-1;});
     if(!arr.length){box.append(h("div",{class:"empty",text:S.contis.length?"찾는 콘티가 없어요.":"아직 저장된 콘티가 없어요. 「콘티 작성」에서 첫 콘티를 써 보세요."}));return;}
     for(const c of arr){const mine=canEditConti(c,c.id)&&S.canWrite;let armed=false;
       const del=mine?h("button",{class:"btn sm danger",text:"지우기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말 지울까요?";setTimeout(()=>{armed=false;del.textContent="지우기";},3000);return;}
@@ -1563,7 +1566,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
         h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn sm",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
         h("span",{class:"spacer"}),canDel?delBtn(c):null));};
   function draw(){box.replaceChildren();let placed=false;const qq=q.trim();
-    const match=c=>{if(!qq)return true;const hay=[c.date,wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),c.note,...allItems(c).map(i=>i.title)].join(" ");return hay.includes(qq)||matchRank(hay,qq)>-1;};
+    const match=c=>{if(!qq)return true;const hay=[dateKeys(c.date),wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),c.note,...allItems(c).map(i=>i.title)].join(" ");return hay.includes(qq)||matchRank(hay,qq)>-1;};
     const byDate={};for(const c of team)if(c.date&&match(c))(byDate[c.date]=byDate[c.date]||[]).push(c);
     const start=team.map(c=>c.date).filter(Boolean).sort()[0];
     const last=[todayStr(),...team.map(c=>c.date||"")].sort().pop();
