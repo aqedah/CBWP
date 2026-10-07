@@ -2881,14 +2881,14 @@ function lyricsDbModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를
             h("div",{class:"field"},h("label",{text:"곡 제목 (라이브러리에 이렇게 들어가요)"}),h("input",{type:"text",value:r.title,oninput:e=>{r.title=e.target.value;r.song=null;}})),ta),
             [h("button",{class:"btn primary",text:"확인",onclick:()=>{r.lyr=ta.value.trim();md.close();draw();}})]);}}):null));}}
   const go=async()=>{const todo=rows.filter(r=>r.on&&r.lyr&&!r.err);if(!todo.length)return toast("넣을 곡이 없어요");
-    goBtn.disabled=true;let done=0,made=0,skip=0;
+    goBtn.disabled=true;let done=0,made=0,skip=0,fail=0,why="";
     for(const r of todo){st.textContent=`넣는 중… ${done+made+skip+1}/${todo.length}`;
       try{let song=r.song&&S.songs.find(s=>s.id===r.song.id);
         if(!song){if(!mkNew.checked){skip++;continue;}const ex=S.songs.find(s=>norm(s.title)===norm(r.title));song=ex||await createSong(r.title);if(!ex)made++;}
         if(song.lyrics&&!overwrite.checked){skip++;continue;}
-        const ppt={slides:r.lyr.split(/\n\s*\n/).map(b=>b.split("\n").filter(Boolean)).filter(x=>x.length),from:r.file,at:Date.now()};await S.db.doc(`songs/${song.id}`).update({lyrics:r.lyr,ppt,updatedAt:Date.now()});song.lyrics=r.lyr;song.ppt=ppt;done++;}
-      catch(e){skip++;}}
-    st.textContent=`가사 ${done}곡 넣음 (새 곡 ${made}개 포함) · 건너뜀 ${skip}개`;toast(`가사 ${done}곡을 넣었어요`);goBtn.disabled=false;if(S.tab==="songs")renderSongs.redraw&&renderSongs.redraw();};
+        const ppt={slides:r.lyr.split(/\n\s*\n/).map(b=>b.split("\n").map(x=>x.trim()).filter(Boolean).join("\n")).filter(Boolean),from:r.file,at:Date.now()};await S.db.doc(`songs/${song.id}`).update({lyrics:r.lyr,ppt,updatedAt:Date.now()});song.lyrics=r.lyr;song.ppt=ppt;done++;}
+      catch(e){fail++;why=(e&&(e.code||e.message))||"";console.error(e);}}
+    st.textContent=`가사 ${done}곡 넣음 (새 곡 ${made}개 포함) · 건너뜀 ${skip}개`+(fail?` · 저장 실패 ${fail}개 (${why})`:"");toast(`가사 ${done}곡을 넣었어요`);goBtn.disabled=false;if(S.tab==="songs")renderSongs.redraw&&renderSongs.redraw();};
   const fileIn=h("input",{type:"file",accept:".pptx,.ppt",multiple:true,onchange:e=>{read([...e.target.files]);e.target.value="";}});
   const dirIn=h("input",{type:"file",webkitdirectory:true,multiple:true,onchange:e=>{read([...e.target.files]);e.target.value="";}});dirIn.setAttribute("webkitdirectory","");
   const goBtn=h("button",{class:"btn primary",text:"가사 넣기",onclick:go});
@@ -2956,7 +2956,7 @@ function renderPptMake(m){const list=pptTpls();const today=todayStr();
     h("div",{class:"cards"},cur?row(cur,`지금 쓰는 콘티 · ${fmtDate(cur.date)} · ${wtypeOf(cur)}`):null,cs.map(c=>row(c))),
     !cur&&!cs.length?h("div",{class:"empty",text:"콘티가 없어요."}):null,
     h("p",{class:"hint",style:"margin-top:10px"},"템플릿과 가사 모으기는 ",h("a",{href:"#",onclick:e=>{e.preventDefault();setTab("ppt");},text:"찬양 → PPT 자료"}),"에서 해요.")));}
-function slidesFor(it,cfg){const sg=songOf(it);if(sg&&sg.ppt&&(sg.ppt.slides||[]).length&&!it.lyrics)return sg.ppt.slides.map(x=>x.slice());return lyricSlides(lyricsOf(it),cfg.lines);}
+function slidesFor(it,cfg){const sg=songOf(it);if(sg&&sg.ppt&&(sg.ppt.slides||[]).length&&!it.lyrics)return sg.ppt.slides.map(x=>Array.isArray(x)?x.slice():String(x).split("\n"));return lyricSlides(lyricsOf(it),cfg.lines);}
 function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=it.title.replace(/\s*\(찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
     if(cfg.titleSlide)out.push({kind:"title",lines:[t],song:it});const sl=slidesFor(it,cfg);if(!cfg.titleSlide&&!sl.length)out.push({kind:"title",lines:[it.title],song:it});
     for(const l of sl)out.push({kind:"lyric",lines:l,song:it});}return out;}
@@ -2986,7 +2986,7 @@ async function uploadSongPpt(sg,file){if(!S.db)return toast("팀 저장소에 �
     if(!slides.length)return toast("PPT에서 가사 글자를 찾지 못했어요 (그림으로 된 슬라이드일 수 있어요)",3500);
     let fileId="";if(buf.byteLength<=2500000){let bin="";const u8=new Uint8Array(buf);for(let i=0;i<u8.length;i+=0x8000)bin+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));
       fileId=await storeImage({url:"data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,"+btoa(bin),w:0,h:0});}
-    const ppt={slides,from:file.name,at:Date.now(),fileId,size:buf.byteLength};const lyr=slides.map(x=>x.join("\n")).join("\n\n");
+    const ppt={slides:slides.map(x=>x.join("\n")),from:file.name,at:Date.now(),fileId,size:buf.byteLength};const lyr=slides.map(x=>x.join("\n")).join("\n\n");
     const patch={ppt,updatedAt:Date.now()};if(!(sg.lyrics||"").trim())patch.lyrics=lyr;
     await S.db.doc(`songs/${sg.id}`).update(patch);Object.assign(sg,patch);toast(`「${sg.title}」 PPT ${slides.length}장을 넣었어요${patch.lyrics?" (가사도 함께)":""}`);if(renderSongs.redraw)renderSongs.redraw();if(S.tab==="ppt")render();}
   catch(e){console.error(e);toast("PPT를 읽지 못했어요");}}
