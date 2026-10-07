@@ -72,7 +72,8 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .links a{height:34px;box-sizing:border-box}
 .links a:hover{border-color:var(--accent);color:var(--ink)}
 .links svg{width:16px;height:16px;flex:none}
-@media (max-width:700px){.brand{padding-right:52px}.brandlogo{height:34px}.brand h1{font-size:1.25rem}.links a{padding:8px;border-radius:999px}.links a .ytlabel{display:none}.links svg{width:20px;height:20px}}
+.brand .links{gap:8px}.brand h1>a{min-width:0}.brand h1>a>span{min-width:0;overflow-wrap:anywhere}
+@media (max-width:700px){.brand{padding-right:96px}.instchip{height:36px;width:36px;padding:0;justify-content:center;font-size:1.05rem}.instchip .instlabel{display:none}.brandlogo{height:34px}.brand h1{font-size:1.25rem}.links a{padding:8px;border-radius:999px}.links a .ytlabel{display:none}.links svg{width:20px;height:20px}}
 /* bottom nav (4 big groups) + sub-tabs */
 .bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--sheet);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgb(0 0 0 / .06);padding-bottom:env(safe-area-inset-bottom,0px)}
 .bnav-in{display:grid;grid-template-columns:repeat(5,1fr);max-width:640px;margin:0 auto}
@@ -847,7 +848,7 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
     h("button",{type:"button",class:"lockchip",title:"팀 비밀번호를 넣으면 콘티를 쓸 수 있어요",text:"🔒 보기 전용",onclick:()=>unlockModal(S.team)}));
   if(S.team&&window.CBWP&&S.canWrite)nm.append(h("button",{type:"button",class:"lockchip",title:"이 기기에서 로그아웃",text:"로그아웃",onclick:logoutModal}));
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
-  const inst=!isStandalone()?h("button",{type:"button",class:"lockchip",title:"홈 화면에 앱처럼 추가해요",text:IN_KAKAO?"🌐 브라우저로 열기":"📲 홈 화면에 추가",onclick:installHelp}):null;
+  const inst=!isStandalone()?h("button",{type:"button",class:"lockchip instchip",title:IN_KAKAO?"브라우저로 열기":"홈 화면에 앱처럼 추가해요","aria-label":IN_KAKAO?"브라우저로 열기":"홈 화면에 추가",onclick:installHelp},h("span",{text:IN_KAKAO?"🌐":"📲"}),h("span",{class:"instlabel",text:IN_KAKAO?" 브라우저로 열기":" 홈 화면에 추가"})):null;
   const links=[inst,h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
   $("#topLinks").replaceChildren(...links.filter(Boolean));}
 /* 팀원 비밀번호(보기 · 참여 응답)로 들어온 기기인지 */
