@@ -454,7 +454,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .lchip.no{border-color:#d0473e;color:#b3362e;background:color-mix(in srgb,#d0473e 10%,var(--sheet));text-decoration:line-through}
 .avcols .lchip.no{text-decoration:none}
 .avb{font-size:.7rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--soft);color:var(--muted)}.avb.ok{background:#2f9e5b;color:#fff}.avb.no{background:#d0473e;color:#fff}
-.avn{font-size:.66rem!important;color:#d0473e!important;font-weight:700}
+.avcnt{display:flex;gap:4px;justify-content:center}.avn{font-size:.66rem!important;color:#d0473e!important;font-weight:700}.avy{font-size:.66rem!important;color:#1f8a4c!important;font-weight:700}.attday.on .avy{color:#7fe0a6!important}.attday.on .avn{color:#ff9b93!important}
 .avcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.avcol{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
 .lgrid{font-size:.82rem;white-space:nowrap}.lgrid tbody tr{cursor:pointer}.lgrid tr.sel{background:var(--soft)}
 .attdays{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
@@ -1763,9 +1763,9 @@ function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);i
   const chip=p=>{const r=respOf(d,p.name);return h("span",{class:"lchip"+(r?r.ok?" ok":" no":""),title:r&&!r.ok?`불참 ${r.note||""}`:""},p.name);};
   const dirty=()=>{L.dirty=true;render();};
   /* 날짜 고르기 */
-  const days=h("div",{class:"attdays"},ds.map(x=>{const pl=planOf(x);const n=Object.values(availOf(x)).filter(v=>!v.ok).length;
+  const days=h("div",{class:"attdays"},ds.map(x=>{const pl=planOf(x);const n=Object.values(availOf(x)).filter(v=>!v.ok).length,y=Object.values(availOf(x)).filter(v=>v.ok).length;
     return h("button",{type:"button",class:"attday"+(x===d?" on":"")+(pl&&pl.off?" off":""),onclick:()=>{S.lineDay=x;render();}},h("b",{text:dLabel(x).replace(/\(.\)/,"")}),
-      h("span",{text:pl?(pl.off?(pl.label||"쉼"):"편성 ✓"):"편성 전"}),n?h("span",{class:"avn",text:`불참 ${n}`}):null);}));
+      h("span",{text:pl?(pl.off?(pl.label||"쉼"):"편성 ✓"):"편성 전"}),(y||n)?h("span",{class:"avcnt"},y?h("span",{class:"avy",text:`참여 ${y}`}):null,n?h("span",{class:"avn",text:`불참 ${n}`}):null):null);}));
   /* 편성표 */
   const rows=L.roster.filter(r=>can||(r.people||[]).length).map(slot=>h("div",{class:"pinfo-row"},h("dt",{text:slot.pos}),h("dd",{},h("span",{class:"pchips"},(slot.people||[]).map(chip),
     can?h("button",{class:"btn sm add",text:(slot.people||[]).length?"바꾸기":"+ 고르기",onclick:()=>openPicker(slot,()=>dirty(),L.roster,badge)}):null))));
