@@ -2430,7 +2430,8 @@ function myServeSheet(){const me=normName(myName());const today=todayStr();
     if(!c)return h("div",{class:"empty"},"다가오는 콘티가 아직 없어요.",S.canWrite&&isWriter()?h("div",{style:"margin-top:8px"},h("button",{class:"btn primary",text:"콘티 쓰러 가기",onclick:()=>goTab("write")})):null);
     return h("div",{class:"card"},h("div",{class:"row"},h("span",{class:"hint",text:"다가오는 예배"}),h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),h("span",{class:"spacer"}),h("b",{class:"dday",text:ddayLabel(c.date)})),
       leaderOf(c)?h("div",{class:"hint",text:`인도 ${leaderOf(c)}`}):null,allItems(c).length?songsBlock(c):null,
-      h("div",{class:"row"},h("button",{class:"btn sm primary",text:"콘티 · 악보 보기",onclick:()=>viewConti(c)})));};
+      h("div",{class:"row"},h("button",{class:"btn sm primary",text:"콘티 · 악보 보기",onclick:()=>viewConti(c)}),allItems(c).length?h("button",{class:"btn sm",text:"🎼 연습 모드",onclick:()=>practiceMode(c)}):null),
+      allItems(c).length&&myName()&&!onRoster(c)?h("div",{class:"hint",text:"이번 편성에는 이름이 없어요. 연습 모드는 볼 수 있어요."}):null);};
   if(!me)return h("div",{class:"sheet myserve"},h("h2",{},"나의 섬김",h("span",{class:"sub",text:"이름을 넣으면 내가 들어간 콘티가 여기 나와요"})),nameBox(),nextSvc());
   const mine=S.contis.filter(c=>!c.past&&!c.noService&&c.date&&c.date>=today).map(c=>({c,pos:(c.roster||[]).filter(r=>(r.people||[]).some(p=>normName(p.name)===me)).map(r=>r.pos)}))
     .filter(x=>x.pos.length).sort((a,b)=>a.c.date.localeCompare(b.c.date)).slice(0,3);
@@ -2605,6 +2606,7 @@ function renderMe(m){const me=normName(myName());const today=todayStr();const ca
       inf("구분",mb&&mb.tier?mb.tier:"-"),
       inf("맡은 자리",posList.length?h("span",{class:"pchips"},posList.map(p=>h("span",{class:"pchip",text:p}))):h("span",{class:"hint",text:mb?"아직 없어요 · 리더에게 말해 주세요":"멤버 명단에 아직 없어요 · 리더에게 등록을 부탁해 주세요"})))));
   /* 2. activity */
+  m.append(practiceSheet());
   m.append(h("div",{class:"sheet"},h("h2",{},"활동 이력"),
     h("div",{class:"kpis"},h("div",{class:"kpi"},h("b",{text:done.length}),h("span",{text:"지금까지 섬긴 예배"})),h("div",{class:"kpi"},h("b",{text:thisYear}),h("span",{text:`${year}년에 섬긴 예배`})),
       h("div",{class:"kpi"},h("b",{text:done[0]?fmtDate(done[0].c.date).replace(/^\d{4}\. /,""):"-"}),h("span",{text:"마지막으로 섬긴 날"})),wrote?h("div",{class:"kpi"},h("b",{text:wrote}),h("span",{text:"내가 만든 콘티"})):null),
@@ -3596,6 +3598,14 @@ function songPptModal(sg){const list=pptTpls();let tpl=tplFor(null);const grid=h
       p.fileId?h("button",{class:"btn",text:"원본 PPT 받기",onclick:async()=>{const u=await getImg(p.fileId);if(!u)return toast("원본을 불러오지 못했어요");const a=document.createElement("a");a.href=u;a.download=p.from||`${sg.title}.pptx`;document.body.append(a);a.click();a.remove();}}):null,
       h("button",{class:"btn primary",text:"⬇ 템플릿으로 받기",onclick:()=>{md.close();exportLyricsPpt({...fake,date:sg.title},tpl&&tpl.id?tpl:null,true);}})],"editor");}
 /* 악보만 보기 (라이브러리) */
+/* 내가 이 예배 편성(콘티 참여자 · 편성표 · 연습 명단)에 들어 있는지 */
+function onRoster(c,name){const n=normName(name||myName());if(!n||!c)return false;if((c.roster||[]).some(r=>(r.people||[]).some(p=>normName(p.name)===n)))return true;const ro=rosterOn(c.date,n);return !!(ro&&(ro.p||ro.s));}
+/* 「나」 · 홈에서 연습 모드로: 다가오는 예배마다 · 편성에 없으면 안내 */
+function practiceSheet(){const today=todayStr();const list=S.contis.filter(c=>!c.noService&&c.date&&c.date>=today&&allItems(c).length).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);
+  return h("div",{class:"sheet"},h("h2",{},"🎼 연습 모드",h("span",{class:"sub",text:"악보대처럼 곡마다 한 화면"})),
+    list.length?h("div",{class:"cards"},list.map(c=>{const on=onRoster(c);return h("div",{class:"card pmrow"},h("div",{style:"flex:1;min-width:180px"},h("b",{text:`${fmtDate(c.date)} · ${wtypeOf(c)}`}),
+      h("div",{class:"hint",text:`${allItems(c).length}곡`}),on?null:h("div",{class:"hint",style:"color:var(--warn)",text:"이번 편성에는 이름이 없어요. 연습용으로 볼 수 있어요."})),
+      h("button",{class:"btn primary",text:"연습 모드",onclick:()=>practiceMode(c)}));})):h("div",{class:"empty",text:"곡이 들어간 다가오는 콘티가 아직 없어요."}));}
 /* 연습 모드: 태블릿을 악보대처럼 · 곡마다 한 화면 · 이전/다음 곡 · 화면 꺼짐 방지 */
 async function practiceMode(c){const songs=[];for(const[k,l]of SECTIONS)for(const it of c[k]||[])songs.push({it,sec:l});if(!songs.length)return toast("콘티에 곡이 없어요");
   let i=0,show="score",z=1,lock=null;const ov=h("div",{class:"pmode",role:"dialog","aria-label":"연습 모드"});document.body.append(ov);document.body.style.overflow="hidden";
@@ -3613,6 +3623,7 @@ async function practiceMode(c){const songs=[];for(const[k,l]of SECTIONS)for(cons
     ov.replaceChildren(...[
       h("div",{class:"pm-top"},h("button",{class:"btn sm",text:"✕ 닫기",onclick:close}),h("div",{class:"pm-title"},h("b",{text:`${i+1} / ${songs.length} · ${it.title}`}),it.key?h("span",{class:"pm-key",text:it.key}):null,h("span",{class:"hint",text:sec})),
         h("button",{class:"btn",text:"← 이전 곡",disabled:i===0,onclick:()=>go(-1)}),h("button",{class:"btn primary",text:"다음 곡 →",disabled:i===songs.length-1,onclick:()=>go(1)})),
+      !onRoster(c)&&myName()?h("div",{class:"pm-memo",style:"color:#ffb4a8",text:"이번 예배 편성에는 이름이 없어요. 연습용으로 보고 있어요."}):null,
       it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,body,
       h("div",{class:"pm-foot"},h("button",{class:"btn sm"+(show==="score"?" primary":""),text:"악보",onclick:()=>{show="score";draw();}}),h("button",{class:"btn sm"+(show==="ly"?" primary":""),text:"가사",onclick:()=>{show="ly";draw();}}),
         show==="score"?h("button",{class:"btn sm",text:"－",title:"작게",onclick:()=>{z=Math.max(1,z-.25);draw();}}):null,show==="score"?h("button",{class:"btn sm",text:"＋",title:"크게",onclick:()=>{z=Math.min(3,z+.25);draw();}}):null,
