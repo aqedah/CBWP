@@ -698,6 +698,11 @@ function handoverModal(c){if(!c||!c.id)return;const lead=S.members.filter(mb=>mb
       try{await S.db.doc(`contis/${c.id}`).update(patch);Object.assign(c,patch);const sc=S.contis.find(x=>x.id===c.id);if(sc&&sc!==c)Object.assign(sc,patch);
         if(S.curId===c.id&&S.cur){Object.assign(S.cur,{authorId:"",authorName:name});if(!S.isOwner){S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();}}
         md.close();toast(`${name}님께 콘티를 넘겼어요`);render();}catch(e){console.error(e);msg.textContent="넘기지 못했어요. 인터넷 연결을 확인해 주세요";}}})]);}
+/* 지난 콘티 목록에서 곡만 모두 빼기 */
+function clearContiSongs(c){const n=allItems(c).length;askConfirm("찬양 비우기",[h("p",{text:`${fmtDate(c.date)} ${wtypeOf(c)} 콘티의 곡 ${n}곡(여는 찬양 · 예배 찬양 · 특송 · 설교 후 찬양)을 모두 뺄까요? 날짜 · 설교 · 참여자는 그대로 남아요. 지우면 되돌릴 수 없어요.`})],"모두 빼기",async()=>{
+  const patch={updatedAt:Date.now()};for(const[k]of SECTIONS)patch[k]=[];
+  try{await S.db.doc(`contis/${c.id}`).update(patch);Object.assign(c,patch);const sc=S.contis.find(x=>x.id===c.id);if(sc&&sc!==c)Object.assign(sc,patch);
+    if(S.curId===c.id&&S.cur){for(const[k]of SECTIONS)S.cur[k]=[];saveDraft();}toast(`${n}곡을 뺐어요`);render();}catch(e){console.error(e);toast("비우지 못했어요. 인터넷 연결을 확인해 주세요");}});}
 function canEditConti(c,id){if(!id)return S.canWrite;if(S.isOwner)return true;if(c&&c.past&&isWriter())return true;return isAuthor(c);}
 const curEditable=()=>S.canWrite&&canEditConti(S.cur,S.curId);
 
@@ -1574,7 +1579,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
         c.past&&mine?h("button",{class:"btn sm",text:"빠르게 고치기",onclick:()=>{S.pastOpen=true;editPast(c);}}):null,
         (mine||isWriter())&&S.db?h("button",{class:"btn sm",text:"📄 악보 PDF 넣기",title:"이 콘티에 악보 PDF를 올려 곡과 악보를 채워요",onclick:()=>pdfPastModal(c)}):null,
         h("button",{class:"btn sm",text:"PDF",onclick:()=>exportPdf(c)}),h("button",{class:"btn sm",text:"압축 A3",onclick:()=>exportCompact(c)}),h("button",{class:"btn sm",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
-        h("span",{class:"spacer"}),canDel?delBtn(c):null));};
+        h("span",{class:"spacer"}),mine&&S.db&&c.id&&allItems(c).length?h("button",{class:"btn sm ghost danger",text:"찬양 비우기",title:"이 콘티의 곡을 모두 빼요 (날짜 · 설교 · 참여자는 그대로)",onclick:()=>clearContiSongs(c)}):null,canDel?delBtn(c):null));};
   function draw(){box.replaceChildren();let placed=false;const qq=q.trim();
     const match=c=>{if(!qq)return true;const hay=[dateKeys(c.date),wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),c.note,...allItems(c).map(i=>i.title)].join(" ");return hay.includes(qq)||matchRank(hay,qq)>-1;};
     const byDate={};for(const c of team)if(c.date&&match(c))(byDate[c.date]=byDate[c.date]||[]).push(c);
