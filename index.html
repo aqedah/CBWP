@@ -949,7 +949,9 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
         if(e.target.checked){if(!c.opening.length){e.target.checked=false;return toast("먼저 여는 찬양을 넣어 주세요");}await setFixedOpening(c.opening);toast(`${teamName(S.team)} 팀 새 콘티에 이 여는 찬양이 자동으로 들어가요`,3200);}
         else{await setFixedOpening([]);toast("고정 여는 찬양을 풀었어요");}}}),
       fixed.length?`새 콘티에 고정 여는 찬양 자동 추가 (지금: ${fixed.map(i=>i.title).join(", ")})`:"새 콘티에 이 여는 찬양을 자동으로 넣기 (팀 고정)"):null;
-    const fileFill=key==="before"&&editable?h("div",{class:"row",style:"margin-top:8px"},h("button",{type:"button",class:"btn sm",text:"📄 콘티 파일(PDF · 사진)로 채우기",onclick:()=>contiImportModal("before")})):null;
+    const fileFill=key==="before"&&editable?h("div",{class:"row",style:"margin-top:8px"},h("button",{type:"button",class:"btn sm",text:"📄 콘티 파일(PDF · 사진)로 채우기",onclick:()=>contiImportModal("before")}),h("span",{class:"spacer"}),
+      h("button",{type:"button",class:"btn sm ghost danger",text:"전체 비우기",title:"예배 찬양 칸의 곡을 모두 빼요",onclick:()=>{const n=(c.before||[]).length;if(!n)return toast("예배 찬양 칸이 이미 비어 있어요");
+        askConfirm("예배 찬양 전체 비우기",[h("p",{text:`예배 찬양 ${n}곡을 모두 뺄까요? 저장하기 전이면 되돌리기로 살릴 수 있어요.`})],"모두 빼기",()=>{c.before.splice(0);markDirty();renderSetlist("before");toast(`${n}곡을 뺐어요`);});}})):null;
     fs.append(h("div",{class:"sheet"},h("h2",{},h("span",{},label,h("span",{class:"cnt",id:`cnt-${key}`})),h("span",{class:"sub",text:sub})),
       songSearch(key),fixBox,fileFill,key==="special"?h("div",{class:"field",style:"margin-top:8px"},h("label",{htmlFor:"f-specby",text:"특송 하는 사람 · 팀"}),
         h("input",{type:"text",id:"f-specby",value:c.specialBy||"",placeholder:"예: 베드로 남선교회, 임마누엘 성가대",disabled:!editable,oninput:e=>{c.specialBy=e.target.value;markDirty();}})):null,key==="before"?h("div",{id:"songHelpHolder",style:"margin-top:10px"}):null,h("div",{class:"setlist",id:`list-${key}`,style:"margin-top:10px"})));}
