@@ -9,6 +9,7 @@
   let app=null,auth=null,fs=null,uid=null,ready=null;
   const unlocked=new Set(ls.get(LS,[]));
   const names={};
+  const PROJ=["festival"]; /* 프로젝트: 어느 팀 비밀번호로든 들어가요 */
   function init(){if(ready)return ready;
     ready=(async()=>{
       if(!cfg||!cfg.apiKey||!window.firebase)throw new Error("firebase-config");
@@ -21,6 +22,8 @@
     })();return ready;}
   async function unlock(team,code,name){await init();code=String(code||"").trim();if(!code)throw new Error("empty");
     const base={uid,code,name:name||"",at:Date.now()};
+    if(PROJ.includes(team)){if(!unlocked.has("any")){try{await fs.doc(`unlocks/${uid}_any`).set({...base,team:"any"});}catch(e){const d=await fs.doc(`unlocks/${uid}_any`).get().catch(()=>null);if(!(d&&d.exists))throw new Error("wrong");}}
+      unlocked.add("any");ls.set(LS,[...unlocked]);if(name){ls.set(NAME,name);try{await fs.doc(`users/${uid}`).set({name,at:Date.now()},{merge:true});}catch(e){}}return true;}
     try{
       if(!unlocked.has(team))await fs.doc(`unlocks/${uid}_${team}`).set({...base,team});
       if(!unlocked.has("any"))await fs.doc(`unlocks/${uid}_any`).set({...base,team:"any"}).catch(()=>{});
@@ -44,7 +47,7 @@
   /* hooks the app calls when it runs outside claude.ai */
   window.CBWP={
     standalone:true,
-    canWrite:team=>unlocked.has(team)||unlocked.has("admin"),
+    canWrite:team=>unlocked.has(team)||unlocked.has("admin")||(PROJ.includes(team)&&unlocked.has("any")),
     isAdmin:()=>unlocked.has("admin"),
     myName:()=>ls.get(NAME,""),
     async setName(name){name=String(name||"").trim();if(!name)return;ls.set(NAME,name);try{await init();await fs.doc(`users/${uid}`).set({name,at:Date.now()},{merge:true});}catch(e){}},
