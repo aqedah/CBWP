@@ -2487,7 +2487,10 @@ function parseKakao(text){const out={};const t=(text||"").replace(/\r/g,"").repl
       if(last&&groups.length&&!/^\d+\s/.test(ln)){const g=groups[groups.length-1];if(last.kind==="song")g.text+=" "+ln;else if(g.memo.length)g.memo[g.memo.length-1]+=" "+ln;}}
     if(groups.length)out.songs=groups.map(g=>{const notes=[...g.text.matchAll(/\(([^)]+)\)/g)].map(x=>x[1].trim());const titles=g.text.replace(/\([^)]*\)/g," ").split(/\s*\+\s*/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
       return{titles,memo:[...notes,...g.memo].join(" · ")};});}
-  if(!out.sermonTitle){const rest=parts.filter((x,i)=>i!==afterIdx&&!(out.after||[]).includes(x)&&!parseRef(x)&&!/\d{1,2}\s*[.\/월]\s*\d{1,2}/.test(x)&&!WTYPES.some(w=>x.replace(/\s+/g,"").includes(w.replace(/\s+/g,"")))&&!/목사|전도사|본문|설교자|예배/.test(x)&&!/^[\d\s.,:~\-/()]+$/.test(x)&&x.replace(/\s/g,"").length>=2);if(rest.length)out.sermonTitle=rest[0];}
+  /* 「특송」 표시 없이 맨 끝에 교회·성가대·선교회 이름만 쓴 경우 → 특송 부르는 사람 */
+  if(!out.specialBy&&!out.special){const SP=/(교회|성가대|찬양대|선교회|중창단|합창단|청년부|청년회|권사회|장로회|집사회|남전도회|여전도회|목장|찬양팀|워십|가족|부부|형제|자매|특송)$/;
+    const cand=parts.slice().reverse().find(x=>SP.test(x.replace(/\s/g,""))&&x.replace(/\s/g,"").length<=20&&!/목사|전도사|강도사|설교|본문/.test(x)&&!parseRef(x));if(cand&&cand!==out.sermonTitle)out.specialBy=cand;}
+  if(!out.sermonTitle){const rest=parts.filter(x=>x!==out.specialBy).filter((x,i)=>i!==afterIdx&&!(out.after||[]).includes(x)&&!parseRef(x)&&!/\d{1,2}\s*[.\/월]\s*\d{1,2}/.test(x)&&!WTYPES.some(w=>x.replace(/\s+/g,"").includes(w.replace(/\s+/g,"")))&&!/목사|전도사|본문|설교자|예배/.test(x)&&!/^[\d\s.,:~\-/()]+$/.test(x)&&x.replace(/\s/g,"").length>=2);if(rest.length)out.sermonTitle=rest[0];}
   if(typeof isProject==="function"&&isProject()){const pj=projOf(S.team);if(pj)out.wtype=pj.wtype;}
   return out;}
 function itemByTitle(t){const n=norm(t);const sg=S.songs.find(x=>norm(x.title)===n)||S.songs.find(x=>norm(splitTitle(x.title).base)===n);return sg?itemFromSong(sg):{uid:uid(8),songId:null,title:t,key:"",yt:"",memo:"",pages:[]};}
