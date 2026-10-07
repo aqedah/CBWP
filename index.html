@@ -3067,15 +3067,21 @@ function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=it
 function previewLyricsPpt(c){if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");const list=pptTpls();let tpl=tplFor(c);
   const grid=h("div",{class:"pptgrid"});const info=h("div");
   const sel=h("select",{style:"width:auto"},list.length?list.map(t=>h("option",{value:t.id,text:t.name+(t.id===tplFor(c).id?" (자동)":""),selected:t.id===tpl.id})):[h("option",{value:"",text:"기본 (검은 화면)"})]);
-  sel.onchange=()=>{tpl=list.find(t=>t.id===sel.value)||tpl;draw();};
-  function draw(){const slides=pptSlidesOf(c,tpl);const miss=items.filter(it=>!lyricsOf(it).trim());
-    info.replaceChildren(h("div",{class:"hint",text:`슬라이드 ${slides.length}장 · ${items.length}곡`}),
+  const DK=["titleDeco","titleGrad","titleDecoKind","titleBox","titleAlign","titleAnchor","titleColor","titleShadow","titleSize"];
+  const withDeco=(t,v)=>{if(v==="keep")return t;const o={...t};for(const k of DK)delete o[k];if(v==="note"){const H=o.slideH||(o.ratio==="4:3"?7.5:5.625);Object.assign(o,NOTE_DECO(),{titleSize:Math.round(40*H/7.5)});}return o;};
+  let base=tpl;const deco=h("select",{style:"width:auto",onchange:()=>{tpl=withDeco(base,deco.value);draw();}});
+  const syncDeco=()=>{const has=!!(base.titleDeco||[]).length;deco.replaceChildren(...[["keep",has?"템플릿 그대로 (꾸밈 있음)":"템플릿 그대로 (글자만)"],["note","♪ 음표 + 아래 검은 띠"],["none","꾸밈 없음"]].map(([v,t])=>h("option",{value:v,text:t})));};
+  const can=S.canWrite&&!!S.db;const saveBtn=h("button",{class:"btn sm",text:"이 꾸밈을 템플릿에 저장",onclick:async()=>{if(!base.id)return toast("기본 화면은 저장할 수 없어요. PPT 라이브러리에서 템플릿을 만들어 주세요.");
+    const nt=withDeco(base,deco.value);const l2=pptTpls().map(t=>t.id===base.id?nt:t);if(await saveTpls(l2)){base=nt;tpl=nt;syncDeco();toast("템플릿에 저장했어요. 다음부터 저절로 들어가요.");draw();}}});
+  sel.onchange=()=>{base=list.find(t=>t.id===sel.value)||base;syncDeco();tpl=withDeco(base,deco.value);draw();};syncDeco();
+  function draw(){saveBtn.hidden=!can||deco.value==="keep";const slides=pptSlidesOf(c,tpl);const miss=items.filter(it=>!lyricsOf(it).trim());
+    info.replaceChildren(...[h("div",{class:"hint",text:`슬라이드 ${slides.length}장 · ${items.length}곡`}),
       miss.length?h("div",{class:"banner warn",style:"margin-top:6px"},h("b",{text:"가사가 없는 곡: "}),...miss.map(it=>h("button",{class:"btn sm",style:"margin:2px",text:`${it.title} · 가사 넣기`,onclick:()=>lyricsModal(it,()=>draw())})),
-        h("div",{class:"hint",text:"가사가 없으면 제목 장만 들어가요."})):null);
+        h("div",{class:"hint",text:"가사가 없으면 제목 장만 들어가요."})):null].filter(Boolean));
     grid.replaceChildren(...slides.map((sl,i)=>h("div",{class:"pptcell"+(sl.kind==="title"?" t":"")},tplPreview(tpl,sl.lines,sl.kind),h("span",{class:"hint",text:`${i+1}${sl.kind==="title"?" · 제목":""}`}))));}
   draw();
-  const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel),info,grid),
-    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();exportLyricsPpt(c,tpl&&tpl.id?tpl:null,true);}})],"editor");}
+  const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel,h("span",{class:"hint",text:"제목 장"}),deco,saveBtn),info,grid),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();exportLyricsPpt(c,tpl&&(tpl.id||deco.value!=="keep")?tpl:null,true);}})],"editor");}
 /* 파일 이름으로 템플릿 이름 짧게: 2부_2026_10_04 → 주일2부예배 / 오후찬양_청년예배_20261004 → 오후찬양예배 · 청년예배 */
 function tplNameOf(fname){const toks=fname.replace(/\.pptx$/i,"").split(/[_\s\-·,]+/).map(x=>x.trim()).filter(x=>x&&!/^\d+$/.test(x)&&!/^\d{2,4}[.\-]?\d{1,2}[.\-]?\d{1,2}$/.test(x));
   const MAP=[[/^(주일)?2부(예배)?$/,"주일2부예배"],[/^(주일)?1부(예배)?$/,"주일1부예배"],[/^오후(찬양)?(예배)?$/,"오후찬양예배"],[/^청년(부)?(예배)?$/,"청년예배"],[/^금요(기도회)?$/,"금요기도회"],[/^수요(예배|기도회)?$/,"수요기도회"],[/^새벽(기도회)?$/,"새벽기도회"]];
