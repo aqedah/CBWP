@@ -114,7 +114,7 @@ main{padding-block:18px 40px;display:flex;flex-direction:column;gap:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field label,.lab{font-size:.78rem;font-weight:600;color:var(--ink2);letter-spacing:.02em}
-input[type=text],input[type=date],input[type=search],select,textarea{width:100%;border:1px solid var(--line);background:var(--sheet);border-radius:8px;padding:9px 11px;min-width:0}
+input[type=text],input[type=date],input[type=time],input[type=search],select,textarea{width:100%;border:1px solid var(--line);background:var(--sheet);border-radius:8px;padding:9px 11px;min-width:0}
 textarea{resize:vertical;min-height:60px}
 input:disabled,select:disabled,textarea:disabled{background:var(--soft);color:var(--ink2)}
 fieldset{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:16px}
@@ -1499,7 +1499,7 @@ function refPlaylistLink(c){const a=h("a",{id:"f-reflist",class:"btn",target:"_b
   a.addEventListener("click",e=>{upd();if(a.getAttribute("href")==="#")e.preventDefault();});upd();refPlaylistLink.upd=upd;return a;}
 /* the day before the service: practice */
 function addPracticeEvent(){const c=S.cur||{};const d=c.date||nextSunday();
-  eventModal(null,{date:addDays(d,-1),kind:"practice",title:"찬양 연습",memo:`${fmtDate(d)} ${wtypeOf(c)||"예배"} 준비`});}
+  eventModal(null,{date:addDays(d,-(((parseD(d).getDay()+1)%7)||7)),time:"11:00",kind:"practice",title:"찬양 연습",memo:`${fmtDate(d)} ${wtypeOf(c)||"예배"} 준비`});}
 
 function renderRoster(){const box=$("#rosterBox");if(!box)return;box.replaceChildren();const c=S.cur;
   c.roster.forEach((slot,si)=>{
@@ -2546,14 +2546,24 @@ async function savePlan(d,pl){const body={team:S.team,post:"plan",date:d,roster:
 const dLabel=d=>{const x=parseD(d);return `${x.getMonth()+1}/${x.getDate()}(${"일월화수목금토"[x.getDay()]})`;};
 /* 홈: 참여 응답 */
 function availSheet(){const me=myName();if(!me||!S.team)return null;const mb=S.members.find(x=>normName(x.name)===normName(me));if(mb&&tierOf(mb)==="휴면")return null;
-  const ds=upcomingDates(3).filter(d=>!(planOf(d)||{}).off);if(!ds.length)return null;const can=S.canWrite&&!!S.db;
+  const ds=upcomingDates(3).filter(d=>!(planOf(d)||{}).off);const can=S.canWrite&&!!S.db;
+  /* 리더 · 인도자가 일정에 넣은 연습도 함께 (3주 안) */
+  const today=todayStr();const prs=(S.events||[]).filter(e=>e.kind==="practice"&&e.date>=today&&e.date<=addDays(today,21)).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  if(!ds.length&&!prs.length)return null;
+  const prRow=e=>{const key=`pr-${e.id}`;const r=respOf(key,me);
+    const no=()=>{const ni=h("input",{type:"text",placeholder:"사유 (예: 가족 일정, 시험)",value:r&&!r.ok?r.note:""});
+      const md=modal(`${dLabel(e.date)} 연습 불참`,h("div",{class:"panel-body"},ni),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn danger",text:"불참으로 알리기",onclick:()=>{md.close();setAvail(key,false,ni.value.trim());}})]);setTimeout(()=>ni.focus(),50);};
+    return h("div",{class:"availrow practice"},h("div",{class:"availd"},h("b",{text:`🎼 ${dLabel(e.date)}${e.time?` ${e.time}`:""}`}),h("span",{class:"hint",text:[e.title||"찬양 연습",e.place].filter(Boolean).join(" · ")})),
+      h("div",{class:"availbtns"},h("button",{class:"btn sm"+(r&&r.ok?" okon":""),disabled:!can,text:r&&r.ok?"✓ 참여 가능":"참여 가능",onclick:()=>setAvail(key,true,"")}),
+        h("button",{class:"btn sm"+(r&&!r.ok?" noon":""),disabled:!can,text:r&&!r.ok?`✕ 불참${r.note?` (${r.note})`:""}`:"어려워요",onclick:no})));};
   return h("div",{class:"sheet"},h("h2",{},"참여 응답",h("span",{class:"sub",text:"리더가 편성할 때 참고해요"})),
     h("div",{class:"availlist"},ds.map(d=>{const r=respOf(d,me);const pl=planOf(d);const mine=pl?(pl.roster||[]).filter(x=>(x.people||[]).some(p=>normName(p.name)===normName(me))).map(x=>x.pos):[];
       const no=()=>{const ni=h("input",{type:"text",id:"av-note",placeholder:"사유 (예: 가족 일정, 시험)",value:r&&!r.ok?r.note:""});
         const md=modal(`${dLabel(d)} 불참`,h("div",{class:"panel-body"},h("p",{class:"hint",text:"사유는 우리 팀 → 편성의 응답 현황에 함께 보여요."}),ni),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn danger",text:"불참으로 알리기",onclick:()=>{md.close();setAvail(d,false,ni.value.trim());}})]);setTimeout(()=>ni.focus(),50);};
       return h("div",{class:"availrow"},h("div",{class:"availd"},h("b",{text:dLabel(d)}),mine.length?h("span",{class:"hint",text:`편성: ${mine.join(" · ")}`}):h("span",{class:"hint",text:pl?"편성 나옴":"편성 전"})),
         h("div",{class:"availbtns"},h("button",{class:"btn sm"+(r&&r.ok?" okon":""),disabled:!can,text:r&&r.ok?"✓ 참여 가능":"참여 가능",onclick:()=>setAvail(d,true,"")}),
-          h("button",{class:"btn sm"+(r&&!r.ok?" noon":""),disabled:!can,text:r&&!r.ok?`✕ 불참${r.note?` (${r.note})`:""}`:"어려워요",onclick:no})));})));}
+          h("button",{class:"btn sm"+(r&&!r.ok?" noon":""),disabled:!can,text:r&&!r.ok?`✕ 불참${r.note?` (${r.note})`:""}`:"어려워요",onclick:no})));}),
+      prs.length?h("div",{class:"lab",style:"margin-top:6px",text:"연습"}):null,...prs.map(prRow)));}
 /* 우리 팀 → 편성 */
 function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);if(!S.lineDay||!ds.includes(S.lineDay))S.lineDay=ds[0];const d=S.lineDay;
   const saved=planOf(d);const conti=S.contis.find(c=>c.date===d&&!c.noService&&!c.past);
@@ -3071,6 +3081,7 @@ const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const addDays=(ds,n)=>{const d=parseD(ds)||new Date();d.setDate(d.getDate()+n);return ymd(d);};
 function eventModal(ev,preset={}){const can=S.canWrite&&!S.memberOnly&&!!S.db;const e=ev?clone(ev):{date:preset.date||todayStr(),time:preset.time||"",title:preset.title||"",kind:preset.kind||"practice",place:preset.place||"",memo:preset.memo||""};
   if(e.kind==="etc"){e.kind="custom";e.kindName=e.kindName||"기타";}
+  if(!ev&&!e.time&&e.kind==="practice")e.time="11:00";   /* 연습은 기본 오전 11시 */
   const kindName=h("input",{type:"text",id:"ev-kindname",placeholder:"종류 이름 (예: 수련회, 회의)",value:e.kindName||"",disabled:!can,oninput:x=>{if(!titleIn.value.trim()||titleIn.value===titleIn.dataset.auto){titleIn.value=x.target.value;titleIn.dataset.auto=x.target.value;}}});
   kindName.hidden=e.kind!=="custom";
   const kindSel=h("select",{id:"ev-kind",disabled:!can,onchange:x=>{const old=evKindName(e.kind,e);e.kind=x.target.value;kindName.hidden=e.kind!=="custom";if(e.kind==="custom"){kindName.focus();if(titleIn.value===old)titleIn.value="";}else if(!titleIn.value.trim()||titleIn.value===old)titleIn.value=evKindName(e.kind);}},EVKINDS.filter(k=>k[0]!=="service").map(([v,l])=>h("option",{value:v,text:l,selected:e.kind===v})));
@@ -3091,7 +3102,10 @@ function eventModal(ev,preset={}){const can=S.canWrite&&!S.memberOnly&&!!S.db;co
   let armed=false;const del=ev&&can?h("button",{class:"btn danger",text:"지우기",onclick:async x=>{if(!armed){armed=true;x.currentTarget.textContent="정말 지울까요?";return;}
     try{await S.db.doc(`events/${ev.id}`).delete();md.close();toast("일정을 지웠어요");if(S.tab==="cal")render();}catch(err){toast("지우지 못했어요");}}}):null;
   const md=modal(ev?"일정 고치기":"일정 추가",h("div",{class:"panel-body"},h("div",{class:"grid"},fld("ev-kind","종류",h("div",{style:"display:flex;flex-direction:column;gap:6px"},kindSel,kindName)),fld("ev-date","날짜 (시작)",dateIn),fld("ev-end","끝나는 날 (여러 날이면)",endIn),fld("ev-time","시간 (선택)",timeIn),fld("ev-place","장소 (선택)",placeIn)),
-    fld("ev-title","제목",titleIn),fld("ev-memo","메모 (선택)",memoIn),can?null:h("p",{class:"hint",text:"보기만 할 수 있어요."})),
+    fld("ev-title","제목",titleIn),fld("ev-memo","메모 (선택)",memoIn),
+    ev&&ev.kind==="practice"?(()=>{const rs=Object.entries(availOf(`pr-${ev.id}`));const ok=rs.filter(([,v])=>v.ok),no=rs.filter(([,v])=>!v.ok);
+      return h("div",{class:"field"},h("label",{text:`참여 응답 ${rs.length}명`}),rs.length?h("div",{class:"pchips"},...ok.map(([n])=>h("span",{class:"lchip",text:`✓ ${resolveName(n)}`})),...no.map(([n,v])=>h("span",{class:"lchip",style:"color:var(--warn)",text:`✕ ${resolveName(n)}${v.note?` (${v.note})`:""}`}))):h("span",{class:"hint",text:"아직 응답이 없어요. 팀원은 홈 「참여 응답」에서 알려요."}));})():null,
+    can?null:h("p",{class:"hint",text:"보기만 할 수 있어요."})),
     [del,h("span",{class:"spacer"}),h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can?h("button",{class:"btn primary",text:"저장",onclick:save}):null]);}
 const evEnd=e=>e.endDate&&e.endDate>e.date?e.endDate:e.date;
 const evSpan=e=>evEnd(e)!==e.date?`${fmtDate(e.date).replace(/^\d{4}\. /,"")} ~ ${fmtDate(evEnd(e)).replace(/^\d{4}\. /,"")}`:"";
