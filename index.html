@@ -3476,21 +3476,30 @@ const devLabel=()=>lsJ(DEVNM,"")||autoDevLabel();
 let devSeen=false;
 /* 이 기기를 users/{uid}에 기록: 기기 이름 · 마지막 접속 · 연결 묶음(grp) */
 async function devHeartbeat(force){if((devSeen&&!force)||!S.db||!S.myId||!window.CBWP)return;devSeen=true;
-  const d={dev:devLabel(),seen:Date.now()};const g=lsJ(DEVGRP,"");if(g)d.grp=g;const lk=lsJ(DEVLK,null);if(lk)Object.assign(d,{linkedAt:lk.at,linkedFrom:lk.from||""});
+  const d={dev:devLabel(),devAt:lsJ(DEVNM+"-at",0),seen:Date.now()};const g=lsJ(DEVGRP,"");if(g)d.grp=g;const lk=lsJ(DEVLK,null);if(lk)Object.assign(d,{linkedAt:lk.at,linkedFrom:lk.from||""});
   try{await S.db.doc(`users/${S.myId}`).set(d,{merge:true});}catch(e){console.warn(e);}}
 const agoText=t=>{if(!t)return"";const m=Math.round((Date.now()-t)/60000);if(m<2)return"방금";if(m<60)return`${m}분 전`;const hh=Math.round(m/60);if(hh<24)return`${hh}시간 전`;const dd=Math.round(hh/24);return dd<31?`${dd}일 전`:fmtDate(new Date(t).toISOString().slice(0,10));};
+function devRenameModal(cur,onSave,onReset){const inp=h("input",{class:"inp",value:cur,maxlength:30});
+  const md=modal("기기 이름",h("div",{class:"panel-body"},h("p",{class:"hint",text:"여러 기기를 구별하기 쉽게 지어 주세요. 예: 내 휴대폰, 사무실 PC"}),inp),
+    [onReset?h("button",{class:"btn",text:"원래대로",onclick:()=>{md.close();onReset();}}):null,h("button",{class:"btn primary",text:"저장",onclick:()=>{md.close();onSave(inp.value);}})].filter(Boolean));
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"){md.close();onSave(inp.value);}});setTimeout(()=>{inp.focus();inp.select();},50);}
 function devStatusBox(){const box=h("div",{class:"devstat"});
   const draw=async()=>{const g=lsJ(DEVGRP,"");const lk=lsJ(DEVLK,null);box.replaceChildren();
-    const nmBtn=h("button",{type:"button",class:"linkbtn",text:"이름 바꾸기",onclick:()=>{const inp=h("input",{class:"inp",value:devLabel(),maxlength:30});
-      const md=modal("이 기기 이름",h("div",{class:"panel-body"},h("p",{class:"hint",text:"여러 기기를 구별하기 쉽게 지어 주세요. 예: 내 휴대폰, 사무실 PC"}),inp),
-        [h("button",{class:"btn",text:"원래대로",onclick:async()=>{lsS(DEVNM,null);md.close();await devHeartbeat(true);draw();}}),h("button",{class:"btn primary",text:"저장",onclick:async()=>{const v=inp.value.trim();lsS(DEVNM,v&&v!==autoDevLabel()?v:null);md.close();await devHeartbeat(true);draw();}})]);setTimeout(()=>inp.focus(),50);}});
+    const setMine=async v=>{v=(v||"").trim();lsS(DEVNM,v&&v!==autoDevLabel()?v:null);lsS(DEVNM+"-at",Date.now());await devHeartbeat(true);draw();};
+    const nmBtn=h("button",{type:"button",class:"linkbtn",text:"이름 바꾸기",onclick:()=>devRenameModal(devLabel(),setMine,()=>setMine(""))});
     box.append(h("div",{class:"devme"},h("span",{class:"devdot"+(g?" on":"")}),h("b",{text:`이 기기: ${devLabel()}`}),nmBtn));
     box.append(h("p",{class:"hint",style:"margin:4px 0 0",text:g?(lk?`${fmtDate(new Date(lk.at).toISOString().slice(0,10))}에 ${lk.from?`「${lk.from}」에서 `:""}연결받은 기기예요.`:"다른 기기에 연결을 보낸 기기예요."):"아직 다른 기기와 연결하지 않았어요."}));
     if(!g||!S.db)return;
     const list=h("div",{class:"devlist"},h("span",{class:"hint",text:"연결된 기기 불러오는 중…"}));box.append(list);
-    try{const snap=await S.db.collection("users").where("grp","==",g).get();const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.id===S.myId?-1:b.id===S.myId?1:(b.seen||0)-(a.seen||0)));
+    try{const snap=await S.db.collection("users").where("grp","==",g).get();const raw=snap.docs.map(d=>({id:d.id,...d.data()}));const names={};
+      for(const r of raw)for(const[id,v]of Object.entries(r.devNames||{}))if(v&&v.n&&(!names[id]||v.at>names[id].at))names[id]=v;
+      const nameOf=r=>{const o=names[r.id];return o&&o.at>(r.devAt||0)?o.n:(r.dev||"이름 없는 기기");};
+      const mineO=names[S.myId];if(mineO&&mineO.at>lsJ(DEVNM+"-at",0)){lsS(DEVNM,mineO.n);lsS(DEVNM+"-at",mineO.at);devHeartbeat(true);box.querySelector(".devme b").textContent=`이 기기: ${mineO.n}`;}
+      const renameOther=r=>devRenameModal(nameOf(r),async v=>{v=(v||"").trim();if(!v)return;try{await S.db.doc(`users/${S.myId}`).set({devNames:{[r.id]:{n:v,at:Date.now()}}},{merge:true});toast("기기 이름을 바꿨어요");}catch(e){toast("이름을 바꾸지 못했어요");}draw();});
+      const rows=raw.sort((a,b)=>(a.id===S.myId?-1:b.id===S.myId?1:(b.seen||0)-(a.seen||0)));
       list.replaceChildren(h("div",{class:"devhd",text:`연결된 기기 ${rows.length}대`}),...rows.map(r=>h("div",{class:"devrow"+(r.id===S.myId?" me":"")},
-        h("span",{class:"devnm",text:r.dev||"이름 없는 기기"}),r.id===S.myId?h("span",{class:"devtag",text:"지금 이 기기"}):null,
+        h("span",{class:"devnm",text:r.id===S.myId?devLabel():nameOf(r)}),r.id===S.myId?h("span",{class:"devtag",text:"지금 이 기기"}):null,
+        h("button",{type:"button",class:"linkbtn",text:"이름 바꾸기",onclick:()=>r.id===S.myId?devRenameModal(devLabel(),setMine,()=>setMine("")):renameOther(r)}),
         h("span",{class:"hint",text:[r.seen&&`마지막 접속 ${agoText(r.seen)}`,r.linkedAt&&`연결 ${fmtDate(new Date(r.linkedAt).toISOString().slice(0,10))}`].filter(Boolean).join(" · ")}))),
         h("button",{type:"button",class:"linkbtn",style:"margin-top:6px",text:"이 기기를 목록에서 빼기",onclick:async e=>{const b=e.currentTarget;if(b.dataset.arm!=="1"){b.dataset.arm="1";b.textContent="정말 뺄까요? 한 번 더 누르세요";setTimeout(()=>{b.dataset.arm="";b.textContent="이 기기를 목록에서 빼기";},3000);return;}
           lsS(DEVGRP,null);lsS(DEVLK,null);try{await S.db.doc(`users/${S.myId}`).set({grp:null,linkedAt:null,linkedFrom:null},{merge:true});}catch(err){}toast("이 기기를 연결 목록에서 뺐어요 (비밀번호는 그대로예요)");draw();}}));}
