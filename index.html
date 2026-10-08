@@ -1093,7 +1093,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
         if(e.target.checked){if(!c.opening.length){e.target.checked=false;return toast("먼저 여는 찬양을 넣어 주세요");}await setFixedOpening(c.opening);toast(`${teamName(S.team)} 팀 새 콘티에 이 여는 찬양이 자동으로 들어가요`,3200);}
         else{await setFixedOpening([]);toast("고정 여는 찬양을 풀었어요");}}}),
       h("span",{class:"teamwide",text:"팀 전체"}),fixed.length?`새 콘티에 고정 여는 찬양 자동 추가 (지금: ${fixed.map(i=>i.title).join(", ")})`:"새 콘티에 이 여는 찬양을 자동으로 넣기"):null;
-    const fileFill=key==="before"&&editable?h("div",{class:"row",style:"margin-top:8px"},h("button",{type:"button",class:"btn sm",text:"📄 콘티 파일(PDF · 사진)로 채우기",onclick:()=>contiImportModal("before")}),h("span",{class:"spacer"}),
+    const fileFill=key==="before"&&editable?h("div",{class:"row",style:"margin-top:8px"},h("span",{class:"spacer"}),
       h("button",{type:"button",class:"btn sm ghost danger",text:"전체 비우기",title:"예배 찬양 칸의 곡을 모두 빼요",onclick:()=>{const n=(c.before||[]).length;if(!n)return toast("예배 찬양 칸이 이미 비어 있어요");
         askConfirm("예배 찬양 전체 비우기",[h("p",{text:`예배 찬양 ${n}곡을 모두 뺄까요? 저장하기 전이면 되돌리기로 살릴 수 있어요.`})],"모두 빼기",()=>{c.before.splice(0);markDirty();renderSetlist("before");toast(`${n}곡을 뺐어요`);});}})):null;
     secEls[key]=(h("div",{class:"sheet"},h("h2",{},h("span",{},label,h("span",{class:"cnt",id:`cnt-${key}`})),h("span",{class:"sub",text:sub})),
@@ -4560,7 +4560,7 @@ function previewLyricsPpt(c){if(!c)return;const items=allItems(c);if(!items.leng
   const DK=["titleDeco","titleGrad","titleDecoKind","titleBox","titleAlign","titleAnchor","titleColor","titleShadow","titleSize"];
   const withDeco=(t,v)=>{if(v==="keep")return t;const o={...t};for(const k of DK)delete o[k];if(v==="none")o.titleDecoKind="none";if(v==="note"){const H=o.slideH||(o.ratio==="4:3"?7.5:5.625);Object.assign(o,NOTE_DECO(),{titleSize:Math.round(40*H/7.5)});}return o;};
   let base=tpl;const deco=h("select",{style:"width:auto",onchange:()=>{tpl=withDeco(base,deco.value);draw();}});
-  const syncDeco=()=>{const has=!!(base.titleDeco||[]).length;deco.replaceChildren(...[["keep",base.titleDecoKind==="note"?"♪ 음표 + 아래 검은 띠":has?"템플릿 그대로 (꾸밈 있음)":"템플릿 그대로 (글자만)"],["note","♪ 음표 + 아래 검은 띠"],["none","꾸밈 없음"]].map(([v,t])=>h("option",{value:v,text:t})));};
+  const syncDeco=()=>{const has=!!(base.titleDeco||[]).length;deco.replaceChildren(...[["keep",base.titleDecoKind==="note"?"♪ 음표 + 아래 검은 띠":has?"템플릿 그대로 (꾸밈 있음)":"템플릿 그대로 (글자만)"],...(base.titleDecoKind==="note"?[]:[["note","♪ 음표 + 아래 검은 띠"]]),["none","꾸밈 없음"]].map(([v,t])=>h("option",{value:v,text:t})));};
   const can=S.canWrite&&!!S.db;const saveBtn=h("button",{class:"btn sm",text:"이 꾸밈을 템플릿에 저장",onclick:async()=>{if(!base.id)return toast("기본 화면은 저장할 수 없어요. PPT 라이브러리에서 템플릿을 만들어 주세요.");
     const nt=withDeco(base,deco.value);const l2=pptTpls().map(t=>t.id===base.id?nt:t);if(await saveTpls(l2)){base=nt;tpl=nt;syncDeco();toast("템플릿에 저장했어요. 다음부터 저절로 들어가요.");draw();}}});
   sel.onchange=()=>{base=list.find(t=>t.id===sel.value)||base;syncDeco();tpl=withDeco(base,deco.value);draw();};syncDeco();
