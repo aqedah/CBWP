@@ -1614,7 +1614,7 @@ function openSavedModal(){let q="";const box=h("div",{style:"display:flex;flex-d
 function openLoadPast(){let q="";const box=h("div",{class:"cards"});
   const search=h("input",{type:"search",id:"lp-q",placeholder:"날짜 · 곡 · 인도자로 찾기 (초성 가능)",oninput:e=>{q=e.target.value;draw();}});
   const load=(c,full)=>{const fresh=it=>{const x=clone(it);x.uid=uid(8);const song=S.songs.find(s=>s.id===x.songId);
-      if(song){x.title=song.title;if(!x.pages||!x.pages.length){const v=teamVer(song);if(v){x.verId=v.vid;x.pages=verPages(v);if(!x.key&&v.key)x.key=v.key;}}if(!x.yt)x.yt=(song.yt||[])[0]||"";}x.pages=x.pages||[];return x;};
+      if(song){x.title=song.title;if(!x.pages||!x.pages.length){const v=teamVer(song);if(v){x.verId=v.vid;x.pages=verPages(v);if(!x.key&&v.key)x.key=v.key;}}}x.pages=x.pages||[];return x;};
     clearTimeout(histT);snapHist();
     for(const[k]of SECTIONS)S.cur[k]=(c[k]||[]).map(fresh);
     if(full){S.cur.roster=clone(c.roster&&c.roster.length?c.roster:S.cur.roster);for(const pos of POSITIONS)if(!S.cur.roster.some(r=>r.pos===pos))S.cur.roster.push({pos,people:[]});if(c.memo&&!c.past)S.cur.memo=c.memo;}
@@ -1657,7 +1657,8 @@ function updateStatus(){for(const el of document.querySelectorAll("#saveStatus,#
   el.textContent=S.dirty?(S.autoNote==="new"?"새 콘티 · 처음 한 번 「저장」을 눌러 주세요 (그다음부터 자동 저장)":S.autoNote==="moved"?"날짜 · 예배가 바뀌었어요 · 「저장」을 눌러 주세요":S.autoNote==="fail"?"자동 저장 실패 · 「저장」을 눌러 주세요":S.curId&&curEditable()?"고치는 중… 곧 자동 저장돼요":"저장하지 않은 변경이 있어요")
     :(S.curId?(hm?`자동 저장됨 ${hm}`:"팀 저장소에 저장됨"):"아직 저장 전");}}
 /* YouTube can play a list of videos without an account: watch_videos?video_ids=a,b,c (up to 50) */
-const ytOfItem=i=>i.yt||((songOf(i)||{}).yt||[])[0]||"";
+/* 레퍼런스는 콘티마다 따로: 라이브러리 영상으로 채우지 않아요 */
+const ytOfItem=i=>i.yt||"";
 const refIds=c=>[...new Set(allItems(c).map(ytOfItem).filter(Boolean))].slice(0,50);
 function refPlaylistLink(c){const a=h("a",{id:"f-reflist",class:"btn",target:"_blank",rel:"noopener",href:"#"});
   const upd=()=>{const ids=refIds(S.cur||c);a.textContent=ids.length?`▶ 곡 이어 듣기 (${ids.length}곡)`:"▶ 곡 이어 듣기 (유튜브 주소 없음)";a.title="곡마다 붙인 유튜브 주소를 콘티 순서대로 이어 들어요 (임시 재생목록)";a.href=ids.length?`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`:"#";a.classList.toggle("disabled",!ids.length);};
@@ -1858,7 +1859,7 @@ async function rememberScore(songId,verId,pages,meta={}){const s=S.songs.find(x=
   const vs=clone(vers(s));let v=vs.find(x=>x.vid===verId);
   if(v){v.pages=clone(pages);if(meta.keepMarks)v.keepMarks=true;}else{v={vid:uid(6),name:meta.name||`악보 ${vs.length+1}`,key:meta.key||"",pages:clone(pages),by:S.myId||null,at:Date.now(),...(meta.keepMarks?{keepMarks:true}:{})};vs.push(v);}
   const ok=await saveVersions(s,vs,{teamVer:{...(s.teamVer||{}),[S.team]:v.vid}});return ok?v.vid:null;}
-function itemFromSong(song,yt){const v=teamVer(song);return{uid:uid(8),songId:song.id,title:song.title,key:(v&&v.key)||song.key||"",yt:yt||(song.yt||[])[0]||"",memo:"",verId:v?v.vid:"",pages:verPages(v)};}
+function itemFromSong(song,yt){const v=teamVer(song);return{uid:uid(8),songId:song.id,title:song.title,key:(v&&v.key)||song.key||"",yt:yt||"",memo:"",verId:v?v.vid:"",pages:verPages(v)};}
 /* 곡에 저장된 악보를 콘티로 가져올 때: 표시(형광펜 · 구간)는 「곡에도 반영」을 직접 고른 악보만 따라와요 */
 const verPages=v=>clone(v?v.pages||[]:[]).map(p=>v.keepMarks?p:{...p,marks:[]});
 
@@ -2048,7 +2049,7 @@ async function uploadScoreForItem(it,song,key,files,stEl){if(!curEditable())retu
 function titleRow(it,song,key){const canSong=song&&!String(song.id).startsWith("local-")&&S.db&&S.canWrite;
   const tIn=h("input",{type:"text",class:"ititle",id:`t-${it.uid}`,"aria-label":"곡 제목",value:it.title,oninput:e=>{it.title=e.target.value;markDirty();sync();}});
   const yIn=h("input",{type:"text",class:"iyt",id:`y-${it.uid}`,"aria-label":"레퍼런스 유튜브 주소",placeholder:"레퍼런스 유튜브 주소 붙여넣기",value:it.yt?ytUrl(it.yt):"",
-    onchange:e=>{const v=e.target.value.trim();const id=ytId(v);if(v&&!id){toast("유튜브 주소를 알아보지 못했어요");return;}it.yt=id||"";markDirty();if(id&&song)attachYt(song,id);sync();}});
+    onchange:e=>{const v=e.target.value.trim();const id=ytId(v);if(v&&!id){toast("유튜브 주소를 알아보지 못했어요");return;}it.yt=id||"";markDirty();sync();}});
   const listen=h("a",{class:"btn sm",target:"_blank",rel:"noopener",text:"듣기"});
   const fix=h("button",{type:"button",class:"btn sm",text:"곡 목록 제목도 바꾸기 · 팀 전체",title:"지난 콘티를 포함해 이 곡이 들어간 모든 곳의 제목이 바뀌어요",onclick:()=>renameSong(song,it.title.trim())});
   function sync(){listen.hidden=!it.yt;if(it.yt)listen.href=ytUrl(it.yt);fix.hidden=!(canSong&&it.title.trim()&&norm(it.title)!==norm(song.title));}
@@ -4006,8 +4007,8 @@ function finishPanel(c,where){const canRef=canUnlock();const y=teamCfg().yt;cons
   let saveT=null;const saveSec=k=>{clearTimeout(saveT);saveT=setTimeout(async()=>{try{await S.db.doc(`contis/${S.curId}`).update({[k]:clone(c[k]),updatedAt:Date.now()});}catch(e){console.error(e);toast("영상 주소를 저장하지 못했어요");}},600);};
   let no=0;const rows=SECTIONS.flatMap(([k,l])=>(c[k]||[]).map(it=>{no++;const lib=((songOf(it)||{}).yt||[])[0]||"";
     const link=h("a",{class:"btn sm",target:"_blank",rel:"noopener",text:"▶"});const ok=h("span",{class:"fin-ok"});
-    const upd=()=>{const v=ytOfItem(it);const id=v?ytId(v):"";link.href=id?`https://youtu.be/${id}`:(v||"#");link.style.visibility=v?"":"hidden";ok.textContent=v?(it.yt?"✓":"✓ 라이브러리"):"영상 없음";ok.classList.toggle("warn",!v);};
-    const inp=h("input",{type:"text",value:it.yt||"",placeholder:lib?"라이브러리 영상을 써요 · 다른 영상이면 붙여 넣기":"유튜브 주소 붙여 넣기",disabled:!canRef,
+    const upd=()=>{const v=ytOfItem(it);const id=v?ytId(v):"";link.href=id?`https://youtu.be/${id}`:(v||"#");link.style.visibility=v?"":"hidden";ok.textContent=v?"✓":"영상 없음";ok.classList.toggle("warn",!v);};
+    const inp=h("input",{type:"text",value:it.yt||"",placeholder:"유튜브 주소 붙여 넣기 (이 콘티에만)",disabled:!canRef,
       oninput:e=>{it.yt=e.target.value.trim();upd();updSum();saveSec(k);}});upd();
     return h("div",{class:"fin-row"},h("span",{class:"fin-no",text:String(no)}),h("div",{class:"fin-t"},h("b",{text:it.title}),it.key?h("span",{class:"cm-k",text:it.key}):null,h("span",{class:"hint",text:l})),
       h("div",{class:"fin-in"},inp,link,ok));}));
@@ -4017,7 +4018,7 @@ function finishPanel(c,where){const canRef=canUnlock();const y=teamCfg().yt;cons
     h("button",{class:"btn sm primary",text:"📣 변경사항 공지",onclick:()=>diffNotice(c)})):null;
   return h("div",{class:"sheet finish",id:"finishPanel"},h("h2",{},h("span",{text:"🔒 확정 후 마무리"}),h("span",{class:"sub",text:c.finalAt?`확정 ${fmtStamp(c.finalAt)}`:""})),
     sum,diff,
-    h("h3",{class:"fin-h",text:"연습 영상 (레퍼런스)"}),h("p",{class:"hint",style:"margin:0 0 8px",text:"비워 두면 곡 라이브러리의 대표 영상을 써요. 이번 주만 다른 편곡을 들려주려면 여기 붙여 넣으세요 (이 콘티에만 적용돼요)."}),
+    h("h3",{class:"fin-h",text:"연습 영상 (레퍼런스)"}),h("p",{class:"hint",style:"margin:0 0 8px",text:"연습 영상은 콘티마다 따로 정해요. 여기 붙인 영상은 이 콘티에만 쓰이고, 다른 팀 · 다른 콘티에는 나오지 않아요."}),
     h("div",{class:"fin-list"},rows),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:12px"},plBtn,h("button",{class:"btn primary",onclick:()=>finalNotice(c),text:"📣 최종 송리스트 공지"})),plSt,
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"},
