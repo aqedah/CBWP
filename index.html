@@ -1002,6 +1002,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("div",{id:"wordSlot",style:"grid-column:1/-1"}),
       fld("f-title","설교 제목",inp("f-title","sermonTitle","예: 참포도나무")),
       fld("f-preacher","설교자",inp("f-preacher","preacher","예: 이삭 목사")),
+      isProject()?fld("f-leadteam","찬양 섬김 팀",h("div",{},h("input",{type:"text",id:"f-leadteam",list:"leadteam-dl",placeholder:"예: 중앙성서워십 · 드림교회",value:c.leadTeam||"",oninput:e=>{c.leadTeam=e.target.value;markDirty();}}),h("datalist",{id:"leadteam-dl"},[...new Set([...TEAMS.map(t=>t.name),...S.contis.map(x=>x.leadTeam).filter(Boolean)])].map(v=>h("option",{value:v}))))):null,
       fld("f-reflist","레퍼런스 재생목록",h("div",{style:"display:flex;flex-direction:column;gap:4px"},refPlaylistLink(c),h("span",{class:"hint",text:"곡마다 붙인 유튜브 주소를 콘티 순서대로 이어 들어요"}))))));
   if(S.wordOpen)setTimeout(()=>toggleWord(c,editable,true),0);
   /* roster */
@@ -1680,11 +1681,62 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault}){
 /* =========================================================
    LIST TAB
    ========================================================= */
+/* 콘티 표로 내보내기: 엑셀(주마다 한 장 · 날짜마다 한 칸) 또는 CSV(콘티마다 한 줄) */
+const XLSX_URL="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+const dayLbl=ds=>{const d=parseD(ds);return `${d.getMonth()+1}/${d.getDate()}(${"주월화수목금토"[d.getDay()]}${d.getDay()?"":"일"})`;};
+const praiseOf=c=>{const ld=leaderOf(c);const tm=c.leadTeam||(isProject()?"":"");return tm?(ld?`${tm}(${ld})`:tm):ld;};
+function exportTableModal(){const today=todayStr();let from=weekStart(today),to=addDays(from,20),fmt="xlsx",fill=true;
+  const title=h("input",{type:"text",value:`${today.slice(0,4)} ${teamName(S.team)} 찬양 선곡`,style:"flex:1;min-width:220px","aria-label":"표 제목"});
+  const fI=h("input",{type:"date",value:from,style:"width:auto",onchange:e=>{from=e.target.value;cnt();}}),tI=h("input",{type:"date",value:to,style:"width:auto",onchange:e=>{to=e.target.value;cnt();}});
+  const setR=(a,b)=>{from=a;to=b;fI.value=a;tI.value=b;cnt();};
+  const ym=(y,m)=>{const a=new Date(y,m,1),b=new Date(y,m+1,0);const f=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;return[f(a),f(b)];};
+  const td=parseD(today);
+  const quick=h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},[["이번 주",()=>setR(weekStart(today),addDays(weekStart(today),6))],["이번 달",()=>setR(...ym(td.getFullYear(),td.getMonth()))],["다음 달",()=>setR(...ym(td.getFullYear(),td.getMonth()+1))],["지난 달",()=>setR(...ym(td.getFullYear(),td.getMonth()-1))],
+    ["모든 콘티",()=>{const ds=S.contis.filter(c=>c.date&&!c.noService).map(c=>c.date).sort();if(ds.length)setR(ds[0],ds[ds.length-1]);}]].map(([t,f])=>h("button",{type:"button",class:"btn sm ghost",text:t,onclick:f})));
+  const info=h("p",{class:"hint"});
+  const inR=()=>S.contis.filter(c=>c.date&&!c.noService&&c.date>=from&&c.date<=to).sort((a,b)=>a.date.localeCompare(b.date)||wtypeOf(a).localeCompare(wtypeOf(b)));
+  function cnt(){const n=inR().length;info.textContent=from>to?"시작 날짜가 끝 날짜보다 뒤예요":`이 기간 콘티 ${n}개`;go.disabled=!n||from>to;}
+  const opt=(name,val,cur,label,sub,on)=>h("label",{class:"pick",style:"align-items:flex-start"},h("input",{type:"radio",name,checked:cur===val,onchange:on}),h("span",{},h("b",{text:label}),sub?h("div",{class:"hint",text:sub}):null));
+  const fillCb=h("input",{type:"checkbox",checked:true,id:"tx-fill",onchange:e=>{fill=e.target.checked;}});
+  const go=h("button",{class:"btn primary",text:"⬇ 내려받기",onclick:async()=>{go.disabled=true;try{await (fmt==="xlsx"?exportXlsx:exportCsv)(inR(),{from,to,title:title.value.trim(),fill});md.close();}catch(e){console.error(e);toast("만들지 못했어요. 인터넷 연결을 확인해 주세요.");go.disabled=false;}}});
+  const md=modal("콘티 표로 내보내기",h("div",{class:"panel-body"},
+    h("div",{class:"lab",text:"기간"}),h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},fI,h("span",{text:"~"}),tI),quick,info,
+    h("div",{class:"lab",text:"표 제목"}),h("div",{class:"row"},title),
+    h("div",{class:"lab",text:"파일"}),h("div",{class:"picklist"},opt("tf","xlsx",fmt,"엑셀 (.xlsx)","주마다 한 장 · 날짜마다 한 칸 (날짜 · 설교자 · 제목 · 특송 · 찬양 · 곡 목록)",()=>{fmt="xlsx";}),
+      opt("tf","csv",fmt,"CSV","콘티마다 한 줄 · 다른 프로그램에서 쓰기 좋아요",()=>{fmt="csv";})),
+    h("label",{class:"row hint",htmlFor:"tx-fill",style:"gap:6px;margin-top:6px"},fillCb,"엑셀: 콘티가 없는 날도 칸을 비워 두기 (한 주를 다 보이게)")),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);cnt();}
+function colsOf(list,from,to,fill){/* 날짜마다 한 칸 (같은 날 콘티가 여럿이면 예배 이름을 붙여 여러 칸) */
+  const out=[];const days=[];for(let d=from;d<=to;d=addDays(d,1))days.push(d);
+  for(const d of days){const cs=list.filter(c=>c.date===d);if(!cs.length){if(fill)out.push({date:d,label:dayLbl(d),c:null});continue;}
+    cs.forEach(c=>out.push({date:d,label:dayLbl(d)+(cs.length>1?` ${wtypeOf(c)}`:""),c}));}
+  return out;}
+async function exportXlsx(list,o){await loadScript(XLSX_URL);const X=window.XLSX;const wb=X.utils.book_new();
+  const ws0=weekStart(o.from);let wk=0;
+  for(let a=ws0;a<=o.to;a=addDays(a,7)){const s0=a<o.from?o.from:a,e0=addDays(a,6)>o.to?o.to:addDays(a,6);const cols=colsOf(list,s0,e0,o.fill);if(!cols.some(x=>x.c))continue;wk++;
+    const cs=cols.map(x=>x.c);const songs=cs.map(c=>c?allItems(c).filter(it=>!(c.special||[]).includes(it)):[]);const nS=Math.max(1,...songs.map(x=>x.length));
+    const rowDef=[["설교자",c=>c?c.preacher||"":""],["제목",c=>c?c.sermonTitle||"":""],["본문",c=>c?c.passage||"":""],["특송",c=>c?(c.specialBy||((c.special||[])[0]||{}).title||""):""],["찬양",c=>c?praiseOf(c):""]]
+      .filter(([,f])=>cs.some(c=>f(c)));   /* 다 비어 있는 줄은 빼요 */
+    const aoa=[[null,o.title],["날짜",...cols.map(x=>x.label)],...rowDef.map(([l,f])=>[l,...cs.map(f)])];
+    const songStart=aoa.length;for(let i=0;i<nS;i++)aoa.push([i===0?"곡":null,...songs.map(arr=>arr[i]?`${i+1}. ${arr[i].title}${arr[i].key?` (${arr[i].key})`:""}`:"")]);
+    const ws=X.utils.aoa_to_sheet(aoa);
+    ws["!merges"]=[{s:{r:0,c:1},e:{r:0,c:Math.max(1,cols.length)}},...(nS>1?[{s:{r:songStart,c:0},e:{r:songStart+nS-1,c:0}}]:[])];
+    ws["!cols"]=[{wch:9},...cols.map(x=>{const c=x.c;const L=Math.max(10,...[x.label,...(c?[c.sermonTitle||"",praiseOf(c),...allItems(c).map(it=>`1. ${it.title}`)]:[])].map(t=>[...String(t)].reduce((a,ch)=>a+(/[가-힣]/.test(ch)?2:1),0)));return{wch:Math.min(48,L+2)};})];
+    X.utils.book_append_sheet(wb,ws,`${wk}주차`);}
+  if(!wk)return toast("이 기간에는 콘티가 없어요");
+  const buf=X.write(wb,{bookType:"xlsx",type:"array"});const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  if(await saveBlob(blob,`${o.title||teamName(S.team)}_${o.from}~${o.to}.xlsx`))toast(`엑셀 ${wk}장(주)을 저장했어요`);}
+async function exportCsv(list,o){const n=Math.max(1,...list.map(c=>allItems(c).length));
+  const head=["날짜","요일","예배","설교자","설교 제목","본문","특송","찬양 인도",...Array.from({length:n},(_,i)=>`곡 ${i+1}`)];
+  const q=v=>{v=String(v??"");return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v;};
+  const rows=list.map(c=>{const d=parseD(c.date);const its=allItems(c);return[c.date,"일월화수목금토"[d.getDay()],wtypeOf(c),c.preacher||"",c.sermonTitle||"",c.passage||"",c.specialBy||((c.special||[])[0]||{}).title||"",praiseOf(c),...Array.from({length:n},(_,i)=>its[i]?its[i].title+(its[i].key?` (${its[i].key})`:""):"")];});
+  const csv="﻿"+[head,...rows].map(r=>r.map(q).join(",")).join("\r\n");   /* 앞의 BOM: 엑셀에서 한글이 안 깨지게 */
+  if(await saveBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}),`${o.title||teamName(S.team)}_${o.from}~${o.to}.csv`))toast(`CSV (콘티 ${list.length}개)를 저장했어요`);}
 function renderList(m){let q="";
   const box=h("div",{class:"cards"});
   const search=h("input",{type:"search",id:"list-q",placeholder:"날짜 · 제목 · 곡 · 인도자로 찾기 (초성 가능)",oninput:e=>{q=e.target.value;draw();}});
   const nPast=S.contis.filter(c=>c.past).length;
-  m.append(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`이 프로그램으로 쓴 콘티 ${S.contis.length-nPast}개${nPast?` · 지난 콘티 ${nPast}개는 「지난 콘티 입력」에 있어요`:""}`})),search,h("div",{style:"height:12px"}),box));
+  m.append(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`이 프로그램으로 쓴 콘티 ${S.contis.length-nPast}개${nPast?` · 지난 콘티 ${nPast}개는 「지난 콘티 입력」에 있어요`:""}`})),search,h("div",{class:"row",style:"margin-top:8px"},h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal})),h("div",{style:"height:12px"}),box));
   function draw(){box.replaceChildren();
     const arr=S.contis.filter(c=>!c.past).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.updatedAt||0)-(a.updatedAt||0))
       .filter(c=>{if(!q.trim())return true;const hay=[dateKeys(c.date),wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),...allItems(c).map(i=>i.title)].join(" ");return hay.includes(q.trim())||matchRank(hay,q)>-1;});
@@ -2696,7 +2748,7 @@ function projectListSheet(){const today=todayStr();const all=S.contis.filter(c=>
   return h("div",{class:"sheet"},h("h2",{},teamName(S.team),h("span",{class:"row",style:"gap:6px"},h("span",{class:"sub",text:all.length?`${all.length}개 · ${keys.length}주`:"아직 콘티가 없어요"}),
       keys.length>1?h("button",{class:"btn sm ghost",text:allOpen?"모두 접기":"모두 펼치기",onclick:()=>{keys.forEach(k=>S.pwOpen[k]=!allOpen);render();}}):null)),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},keys.map(week)),
-    isWriter()?h("button",{class:"btn sm",style:"margin-top:8px",text:"+ 새 집회 콘티",onclick:()=>newConti()}):null);}
+    h("div",{class:"row",style:"margin-top:8px;gap:6px"},isWriter()?h("button",{class:"btn sm",text:"+ 새 집회 콘티",onclick:()=>newConti()}):null,h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal})));}
 /* 행사 프로젝트 홈: 앞으로 2주 달력 · 날마다 설교자 · 특송 */
 function projectCalSheet(){const today=todayStr();const st=weekStart(today);const DW="일월화수목금토";
   const cells=Array.from({length:14},(_,i)=>{const d=addDays(st,i);const dt=parseD(d);const cs=S.contis.filter(c=>c.date===d&&!c.noService);const hol=HOLIDAYS[d];
