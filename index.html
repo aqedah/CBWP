@@ -685,7 +685,8 @@ function cleanTitle(s){s=(s||"").replace(/https?:\/\/\S+/g," ");s=s.replace(/\[[
 const isPastConti=c=>!!(c.past||c.noService||(c.date&&c.date<todayStr()));
 /* 작성자 확인: 기기 로그인 번호(uid)가 같거나, 콘티에 적힌 작성자 이름이 지금 내 이름과 같으면 작성자 */
 function isAuthor(c){if(!c)return false;if(c.authorId&&c.authorId===S.myId)return true;const me=normName(typeof myName==="function"?myName():"");if(!me)return false;
-  const n=c.authorName||(c.authorId&&S.names[c.authorId])||"";return !!n&&normName(n)===me;}
+  const n=c.authorName||(c.authorId&&S.names[c.authorId])||"";return !!n&&(normName(n)===me||bareName(n)===bareName(me));}
+const bareName=n=>normName(n).replace(/(담임목사|부목사|목사님|목사|전도사님|전도사|강도사|선교사|장로님|장로|권사님|권사|집사님|집사|간사|선생님|형제|자매|님)$/,"");
 function canDeleteConti(c){if(!S.db||!c||!c.id||!S.canWrite)return false;if(S.isOwner)return true;return isPastConti(c)?canLead():isAuthor(c);}
 function canDeletePast(c){if(!S.db||!c||!c.id||!S.canWrite)return false;return S.isOwner||canLead()||(!isPastConti(c)&&isAuthor(c));}
 /* 다가오는 예배 날짜: 이 팀이 주로 예배드린 요일(없으면 주일) 중 오늘부터 가장 가까운 날 */
