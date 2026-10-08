@@ -696,12 +696,12 @@ function blankConti(){const d=nextServiceDate(),pl=(S.posts||[]).find(p=>p.id===
 const teamCfg=()=>S.teamCfgs[S.team]||{};
 const fixedOpening=()=>(teamCfg().fixedOpening||[]).map(it=>({...clone(it),uid:uid(8)}));
 async function setFixedOpening(items){if(!S.db||!S.team)return;try{await S.db.doc(`teams/${S.team}`).set({...teamCfg(),fixedOpening:clone(items).map(it=>({...it,memo:""})),updatedAt:Date.now()});}catch(e){toast("저장하지 못했어요");}}
-function fixConti(c){for(const[k]of SECTIONS)c[k]=c[k]||[];if(c.wtype)c.wtype=normWtype(c.wtype,c.team);return c;}
+function fixConti(c){for(const[k]of SECTIONS)c[k]=c[k]||[];if(!Array.isArray(c.roster))c.roster=[];if(c.wtype)c.wtype=normWtype(c.wtype,c.team);return c;}
 function saveDraft(){if(!S.team)return;if(!S.draftOwner)S.draftOwner={id:S.myId||null,name:(typeof myName==="function"?myName():"")||""};
   try{localStorage.setItem(draftKey(),JSON.stringify({curId:S.curId,cur:S.cur,dirty:S.dirty,owner:S.draftOwner}));}catch(e){}}
 function isMineDraft(){const o=S.draftOwner;if(!o||o.legacy)return false;if(o.id&&S.myId)return o.id===S.myId;return !!o.name&&normName(o.name)===normName(myName());}
 function loadDraft(){try{const d=JSON.parse(localStorage.getItem(draftKey())||"null");if(d&&d.cur){S.cur=fixConti(d.cur);S.curId=d.curId||null;S.dirty=!!d.dirty;S.draftOwner=d.owner||{legacy:true};return true;}}catch(e){}return false;}
-let draftT;function markDirty(){S.dirty=true;if(refPlaylistLink.upd&&document.getElementById("f-reflist"))refPlaylistLink.upd();clearTimeout(draftT);draftT=setTimeout(saveDraft,400);clearTimeout(histT);const ev=window.event;if(ev&&ev.type==="input")histT=setTimeout(snapHist,700);else snapHist();updateStatus();}
+let draftT;function markDirty(){S.dirty=true;scheduleAutoSave();if(refPlaylistLink.upd&&document.getElementById("f-reflist"))refPlaylistLink.upd();clearTimeout(draftT);draftT=setTimeout(saveDraft,400);clearTimeout(histT);const ev=window.event;if(ev&&ev.type==="input")histT=setTimeout(snapHist,700);else snapHist();updateStatus();}
 /* undo history for the write tab: snapshots of the conti being written */
 let histT;const H={owner:null,list:[],last:null};
 function initHist(){if(H.owner!==S.cur){H.owner=S.cur;H.list=[];H.last=JSON.stringify(S.cur);}}
@@ -947,7 +947,7 @@ function render(){const m=$("#main");m.replaceChildren();document.body.classList
   setTimeout(tryDeep,0);
   if(!tabAllowed(groupOf(S.tab),S.tab)&&!(S.tab==="write"&&S.curId)){S.tab="home";syncNav();}
   const st=subTabs();if(st)m.append(st);
-  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend,lineup:renderLineup,ppt:renderPpt,pptmake:renderPptMake,sheet:renderSheet})[S.tab](m);}
+  ({home:renderHome,write:renderWrite,list:renderPast,past:renderPast,songs:renderSongs,members:renderMembers,stats:renderStats,bible:renderBible,cal:renderCal,bylaws:renderBylaws,me:renderMe,attend:renderAttend,lineup:renderLineup,ppt:renderPpt,pptmake:renderPptMake,sheet:renderSheet})[S.tab](m);updateStatus();}
 /* stand-alone app: unlock writing with a team password (or the admin password) */
 function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lead$/.test(team);const tn=isLead?`${teamName(team.replace(/_lead$/,""))} 리더`:teamName(team);
   const nameIn=h("input",{type:"text",id:"ul-name",placeholder:"이름 (콘티 작성자로 보여요)",value:window.CBWP.myName()||""});
@@ -1491,9 +1491,22 @@ function openLoadPast(){let q="";const box=h("div",{class:"cards"});
       h("div",{class:"row"},h("span",{class:"spacer"}),h("button",{class:"btn sm",text:"곡만 불러오기",onclick:()=>load(c,false)}),h("button",{class:"btn sm primary",text:"곡 + 참여자 불러오기",onclick:()=>load(c,true)}))));}
   const md=modal("지난 콘티 불러오기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"고른 콘티의 곡 순서를 지금 쓰는 콘티에 그대로 가져와요. 날짜 · 설교 정보는 그대로 두고, 지금 들어 있는 곡은 바뀌어요."}),search,h("div",{style:"height:10px"}),box),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);draw();search.focus();}
-function updateStatus(){for(const el of document.querySelectorAll("#saveStatus,#saveStatus2")){
+/* 자동 저장: 한 번 저장한 콘티는 고친 뒤 4초 동안 손을 멈추면 팀 저장소에 저절로 올라가요.
+   새 콘티(처음 저장 전)와 날짜 · 예배를 바꾼 콘티는 직접 「저장」을 눌러야 해요 (다른 콘티를 덮어쓰지 않게). */
+let autoT=null,autoBusy=false;S.autoNote="";
+function scheduleAutoSave(){clearTimeout(autoT);autoT=setTimeout(autoSave,4000);}
+async function autoSave(){if(!S.dirty||!S.db||!S.cur)return;if(!S.curId){S.autoNote="new";updateStatus();return;}if(!curEditable()||autoBusy)return;
+  const old=S.contis.find(x=>x.id===S.curId);if(!old||old.date!==S.cur.date||wtypeOf(old)!==wtypeOf(S.cur)){S.autoNote="moved";updateStatus();return;}
+  if(document.activeElement&&document.activeElement.isContentEditable)return scheduleAutoSave();
+  autoBusy=true;const c=S.cur;const snap=JSON.stringify(c);
+  const body={...clone(c),team:c.team||S.team,status:statusOf(c),updatedAt:Date.now(),authorId:old.authorId??c.authorId??S.myId??null,authorName:old.authorName||c.authorName||"",createdAt:old.createdAt||c.createdAt||Date.now()};delete body.id;
+  try{await S.db.doc(`contis/${S.curId}`).set(body);if(JSON.stringify(S.cur)===snap){S.dirty=false;H.last=snap;}S.autoNote="";S.autoAt=Date.now();saveDraft();updateStatus();rememberFlows(c);}
+  catch(e){console.error(e);S.autoNote="fail";updateStatus();}finally{autoBusy=false;if(S.dirty)scheduleAutoSave();}}
+function updateStatus(){for(const el of document.querySelectorAll("#saveStatus,#saveStatus2,#saveStatus3")){
   el.className="status"+(S.dirty?" dirty":"");
-  el.textContent=S.dirty?"저장하지 않은 변경이 있어요":(S.curId?"팀 저장소에 저장됨":"아직 저장 전");}}
+  const t=S.autoAt?new Date(S.autoAt):null;const hm=t?`${t.getHours()}:${String(t.getMinutes()).padStart(2,"0")}`:"";
+  el.textContent=S.dirty?(S.autoNote==="new"?"새 콘티 · 처음 한 번 「저장」을 눌러 주세요 (그다음부터 자동 저장)":S.autoNote==="moved"?"날짜 · 예배가 바뀌었어요 · 「저장」을 눌러 주세요":S.autoNote==="fail"?"자동 저장 실패 · 「저장」을 눌러 주세요":S.curId&&curEditable()?"고치는 중… 곧 자동 저장돼요":"저장하지 않은 변경이 있어요")
+    :(S.curId?(hm?`자동 저장됨 ${hm}`:"팀 저장소에 저장됨"):"아직 저장 전");}}
 /* YouTube can play a list of videos without an account: watch_videos?video_ids=a,b,c (up to 50) */
 const ytOfItem=i=>i.yt||((songOf(i)||{}).yt||[])[0]||"";
 const refIds=c=>[...new Set(allItems(c).map(ytOfItem).filter(Boolean))].slice(0,50);
@@ -2015,12 +2028,12 @@ async function saveConti(mode){if(!curEditable())return;const c=S.cur;
         h("button",{class:"btn primary",style:"white-space:normal;text-align:left",text:`새 콘티로 따로 저장 (추천) — 「${was}」는 그대로 두고 「${now}」를 새로 만들어요`,onclick:()=>{md.close();S.curId=null;S.cur.authorId=null;delete S.cur.createdAt;saveConti("new");}}),
         h("button",{class:"btn",style:"white-space:normal;text-align:left",text:`이 콘티를 옮기기 — 「${was}」 콘티가 「${now}」(으)로 바뀌어요`,onclick:()=>{md.close();saveConti("move");}}))),
       [h("button",{class:"btn",text:"취소",onclick:()=>md.close()})]);})();}
-  const btn=$("#saveBtn");btn.disabled=true;btn.textContent="저장 중…";
+  clearTimeout(autoT);const btn=$("#saveBtn")||{};btn.disabled=true;btn.textContent="저장 중…";
   const body={...clone(c),team:c.team||S.team,status:$("#f-status")?$("#f-status").value:statusOf(c),updatedAt:Date.now()};
   try{
     if(!S.curId){const ref=S.db.collection("contis").doc();body.authorId=S.myId||null;body.authorName=myName()||"";body.createdAt=Date.now();await ref.set(body);S.curId=ref.id;S.cur=body;}
     else{const old=S.contis.find(x=>x.id===S.curId);body.authorId=old?.authorId??c.authorId??S.myId??null;body.authorName=old?.authorName||c.authorName||(body.authorId===S.myId?myName():S.names[body.authorId])||"";body.createdAt=old?.createdAt||c.createdAt||Date.now();await S.db.doc(`contis/${S.curId}`).set(body);S.cur=body;}
-    H.owner=S.cur;H.last=JSON.stringify(S.cur);S.dirty=false;saveDraft();toast("저장했어요. 팀원 모두에게 보여요.");render();rememberFlows(S.cur);
+    H.owner=S.cur;H.last=JSON.stringify(S.cur);S.dirty=false;S.autoNote="";saveDraft();toast("저장했어요. 팀원 모두에게 보여요.");render();rememberFlows(S.cur);
   }catch(e){toast(e&&e.code==="invalid_argument"?"저장 권한이 없어요":"저장하지 못했어요. 다시 눌러 주세요.");btn.disabled=false;btn.textContent="저장";}}
 /* is there really unsaved work in the write tab? (empty drafts and drafts identical to the saved conti don't count) */
 const draftSig=c=>JSON.stringify([c.date,c.wtype,c.wtypeCustom||"",c.sermonTitle||"",c.passage||"",c.preacher||"",c.memo||"",
@@ -3693,7 +3706,7 @@ function markWords(t,ws){const re=new RegExp(ws.map(w=>w.replace(/[.*+?^${}()|[\
 function meditSheet(){const c=S.cur;const can=!!c&&curEditable();
   const ta=h("textarea",{id:"medit",style:"min-height:110px",value:(c&&c.meditation)||"",disabled:!can,placeholder:"말씀을 읽고 받은 마음, 이번 예배의 흐름을 적어 두세요. 콘티 공지에 함께 들어가요.",oninput:e=>{c.meditation=e.target.value;markDirty();saveDraft();}});
   return h("div",{class:"sheet"},h("h2",{},"묵상 메모",h("span",{class:"sub",text:can?"지금 쓰는 콘티에 함께 저장돼요":"콘티를 쓰는 인도자만 적을 수 있어요"})),ta,
-    can?h("div",{class:"row",style:"margin-top:8px"},h("span",{class:"hint",text:"「콘티 작성」에서 「콘티 저장」을 눌러야 팀에 올라가요"}),h("span",{class:"spacer"}),h("button",{class:"btn sm primary",text:"콘티 작성으로 →",onclick:()=>setTab("write")})):null);}
+    can?h("div",{class:"row",style:"margin-top:8px;gap:8px;flex-wrap:wrap"},h("button",{class:"btn primary",id:"saveBtn",text:"저장",onclick:()=>saveConti()}),h("span",{class:"status",id:"saveStatus3"}),h("span",{class:"spacer"}),h("button",{class:"btn sm",text:"콘티 작성으로 →",onclick:()=>setTab("write")})):null);}
 /* 콘티 공지: 본문 · 묵상 · 곡 순서 · 재생목록 · 악보 보기 */
 /* 카톡에 공유할 링크: 누르면 그 팀 · 그 콘티가 바로 열려요 */
 const contiLink=c=>`${location.origin}${location.pathname}#t=${encodeURIComponent(teamOf(c)||S.team||"")}${c.id?`&c=${c.id}`:""}${c.date?`&d=${c.date}`:""}`;
@@ -4794,7 +4807,7 @@ render();
   if(!db){S.dbFailed=true;S.ready=true;render();return;}
   let got=0;const done=()=>{if(++got===6){S.ready=true;render();}};
   const onErr=e=>{console.warn(e);if(e&&e.code!=="unavailable"){S.dbFailed=true;S.ready=true;render();}};
-  const rerender=()=>{if(!S.ready)return;if(!S.team){render();return;}if(S.tab==="write"||S.tab==="sheet")return;
+  const rerender=()=>{if(!S.ready)return;if(!S.team){render();return;}if(S.tab==="write"||S.tab==="sheet")return;if(S.tab==="bible"){const a=document.activeElement;if((a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))||document.querySelector(".modal"))return;}
     if((S.tab==="cal"||S.tab==="home")&&document.querySelector(".modal"))return;
     if(S.tab==="home"){const a=document.activeElement;if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))return;}
     if(S.tab==="past"||S.tab==="list"){const a=document.activeElement;if(!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))&&!document.querySelector(".modal"))render();return;}
