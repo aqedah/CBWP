@@ -1106,18 +1106,23 @@ function dupModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣�
             onchange:async e=>{const t=e.target.value.trim();if(!t||t===sg.title){e.target.value=sg.title;return;}await renameSong(sg,t);if(norm(nm.value)===norm(t)||sg.id===keep)nm.value=t;}}),h("div",{class:"hint",text:info(sg)}),
           sg.lyrics?h("details",{},h("summary",{class:"hint",text:"가사 앞부분"}),h("div",{class:"hint",style:"white-space:pre-wrap",text:(sg.lyrics||"").trim().split("\n").slice(0,4).join("\n")})):null),
         h("div",{style:"display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex:none"},
-          h("label",{class:"hint row",style:"gap:4px"},h("input",{type:"checkbox",checked:true,onchange:e=>{e.target.checked?pick.add(sg.id):pick.delete(sg.id);}}),"합치기에 넣기"),
+          (()=>{const lab=h("span",{text:"같은 곡 · 합치기"});const row=h("label",{class:"hint row",style:"gap:4px",title:"체크를 풀면 이 곡은 합치지 않고 따로 남아요"},h("input",{type:"checkbox",checked:true,onchange:e=>{const on=e.target.checked;on?pick.add(sg.id):pick.delete(sg.id);lab.textContent=on?"같은 곡 · 합치기":"다른 곡 · 따로 두기";row.style.color=on?"":"var(--warn)";}}),lab);return row;})(),
           (()=>{let armed=false;const b=h("button",{type:"button",class:"btn sm ghost danger",text:"곡 지우기",title:"이 곡만 라이브러리에서 지워요 (이미 쓴 콘티에는 제목이 남아요)",onclick:async()=>{
             if(!armed){armed=true;b.textContent="정말 지울까요?";setTimeout(()=>{armed=false;b.textContent="곡 지우기";},3000);return;}
             try{await S.db.doc(`songs/${sg.id}`).delete();const i=S.songs.indexOf(sg);if(i>=0)S.songs.splice(i,1);toast(`「${sg.title}」을(를) 지웠어요`);draw();renderSongs.redraw&&renderSongs.redraw();}catch(err){toast("지우지 못했어요");}}});return b;})())));
       box.append(h("div",{class:"card",style:"display:flex;flex-direction:column;gap:6px"},
-        h("div",{class:"hint",text:"● 남길 곡을 고르면, 체크한 다른 곡의 악보 · PPT · 가사 · 유튜브를 남길 곡으로 모으고 다른 곡은 지워요. 콘티에 쓴 곡은 남긴 곡으로 이어져요. 다른 곡이면 제목을 바로 고치거나 필요 없는 곡만 「곡 지우기」하고, 남은 곡들은 「중복 아님」을 누르세요."}),
+        h("div",{class:"hint",text:"● 남길 곡을 고르면, 체크한 다른 곡의 악보 · PPT · 가사 · 유튜브를 남길 곡으로 모으고 다른 곡은 지워요. 콘티에 쓴 곡은 남긴 곡으로 이어져요. 다른 곡은 체크를 풀면(「따로 두기」) 합치지 않고 남아요. 제목을 바로 고치거나 필요 없는 곡만 「곡 지우기」할 수도 있어요. 모두 다른 곡이면 「중복 아님」을 누르세요."}),
         ...rows,
         h("div",{class:"row",style:"gap:6px"},h("span",{class:"hint",text:"합친 뒤 제목"}),nm),
         h("div",{class:"row",style:"gap:6px"},h("span",{class:"spacer"}),
           h("button",{class:"btn sm ghost",text:"중복 아님",title:"이 곡들은 서로 다른 곡이에요 (다시 묶지 않아요)",onclick:async()=>{for(const sg of arr){const nd=[...new Set([...(sg.notDup||[]),...arr.filter(x=>x!==sg).map(x=>x.id)])];sg.notDup=nd;try{await S.db.doc(`songs/${sg.id}`).update({notDup:nd});}catch(e){}}draw();}}),
           h("button",{class:"btn sm primary",text:"합치기",onclick:async e=>{const others=arr.filter(x=>x.id!==keep&&pick.has(x.id));if(!others.length)return toast("합칠 다른 곡을 체크해 주세요");
-            e.currentTarget.disabled=true;await mergeSongs(arr.find(x=>x.id===keep),others,nm.value.trim());draw();renderSongs.redraw&&renderSongs.redraw();}}))));}}
+            e.currentTarget.disabled=true;const kp=arr.find(x=>x.id===keep);await mergeSongs(kp,others,nm.value.trim());
+            /* 체크를 푼 곡은 따로 남기고, 다시 묶이지 않게 「중복 아님」으로 */
+            const stay=arr.filter(x=>x.id!==keep&&!pick.has(x.id));
+            for(const sg of [kp,...stay]){const add=[kp,...stay].filter(x=>x!==sg).map(x=>x.id);const nd=[...new Set([...(sg.notDup||[]),...add])];if(nd.length===(sg.notDup||[]).length)continue;sg.notDup=nd;try{await S.db.doc(`songs/${sg.id}`).update({notDup:nd});}catch(err){}}
+            if(stay.length)toast(`합쳤어요. 체크를 푼 ${stay.length}곡은 따로 남겼어요`,3500);
+            draw();renderSongs.redraw&&renderSongs.redraw();}}))));}}
   const md=modal("중복 곡 찾기 · 합치기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"제목이 같거나, 「제목(첫 줄)」 · 찬송가 장 · 제목 목록의 다른 이름이 겹치는 곡을 묶어 보여 줘요. 다른 곡이면 「중복 아님」을 누르세요."}),st,box),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);
   draw();}
 async function mergeSongs(keep,others,title){if(!keep)return;const upd={};const vs=clone(vers(keep));const used=new Set(vs.map(v=>v.vid));
