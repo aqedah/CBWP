@@ -1089,9 +1089,9 @@ det.append(h("summary",{},h2),...[...d.childNodes]);secEls.special=det;}
   const sM=(h("div",{class:"sheet"},h("h2",{text:"메모"}),
     h("textarea",{id:"f-memo",placeholder:"리허설 시간, 전달 사항 등",value:c.memo||"",oninput:e=>{c.memo=e.target.value;markDirty();}})));
   /* 번호 01~07 그대로, 칸은 탭 4개로 묶어요 */
-  [sI,sR,secEls.opening,secEls.before,secEls.special,secEls.after,sM].forEach((el,i)=>{const h2=el.querySelector(":scope > h2, :scope > summary > h2");if(!h2)return;const first=h2.firstChild;
+  [sI,sR,sM,secEls.opening,secEls.before,secEls.special,secEls.after].forEach((el,i)=>{const h2=el.querySelector(":scope > h2, :scope > summary > h2");if(!h2)return;const first=h2.firstChild;
     const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
-  const WT=[["info","예배 정보 · 참여자",[],[sI,sR]],["songs","찬양",["opening","before","special","after"],[secEls.opening,secEls.before,secEls.special,secEls.after]],["memo","메모",[],[sM]]];
+  const WT=[["info","예배 정보 · 참여자 · 메모",[],[sI,sR,sM]],["songs","찬양",["opening","before","special","after"],[secEls.opening,secEls.before,secEls.special,secEls.after]]];
   if(["opening","before","after"].includes(S.wTab))S.wTab="songs";if(!WT.some(x=>x[0]===S.wTab))S.wTab="info";
   const panels=WT.map(([id,,,els])=>h("div",{class:"wpanel","data-wt":id,hidden:id!==S.wTab},els));
   const wtabs=h("div",{class:"wtabs",role:"tablist","aria-label":"콘티 작성 칸"},WT.map(([id,label,keys])=>h("button",{type:"button",role:"tab",class:"wtab","data-wt":id,"data-keys":keys.join(","),"aria-selected":String(id===S.wTab),onclick:()=>setWT(id)},
