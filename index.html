@@ -146,6 +146,8 @@ fieldset{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:col
 .slot-people{display:flex;flex-wrap:wrap;gap:4px;min-height:24px}
 .slot .add{align-self:flex-start}
 .slot-x{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font-size:1rem}
+.slot-plus{margin-left:auto;width:28px;height:28px;border-radius:50%;border:1px solid var(--team,var(--accent));background:var(--sheet);color:var(--team,var(--accent));font-size:1.15rem;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.slot-plus:hover{background:var(--team,var(--accent));color:#fff}
 
 /* setlist */
 .setlist{display:flex;flex-direction:column;gap:8px}
@@ -1622,10 +1624,9 @@ function renderRoster(){const box=$("#rosterBox");if(!box)return;box.replaceChil
   c.roster.forEach((slot,si)=>{
     box.append(h("div",{class:"slot"},
       h("div",{class:"slot-head"},h("strong",{text:slot.pos}),
-        h("button",{class:"slot-x",title:"자리 빼기","aria-label":`${slot.pos} 자리 빼기`,text:"×",onclick:()=>{c.roster.splice(si,1);markDirty();renderRoster();}})),
+        h("button",{type:"button",class:"slot-plus",title:`${slot.pos} 이름 고르기`,"aria-label":`${slot.pos} 이름 고르기`,text:"+",onclick:()=>openPicker(slot,null,c.roster)})),
       h("div",{class:"slot-people"},slot.people.length?slot.people.map((p,pi)=>h("span",{class:"chip"},p.name,p.tier&&!["정규","정회원"].includes(p.tier)?h("span",{class:`tier t${p.tier}`,text:p.tier}):null,
-        h("button",{"aria-label":`${p.name} 빼기`,text:"×",onclick:()=>{slot.people.splice(pi,1);markDirty();renderRoster();}}))):h("span",{class:"hint",text:"비어 있음"})),
-      h("button",{class:"btn sm add",text:"+ 이름 고르기",onclick:()=>openPicker(slot,null,c.roster)})));});}
+        h("button",{"aria-label":`${p.name} 빼기`,text:"×",onclick:()=>{slot.people.splice(pi,1);markDirty();renderRoster();}}))):h("span",{class:"hint",text:"비어 있음"}))));});}
 
 function openPicker(slot,onApply,roster,badge){const chosen=new Map(slot.people.map(p=>[p.id||("x:"+p.name),p]));
   const mine=S.members.filter(mb=>(mb.positions||[]).includes(slot.pos)),others=S.members.filter(mb=>!(mb.positions||[]).includes(slot.pos));
