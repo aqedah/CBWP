@@ -236,6 +236,7 @@ html{scrollbar-gutter:stable}
 .vs-item{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--sheet);cursor:pointer;font:inherit;color:var(--ink)}
 .vs-item.on,.vsplit .vcard.on{border-color:var(--team,var(--accent));box-shadow:0 0 0 2px color-mix(in srgb,var(--team,var(--accent)) 35%,transparent)}
 @media (max-width:760px){.vsplit{grid-template-columns:1fr}.vs-list{position:static;max-height:none}.vs-prev{order:-1;max-height:55vh;overflow:auto}}
+.fchk{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.88rem;cursor:pointer;color:var(--ink)}.fchk input{width:18px;height:18px;margin:0}.fchk.dim{opacity:.45}
 .wb.wb2{grid-template-columns:minmax(0,1fr) minmax(300px,380px)}
 .spdet>summary{list-style:none;cursor:pointer}.spdet>summary::-webkit-details-marker{display:none}
 .spdet>summary h2::after{content:"▸";margin-left:8px;color:var(--muted);font-size:.9rem;transition:transform .15s}.spdet[open]>summary h2::after{transform:rotate(90deg)}
@@ -4516,22 +4517,29 @@ function renderPpt(m){const can=S.canWrite&&!!S.db;const list=pptTpls();const de
       list.length?h("div",{class:"tplgrid"},cards):can?h("label",{class:"dropzone"},mkFin(),h("b",{text:"⬆ 여기를 눌러 PPT 템플릿을 올리거나, 파일을 끌어다 놓으세요"}),h("span",{class:"hint",text:"아직 템플릿이 없어요. 지금은 검은 바탕에 흰 글씨로 만들어져요."})):h("div",{class:"empty",text:"아직 템플릿이 없어요. 지금은 검은 바탕에 흰 글씨로 만들어져요."})))));
   m.append(pptDbSheet());}
 /* PPT 라이브러리: 곡마다 PPT 있음/없음, 찾기, 보기·받기·넣기 */
-function pptDbSheet(){if(!S.pptF)S.pptF={f:"has",q:""};const F=S.pptF;const box=h("div",{class:"cards"});const can=S.canWrite&&!!S.db;
+function pptDbSheet(){if(!S.pptF||S.pptF.f)S.pptF={all:true,p:true,l:true,q:""};const F=S.pptF;const box=h("div",{class:"cards"});const can=S.canWrite&&!!S.db;
   const q=h("input",{type:"search",placeholder:"곡 찾기 · 초성",value:F.q,oninput:e=>{F.q=e.target.value;draw();}});
-  const chips=h("div",{class:"chipbar"},[["has","PPT 있는 곡"],["lyr","가사만 있는 곡"],["none","PPT·가사 없는 곡"],["all","전체"]].map(([k,l])=>h("button",{type:"button",class:"fchip","aria-pressed":String(F.f===k),text:l,onclick:()=>{F.f=k;[...chips.children].forEach(b=>b.setAttribute("aria-pressed",String(b.textContent===l)));draw();}})));
+  /* 체크: 전체 / PPT 있음 / 가사 있음 — 두 칸을 켜고 끄는 조합으로 네 경우를 모두 골라요 */
+  const ck=(key,label)=>{const i=h("input",{type:"checkbox",checked:!!F[key],onchange:e=>{F[key]=e.target.checked;if(key!=="all")F.all=false;sync();draw();}});return[h("label",{class:"fchk"},i,label),i];};
+  const [cA,iA]=ck("all","전체"),[cP,iP]=ck("p","PPT 있음"),[cL,iL]=ck("l","가사 있음");
+  const sync=()=>{iA.checked=F.all;iP.checked=F.p;iL.checked=F.l;cP.classList.toggle("dim",F.all);cL.classList.toggle("dim",F.all);};sync();
+  const chips=h("div",{class:"chipbar",style:"gap:14px"},cA,cP,cL);
   const hasP=x=>!!(x.ppt&&(x.ppt.slides||[]).length);
   function draw(){box.replaceChildren();let arr=S.songs.slice();if(F.q.trim())arr=arr.filter(x=>matchRank(x.title,F.q)>-1);
-    arr=arr.filter(x=>F.f==="all"?true:F.f==="has"?hasP(x):F.f==="lyr"?!hasP(x)&&(x.lyrics||"").trim():!hasP(x)&&!(x.lyrics||"").trim()).sort((a,b)=>F.f==="has"?(((b.ppt||{}).at||b.updatedAt||0)-((a.ppt||{}).at||a.updatedAt||0)):a.title.localeCompare(b.title,"ko"));
-    const lim=F.q.trim()?40:F.f==="has"?10:60;
-    box.append(h("div",{class:"hint",text:F.q.trim()?`${arr.length}곡${arr.length>lim?` · ${lim}곡까지 보여요`:""}`:`${arr.length}곡 중 ${F.f==="has"?"최근 올린 ":""}${Math.min(lim,arr.length)}곡 · 다른 곡은 위에서 찾아 주세요`}));
+    const hasL=x=>!!(x.lyrics||"").trim();
+    if(!F.all)arr=arr.filter(x=>hasP(x)===!!F.p&&hasL(x)===!!F.l);
+    arr.sort((a,b)=>(((b.ppt||{}).at||b.updatedAt||0)-((a.ppt||{}).at||a.updatedAt||0)));
+    const what=F.all?"전체":`${F.p?"PPT 있고":"PPT 없고"} ${F.l?"가사 있는":"가사 없는"} 곡`;
+    const lim=F.q.trim()?40:60;
+    box.append(h("div",{class:"hint",text:`${what} ${arr.length}곡${arr.length>lim?` · 최근 고친 ${lim}곡까지 보여요 · 다른 곡은 위에서 찾아 주세요`:""}`}));
     for(const x of arr.slice(0,lim)){const p=x.ppt||{};const up=can?h("input",{type:"file",accept:".pptx",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)uploadSongPpt(x,f);}}):null;
       box.append(h("div",{class:"card pmrow"},h("div",{style:"flex:1;min-width:180px"},h("b",{text:x.title}),h("div",{class:"hint",text:hasP(x)?`PPT ${p.slides.length}장${p.from?` · ${p.from}`:""}${p.fileId?" · 원본 보관":""}`:(x.lyrics||"").trim()?"가사만 있어요 (템플릿으로 PPT를 만들 수 있어요)":"PPT · 가사 없음"})),
         hasP(x)||(x.lyrics||"").trim()?h("button",{class:"btn sm primary",text:"보기 · 받기",onclick:()=>songPptModal(x)}):null,
         can?h("span",{class:"btn sm filebtn"},hasP(x)?"다시 올리기":"PPT 넣기",up):null,
-        can&&hasP(x)?h("button",{class:"btn sm ghost danger",text:"PPT 지우기",title:"넣어 둔 PPT 장면만 지워요 (곡 · 가사는 그대로)",onclick:()=>askConfirm("곡 PPT 지우기",[h("p",{text:`「${x.title}」에 넣어 둔 PPT를 지울까요? 곡과 가사는 그대로 남아요.`})],"삭제",async()=>{
+        can&&hasP(x)?h("button",{class:"btn sm danger",text:"PPT 지우기",title:"넣어 둔 PPT 장면만 지워요 (곡 · 가사는 그대로)",onclick:()=>askConfirm("곡 PPT 지우기",[h("p",{text:`「${x.title}」에 넣어 둔 PPT를 지울까요? 곡과 가사는 그대로 남아요.`})],"삭제",async()=>{
           try{await S.db.doc(`songs/${x.id}`).update({ppt:null,updatedAt:Date.now()});x.ppt=null;toast("PPT를 지웠어요");draw();}catch(e){toast("지우지 못했어요");}})}):null,
         can?h("button",{class:"btn sm",text:(x.lyrics||"").trim()?"가사 고치기":"가사 넣기",title:"이 곡의 가사를 고쳐요 (PPT에 들어가는 가사)",onclick:()=>songLyricsEdit(x,()=>draw())}):null,
-        can?h("button",{class:"btn sm ghost danger",text:"곡 지우기",title:"잘못 들어간 곡을 라이브러리에서 지워요",onclick:()=>askConfirm("곡 지우기",[h("p",{text:`「${x.title}」을(를) 라이브러리에서 지울까요? 가사 · PPT · 악보 정보가 함께 지워져요. 이미 쓴 콘티에는 제목이 남아요.`})],"곡 지우기",async()=>{
+        can?h("button",{class:"btn sm danger",text:"곡 지우기",title:"잘못 들어간 곡을 라이브러리에서 지워요",onclick:()=>askConfirm("곡 지우기",[h("p",{text:`「${x.title}」을(를) 라이브러리에서 지울까요? 가사 · PPT · 악보 정보가 함께 지워져요. 이미 쓴 콘티에는 제목이 남아요.`})],"곡 지우기",async()=>{
           try{await S.db.doc(`songs/${x.id}`).delete();S.songs=S.songs.filter(y=>y.id!==x.id);toast("곡을 지웠어요");draw();}catch(e){toast("지우지 못했어요");}})}):null));}}
   draw();
   return h("div",{class:"sheet"},h("h2",{},"곡별 PPT",h("span",{class:"sub",text:"곡마다 가사 슬라이드를 모아 두는 곳"})),q,h("div",{style:"height:8px"}),chips,can?h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal})):null,h("div",{style:"height:10px"}),box);}
