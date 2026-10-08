@@ -1091,8 +1091,8 @@ det.append(h("summary",{},h2),...[...d.childNodes]);secEls.special=det;}
   /* 번호 01~07 그대로, 칸은 탭 4개로 묶어요 */
   [sI,sR,secEls.opening,secEls.before,secEls.special,secEls.after,sM].forEach((el,i)=>{const h2=el.querySelector(":scope > h2, :scope > summary > h2");if(!h2)return;const first=h2.firstChild;
     const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
-  const WT=[["info","예배 정보 · 참여자",[],[sI,sR]],["opening","여는 찬양",["opening"],[secEls.opening]],["before","예배 찬양 · 특송",["before","special"],[secEls.before,secEls.special]],["after","설교 후 찬양 · 메모",["after"],[secEls.after,sM]]];
-  if(!WT.some(x=>x[0]===S.wTab))S.wTab="info";
+  const WT=[["info","예배 정보 · 참여자",[],[sI,sR]],["songs","찬양",["opening","before","special","after"],[secEls.opening,secEls.before,secEls.special,secEls.after]],["memo","메모",[],[sM]]];
+  if(["opening","before","after"].includes(S.wTab))S.wTab="songs";if(!WT.some(x=>x[0]===S.wTab))S.wTab="info";
   const panels=WT.map(([id,,,els])=>h("div",{class:"wpanel","data-wt":id,hidden:id!==S.wTab},els));
   const wtabs=h("div",{class:"wtabs",role:"tablist","aria-label":"콘티 작성 칸"},WT.map(([id,label,keys])=>h("button",{type:"button",role:"tab",class:"wtab","data-wt":id,"data-keys":keys.join(","),"aria-selected":String(id===S.wTab),onclick:()=>setWT(id)},
     h("span",{text:label}),h("span",{class:"wtn"}))));
@@ -1134,7 +1134,7 @@ function updMini(){const c=S.cur;if(!c)return;const all=allItems(c),n=all.length
         h("span",{class:"cm-no",text:String(no)}),h("span",{class:"cm-t",text:it.title||"(제목 없음)"}),it.key?h("span",{class:"cm-k",text:it.key}):null,(it.pages||[]).length?null:h("span",{class:"cm-warn",text:"악보 없음"}));})));
       box.append(row);}
     if(!n)box.append(h("div",{class:"hint",text:"아직 곡이 없어요."}));});}
-function jumpToItem(k,i){if(S.tab!=="write")return;const tab=k==="special"?"before":k;if(S.setWT)S.setWT(tab);
+function jumpToItem(k,i){if(S.tab!=="write")return;if(S.setWT)S.setWT("songs");
   if(k==="special"){const d=document.querySelector(".spdet");if(d)d.open=true;}
   setTimeout(()=>{const box=$(`#list-${k}`);const row=box&&box.children[i];if(row){row.scrollIntoView({block:"center",behavior:"smooth"});row.classList.add("flash");setTimeout(()=>row.classList.remove("flash"),1400);}},80);}
 /* 예배 정보 한 줄 + 본문 보기 */
