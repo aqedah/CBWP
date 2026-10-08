@@ -65,7 +65,9 @@
       await new Promise((res,rej)=>{const off=auth.onAuthStateChanged(u=>{if(u){uid=u.uid;off();res();}});auth.signInAnonymously().catch(rej);});
       for(const [k,code] of keep){try{await unlock(k,code,name);}catch(e){}}
       return keep.map(x=>x[0]);},
-    logoutAdmin(){return this.logoutKeys(["admin"]);}
+    logoutAdmin(){return this.logoutKeys(["admin"]);},
+    /* 다른 기기 연결: 이 기기에서 연 비밀번호들 [[종류, 비밀번호], …] (any · anyread는 저절로 따라와요) */
+    async exportKeys(){await init();const out=[];for(const k of [...unlocked]){if(k==="any"||k==="anyread")continue;try{const d=await fs.doc(`unlocks/${uid}_${k}`).get();if(d.exists&&d.data().code)out.push([k,d.data().code]);}catch(e){}}return out;}
   };
   /* service worker (offline + home-screen install) */
   if("serviceWorker" in navigator&&location.protocol==="https:")window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
