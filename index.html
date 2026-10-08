@@ -1213,7 +1213,7 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"다음 단계"}),h("span",{class:"sub",text:"연습 일정 · 출력 · 공지 → PPT 만들기"})),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
-      refPlaylistLink(S.cur),h("button",{class:"btn",onclick:()=>ytAddModal(S.cur),title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${(teamCfg().yt||{}).name||teamName(S.team)} 재생목록에 담기`}),
+      h("button",{class:"btn",onclick:()=>{const y=teamCfg().yt;if(y&&y.clientId&&y.playlistId)return ytAddModal(S.cur);toast(`${teamName(S.team)} 재생목록에 담기는 준비 중이에요. 담당자와 유튜브 연결을 마치면 쓸 수 있어요`,4000);},title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${teamName(S.team)} 재생목록에 담기`}),
       h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
       h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}),
       h("button",{class:"btn",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"PPT 만들기 →"}))));
@@ -1537,7 +1537,7 @@ function ytAddModal(c){if(!c)return;const y=teamCfg().yt;const can=S.canWrite&&!
         /forbidden|insufficient|playlistItemsNotAccessible|playlistForbidden/i.test(r)||e.status===403?"이 계정으로는 재생목록을 고칠 수 없어요. 재생목록 주인 계정으로 로그인해 주세요. (하루 사용량을 넘긴 경우에도 이렇게 나와요)":
         /playlistNotFound/.test(r)||e.status===404?"재생목록을 찾지 못했어요. 「연결 설정」에서 주소를 확인해 주세요.":
         /videoNotFound/.test(r)?"찾을 수 없는 영상이 있어요 (비공개 · 삭제된 영상). 그 곡의 유튜브 주소를 확인해 주세요.":`담지 못했어요 (${r})`;}}});
-  const md=modal(`🎵 ${y.name} 재생목록에 담기`,h("div",{class:"panel-body"},
+  const md=modal(`🎵 ${teamName(S.team)} 재생목록에 담기`,h("div",{class:"panel-body"},
     h("p",{},`이 콘티에서 유튜브 주소가 있는 곡 `,h("b",{text:`${ids.length}곡`}),`을 `,h("a",{href:`https://www.youtube.com/playlist?list=${y.playlistId}`,target:"_blank",rel:"noopener",text:`${y.name} 재생목록 ↗`}),`에 넣어요.`),
     noYt.length?h("p",{class:"hint",text:`유튜브 주소가 없는 곡: ${noYt.join(", ")}`}):null,
     h("div",{class:"picklist"},opt("add","새 곡만 뒤에 더하기","이미 들어 있는 영상은 그대로 두고, 없는 곡만 끝에 더해요"),opt("replace","이 콘티 곡으로 새로 채우기","재생목록의 예전 영상을 모두 빼고, 이 콘티 순서대로 다시 넣어요")),
