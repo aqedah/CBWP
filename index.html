@@ -891,7 +891,7 @@ function installHelp(){if(IN_KAKAO)return openOutside();if(installEvt){installEv
   const md=modal("홈 화면에 추가",h("div",{class:"panel-body"},isIOS?h("ol",{style:"line-height:1.9"},h("li",{text:"사파리(Safari)에서 이 페이지를 열어요."}),h("li",{text:"아래쪽 가운데 공유 버튼(□↑)을 눌러요."}),h("li",{text:"「홈 화면에 추가」를 누르고 「추가」를 눌러요."})):
     h("ol",{style:"line-height:1.9"},h("li",{text:"크롬(Chrome)이나 삼성 인터넷에서 이 페이지를 열어요."}),h("li",{text:"오른쪽 위(삼성 인터넷은 아래) 메뉴 ⋮ 를 눌러요."}),h("li",{text:"「홈 화면에 추가」 또는 「앱 설치」를 눌러요."})),
     h("p",{class:"hint",text:"홈 화면에 「워십플래너」 아이콘이 생겨요. 누르면 앱처럼 바로 열려요."})),[h("button",{class:"btn primary",text:"확인",onclick:()=>md.close()})]);}
-function renderTeamPick(m){m.append(h("img",{class:"bigLogo",alt:"중앙성서교회 로고",src:$(".brandlogo").src}));m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:window.CBWP?"팀 비밀번호를 넣으면 그 팀의 콘티 · 멤버 · 결산이 열려요.":"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
+function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));m.append(h("div",{class:"sheet"},h("h2",{},"어느 찬양팀에서 쓰시나요?",h("span",{class:"sub",text:window.CBWP?"팀 비밀번호를 넣으면 그 팀의 콘티 · 멤버 · 결산이 열려요.":"팀을 고르면 그 팀의 콘티 · 멤버 · 결산만 보여요. 곡과 악보는 교회 전체가 함께 써요."})),
   h("div",{class:"teampick"},TEAMS.map(t=>{const n=S.allContis.filter(c=>teamOf(c)===t.id).length;
     const i=TEAMS.indexOf(t)+1;
     return h("button",{type:"button",class:"teambtn",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:String(i).padStart(2,"0")}),
