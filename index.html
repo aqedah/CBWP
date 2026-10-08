@@ -2682,11 +2682,17 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
   box.after(more);draw();renderSongs.redraw=draw;
   if(S.canWrite)libDropZone(m);
   m.append(hymnSheet(addFromList),tongilSheet(addFromList),catalogSheet());}
+/* 찬송가 칸을 누르면: 라이브러리에 있는 그 곡의 가사 */
+function hymnLyricsModal(song,label){if(!song)return toast("라이브러리에서 이 곡을 찾지 못했어요");const ly=(song.lyrics||"").trim();
+  const body=h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 8px",text:label}),
+    ly?h("div",{style:"white-space:pre-wrap;line-height:1.75;font-size:1.02rem",text:ly.replace(/^\s*\[[^\]]*\]\s*$/gm,m=>m.trim())}):h("div",{class:"empty",text:"이 곡은 아직 가사가 없어요."}));
+  const md=modal((splitTitle(song.title).base||song.title).replace(/\s*\(\s*통일[^)]*\)\s*$/,""),body,[S.canWrite&&S.db?h("button",{class:"btn",text:ly?"가사 고치기":"가사 넣기",onclick:()=>{md.close();songLyricsEdit(song,()=>render());}}):null,
+    vers(song).some(v=>(v.pages||[]).length)?h("button",{class:"btn",text:"악보 보기",onclick:()=>{md.close();versionsViewer(song,(teamVer(song)||{}).vid);}}):null,h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})].filter(Boolean));}
 /* browse all 645 hymns by number */
 function hymnSheet(addFromList){const cat=S.catalogs.find(c=>c.id==="hymns");const items=cat?catItems(cat).map(r=>r[0]):[];
   const have=libKeys();const grid=h("div",{class:"hymngrid"});let from=1;
   const draw=()=>{grid.replaceChildren(...items.filter(t=>{const n=splitTitle(t).hymn;return n>=from&&n<from+100;}).map(t=>{const sp=splitTitle(t);const inLib=have.has(norm(t));
-    return h("button",{type:"button",class:"hymn"+(inLib?" in":""),title:inLib?"라이브러리에 있어요":"눌러서 라이브러리에 넣기",disabled:!S.canWrite&&!inLib,onclick:()=>{if(!inLib)addFromList(t);}},h("b",{text:sp.hymn}),h("span",{text:sp.base}));}));};
+    return h("button",{type:"button",class:"hymn"+(inLib?" in":""),title:inLib?"눌러서 가사 보기":"눌러서 라이브러리에 넣기",disabled:!S.canWrite&&!inLib,onclick:()=>{if(inLib)hymnLyricsModal(S.songs.find(x=>norm(x.title)===norm(t)),`새찬송가 ${sp.hymn}장`);else addFromList(t);}},h("b",{text:sp.hymn}),h("span",{text:sp.base}));}));};
   const pager=h("div",{class:"seg"},Array.from({length:7},(_,i)=>{const a=i*100+1;return h("button",{type:"button","aria-pressed":String(a===from),text:`${a}~${Math.min(645,a+99)}`,onclick:e=>{from=a;[...pager.children].forEach(b=>b.setAttribute("aria-pressed",String(b===e.currentTarget)));draw();}});}));
   draw();
   return h("details",{class:"sheet"},h("summary",{class:"sumh"},"21세기 찬송가 전체 보기",h("span",{class:"sub",text:`${items.length}곡 · 진한 칸은 라이브러리에 있는 곡`})),h("div",{style:"overflow-x:auto;margin:10px 0"},pager),grid);}
@@ -2695,7 +2701,7 @@ const TONGIL="만복의 근원 하나님|성부 성자 성령께|이 천지간 �
 function tongilSheet(addFromList){const have=libKeys();const libNums=new Set(S.songs.map(x=>((x.title||"").match(/통일\s*(\d{1,3})\s*장/)||[])[1]).filter(Boolean).map(Number));
   const grid=h("div",{class:"hymngrid"});let from=1;
   const draw=()=>{grid.replaceChildren(...TONGIL.map((t,i)=>[i+1,t]).filter(([n])=>n>=from&&n<from+100).map(([n,t])=>{const full=`${t} (통일 ${n}장)`;const inLib=libNums.has(n)||have.has(norm(full));
-    return h("button",{type:"button",class:"hymn"+(inLib?" in":""),title:inLib?"라이브러리에 있어요":"눌러서 라이브러리에 넣기",disabled:!S.canWrite&&!inLib,onclick:()=>{if(!inLib)addFromList(full);}},h("b",{text:n}),h("span",{text:t}));}));};
+    return h("button",{type:"button",class:"hymn"+(inLib?" in":""),title:inLib?"눌러서 가사 보기":"눌러서 라이브러리에 넣기",disabled:!S.canWrite&&!inLib,onclick:()=>{if(inLib)hymnLyricsModal(S.songs.find(x=>((x.title||"").match(/통일\s*(\d{1,3})\s*장/)||[])[1]==n)||S.songs.find(x=>norm(x.title)===norm(full)),`통일찬송가 ${n}장`);else addFromList(full);}},h("b",{text:n}),h("span",{text:t}));}));};
   const pager=h("div",{class:"seg"},Array.from({length:6},(_,i)=>{const a=i*100+1;return h("button",{type:"button","aria-pressed":String(a===from),text:`${a}~${Math.min(558,a+99)}`,onclick:e=>{from=a;[...pager.children].forEach(b=>b.setAttribute("aria-pressed",String(b===e.currentTarget)));draw();}});}));
   draw();
   return h("details",{class:"sheet"},h("summary",{class:"sumh"},"통일 찬송가 전체 보기",h("span",{class:"sub",text:"558곡 · 진한 칸은 라이브러리에 있는 곡"})),h("div",{style:"overflow-x:auto;margin:10px 0"},pager),grid);}
