@@ -983,7 +983,6 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("button",{class:"btn primary",id:"saveBtn",disabled:!editable,onclick:()=>saveConti(),text:"저장"}),
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"}),
       h("button",{class:"btn",disabled:!editable,onclick:openLoadPast,text:"지난 콘티 불러오기"}),
-      S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       S.curId&&isWriter()?h("button",{class:"btn"+(editable?"":" primary"),onclick:newConti,title:"빈 콘티를 새로 시작해요",text:"+ 새 콘티 만들기"}):null,
       isWide()?h("button",{class:"btn",onclick:()=>setTab("sheet"),text:"악보 편집 →"}):null,
       h("span",{class:"spacer"}),h("span",{class:"status",id:"saveStatus"})));
@@ -1039,7 +1038,6 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   m.append(fs);
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 다음 단계"}),h("span",{class:"status",id:"saveStatus2"})),
     h("div",{class:"row"},h("button",{class:"btn primary",disabled:!editable,onclick:()=>saveConti(),text:"콘티 저장"}),
-      S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 하루 전 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"})),
     h("div",{class:"row",style:"margin-top:10px"},h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 흐름 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 편집 →"}),
       h("span",{class:"hint",text:"악보 편집 → 콘티 공지 → PPT 만들기 순서로 이어져요"}))));
@@ -1211,9 +1209,9 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
     updTimes();}
   renderSheet.redraw=draw;draw();
   /* 다음 단계 */
-  m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"다음 단계"}),h("span",{class:"sub",text:"콘티 공지 → PPT 만들기"})),
+  m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"다음 단계"}),h("span",{class:"sub",text:"연습 일정 · 출력 · 공지 → PPT 만들기"})),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},
-      h("button",{class:"btn",onclick:()=>layoutEditor(S.cur,()=>{markDirty();}),title:"종이 위에 악보 · 글상자 · 번호를 PPT처럼 놓아요",text:"🧩 자유롭게 편집"+(S.cur.layout&&(S.cur.layout.pages||[]).some(p=>p.els.length)?" (편집함)":"")}),
+      S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
       h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}),
       h("button",{class:"btn",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"PPT 만들기 →"}))));
