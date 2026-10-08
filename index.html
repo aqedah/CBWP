@@ -242,7 +242,9 @@ html{scrollbar-gutter:stable}
 .glpop-h{display:flex;align-items:center;gap:8px;margin-bottom:4px}.glpop-h b{font-size:1rem}.glpop-x{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font-size:1rem}.glpop p{margin:0;font-size:.9rem;line-height:1.55}
 .pager{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin:12px 0 4px}
 .pgbtn{min-width:34px;height:34px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--sheet);color:var(--ink);font:inherit;font-weight:700;font-size:.88rem;cursor:pointer;font-variant-numeric:tabular-nums}
-.pgbtn.on{background:var(--team,var(--accent));border-color:transparent;color:#fff}.pgbtn:disabled{opacity:.35;cursor:default}.pgdots{color:var(--muted);padding:0 2px}.pgtotal{margin-left:8px}
+.pgbtn.on{background:var(--team,var(--accent));border-color:transparent;color:#fff}.pgbtn:disabled{opacity:.35;cursor:default}.pgdots{color:var(--muted);padding:0 2px}.pgjumpwrap{display:inline-flex;align-items:center;gap:4px;margin:0 6px}.pgjump{width:64px!important;height:34px;text-align:center;padding:0 4px!important;font-weight:700}.pgtotal{margin-left:8px}
+.tbox{flex:1;min-width:0;display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--sheet);padding-right:12px}.tbox input{border:0!important;box-shadow:none!important;flex:0 1 auto;min-width:3em;max-width:100%;background:transparent;padding-right:2px!important}
+.tsuffix{flex:none;font-weight:700;color:var(--ink);white-space:nowrap;font-size:1.02rem;margin-right:auto}
 .wb.wb2{grid-template-columns:minmax(0,1fr) minmax(300px,380px)}
 .spdet>summary{list-style:none;cursor:pointer}.spdet>summary::-webkit-details-marker{display:none}
 .spdet>summary h2::after{content:"▸";margin-left:8px;color:var(--muted);font-size:.9rem;transition:transform .15s}.spdet[open]>summary h2::after{transform:rotate(90deg)}
@@ -2648,13 +2650,8 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
       h("span",{class:"hint",text:[fx.filter(r=>r.kind==="add").length?`장 번호 붙일 곡 ${fx.filter(r=>r.kind==="add").length}`:"",fx.filter(r=>r.kind==="strip").length?`「새찬송가」를 뺄 곡 ${fx.filter(r=>r.kind==="strip").length}`:"",old?`「찬송가 → 새찬송가」 ${old}`:""].filter(Boolean).join(" · ")}),
       h("span",{class:"spacer"}),fx.length?h("button",{class:"btn sm primary",text:"확인하고 바로잡기",onclick:hymnFixModal}):null,old?h("button",{class:"btn sm",text:"찬송가 → 새찬송가",onclick:newHymnFixModal}):null));}
   m.append(h("div",{class:"sheet"},h("h2",{},"찬양 라이브러리",h("span",{class:"sub",text:`모두 ${S.songs.length}곡 · 교회 전체가 함께 써요`})),
-    h("div",{class:"row"},newT,h("button",{class:"btn",disabled:!S.canWrite,text:"곡 등록",onclick:async()=>{const v=newT.value;const yid=ytId(v);const t=yid?cleanTitle(v):v.trim();if(!t){toast("곡 제목을 써 주세요");return;}
-      if(S.songs.some(s=>norm(s.title)===norm(t))){toast("이미 있는 곡이에요");return;}await createSong(t,yid);newT.value="";draw();toast(`「${t}」 등록했어요`);}})),
-    h("p",{class:"hint",text:"자주 부르는 곡을 미리 등록하고 기본 악보와 구간 표시를 저장해 두면, 콘티에 넣을 때 그대로 불러와요."}),
-    S.canWrite?h("div",{class:"row",style:"margin-bottom:8px"},h("button",{class:"btn primary",text:"🎼 악보 올리기 (제목 자동 찾기)",onclick:()=>scoreAutoModal()}),h("span",{class:"hint",text:"악보 그림 · PDF나 가사 PPT를 이 화면에 끌어다 놓아도 돼요"})):null,
-    S.canWrite?h("div",{class:"row",style:"margin-bottom:8px"},h("button",{class:"btn",text:"📂 가사 PPT 한꺼번에 올리기",onclick:lyricsDbModal}),h("span",{class:"hint",text:"방송실 가사 DB를 곡마다 가사로 넣어요"})):null,
-    h("input",{type:"search",id:"song-q",placeholder:"곡 찾기 · 초성 · 찬송가 장 번호 (예: 524)",oninput:e=>{q=e.target.value;draw();}}),h("div",{style:"height:8px"}),chips,
-    canDel?h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),S.songs.some(x=>TONGIL_TAG.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔢 통일찬송가 번호 붙이기",onclick:tongilFixModal}):null,S.songs.some(x=>OLD_HYMN.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔁 찬송가 → 새찬송가",onclick:newHymnFixModal}):null,(hymnFixRows()||[]).length?h("button",{class:"btn sm ghost",text:`🎼 새찬송가 표시 바로잡기 (${hymnFixRows().length})`,onclick:hymnFixModal}):null,h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}})):null,h("div",{style:"height:10px"}),box));
+    h("input",{type:"search",id:"song-q",placeholder:"곡 찾기 · 초성 · 찬송가 장 번호 (예: 524) · 없으면 바로 등록",oninput:e=>{q=e.target.value;draw();}}),h("div",{style:"height:8px"}),chips,
+    canDel?h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),S.songs.some(x=>TONGIL_TAG.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔢 통일찬송가 번호 붙이기",onclick:tongilFixModal}):null,S.songs.some(x=>OLD_HYMN.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔁 찬송가 → 새찬송가",onclick:newHymnFixModal}):null,(hymnFixRows()||[]).length?h("button",{class:"btn sm ghost",text:`🎼 새찬송가 표시 바로잡기 (${hymnFixRows().length})`,onclick:hymnFixModal}):null,h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}})):null,S.canWrite?h("div",{class:"row",style:"margin-top:8px;gap:8px;flex-wrap:wrap"},h("button",{class:"btn sm",text:"🎼 악보 올리기 (제목 자동 찾기)",title:"악보 그림 · PDF나 가사 PPT를 이 화면에 끌어다 놓아도 돼요",onclick:()=>scoreAutoModal()}),h("button",{class:"btn sm",text:"📂 가사 PPT 한꺼번에 올리기",title:"방송실 가사 DB를 곡마다 가사로 넣어요",onclick:lyricsDbModal})):null,h("div",{style:"height:10px"}),box));
   /* titles that are not in the library yet (21세기 찬송가 645곡 · 곡집 제목) */
   const more=h("div",{class:"cards"});
   const addFromList=async t=>{if(S.songs.some(s=>norm(s.title)===norm(t)))return toast("이미 라이브러리에 있어요");await createSong(t,null);toast(`「${t}」을(를) 라이브러리에 넣었어요`);draw();};
@@ -2664,13 +2661,20 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
     more.append(h("div",{class:"lab",text:`라이브러리에 아직 없는 곡 (찬송가 · 제목 목록) ${hits.length>=40?"40개까지":hits.length+"곡"}`}),
       ...hits.map(([t,a])=>h("div",{class:"card row",style:"flex-wrap:nowrap"},h("div",{style:"flex:1;min-width:0"},h("b",{text:t}),a?h("div",{class:"hint",text:`첫 줄: ${a}`}):null),
         S.canWrite?h("button",{class:"btn sm",text:"+ 라이브러리에 넣기",onclick:()=>addFromList(t)}):null)));}
+  const regNew=async v=>{const yid=ytId(v);const t=yid?cleanTitle(v):String(v||"").trim();if(!t)return toast("곡 제목을 써 주세요");
+    if(S.songs.some(s=>norm(s.title)===norm(t)))return toast("이미 있는 곡이에요");await createSong(t,yid);toast(`「${t}」을(를) 새 곡으로 등록했어요`);draw();};
+  const regCard=(big)=>{const t=q.trim();if(!t||!S.canWrite)return null;const yid=ytId(t);const show=yid?cleanTitle(t):t;if(!show)return null;
+    return h("div",{class:big?"empty":"hint",style:big?"display:flex;flex-direction:column;align-items:center;gap:8px":"text-align:center;margin:8px 0"},
+      big?h("span",{text:`「${show}」은(는) 라이브러리에 없어요. 새 곡으로 등록할까요?`}):h("span",{text:`찾는 곡이 없나요? `}),
+      h("button",{type:"button",class:big?"btn primary":"btn sm",text:big?"+ 새 곡으로 등록":`「${show}」 새 곡으로 등록`,onclick:()=>regNew(t)}));};
   function draw(){box.replaceChildren();drawMore();
     let arr=S.songs.slice();const qn=/^\d+$/.test(q.trim())?+q.trim():null;if(q.trim())arr=arr.filter(s=>qn!=null?splitTitle(s.title).hymn===qn:matchRank(s.title,q)>-1);
     const fv=favs();const hasScore=s=>{const v=teamVer(s);return !!(v&&v.pages.length);};
     if(F.f==="fav")arr=arr.filter(s=>fv.has(s.id));else if(F.f==="score")arr=arr.filter(hasScore);else if(F.f==="lyrics")arr=arr.filter(s=>(s.lyrics||"").trim());else if(F.f==="nolyrics")arr=arr.filter(s=>!(s.lyrics||"").trim()&&!(s.ppt&&(s.ppt.slides||[]).length));else if(F.f==="hymn")arr=arr.filter(s=>splitTitle(s.title).hymn);else if(F.f==="tongil")arr=arr.filter(s=>/통일/.test(s.title||""));
     arr.sort(F.sort==="abc"?(a,b)=>a.title.localeCompare(b.title,"ko"):(a,b)=>(usage[b.id]||0)-(usage[a.id]||0)||a.title.localeCompare(b.title,"ko"));
     
-    if(!arr.length){box.append(h("div",{class:"empty",text:F.f==="fav"?"아직 즐겨찾기한 곡이 없어요. 곡 카드의 ☆를 누르면 여기 모여요.":F.f!=="all"?"조건에 맞는 곡이 없어요.":S.songs.length?"찾는 곡이 없어요.":"아직 등록된 곡이 없어요. 위에서 곡을 등록하거나, 콘티를 쓰면서 새 곡을 넣으면 여기 쌓여요."}));return;}
+    if(!arr.length&&q.trim()&&S.canWrite){box.append(regCard(true));return;}
+    if(!arr.length){box.append(h("div",{class:"empty",text:F.f==="fav"?"아직 즐겨찾기한 곡이 없어요. 곡 카드의 ☆를 누르면 여기 모여요.":F.f!=="all"?"조건에 맞는 곡이 없어요.":S.songs.length?"찾는 곡이 없어요.":"아직 등록된 곡이 없어요. 위 검색 칸에 제목을 쓰면 새 곡으로 등록할 수 있어요."}));return;}
     /* 정리 모드: 여러 곡을 골라 한꺼번에 지우기 (잘못 들어간 곡 정리) */
     if(S.songSel){const sel=S.songSel;const lim2=300;const cnt=h("b");const upd=()=>{cnt.textContent=`${sel.size}곡 골랐어요`;};upd();
       box.append(h("div",{class:"banner",style:"display:flex;gap:8px;align-items:center;flex-wrap:wrap"},cnt,
@@ -2686,7 +2690,8 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
     const PER=5,sig=[F.f,q,F.sort].join("|");if(S.libSig!==sig){S.libSig=sig;S.libPage=1;}const pages=Math.max(1,Math.ceil(arr.length/PER));S.libPage=Math.min(S.libPage||1,pages);
     for(const s of arr.slice((S.libPage-1)*PER,S.libPage*PER))box.append(songCard(s,usage[s.id]||0));
     if(!arr.length&&q.trim())box.append(h("div",{class:"empty",text:"찾는 곡이 없어요."}));
-    box.append(pagerEl(arr.length,PER,S.libPage,n=>{S.libPage=n;draw();const t=box.getBoundingClientRect().top;if(t<0)window.scrollBy({top:t-90});}));}
+    box.append(pagerEl(arr.length,PER,S.libPage,n=>{S.libPage=n;draw();const t=box.getBoundingClientRect().top;if(t<0)window.scrollBy({top:t-90});}));
+    if(q.trim()&&!arr.some(x=>norm(splitTitle(x.title).base)===norm(q.trim())||norm(x.title)===norm(q.trim()))){const rc=regCard(false);if(rc)box.append(rc);}}
   box.after(more);draw();renderSongs.redraw=draw;
   if(S.canWrite)libDropZone(m);
   m.append(hymnSheet(addFromList),tongilSheet(addFromList),catalogSheet());}
@@ -2695,6 +2700,9 @@ function pagerEl(total,per,page,go){const n=Math.ceil(total/per);if(n<=1)return 
   const nums=new Set([1,n,page-1,page,page+1,page-2,page+2].filter(x=>x>=1&&x<=n));const list=[...nums].sort((a,b)=>a-b);
   const btn=(x,label,dis)=>h("button",{type:"button",class:"pgbtn"+(x===page&&!label?" on":""),disabled:!!dis,"aria-current":x===page&&!label?"page":null,"aria-label":label?(label==="‹"?"앞 쪽":"다음 쪽"):`${x}쪽`,text:label||String(x),onclick:()=>go(x)});
   const out=[btn(page-1,"‹",page<=1)];list.forEach((x,i)=>{if(i&&x-list[i-1]>1)out.push(h("span",{class:"pgdots",text:"…"}));out.push(btn(x));});out.push(btn(page+1,"›",page>=n));
+  const jump=h("input",{type:"number",min:1,max:n,value:page,class:"pgjump","aria-label":`쪽 번호 (1~${n})`,title:"쪽 번호를 쓰고 Enter",
+    onkeydown:e=>{if(e.key==="Enter"){e.preventDefault();e.target.blur();const v=Math.max(1,Math.min(n,Math.round(+e.target.value)||1));go(v);}}});
+  const mid=Math.ceil(out.length/2);out.splice(mid,0,h("span",{class:"pgjumpwrap"},jump,h("span",{class:"hint",text:`/ ${n}쪽`})));
   return h("nav",{class:"pager","aria-label":"쪽 넘기기"},...out,h("span",{class:"hint pgtotal",text:`${total}곡`}));}
 /* 찬송가 칸을 누르면: 라이브러리에 있는 그 곡의 가사 */
 function hymnLyricsModal(song,label){if(!song)return toast("라이브러리에서 이 곡을 찾지 못했어요");const ly=(song.lyrics||"").trim();
@@ -2746,6 +2754,10 @@ function catalogSheet(){
       P(`지금 들어 있는 목록: ${S.catalogs.map(c=>`${c.name||c.id} ${catItems(c).length}곡`).join(" · ")||"없음"}`),
       P("목록에 없는 곡이 추천에 나오게 하려면 아래에 제목을 한 줄에 하나씩 붙여 넣으세요. 이미 있는 제목은 저절로 빠져요. 라이브러리 곡은 만들어지지 않아요."),
       h("div",{class:"lab",text:"목록에 없는 제목 넣기"}),ta,preview,h("div",{class:"row"},h("span",{class:"spacer"}),go)));}
+/* 곡 카드 제목: 입력칸을 글자 길이에 맞춰 「(새찬송가 N장)」이 제목 바로 뒤에 붙어 보이게 */
+function fitTitle(box){const inp=box.querySelector("input");const cv=fitTitle.cv||(fitTitle.cv=document.createElement("canvas"));
+  inp.style.flex="0 1 auto";inp.style.minWidth="3em";const fit=()=>{const cs=getComputedStyle(inp);const x=cv.getContext("2d");x.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;inp.style.width=Math.ceil(x.measureText(inp.value||inp.placeholder||" ").width+18)+"px";};
+  inp.addEventListener("input",fit);setTimeout(fit,0);return box;}
 function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canWrite&&!local&&S.db;
   const keyIn=h("input",{type:"text",id:`sk-${s.id}`,"aria-label":"기본 키",placeholder:"Key",value:s.key||"",style:"width:72px;text-align:center;font-weight:700",disabled:!can,onchange:()=>save()});
   const sp=splitTitle(s.title);
@@ -2770,9 +2782,9 @@ function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canW
     S.cur.before.push(itemFromSong(s));markDirty();saveDraft();toast(`「${s.title}」을(를) 예배 찬양 ${S.cur.before.length}번째로 넣었어요`);}});
   return h("div",{class:"card"},
     h("div",{class:"row",style:"flex-wrap:nowrap;align-items:flex-start"},th,h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"},
-      h("div",{class:"row",style:"flex-wrap:nowrap"},tIn,keyIn,(()=>{const on=favs().has(s.id);const b=h("button",{type:"button",class:"star","aria-pressed":String(on),"aria-label":"즐겨찾기",title:"즐겨찾기 (이 기기에 저장)",text:on?"★":"☆",onclick:()=>{const v=toggleFav(s.id);b.setAttribute("aria-pressed",String(v));b.textContent=v?"★":"☆";toast(v?"즐겨찾기에 넣었어요":"즐겨찾기에서 뺐어요");if(S.songF&&S.songF.f==="fav"&&renderSongs.redraw)renderSongs.redraw();}});return b;})()),
+      h("div",{class:"row",style:"flex-wrap:nowrap"},sp.hymn?fitTitle(h("div",{class:"tbox"},tIn,h("span",{class:"tsuffix",text:`(새찬송가 ${sp.hymn}장${sp.arr?`, ${sp.arr} 편곡`:""})`}))):/통일/.test(s.title||"")?h("div",{class:"tbox"},tIn):tIn,keyIn,(()=>{const on=favs().has(s.id);const b=h("button",{type:"button",class:"star","aria-pressed":String(on),"aria-label":"즐겨찾기",title:"즐겨찾기 (이 기기에 저장)",text:on?"★":"☆",onclick:()=>{const v=toggleFav(s.id);b.setAttribute("aria-pressed",String(v));b.textContent=v?"★":"☆";toast(v?"즐겨찾기에 넣었어요":"즐겨찾기에서 뺐어요");if(S.songF&&S.songF.f==="fav"&&renderSongs.redraw)renderSongs.redraw();}});return b;})()),
       h("div",{class:"row sbadges"},
-        sp.hymn?h("span",{class:"sbadge",text:`새찬송가 ${sp.hymn}장${sp.arr?` · ${sp.arr} 편곡`:""}`}):null,
+
         tv&&tv.pages.length?h("button",{type:"button",class:"sbadge ok",title:"악보 보기",onclick:()=>versionsViewer(s,tv.vid)},`악보 보기 · ${verLabel(tv)}${vers(s).filter(v=>(v.pages||[]).length).length>1?` 외 ${vers(s).filter(v=>(v.pages||[]).length).length-1}개`:""}`):h("label",{class:"sbadge no filebtn",title:can?"악보 사진이나 PDF를 골라 넣어요":"",htmlFor:`snew-${s.id}`},can?"악보 없음 · 넣기":"악보 없음",
           can?h("input",{type:"file",id:`snew-${s.id}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
             const pages=[];toast("악보를 올리는 중이에요…");const n=await uploadInto(pages,files,()=>{});if(!n)return;const vs=clone(vers(s));vs.push({vid:uid(6),name:`악보 ${vs.length+1}`,key:s.key||"",pages,by:S.myId||null,at:Date.now()});
