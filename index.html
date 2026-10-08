@@ -2053,13 +2053,31 @@ function titleRow(it,song,key){const canSong=song&&!String(song.id).startsWith("
   function sync(){listen.hidden=!it.yt;if(it.yt)listen.href=ytUrl(it.yt);fix.hidden=!(canSong&&it.title.trim()&&norm(it.title)!==norm(song.title));}
   sync();return h("div",{class:"titlerow"},tIn,yIn,listen,fix);}
 /* rename a library song and the title copies stored in every conti that uses it */
-async function renameSong(song,title){if(!song||!title||!S.db)return;
+async function renameSong(song,title,quiet){if(!song||!title||!S.db)return;
   try{await S.db.doc(`songs/${song.id}`).update({title,cho:choStr(title),updatedAt:Date.now()});song.title=title;
     let n=0;for(const c of S.allContis){if(c.id===S.curId||!canEditConti(c,c.id))continue;let hit=false;const up={};
       for(const[k]of SECTIONS){const arr=clone(c[k]||[]);for(const x of arr)if(x.songId===song.id&&x.title!==title){x.title=title;hit=true;}if(hit)up[k]=arr;}
       if(hit){await S.db.doc(`contis/${c.id}`).update({...up,updatedAt:Date.now()});n++;}}
     for(const[k]of SECTIONS)for(const x of S.cur[k]||[])if(x.songId===song.id)x.title=title;markDirty();for(const[k]of SECTIONS)renderSetlist(k);
-    toast(`곡 제목을 「${title}」로 바꿨어요${n?` (다른 콘티 ${n}개도 함께)`:""}`,3600);}catch(e){toast("제목을 바꾸지 못했어요");}}
+    if(!quiet)toast(`곡 제목을 「${title}」로 바꿨어요${n?` (다른 콘티 ${n}개도 함께)`:""}`,3600);return true;}catch(e){if(!quiet)toast("제목을 바꾸지 못했어요");return false;}}
+/* 「제목(통일찬송가)」 → 「제목 (통일 N장)」 한꺼번에 */
+const TONGIL_TAG=/\s*\(\s*통일\s*(?:찬송가)?\s*\)\s*$/;
+function tongilFixModal(){const cands=S.songs.filter(x=>TONGIL_TAG.test(x.title||""));if(!cands.length)return toast("「(통일찬송가)」로 된 곡이 없어요");
+  const idx=TONGIL.map((t,i)=>({n:i+1,k:nk(t)}));
+  const rows=cands.map(song=>{const base=song.title.replace(TONGIL_TAG,"").trim();const k=nk(base);let nums=idx.filter(x=>x.k===k).map(x=>x.n);let guess=false;
+    if(!nums.length){const best=idx.map(x=>({n:x.n,sc:dice(k,x.k)})).sort((a,b)=>b.sc-a.sc)[0];if(best&&best.sc>=.75){nums=[best.n];guess=true;}}
+    return{song,base,nums,n:nums[0]||null,guess,on:nums.length===1&&!guess};});
+  const list=h("div",{style:"display:flex;flex-direction:column;gap:6px"});const st=h("p",{class:"hint"});
+  const draw=()=>{list.replaceChildren(...rows.map((r,i)=>{const cb=h("input",{type:"checkbox",checked:r.on,onchange:e=>{r.on=e.target.checked;upd();}});
+    const num=h("input",{type:"number",min:1,max:558,value:r.n||"",placeholder:"장",style:"width:80px",oninput:e=>{const v=+e.target.value;r.n=v>=1&&v<=558?v:null;r.on=!!r.n;cb.checked=r.on;tt.textContent=r.n?`→ ${r.base} (통일 ${r.n}장) · 목록 제목: ${TONGIL[r.n-1]}`:"번호를 넣어 주세요";upd();}});
+    const tt=h("span",{class:"hint",text:r.n?`→ ${r.base} (통일 ${r.n}장)${r.guess?` · 비슷한 제목 「${TONGIL[r.n-1]}」로 짐작했어요, 확인해 주세요`:""}${r.nums.length>1?` · 같은 제목이 ${r.nums.join(", ")}장에 있어요`:""}`:"통일찬송가 목록에서 못 찾았어요 · 번호를 넣어 주세요"});
+    return h("div",{class:"card row",style:"gap:8px;align-items:center;flex-wrap:wrap"},cb,h("b",{style:"flex:1;min-width:160px",text:r.song.title}),num,h("div",{style:"flex-basis:100%"},tt));}));upd();};
+  const go=h("button",{class:"btn primary",text:"바꾸기",onclick:async()=>{const pick=rows.filter(r=>r.on&&r.n);if(!pick.length)return;go.disabled=true;let ok=0;
+    for(const r of pick){st.textContent=`바꾸는 중… ${ok+1}/${pick.length}`;if(await renameSong(r.song,`${r.base} (통일 ${r.n}장)`,true))ok++;}
+    md.close();toast(`${ok}곡의 제목을 「(통일 N장)」으로 바꿨어요. 이 곡이 들어간 콘티 제목도 함께 바뀌었어요`,4000);render();}});
+  const upd=()=>{const n=rows.filter(r=>r.on&&r.n).length;go.textContent=`${n}곡 바꾸기`;go.disabled=!n;};
+  const md=modal("통일찬송가 번호 붙이기",h("div",{class:"panel-body"},h("p",{class:"hint",text:`「제목(통일찬송가)」로 된 곡 ${rows.length}개를 찾았어요. 통일찬송가 목록과 제목을 맞춰 번호를 붙여요. 짐작한 것과 못 찾은 것은 체크가 꺼져 있으니 확인해 주세요.`}),list,st),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);draw();}
 /* ---------- fill 예배 찬양 from a conti file (PDF text, or photo/scan → OCR) ---------- */
 const TESS_URL="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
 const nk=s=>(s||"").replace(/\([^)]*\)/g,"").replace(/[^가-힣A-Za-z0-9]/g,"").toLowerCase();
@@ -2525,7 +2543,7 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
     S.canWrite?h("div",{class:"row",style:"margin-bottom:8px"},h("button",{class:"btn primary",text:"🎼 악보 올리기 (제목 자동 찾기)",onclick:()=>scoreAutoModal()}),h("span",{class:"hint",text:"악보 그림 · PDF나 가사 PPT를 이 화면에 끌어다 놓아도 돼요"})):null,
     S.canWrite?h("div",{class:"row",style:"margin-bottom:8px"},h("button",{class:"btn",text:"📂 가사 PPT 한꺼번에 올리기",onclick:lyricsDbModal}),h("span",{class:"hint",text:"방송실 가사 DB를 곡마다 가사로 넣어요"})):null,
     h("input",{type:"search",id:"song-q",placeholder:"곡 찾기 · 초성 · 찬송가 장 번호 (예: 524)",oninput:e=>{q=e.target.value;draw();}}),h("div",{style:"height:8px"}),chips,
-    canDel?h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}})):null,h("div",{style:"height:10px"}),box));
+    canDel?h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),S.songs.some(x=>TONGIL_TAG.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔢 통일찬송가 번호 붙이기",onclick:tongilFixModal}):null,h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}})):null,h("div",{style:"height:10px"}),box));
   /* titles that are not in the library yet (21세기 찬송가 645곡 · 곡집 제목) */
   const more=h("div",{class:"cards"});
   const addFromList=async t=>{if(S.songs.some(s=>norm(s.title)===norm(t)))return toast("이미 라이브러리에 있어요");await createSong(t,null);toast(`「${t}」을(를) 라이브러리에 넣었어요`);draw();};
