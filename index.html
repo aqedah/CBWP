@@ -72,7 +72,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .links a{height:34px;box-sizing:border-box}
 .links a:hover{border-color:var(--accent);color:var(--ink)}
 .links svg{width:16px;height:16px;flex:none}
-.brand .links{gap:8px}.innertop-w{position:sticky;bottom:8px;height:0;display:flex;justify-content:flex-end;pointer-events:none;z-index:5}.innertop{transform:translateY(calc(-100% - 4px)) scale(.8);opacity:0;pointer-events:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--sheet);color:var(--ink);font-size:1.1rem;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.15);cursor:pointer;transition:opacity .15s,transform .15s;margin-right:4px}.innertop.on{opacity:1;pointer-events:auto;transform:translateY(calc(-100% - 4px))}.sbrowse-res{margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:8px;max-height:320px;overflow:auto;background:var(--sheet)}.sbrowse-row{display:flex;gap:8px;align-items:center;padding:4px 2px;border-bottom:1px dashed var(--line)}.sbrowse-row:last-child{border-bottom:0}.sbrowse .btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}.sh-card{display:flex;flex-direction:column;gap:10px}.sh-no{font-size:1.6rem;line-height:1;color:var(--accent)}.sh-thumbs{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}.sh-thumb{flex:none;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center}.sh-thumb img{display:block;height:min(52vh,420px);width:auto;max-width:80vw;border-radius:8px}.flowbox{margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}.flowbox>summary{cursor:pointer;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;list-style:none}.flowbox>summary::before{content:"▸";color:var(--muted)}.flowbox[open]>summary::before{content:"▾"}.vw-dropsc{display:block;cursor:pointer}.vw-dropsc b{color:var(--accent);font-weight:600}.vw-song.vw-over{outline:3px dashed var(--accent);outline-offset:-3px;background:var(--soft)}.libdrop{outline:3px dashed var(--accent);outline-offset:6px;border-radius:12px}.libdrop-tip{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:999;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;pointer-events:none;max-width:calc(100% - 32px);text-align:center}.wordin{margin:4px 0 6px;box-shadow:none;border:1px solid var(--line);background:var(--soft)}.wordin h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wordin .wb-word{max-height:55vh;overflow:auto}.instchip{gap:4px}.brandname{line-height:1.12;font-size:.92em;white-space:nowrap}.brand h1>a{min-width:0}.brand h1>a>span{min-width:0;overflow-wrap:anywhere}
+.brand .links{gap:8px}.fdrop{outline:3px dashed var(--accent)!important;outline-offset:-3px;position:relative}.fdrop::after{content:attr(data-droptip);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--accent);color:#fff;padding:8px 14px;border-radius:999px;font-weight:700;font-size:.9rem;pointer-events:none;white-space:nowrap;z-index:5}.innertop-w{position:sticky;bottom:8px;height:0;display:flex;justify-content:flex-end;pointer-events:none;z-index:5}.innertop{transform:translateY(calc(-100% - 4px)) scale(.8);opacity:0;pointer-events:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--sheet);color:var(--ink);font-size:1.1rem;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.15);cursor:pointer;transition:opacity .15s,transform .15s;margin-right:4px}.innertop.on{opacity:1;pointer-events:auto;transform:translateY(calc(-100% - 4px))}.sbrowse-res{margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:8px;max-height:320px;overflow:auto;background:var(--sheet)}.sbrowse-row{display:flex;gap:8px;align-items:center;padding:4px 2px;border-bottom:1px dashed var(--line)}.sbrowse-row:last-child{border-bottom:0}.sbrowse .btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}.sh-card{display:flex;flex-direction:column;gap:10px}.sh-no{font-size:1.6rem;line-height:1;color:var(--accent)}.sh-thumbs{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}.sh-thumb{flex:none;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center}.sh-thumb img{display:block;height:min(52vh,420px);width:auto;max-width:80vw;border-radius:8px}.flowbox{margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}.flowbox>summary{cursor:pointer;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;list-style:none}.flowbox>summary::before{content:"▸";color:var(--muted)}.flowbox[open]>summary::before{content:"▾"}.vw-dropsc{display:block;cursor:pointer}.vw-dropsc b{color:var(--accent);font-weight:600}.vw-song.vw-over{outline:3px dashed var(--accent);outline-offset:-3px;background:var(--soft)}.libdrop{outline:3px dashed var(--accent);outline-offset:6px;border-radius:12px}.libdrop-tip{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:999;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;pointer-events:none;max-width:calc(100% - 32px);text-align:center}.wordin{margin:4px 0 6px;box-shadow:none;border:1px solid var(--line);background:var(--soft)}.wordin h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wordin .wb-word{max-height:55vh;overflow:auto}.instchip{gap:4px}.brandname{line-height:1.12;font-size:.92em;white-space:nowrap}.brand h1>a{min-width:0}.brand h1>a>span{min-width:0;overflow-wrap:anywhere}
 @media (max-width:700px){.brand{padding-right:96px}.instchip{height:36px;width:36px;padding:0;justify-content:center;font-size:1.05rem}.instchip .instlabel{display:none}.brandlogo{height:34px}.brand h1{font-size:1.25rem}.links a{padding:8px;border-radius:999px}.links a .ytlabel{display:none}.links svg{width:20px;height:20px}}
 /* bottom nav (4 big groups) + sub-tabs */
 .bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--sheet);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgb(0 0 0 / .06);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -1147,12 +1147,12 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
       const edit=()=>openScoreEditor({title:`${it.title}${cur?` · ${cur.name||""}`:""}`,pages:it.pages,songId:it.songId,verId:cur?it.verId:"",onDone:(pages,vid)=>{it.pages=pages;if(vid)it.verId=vid;markDirty();draw();}});
       const keyIn=h("input",{type:"text",class:"key","aria-label":"키",placeholder:"Key",value:it.key||"",disabled:!editable,style:"width:70px",oninput:e=>{it.key=e.target.value;markDirty();}});
       S.flowOpen=S.flowOpen||new Set();S.flowOpen.add(it.uid);   /* 이 화면에서는 흐름 칸을 펼쳐 둬요 */
-      box.append(h("div",{class:"card sh-card"},
+      const shc=h("div",{class:"card sh-card"},
         h("div",{class:"row",style:"gap:8px;align-items:center"},h("span",{class:"sh-no",text:circ(no)}),h("b",{style:"font-size:1.1rem;overflow-wrap:anywhere;flex:1;min-width:0",text:it.title}),h("span",{class:"hint",text:l}),keyIn),
         (it.pages||[]).length?thumbs:h("div",{class:"vw-noscore",text:"이 곡은 악보가 아직 없어요. 「악보 선택」에서 고르거나 올려 주세요."}),
         h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},h("button",{class:"btn sm primary",disabled:!editable,text:"악보 선택",onclick:()=>openScorePicker(it,song,k)}),
           h("button",{class:"btn sm",disabled:!editable||!(it.pages||[]).length,text:"✏️ 악보에 표시 (형광펜 · 구간)",onclick:edit})),
-        flowBox(it,song,k)));}
+        flowBox(it,song,k));if(editable)fileDropOn(shc,f=>uploadScoreForItem(it,song,k,f),"여기에 놓으면 이 곡 악보로 넣어요");box.append(shc);}
     updTimes();}
   renderSheet.redraw=draw;draw();
   /* 다음 단계 */
@@ -1449,6 +1449,7 @@ function renderSetlist(key){if(S.tab==="sheet"&&renderSheet.redraw){renderSheet.
             h("option",{value:"",text:"옮기기…"}),others.map(([k,l])=>h("option",{value:k,text:`→ ${l}`}))),
           h("button",{class:"btn sm ghost danger","aria-label":"빼기",text:"빼기",onclick:()=>{arr.splice(i,1);markDirty();renderSetlist(key);}})),
         memo));
+    if(curEditable())fileDropOn(el,f=>uploadScoreForItem(it,song,key,f),"여기에 놓으면 이 곡 악보로 넣어요");
     /* drag to reorder — also across 여는 찬양 / 예배 찬양 / 설교 후 찬양 (mouse + touch) */
     handle.addEventListener("pointerdown",e=>{if(!curEditable())return;e.preventDefault();try{handle.setPointerCapture(e.pointerId);}catch(_){}el.classList.add("dragging");
       const boxes=SECTIONS.map(([k])=>$(`#list-${k}`)).filter(Boolean);
@@ -1491,11 +1492,31 @@ function openScorePicker(it,song,key){const editable=curEditable();let vs=vers(s
       v.pages,!loose&&it.verId===v.vid,()=>choose(v.vid,v.pages,v.key),editable&&song&&S.db?verNameEdit(song,v,()=>{if(it.verId===v.vid){if(v.key)it.key=v.key;markDirty();renderSetlist(key);}draw();}):null)));
     list.append(card("악보 없이","PDF에 이 곡 악보를 넣지 않아요",[],!it.pages.length,()=>choose("",[],"")));}
   const up=h("input",{type:"file",id:`pk-up-${it.uid}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,
-    onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;const pages=[];const n=await uploadInto(pages,files,t=>st.textContent=t);st.textContent="";if(!n)return;
-      const vid=song?await rememberScore(song.id,null,pages,{key:it.key,name:it.key?`${it.key}코드`:`악보 ${vs.length+1}`}):null;choose(vid||"",pages,"");if(vid)setTimeout(()=>openScorePicker(it,song,key),50);toast(`새 악보(${n}장)를 올렸어요. 이름(예: G코드)을 바로 적어 주세요`,3800);}});
-  const body=h("div",{class:"panel-body"},h("p",{class:"hint",text:"하나만 고르세요. 고른 악보가 PDF에 나가요. 한 악보가 여러 쪽이면 쪽이 모두 나가요."}),list,
+    onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;await pickerUp(files);}});
+  const pickerUp=async files=>{const vid=await uploadScoreForItem(it,song,key,files,st);if(vid===null)return;md.close();if(vid)setTimeout(()=>openScorePicker(it,song,key),50);};
+  const body=h("div",{class:"panel-body"},h("p",{class:"hint",text:"하나만 고르세요. 고른 악보가 PDF에 나가요. 한 악보가 여러 쪽이면 쪽이 모두 나가요. 새 악보는 이 창에 끌어다 놓아도 돼요."}),list,
     editable?h("div",{class:"row",style:"margin-top:10px"},h("span",{class:"btn sm filebtn"},"+ 새 악보 올리기 (다른 조성 · 편곡)",up),st):null);
+  if(editable)fileDropOn(body,pickerUp,"여기에 놓으면 새 악보로 올려요");
   const md=modal(`악보 선택 · ${it.title}`,body,[h("button",{class:"btn primary",text:"완료",onclick:()=>md.close()})]);draw();}
+/* 악보 파일을 끌어다 놓는 자리 만들기 (그림 · PDF만) */
+function fileDropOn(el,onFiles,tip){let n=0;const isF=e=>[...(e.dataTransfer&&e.dataTransfer.types||[])].includes("Files");
+  el.addEventListener("dragenter",e=>{if(!isF(e))return;e.preventDefault();e.stopPropagation();n++;el.classList.add("fdrop");if(tip)el.dataset.droptip=tip;});
+  el.addEventListener("dragover",e=>{if(isF(e)){e.preventDefault();e.stopPropagation();}});
+  el.addEventListener("dragleave",e=>{if(!isF(e))return;if(--n<=0){n=0;el.classList.remove("fdrop");}});
+  el.addEventListener("drop",e=>{if(!isF(e))return;e.preventDefault();e.stopPropagation();n=0;el.classList.remove("fdrop");
+    const f=[...(e.dataTransfer.files||[])].filter(f=>/^image\/|pdf$/i.test(f.type)||/\.(pdf|png|jpe?g|gif|webp|bmp|heic|heif)$/i.test(f.name));if(!f.length)return toast("악보 그림이나 PDF를 놓아 주세요");onFiles(f);});}
+/* 콘티의 한 곡에 악보 올리기: 라이브러리 곡이면 새 악보로 남기고 이 콘티에 바로 고르고, Key가 비어 있으면 조성도 찾아 넣어요.
+   돌려주는 값: 새 악보 번호(라이브러리에 남긴 경우) · ""(이 콘티에만) · null(실패) */
+async function uploadScoreForItem(it,song,key,files,stEl){if(!curEditable())return toast("지금 열린 콘티는 고칠 수 없어요"),null;
+  toast("악보를 올리는 중…",6000);const pages=[];const n=await uploadInto(pages,files,t=>{if(stEl)stEl.textContent=t;});if(stEl)stEl.textContent="";if(!n)return null;
+  const vs=vers(song);const vid=song?await rememberScore(song.id,null,pages,{key:it.key,name:it.key?`${it.key}코드`:`악보 ${vs.length+1}`}):null;
+  it.verId=vid||"";it.pages=clone(pages);markDirty();if(vid&&song)setTeamVer(song,vid);renderSetlist(key);
+  toast(`「${it.title}」에 악보 ${n}장을 넣었어요${it.key?"":" · 조성을 찾는 중…"}`,3500);
+  if(!it.key){const f0=files[0];const src=f0&&/^image\/(png|jpe?g|gif|webp|bmp)$/i.test(f0.type)?URL.createObjectURL(f0):null;
+    detectKey(src?[{url:src}]:pages.slice(0,2).map(pg=>({url:imgCache.get(pg.imgId)})).filter(x=>x.url)).then(async r=>{if(src)URL.revokeObjectURL(src);if(!r||it.key)return;
+      it.key=r.key;markDirty();if(vid&&song){const v2=clone(vers(song));const v=v2.find(x=>x.vid===vid);if(v&&!v.key){v.key=r.key;if(/^악보 \d+$/.test(v.name||""))v.name=`${r.key}코드`;await saveVersions(song,v2,song.key?{}:{key:r.key});}}
+      renderSetlist(key);toast(`조성을 ${r.key}(으)로 적었어요 (${r.how}로 짐작)`,3500);}).catch(()=>{if(src)URL.revokeObjectURL(src);});}
+  return vid||"";}
 /* editable title + reference YouTube link for one setlist item */
 function titleRow(it,song,key){const canSong=song&&!String(song.id).startsWith("local-")&&S.db&&S.canWrite;
   const tIn=h("input",{type:"text",class:"ititle",id:`t-${it.uid}`,"aria-label":"곡 제목",value:it.title,oninput:e=>{it.title=e.target.value;markDirty();sync();}});
