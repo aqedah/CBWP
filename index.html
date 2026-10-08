@@ -1033,10 +1033,12 @@ function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{t
     const i=TEAMS.indexOf(t)+1;
     return h("button",{type:"button",class:"teambtn",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:String(i).padStart(2,"0")}),
       h("span",{class:"tnote","aria-hidden":"true",text:"♪"}),h("b",{text:t.name}),h("small",{text:t.en}),h("span",{text:window.CBWP?(canIn(t.id)?"들어가기 →":"🔒 비밀번호로 들어가기"):(S.ready&&!S.dbFailed?`저장된 콘티 ${n}개`:"들어가기")}));}))));
-  if(!DEMO)m.append(h("p",{class:"hint",style:"text-align:center;margin:4px 0 14px"},"처음 오셨나요? ",h("a",{href:"?demo=1",text:"👀 비밀번호 없이 체험판으로 둘러보기"})));
   if(PROJECTS.length)m.append(h("div",{class:"sheet"},h("h2",{},"프로젝트",h("span",{class:"sub",text:"행사 찬양을 준비해요 · 본문 · 콘티 · PPT만 간단히"})),
     h("div",{class:"teampick"},PROJECTS.map(t=>h("button",{type:"button",class:"teambtn proj",style:`--tc:${t.color}`,onclick:()=>pickTeam(t.id)},h("span",{class:"tno",text:"P"}),
-      h("span",{class:"tnote","aria-hidden":"true",text:"✦"}),h("b",{text:t.name}),h("small",{text:t.note}),h("span",{text:window.CBWP&&!canIn(t.id)?"🔒 팀 비밀번호로 들어가기":"들어가기 →"}))))));}
+      h("span",{class:"tnote","aria-hidden":"true",text:"✦"}),h("b",{text:t.name}),h("small",{text:t.note}),h("span",{text:window.CBWP&&!canIn(t.id)?"🔒 팀 비밀번호로 들어가기":"들어가기 →"}))))));
+  if(!DEMO)m.append(h("div",{class:"sheet"},h("h2",{},"체험판",h("span",{class:"sub",text:"처음 오셨나요? 비밀번호 없이 예시 팀으로 모든 화면을 둘러봐요"})),
+    h("div",{class:"teampick"},h("a",{class:"teambtn proj",href:"?demo=1",style:"--tc:#2f62d6;text-decoration:none"},h("span",{class:"tno",text:"D"}),h("span",{class:"tnote","aria-hidden":"true",text:"👀"}),
+      h("b",{text:"체험 찬양팀"}),h("small",{text:"예시 콘티 · 악보 · 멤버 · 실제 자료와 따로"}),h("span",{text:"둘러보기 →"})))));}
 function drawAdminRow(){const r=$("#adminRow");if(!r)return;r.hidden=!window.CBWP;if(!window.CBWP)return;
   r.replaceChildren(...(S.isOwner?[h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}),h("button",{class:"btn sm",text:"관리자 로그아웃",onclick:adminLogout})]:[]));if(S.isOwner)return;r.append(h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
 function logoutModal(){if(!window.CBWP)return;if(!window.CBWP.logoutKeys)return toast("앱이 예전 버전이에요. 새로고침(PC는 Ctrl+Shift+R)한 뒤 다시 눌러 주세요",4000);const t=S.team;
