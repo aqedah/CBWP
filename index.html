@@ -204,6 +204,7 @@ details.pastdet[open]>summary{margin-bottom:12px}
 .fb-in{display:flex;align-items:center;gap:8px;max-width:980px;margin:0 auto;padding-inline:16px}
 .fb-in .status{flex:1;min-width:0;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fb-next{margin-left:auto;flex:none}
+body.wb-on .fb-in{max-width:1560px}
 body.fb-pad{padding-bottom:72px}
 body.has-bnav .floatbar{bottom:calc(64px + env(safe-area-inset-bottom,0px));padding-bottom:8px;z-index:39}
 body.has-bnav.fb-pad{padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}
@@ -486,7 +487,7 @@ body.wb-on .wrap{max-width:1560px}
 .wb-r{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px)}.wb-lib{max-height:calc(100vh - 100px);overflow:auto}
 .wb-word{max-height:45vh;overflow:auto;line-height:1.75;font-size:.95rem}.wb-word p{margin:0 0 4px}.wb-word sup{color:var(--muted);font-size:.7rem}
 .wb-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}.wb-song{display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid var(--line);border-radius:8px}.wb-st{flex:1;min-width:0;overflow-wrap:anywhere}
-body.wb-on .wb-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 4px 12px rgb(0 0 0 / .06)}
+
 .serve-me{display:inline-flex;align-items:center;gap:12px;border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
 .avatar.serve-av{width:52px;height:52px;border-radius:50%;font-size:1.3rem;box-shadow:0 0 0 3px var(--sheet),0 0 0 5px var(--team,var(--accent))}
 .tplpair{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tplone{display:flex;flex-direction:column;gap:3px;max-width:320px;margin-top:6px}
@@ -1046,15 +1047,18 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   fs.append(h("div",{class:"sheet"},h("h2",{text:"메모"}),
     h("textarea",{id:"f-memo",placeholder:"리허설 시간, 전달 사항 등",value:c.memo||"",oninput:e=>{c.memo=e.target.value;markDirty();}})));
   m.append(fs);
-  m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"공지 · 재생목록"}),h("span",{class:"sub",text:"악보 편집 전에 먼저 알릴 때"})),
+  const wBot=h("div",{class:"sheet"},h("h2",{},h("span",{text:"연습 · 공지 · 재생목록"}),h("span",{class:"sub",text:"악보 편집 전에 먼저 알릴 때"})),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},
+      S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       h("button",{class:"btn",onclick:()=>songListNotice(S.cur),title:"날짜 · 제목 · 설교자 · 본문 · 묵상 · 송리스트를 먼저 알려요 (악보 없이)",text:"📋 송리스트 공지"}),
       h("button",{class:"btn",onclick:()=>{const y=teamCfg().yt;if(y&&y.clientId&&y.playlistId)return ytAddModal(S.cur);
         const md=modal(`🎵 ${teamName(S.team)} 재생목록에 담기`,h("div",{class:"panel-body"},h("p",{text:`준비 중이에요. 담당자가 유튜브 연결을 마치면 쓸 수 있어요.`}),h("p",{class:"hint",text:"담당자는 구글 클라우드에서 받은 클라이언트 ID와 재생목록 주소를 넣어 연결해요."})),
-          [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),S.canWrite&&S.db?h("button",{class:"btn primary",text:"연결 설정 (담당자용)",onclick:()=>{md.close();ytSetupModal(()=>ytAddModal(S.cur));}}):null]);},title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${teamName(S.team)} 재생목록에 담기`}))));
+          [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),S.canWrite&&S.db?h("button",{class:"btn primary",text:"연결 설정 (담당자용)",onclick:()=>{md.close();ytSetupModal(()=>ytAddModal(S.cur));}}):null]);},title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${teamName(S.team)} 재생목록에 담기`}),
+      h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 흐름 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 편집 →"})));
+  m.append(wBot);
   [...fs.querySelectorAll(".sheet > h2")].forEach((h2,i)=>{const first=h2.firstChild;const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
   if(isWide())workbench(fs,c,editable);else document.body.classList.remove("wb-on");
-  renderRoster();for(const[k]of SECTIONS)renderSetlist(k);floatSave(head,editable,["다음: 악보 편집 →",()=>setTab("sheet")]);updateStatus();updUndo();}
+  renderRoster();for(const[k]of SECTIONS)renderSetlist(k);floatSave(head,editable,["다음: 악보 편집 →",()=>setTab("sheet")],wBot);updateStatus();updUndo();}
 /* 중복 곡 찾기 · 합치기: 제목 · 괄호 속 첫 줄 · 찬송가 장 · 제목 목록의 다른 이름으로 같은 곡 후보를 묶어요 */
 /* 악보 이름 정리: 「악보 1 · 기본 악보」 같은 이름을 조성 이름(G코드 · A코드)으로. Key가 없는 악보는 조성을 찾아서 */
 const genericVerName=n=>!String(n||"").trim()||/^(악보\s*\d*|기본\s*악보|이름\s*없는\s*악보|새\s*악보\s*\d*|악보\s*\d+\s*\(.*\))$/.test(String(n).trim());
@@ -1221,12 +1225,13 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
     updTimes();}
   renderSheet.redraw=draw;draw();
   /* 다음 단계 */
-  m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"연습 · 출력 · 공지"}),h("span",{class:"sub",text:"악보를 다 고른 뒤에"})),
+  const sBot=h("div",{class:"sheet"},h("h2",{},h("span",{text:"연습 · 출력 · 공지"}),h("span",{class:"sub",text:"악보를 다 고른 뒤에"})),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
-      h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
-      h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}))));
-  floatSave(shTop,editable,["다음: PPT 만들기 →",()=>previewLyricsPpt(S.cur)]);updateStatus();}
+      h("button",{class:"btn",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
+      h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}),
+      h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"다음: PPT 만들기 →"})));
+  m.append(sBot);floatSave(shTop,editable,["다음: PPT 만들기 →",()=>previewLyricsPpt(S.cur)],sBot);updateStatus();}
 /* =========================================================
    🧩 자유 배치: 종이(A3 가로 · A4 세로) 위에 악보 · 글상자 · 번호를 PPT처럼 놓아요.
    단위는 mm. 콘티에 layout으로 함께 저장되고, 편집한 그대로 PDF · 그림으로 나가요.
@@ -1512,13 +1517,15 @@ async function autoSave(){if(!S.dirty||!S.db||!S.cur)return;if(!S.curId){S.autoN
 /* 위쪽 저장 줄이 화면 밖으로 나가면 아래에 얇은 저장 줄을 띄워요 (저장 · 상태 · 다음) */
 let fbObs=null;
 function dropFloat(){if(fbObs){fbObs.disconnect();fbObs=null;}document.querySelectorAll(".floatbar").forEach(x=>x.remove());document.body.classList.remove("fb-pad");}
-function floatSave(top,editable,next){dropFloat();if(!top||!top.isConnected||typeof IntersectionObserver==="undefined")return;
+function floatSave(top,editable,next,bottom){dropFloat();if(!top||!top.isConnected||typeof IntersectionObserver==="undefined")return;
   const bar=h("div",{class:"floatbar",role:"region","aria-label":"저장 · 다음 단계"},h("div",{class:"fb-in"},
     h("button",{class:"btn primary",disabled:!editable,onclick:()=>saveConti(),text:"저장"}),h("span",{class:"status",id:"saveStatusF"}),
     next?h("button",{class:"btn primary fb-next",onclick:next[1],text:next[0]}):null));
   document.body.append(bar);
   fbObs=new IntersectionObserver(([e])=>{const on=!e.isIntersecting&&e.boundingClientRect.top<0;bar.classList.toggle("on",on);document.body.classList.toggle("fb-pad",on);},{threshold:0});
-  fbObs.observe(top);updateStatus();}
+  fbObs.observe(top);
+  if(bottom){const nb=bar.querySelector(".fb-next");const o2=new IntersectionObserver(([e])=>{if(nb)nb.style.visibility=e.isIntersecting?"hidden":"";},{threshold:0});o2.observe(bottom);const d=fbObs.disconnect.bind(fbObs);fbObs.disconnect=()=>{o2.disconnect();d();};}
+  updateStatus();}
 function updateStatus(){for(const el of document.querySelectorAll("#saveStatus,#saveStatus2,#saveStatus3,#saveStatusF")){
   el.className="status"+(S.dirty?" dirty":"");
   const t=S.autoAt?new Date(S.autoAt):null;const hm=t?`${t.getHours()}:${String(t.getMinutes()).padStart(2,"0")}`:"";
