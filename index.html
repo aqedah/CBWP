@@ -779,6 +779,9 @@ const ssSong=id=>`https://songselect.ccli.com/songs/${id}`;
 function catItems(cat){return(cat.items||[]).map(r=>typeof r==="string"?r.split("\t"):(typeof r[0]==="number"||r[0]===null?r.slice(1):r)).filter(r=>r&&r[0]);}
 /* fast search: catalogs are parsed and normalised once, then every keystroke only compares ready-made strings */
 const SIDX={cats:null,len:-1,list:[],dup:{}};
+/* 라이브러리에 이미 있는 곡인지: 「부흥 2000(오소서 진리의 성령님)」처럼 제목(첫 줄)으로 등록한 곡도 같은 곡으로 봐요 */
+function libKeys(){const k=new Set();for(const sg of S.songs){const t=sg.title||"";k.add(norm(t));const m=t.match(/^(.*?)\s*\(([^()]*)\)\s*$/);if(m&&!/찬송가/.test(m[2])){k.add(norm(m[1])+"|"+norm(m[2]));k.add("~"+norm(m[2]));}}return k;}
+function inLib(have,e){if(have.has(e.nt))return true;return e.na.some(a=>have.has(e.nt+"|"+a)||(a.length>=6&&have.has("~"+a)));}
 function catIndex(){if(SIDX.cats===S.catalogs&&SIDX.len===S.catalogs.length)return SIDX;
   const list=[],dup={};for(const cat of S.catalogs)for(const[title,...alts]of catItems(cat)){const nt=norm(title);dup[nt]=(dup[nt]||0)+1;
     list.push({title,alts,nt,ct:choStr(nt),na:alts.map(norm),ca:alts.map(a=>choStr(norm(a))),hymn:splitTitle(title).hymn});}
@@ -790,8 +793,8 @@ function rankN(nt,ct,Q){if(!Q.qq)return -1;const i=nt.indexOf(Q.qq);if(i===0)ret
 function suggest(q,yid){const out=[];q=(q||"").trim();const num=/^\d+$/.test(q)?+q:null;const Q=prepQ(q);
   for(const s of S.songs){let r=-1;if(yid&&(s.yt||[]).includes(yid))r=-3;else if(num!=null&&(splitTitle(s.title).hymn===num||String(s.ccli||"")===q))r=-1.5;
     else if(q&&num==null){const nt=norm(s.title);r=rankN(nt,choStr(nt),Q);if(r===-1&&s.author){const na=norm(s.author);r=rankN(na,choStr(na),Q)>-1?3.5:-1;}}if(r!==-1)out.push({kind:"song",r,s,title:s.title});}
-  if(q){const have=new Set(S.songs.map(s=>norm(s.title)));const seen=new Set();const ix=catIndex();
-    for(const e of ix.list){if(have.has(e.nt))continue;const key=e.nt+"|"+(e.na[0]||"");if(seen.has(key))continue;
+  if(q){const have=libKeys();const seen=new Set();const ix=catIndex();
+    for(const e of ix.list){if(inLib(have,e))continue;const key=e.nt+"|"+(e.na[0]||"");if(seen.has(key))continue;
       let r=-1,hit=null;if(num!=null)r=e.hymn===num?-1.4:-1;else{r=rankN(e.nt,e.ct,Q);if(r===-1)for(let k=0;k<e.na.length;k++){const ra=rankN(e.na[k],e.ca[k],Q);if(ra!==-1){r=ra+.2;hit=e.alts[k];break;}}}
       if(r!==-1){seen.add(key);out.push({kind:"cat",r:r+.5,title:e.title,alt:hit||e.alts[0]||"",dup:ix.dup[e.nt]>1});}}}
   out.sort((a,b)=>a.r-b.r||a.title.localeCompare(b.title,"ko"));
@@ -1733,8 +1736,8 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
   /* titles that are not in the library yet (21세기 찬송가 645곡 · 곡집 제목) */
   const more=h("div",{class:"cards"});
   const addFromList=async t=>{if(S.songs.some(s=>norm(s.title)===norm(t)))return toast("이미 라이브러리에 있어요");await createSong(t,null);toast(`「${t}」을(를) 라이브러리에 넣었어요`);draw();};
-  function drawMore(){more.replaceChildren();const qq=q.trim();if(!qq)return;const num=/^\d+$/.test(qq)?+qq:null;const have=new Set(S.songs.map(s=>norm(s.title)));const hits=[];
-    const Q=prepQ(qq);for(const e of catIndex().list){if(have.has(e.nt))continue;const ok=num!=null?e.hymn===num:(rankN(e.nt,e.ct,Q)>-1||e.na.some((a,k)=>rankN(a,e.ca[k],Q)>-1));if(ok)hits.push([e.title,e.alts[0]||""]);if(hits.length>=40)break;}
+  function drawMore(){more.replaceChildren();const qq=q.trim();if(!qq)return;const num=/^\d+$/.test(qq)?+qq:null;const have=libKeys();const hits=[];
+    const Q=prepQ(qq);for(const e of catIndex().list){if(inLib(have,e))continue;const ok=num!=null?e.hymn===num:(rankN(e.nt,e.ct,Q)>-1||e.na.some((a,k)=>rankN(a,e.ca[k],Q)>-1));if(ok)hits.push([e.title,e.alts[0]||""]);if(hits.length>=40)break;}
     if(!hits.length)return;
     more.append(h("div",{class:"lab",text:`라이브러리에 아직 없는 곡 (찬송가 · 제목 목록) ${hits.length>=40?"40개까지":hits.length+"곡"}`}),
       ...hits.map(([t,a])=>h("div",{class:"card row",style:"flex-wrap:nowrap"},h("div",{style:"flex:1;min-width:0"},h("b",{text:t}),a?h("div",{class:"hint",text:`첫 줄: ${a}`}):null),
@@ -1766,7 +1769,7 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
   m.append(hymnSheet(addFromList),catalogSheet());}
 /* browse all 645 hymns by number */
 function hymnSheet(addFromList){const cat=S.catalogs.find(c=>c.id==="hymns");const items=cat?catItems(cat).map(r=>r[0]):[];
-  const have=new Set(S.songs.map(s=>norm(s.title)));const grid=h("div",{class:"hymngrid"});let from=1;
+  const have=libKeys();const grid=h("div",{class:"hymngrid"});let from=1;
   const draw=()=>{grid.replaceChildren(...items.filter(t=>{const n=splitTitle(t).hymn;return n>=from&&n<from+100;}).map(t=>{const sp=splitTitle(t);const inLib=have.has(norm(t));
     return h("button",{type:"button",class:"hymn"+(inLib?" in":""),title:inLib?"라이브러리에 있어요":"눌러서 라이브러리에 넣기",disabled:!S.canWrite&&!inLib,onclick:()=>{if(!inLib)addFromList(t);}},h("b",{text:sp.hymn}),h("span",{text:sp.base}));}));};
   const pager=h("div",{class:"seg"},Array.from({length:7},(_,i)=>{const a=i*100+1;return h("button",{type:"button","aria-pressed":String(a===from),text:`${a}~${Math.min(645,a+99)}`,onclick:e=>{from=a;[...pager.children].forEach(b=>b.setAttribute("aria-pressed",String(b===e.currentTarget)));draw();}});}));
