@@ -223,6 +223,11 @@ html{scrollbar-gutter:stable}
 .cmini-sheet h2{margin-bottom:8px}.flash{outline:3px solid var(--team,var(--accent));outline-offset:2px;transition:outline-color .4s}
 .teamwide{display:inline-block;font-size:.68rem;font-weight:700;color:#fff;background:var(--warn);border-radius:4px;padding:0 5px;margin-right:4px}
 .stbadge.reopen{color:var(--warn)}.lockban{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.finish .fin-sum{font-weight:700;margin:-4px 0 10px}.fin-h{font-size:1rem;margin:10px 0 4px}
+.fin-list{display:flex;flex-direction:column;gap:6px}.fin-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:4px 8px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--sheet)}
+.fin-no{color:var(--muted);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}.fin-t{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+.fin-in{grid-column:2;display:flex;gap:6px;align-items:center;min-width:0}.fin-in input{flex:1;min-width:0}.fin-ok{font-size:.75rem;color:var(--ok);white-space:nowrap}.fin-ok.warn,.fin-pl.warn{color:var(--warn)}
+.fin-pl{margin-top:6px}.fin-diff ul{margin:6px 0 8px;padding-left:18px}
 .wb.wb2{grid-template-columns:minmax(0,1fr) minmax(300px,380px)}
 .spdet>summary{list-style:none;cursor:pointer}.spdet>summary::-webkit-details-marker{display:none}
 .spdet>summary h2::after{content:"▸";margin-left:8px;color:var(--muted);font-size:.9rem;transition:transform .15s}.spdet[open]>summary h2::after{transform:rotate(90deg)}
@@ -782,8 +787,9 @@ function stBadge(c){if(c.past)return h("span",{class:"stbadge draft",text:"지�
 async function finalizeConti(){if(!S.db)return toast("팀 저장소에 연결되어야 확정할 수 있어요");
   if(!S.curId||S.dirty){await saveConti();if(!S.curId||S.dirty)return toast("먼저 저장을 마쳐 주세요");}
   askConfirm("콘티를 확정할까요?",[h("p",{text:"확정하면 이 콘티는 잠겨서 고칠 수 없어요. 팀원에게는 최종 콘티로 보여요."}),h("p",{class:"hint",text:"고칠 일이 생기면 작성자가 「확정 풀기」를 누르면 돼요. 고친 뒤 다시 확정하면 「고친 뒤 다시 확정」 표시가 남아요."})],"콘티 확정",async()=>{
-    const p={status:"final",finalAt:Date.now(),finalCount:(S.cur.finalCount||0)+1,updatedAt:Date.now()};
-    try{clearTimeout(autoT);await S.db.doc(`contis/${S.curId}`).update(p);Object.assign(S.cur,p);S.dirty=false;saveDraft();toast("확정했어요 🔒");render();}catch(e){console.error(e);toast("확정하지 못했어요");}});}
+    const snap=contiSnap(S.cur);const p={status:"final",finalAt:Date.now(),finalCount:(S.cur.finalCount||0)+1,updatedAt:Date.now(),finalSnap:snap,finalDiff:S.cur.finalSnap?contiDiff(S.cur.finalSnap,snap):[]};
+    try{clearTimeout(autoT);await S.db.doc(`contis/${S.curId}`).update(p);Object.assign(S.cur,p);S.dirty=false;saveDraft();toast("확정했어요 🔒 이제 연습 영상과 공지를 마무리하세요",3500);render();
+      setTimeout(()=>{const f=$("#finishPanel");if(f)f.scrollIntoView({behavior:"smooth",block:"start"});},120);}catch(e){console.error(e);toast("확정하지 못했어요");}});}
 function unlockConti(){if(!canUnlock())return;
   askConfirm("확정을 풀까요?",[h("p",{text:"다시 고칠 수 있게 돼요. 팀원에게는 「작성 중 · 확정 풀림」으로 보여요. 다 고친 뒤 다시 「확정하기」를 눌러 주세요."})],"확정 풀기",async()=>{
     const p={status:"draft",reopenedAt:Date.now(),updatedAt:Date.now()};
@@ -1102,7 +1108,8 @@ det.append(h("summary",{},h2),...[...d.childNodes]);secEls.special=det;}
   S.setWT=setWT;
   const miniDet=isWide()?null:h("details",{class:"sheet cmini-det",open:!!S.miniOpen,ontoggle:e=>{S.miniOpen=e.target.open;}},h("summary",{},h("b",{text:"전체 콘티"}),h("span",{class:"cm-n"}),h("span",{class:"cm-rd hint"})),contiMini());
   fs.append(...panels);if(miniDet)m.append(miniDet);m.append(wtabs,fs);
-  const wBot=h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 다음 단계"})),
+  const reopened=!!c.reopenedAt&&!isLocked(c);
+  const wBot=h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 다음 단계"}),reopened?h("span",{class:"sub",style:"color:var(--warn)",text:"확정을 푼 동안은 공지 · 재생목록을 잠시 꺼 둬요. 다시 확정하면 마무리 칸이 열려요."}):null),
     h("div",{class:"savebar"},
       h("button",{class:"btn primary",id:"saveBtn",disabled:!editable,onclick:()=>saveConti(),text:"저장"}),h("span",{class:"status",id:"saveStatus"}),
       editable?h("button",{type:"button",class:"btn",id:"undoBtn",title:"방금 고친 것을 한 단계씩 되돌려요 (Ctrl+Z)",onclick:undoConti,text:"↶ 실행 취소"}):null,lockCtl(editable),
@@ -1110,15 +1117,15 @@ det.append(h("summary",{},h2),...[...d.childNodes]);secEls.special=det;}
       S.curId&&isWriter()?h("button",{class:"btn",onclick:newConti,title:"빈 콘티를 새로 시작해요",text:"+ 새 콘티 만들기"}):null),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"},
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
-      h("button",{class:"btn",onclick:async()=>{if(!S.curId&&curEditable()&&S.db){toast("새 콘티를 먼저 저장해요");await saveConti();if(!S.curId)return;}songListNotice(S.cur);},title:"날짜 · 제목 · 설교자 · 본문 · 묵상 · 송리스트를 먼저 알려요 (악보 없이)",text:"📋 송리스트 공지"}),
-      h("button",{class:"btn",onclick:()=>{const y=teamCfg().yt;if(y&&y.clientId&&y.playlistId)return ytAddModal(S.cur);
+      h("button",{class:"btn",disabled:reopened,onclick:async()=>{if(!S.curId&&curEditable()&&S.db){toast("새 콘티를 먼저 저장해요");await saveConti();if(!S.curId)return;}songListNotice(S.cur);},title:"날짜 · 제목 · 설교자 · 본문 · 묵상 · 송리스트를 먼저 알려요 (악보 없이)",text:"📋 송리스트 공지"}),
+      h("button",{class:"btn",disabled:reopened,onclick:()=>{const y=teamCfg().yt;if(y&&y.clientId&&y.playlistId)return ytAddModal(S.cur);
         const md=modal(`🎵 ${teamName(S.team)} 재생목록에 담기`,h("div",{class:"panel-body"},h("p",{text:`준비 중이에요. 담당자가 유튜브 연결을 마치면 쓸 수 있어요.`}),h("p",{class:"hint",text:"담당자는 구글 클라우드에서 받은 클라이언트 ID와 재생목록 주소를 넣어 연결해요."})),
           [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),S.canWrite&&S.db?h("button",{class:"btn primary",text:"연결 설정 (담당자용)",onclick:()=>{md.close();ytSetupModal(()=>ytAddModal(S.cur));}}):null]);},title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${teamName(S.team)} 재생목록에 담기`}),
       h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 흐름 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 편집 →"})));
-  m.append(wBot);
+  const botEl=isLocked(c)?finishPanel(c,"write"):wBot;m.append(botEl);
   if(isWide())workbench(fs,c,editable,wtabs);else document.body.classList.remove("wb-on");
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updAux();if(S.wTab!=="info")setTimeout(()=>setWT(S.wTab),0);
-  floatSave(head,editable,["다음: 악보 편집 →",()=>setTab("sheet")],wBot,true);updUndo();updateStatus();updUndo();}
+  floatSave(head,editable,["다음: 악보 편집 →",()=>setTab("sheet")],botEl,true);updUndo();updateStatus();updUndo();}
 function updAux(){updWTabs();updMini();drawBrief();}
 /* 전체 콘티 미니맵: 어느 탭에 있어도 곡 순서 · 키 · 악보 여부를 한눈에, 누르면 그 곡으로 */
 function contiMini(){const box=h("div",{class:"cmini"});return box;}
@@ -1325,9 +1332,9 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
       h("button",{class:"btn",onclick:()=>layoutEditor(S.cur,()=>{markDirty();}),text:"🧩 자유롭게 편집"}),
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
       h("button",{class:"btn",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
-      h("button",{class:"btn",onclick:async()=>{if(!S.curId&&curEditable()&&S.db){toast("새 콘티를 먼저 저장해요");await saveConti();if(!S.curId)return;}contiNotice(S.cur);},text:"📣 콘티 공지"}),
+      h("button",{class:"btn",disabled:!!c.reopenedAt&&!isLocked(c),title:c.reopenedAt&&!isLocked(c)?"확정을 푼 동안은 꺼 둬요":"",onclick:async()=>{if(!S.curId&&curEditable()&&S.db){toast("새 콘티를 먼저 저장해요");await saveConti();if(!S.curId)return;}contiNotice(S.cur);},text:"📣 콘티 공지"}),
       h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"다음: PPT 만들기 →"})));
-  m.append(sBot);floatSave(shTop,editable,["다음: PPT 만들기 →",()=>previewLyricsPpt(S.cur)],sBot);updateStatus();}
+  const sBotEl=isLocked(c)?finishPanel(c,"sheet"):sBot;m.append(sBotEl);floatSave(shTop,editable,["다음: PPT 만들기 →",()=>previewLyricsPpt(S.cur)],sBotEl);updateStatus();}
 /* =========================================================
    🧩 자유 배치: 종이(A3 가로 · A4 세로) 위에 악보 · 글상자 · 번호를 PPT처럼 놓아요.
    단위는 mm. 콘티에 layout으로 함께 저장되고, 편집한 그대로 PDF · 그림으로 나가요.
@@ -1654,10 +1661,10 @@ function ytSetupModal(after){const y=teamCfg().yt||{};
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:async()=>{const pid=playlistIdOf(pl.value);const c2=cid.value.trim();
       if(!pid)return toast("재생목록 주소를 알아보지 못했어요 (주소에 list=… 가 있어야 해요)");if(!/\.apps\.googleusercontent\.com$/.test(c2))return toast("클라이언트 ID는 …apps.googleusercontent.com 으로 끝나요");
       const yt={clientId:c2,playlistId:pid,name:nm.value.trim()||teamName(S.team)};try{await S.db.doc(`teams/${S.team}`).set({...teamCfg(),yt,updatedAt:Date.now()});S.teamCfgs[S.team]={...teamCfg(),yt};md.close();toast("유튜브 재생목록을 연결했어요");after&&after();}catch(e){toast("저장하지 못했어요");}}})]);}
-function ytAddModal(c){if(!c)return;const y=teamCfg().yt;const can=S.canWrite&&!!S.db;
-  if(!y||!y.clientId||!y.playlistId){if(!can)return toast("팀 유튜브 재생목록이 아직 연결되지 않았어요");return ytSetupModal(()=>ytAddModal(c));}
+function ytAddModal(c,onDone){if(!c)return;const y=teamCfg().yt;const can=S.canWrite&&!!S.db;
+  if(!y||!y.clientId||!y.playlistId){if(!can)return toast("팀 유튜브 재생목록이 아직 연결되지 않았어요");return ytSetupModal(()=>ytAddModal(c,onDone));}
   const ids=[...new Set(allItems(c).map(ytOfItem).filter(Boolean))];const noYt=allItems(c).filter(i=>!ytOfItem(i)).map(i=>i.title);const nItems=allItems(c).length;
-  let mode="add";const st=h("p",{class:"hint"});
+  let mode="replace";const st=h("p",{class:"hint"});
   const opt=(v,l,sub)=>h("label",{class:"pick",style:"align-items:flex-start"},h("input",{type:"radio",name:"ytm",checked:mode===v,onchange:()=>{mode=v;}}),h("span",{},h("b",{text:l}),h("div",{class:"hint",text:sub})));
   const go=h("button",{class:"btn primary",text:"구글로 로그인하고 담기",disabled:!ids.length,onclick:async()=>{go.disabled=true;
     try{st.textContent="구글 로그인 창에서 재생목록 주인 계정으로 허락해 주세요…";const tok=await ytToken(y.clientId);
@@ -1666,17 +1673,18 @@ function ytAddModal(c){if(!c)return;const y=teamCfg().yt;const can=S.canWrite&&!
       if(mode==="replace"){for(const x of have){st.textContent=`예전 영상 빼는 중… ${++del}/${have.length}`;await ytCall(tok,"DELETE",`playlistItems?id=${x.id}`);}}
       const haveV=new Set(mode==="replace"?[]:have.map(x=>x.v));
       for(const v of ids){if(haveV.has(v)){skip++;continue;}st.textContent=`영상 넣는 중… ${add+1}/${ids.length-skip}`;await ytCall(tok,"POST","playlistItems?part=snippet",{snippet:{playlistId:y.playlistId,resourceId:{kind:"youtube#video",videoId:v}}});add++;haveV.add(v);}
-      st.textContent="";md.close();toast(`${y.name} 재생목록에 ${add}곡을 넣었어요${skip?` (이미 있던 ${skip}곡은 그대로)`:""}${del?` · 예전 영상 ${del}개 뺌`:""}`,4500);}
+      st.textContent="";md.close();toast(`${y.name} 재생목록을 이 콘티 순서대로 새로 채웠어요 (${add}곡)`,4500);
+      const sync={at:Date.now(),n:add,sig:ids.join(",")};if(S.db&&c===S.cur&&S.curId){try{await S.db.doc(`contis/${S.curId}`).update({ytSync:sync});S.cur.ytSync=sync;}catch(e){}}if(onDone)onDone(sync);}
     catch(e){console.error(e);go.disabled=false;const r=e.reason||e.message||"";
       st.textContent=/popup|denied|access_denied/.test(r)?"로그인을 취소했거나 팝업이 막혔어요. 팝업을 허용하고 다시 눌러 주세요.":
         /forbidden|insufficient|playlistItemsNotAccessible|playlistForbidden/i.test(r)||e.status===403?"이 계정으로는 재생목록을 고칠 수 없어요. 재생목록 주인 계정으로 로그인해 주세요. (하루 사용량을 넘긴 경우에도 이렇게 나와요)":
         /playlistNotFound/.test(r)||e.status===404?"재생목록을 찾지 못했어요. 「연결 설정」에서 주소를 확인해 주세요.":
         /videoNotFound/.test(r)?"찾을 수 없는 영상이 있어요 (비공개 · 삭제된 영상). 그 곡의 유튜브 주소를 확인해 주세요.":`담지 못했어요 (${r})`;}}});
-  const md=modal(`🎵 ${teamName(S.team)} 재생목록에 담기`,h("div",{class:"panel-body"},
-    h("p",{},`이 콘티에서 유튜브 주소가 있는 곡 `,h("b",{text:`${ids.length}곡`}),`을 `,h("a",{href:`https://www.youtube.com/playlist?list=${y.playlistId}`,target:"_blank",rel:"noopener",text:`${y.name} 재생목록 ↗`}),`에 넣어요.`),
+  const md=modal(`🎵 ${teamName(S.team)} 재생목록 업데이트`,h("div",{class:"panel-body"},
+    h("p",{},`재생목록의 예전 영상을 모두 빼고, 이 콘티 순서대로 영상이 있는 곡 `,h("b",{text:`${ids.length}곡`}),`을 `,h("a",{href:`https://www.youtube.com/playlist?list=${y.playlistId}`,target:"_blank",rel:"noopener",text:`${y.name} 재생목록 ↗`}),`에 다시 채워요.`),
     !nItems?h("p",{class:"banner warn",text:"지금 열린 콘티에 곡이 없어요. 「지난 콘티」에서 담을 콘티를 열거나, 콘티 작성에서 곡을 먼저 넣어 주세요."}):
     noYt.length?h("p",{class:"hint",style:ids.length?"":"color:var(--warn)",text:`유튜브 주소가 없는 곡: ${noYt.join(", ")} → 콘티 작성의 곡 카드 「레퍼런스 유튜브 주소」 칸에 붙여 넣으면 담을 수 있어요`}):null,
-    h("div",{class:"picklist"},opt("add","새 곡만 뒤에 더하기","이미 들어 있는 영상은 그대로 두고, 없는 곡만 끝에 더해요"),opt("replace","이 콘티 곡으로 새로 채우기","재생목록의 예전 영상을 모두 빼고, 이 콘티 순서대로 다시 넣어요")),
+    h("p",{class:"hint",text:"재생목록 주인 구글 계정으로 로그인해야 바꿀 수 있어요."}),
     h("p",{class:"hint",text:"처음에는 구글이 「확인되지 않은 앱」이라고 알려 줄 수 있어요. 우리 교회 앱이니 「고급 → 계속」을 누르면 돼요."}),st,
     can?h("button",{class:"btn sm ghost",text:"연결 설정 바꾸기",onclick:()=>{md.close();ytSetupModal(()=>ytAddModal(c));}}):null),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);}
@@ -3896,6 +3904,59 @@ const contiLink=c=>`${location.origin}${location.pathname}#t=${encodeURIComponen
 async function shareText(text,title){try{if(navigator.share){await navigator.share({title:title||"워십플래너",text});return true;}}catch(e){if(e&&e.name==="AbortError")return false;}
   try{await navigator.clipboard.writeText(text);toast("복사했어요. 카톡방에 붙여 넣으세요");return true;}catch(e){toast("복사하지 못했어요. 글을 길게 눌러 복사해 주세요");return false;}}
 /* 송리스트 공지: 악보 없이 날짜 · 제목 · 설교자 · 본문(말씀) · 묵상 · 곡 목록만 먼저 알려요 */
+function noticeTextModal(title,text,shareTitle){const ta=h("textarea",{style:"min-height:300px;font-size:.92rem;line-height:1.6",value:text});
+  const md=modal(title,h("div",{class:"panel-body"},ta,h("p",{class:"hint",text:"고쳐서 쓸 수 있어요. 「📤 카톡으로 보내기」를 누르면 카톡을 골라 바로 보낼 수 있어요(PC는 복사돼요)."})),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn",text:"복사",onclick:async()=>{try{await navigator.clipboard.writeText(ta.value);toast("복사했어요");}catch(e){ta.select();toast("글을 골라 두었어요. 복사해 주세요");}}}),
+      h("button",{class:"btn primary",text:"📤 카톡으로 보내기",onclick:()=>shareText(ta.value,shareTitle)}),
+      S.canWrite&&S.db?h("button",{class:"btn primary",text:"공지로 올리기",onclick:async()=>{const nn={id:uid(8),text:ta.value.trim(),by:S.myId||null,name:myName(),at:Date.now(),pin:true};
+        if(await saveNotices([nn,...notices().map(x=>({...x,pin:false}))].slice(0,30))){md.close();toast("홈 공지 맨 위에 올렸어요");}}}):null]);}
+const songLines=c=>{let n=0;return SECTIONS.filter(([k])=>(c[k]||[]).length).flatMap(([k,l])=>[`<${l}>`,...c[k].map(it=>`${++n}. ${it.title}${it.key?` (${it.key})`:""}`),""]);};
+const teamPlUrl=c=>{const y=(S.teamCfgs[teamOf(c)]||{}).yt;return y&&y.playlistId?`https://www.youtube.com/playlist?list=${y.playlistId}`:"";};
+/* 확정 후 최종 송리스트 공지 */
+function finalNotice(c){if(!allItems(c).length)return toast("콘티에 곡이 없어요");const pl=teamPlUrl(c);
+  const text=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 최종 송리스트 🔒`,"",c.sermonTitle?`제목: 「${c.sermonTitle}」`:"",c.preacher?`설교: ${c.preacher}`:"",c.passage?`본문: ${c.passage}`:"",leaderOf(c)?`인도: ${leaderOf(c)}`:"","",
+    ...songLines(c),pl?`🎵 연습 재생목록: ${pl}`:"",`👉 콘티 보기: ${contiLink(c)}`].join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  noticeTextModal("최종 송리스트 공지",text,`${dLabel(c.date)} 최종 송리스트`);}
+/* 다시 확정할 때 달라진 점 */
+const contiSnap=c=>SECTIONS.flatMap(([k,l])=>(c[k]||[]).map(it=>({id:it.songId||norm(it.title||""),t:it.title||"",k:(it.key||"").trim(),s:l})));
+function contiDiff(a,b){const out=[];const A=new Map(a.map(x=>[x.id,x])),B=new Map(b.map(x=>[x.id,x]));
+  b.forEach((x,i)=>{if(!A.has(x.id))out.push(`➕ ${i+1}번 「${x.t}」 추가 (${x.s})`);});
+  a.forEach(x=>{if(!B.has(x.id))out.push(`➖ 「${x.t}」 빠짐`);});
+  b.forEach(x=>{const o=A.get(x.id);if(o&&o.k!==x.k)out.push(`🎼 「${x.t}」 키 ${o.k||"-"} → ${x.k||"-"}`);});
+  const ca=a.filter(x=>B.has(x.id)).map(x=>x.id).join("|"),cb=b.filter(x=>A.has(x.id)).map(x=>x.id).join("|");if(ca!==cb)out.push("🔀 곡 순서가 바뀌었어요");
+  return out;}
+function diffNotice(c){const d=c.finalDiff||[];const pl=teamPlUrl(c);
+  const text=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 콘티가 바뀌었어요`,"",...d,"","[바뀐 송리스트]",...songLines(c),pl?`🎵 연습 재생목록: ${pl}`:"",`👉 콘티 보기: ${contiLink(c)}`].join("\n").replace(/\n{3,}/g,"\n\n").trim();
+  noticeTextModal("변경사항 공지",text,`${dLabel(c.date)} 콘티 변경`);}
+/* 확정 후 마무리 칸: 연습 영상 · 재생목록 · 최종 공지 */
+function finishPanel(c,where){const canRef=canUnlock();const y=teamCfg().yt;const all=allItems(c),n=all.length;
+  const sum=h("div",{class:"fin-sum"});const plSt=h("div",{class:"hint fin-pl"});
+  const updSum=()=>{const kc=all.filter(i=>(i.key||"").trim()).length,sc=all.filter(i=>(i.pages||[]).length).length,yc=all.filter(i=>ytOfItem(i)).length;
+    sum.textContent=`${n}곡 · 키 ${kc}/${n} · 악보 ${sc}/${n} · 연습 영상 ${yc}/${n}`;
+    const sig=refIds(c).join(",");const ys=c.ytSync;
+    plSt.textContent=!y||!y.playlistId?"팀 재생목록이 아직 연결되지 않았어요.":!ys?"아직 재생목록에 담지 않았어요.":ys.sig===sig?`✓ 재생목록 업데이트 ${fmtStamp(ys.at)} · ${ys.n}곡`:"⚠ 확정 콘티나 연습 영상이 바뀌었어요. 재생목록을 다시 업데이트하세요.";
+    plSt.classList.toggle("warn",!!ys&&ys.sig!==sig);};
+  let saveT=null;const saveSec=k=>{clearTimeout(saveT);saveT=setTimeout(async()=>{try{await S.db.doc(`contis/${S.curId}`).update({[k]:clone(c[k]),updatedAt:Date.now()});}catch(e){console.error(e);toast("영상 주소를 저장하지 못했어요");}},600);};
+  let no=0;const rows=SECTIONS.flatMap(([k,l])=>(c[k]||[]).map(it=>{no++;const lib=((songOf(it)||{}).yt||[])[0]||"";
+    const link=h("a",{class:"btn sm",target:"_blank",rel:"noopener",text:"▶"});const ok=h("span",{class:"fin-ok"});
+    const upd=()=>{const v=ytOfItem(it);const id=v?ytId(v):"";link.href=id?`https://youtu.be/${id}`:(v||"#");link.style.visibility=v?"":"hidden";ok.textContent=v?(it.yt?"✓":"✓ 라이브러리"):"영상 없음";ok.classList.toggle("warn",!v);};
+    const inp=h("input",{type:"text",value:it.yt||"",placeholder:lib?"라이브러리 영상을 써요 · 다른 영상이면 붙여 넣기":"유튜브 주소 붙여 넣기",disabled:!canRef,
+      oninput:e=>{it.yt=e.target.value.trim();upd();updSum();saveSec(k);}});upd();
+    return h("div",{class:"fin-row"},h("span",{class:"fin-no",text:String(no)}),h("div",{class:"fin-t"},h("b",{text:it.title}),it.key?h("span",{class:"cm-k",text:it.key}):null,h("span",{class:"hint",text:l})),
+      h("div",{class:"fin-in"},inp,link,ok));}));
+  updSum();
+  const plBtn=h("button",{class:"btn",title:"재생목록 주인 구글 계정이 필요해요",onclick:()=>ytAddModal(c,()=>updSum()),text:`🎵 ${teamName(S.team)} 재생목록 업데이트`});
+  const diff=(c.finalDiff||[]).length?h("div",{class:"banner fin-diff"},h("b",{text:`지난 확정과 달라진 점 (${c.finalCount}번째 확정)`}),h("ul",{},c.finalDiff.map(x=>h("li",{text:x}))),
+    h("button",{class:"btn sm primary",text:"📣 변경사항 공지",onclick:()=>diffNotice(c)})):null;
+  return h("div",{class:"sheet finish",id:"finishPanel"},h("h2",{},h("span",{text:"🔒 확정 후 마무리"}),h("span",{class:"sub",text:c.finalAt?`확정 ${fmtStamp(c.finalAt)}`:""})),
+    sum,diff,
+    h("h3",{class:"fin-h",text:"연습 영상 (레퍼런스)"}),h("p",{class:"hint",style:"margin:0 0 8px",text:"비워 두면 곡 라이브러리의 대표 영상을 써요. 이번 주만 다른 편곡을 들려주려면 여기 붙여 넣으세요 (이 콘티에만 적용돼요)."}),
+    h("div",{class:"fin-list"},rows),
+    h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:12px"},plBtn,h("button",{class:"btn primary",onclick:()=>finalNotice(c),text:"📣 최종 송리스트 공지"})),plSt,
+    h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"},
+      S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,text:"+ 연습 일정"}):null,h("button",{class:"btn",onclick:()=>outputModal(c),text:"🖨 콘티 출력"}),
+      where==="write"?h("button",{class:"btn",onclick:()=>setTab("sheet"),text:"악보 편집 보기"}):null,
+      h("span",{class:"spacer"}),canUnlock()?h("button",{class:"btn",onclick:unlockConti,text:"확정 풀기"}):null,h("button",{class:"btn primary",onclick:()=>previewLyricsPpt(c),text:"다음: PPT 만들기 →"})));}
 function songListNotice(c){if(!c)return;if(!allItems(c).length)return toast("콘티에 곡이 없어요");
   askConfirm("송리스트 공지",[h("p",{text:"악보 편집 없이 공지할까요?"}),h("p",{class:"hint",text:"날짜 · 제목 · 설교자 · 본문 · 묵상 · 송리스트만 먼저 알려요. 악보까지 마친 뒤에는 「콘티 공지」로 악보와 함께 다시 알릴 수 있어요."})],"공지 쓰기",async()=>{
     let verses="";const r=parseRef((c.passage||"").trim());if(r){try{await loadBible();if(BIB[r.b]&&BIB[r.b][r.ch-1])verses=refRows(r).map(([ch,v,t])=>`${v} ${t}`).join("\n");}catch(e){}}
