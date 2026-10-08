@@ -1014,9 +1014,9 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   if(S.wordOpen)setTimeout(()=>toggleWord(c,editable,true),0);
   /* roster */
   const rosterBox=h("div",{class:"roster",id:"rosterBox"});
-  const newPos=h("input",{type:"text",id:"f-newpos",placeholder:"자리 이름 (예: 바이올린)",style:"max-width:220px"});
-  fs.append(h("div",{class:"sheet"},h("h2",{},"참여자",h("span",{class:"sub",text:"자리를 누르면 멤버를 고를 수 있어요"})),rosterBox,
-    h("div",{class:"row",style:"margin-top:10px"},planOf(c.date)&&editable?h("button",{class:"btn sm primary",text:"편성표 불러오기",title:"우리 팀 → 편성에서 정한 이 날 참여자",onclick:()=>{c.roster=planRoster(planOf(c.date));markDirty();renderRoster();toast("편성표대로 채웠어요");}}):null,editable?rosterSetBtns((id,nm)=>{fillBasicRoster(c,false,id);markDirty();renderRoster();toast(`「${nm}」으로 채웠어요. 빠지는 사람만 고치세요`);}):null,newPos,h("button",{class:"btn sm",text:"+ 자리 직접입력",onclick:()=>{const v=newPos.value.trim();if(!v)return newPos.focus();c.roster.push({pos:v,people:[]});newPos.value="";markDirty();renderRoster();}}))));
+  const loadBtns=h("span",{class:"row",style:"gap:6px;flex-wrap:wrap"},planOf(c.date)&&editable?h("button",{class:"btn sm primary",text:"편성표 불러오기",title:"우리 팀 → 편성에서 정한 이 날 참여자",onclick:()=>{c.roster=planRoster(planOf(c.date));markDirty();renderRoster();toast("편성표대로 채웠어요");}}):null,
+    editable?rosterSetBtns((id,nm)=>{fillBasicRoster(c,false,id);markDirty();renderRoster();toast(`「${nm}」으로 채웠어요. 빠지는 사람만 고치세요`);}):null);
+  fs.append(h("div",{class:"sheet"},h("h2",{style:"display:flex;align-items:center;gap:8px;flex-wrap:wrap"},h("span",{text:"참여자"}),loadBtns),rosterBox));
   /* setlists */
   for(const [key,label,sub] of SECTIONS){
     const fixed=teamCfg().fixedOpening||[];
