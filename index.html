@@ -2483,7 +2483,7 @@ function projectListSheet(){const today=todayStr();const all=S.contis.filter(c=>
   const md=ds=>{const d=parseD(ds);return `${d.getMonth()+1}/${d.getDate()}`;};const DW="일월화수목금토";
   const row=c=>{const n=allItems(c).length,sp=(c.special||[])[0];return h("div",{class:"card pmrow"},h("div",{style:"flex:1;min-width:200px"},
       h("b",{text:`${fmtDate(c.date)}${c.sermonTitle?` · ${c.sermonTitle}`:""}`}),
-      h("div",{class:"hint",text:[c.preacher,c.passage,n?`${n}곡`:"곡 미입력",(sp||c.specialBy)?`특송 ${[sp&&sp.title,c.specialBy].filter(Boolean).join(" - ")}`:""].filter(Boolean).join(" · ")})),
+      h("div",{class:"hint",text:[leaderOf(c)?`인도 ${leaderOf(c)}`:"인도자 미정",c.preacher?`설교 ${c.preacher}`:"",c.passage,n?`${n}곡`:"곡 미입력",(sp||c.specialBy)?`특송 ${[sp&&sp.title,c.specialBy].filter(Boolean).join(" - ")}`:""].filter(Boolean).join(" · ")})),
     h("div",{class:"row"},h("button",{class:"btn sm",text:"보기",onclick:()=>viewConti(c)}),isWriter()?h("button",{class:"btn sm",text:"고치기",onclick:()=>openConti(c)}):null,h("button",{class:"btn sm primary",text:"PPT",onclick:()=>previewLyricsPpt(c)})));};
   const week=k=>{const end=addDays(k,6);const list=weeks[k];const open=isOpen(k);const past=end<today;
     return h("div",{class:"pweek"+(past?" past":"")},h("button",{type:"button",class:"pweek-h","aria-expanded":String(open),onclick:()=>{S.pwOpen[k]=!open;render();}},
@@ -2491,7 +2491,7 @@ function projectListSheet(){const today=todayStr();const all=S.contis.filter(c=>
       open?h("div",{class:"cards",style:"margin-top:6px"},Array.from({length:7},(_,i)=>{const d=addDays(k,i);const cs=list.filter(c=>c.date===d);
         return cs.length?cs.map(row):h("div",{class:"pday-empty hint",text:`${md(d)}(${DW[i]}) · 집회 없음`});}).flat()):null);};
   const allOpen=keys.length&&keys.every(isOpen);
-  return h("div",{class:"sheet"},h("h2",{},`${teamName(S.team)} 집회`,h("span",{class:"row",style:"gap:6px"},h("span",{class:"sub",text:all.length?`${all.length}개 · ${keys.length}주`:"아직 콘티가 없어요"}),
+  return h("div",{class:"sheet"},h("h2",{},teamName(S.team),h("span",{class:"row",style:"gap:6px"},h("span",{class:"sub",text:all.length?`${all.length}개 · ${keys.length}주`:"아직 콘티가 없어요"}),
       keys.length>1?h("button",{class:"btn sm ghost",text:allOpen?"모두 접기":"모두 펼치기",onclick:()=>{keys.forEach(k=>S.pwOpen[k]=!allOpen);render();}}):null)),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},keys.map(week)),
     isWriter()?h("button",{class:"btn sm",style:"margin-top:8px",text:"+ 새 집회 콘티",onclick:()=>newConti()}):null);}
