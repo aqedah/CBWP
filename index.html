@@ -2637,7 +2637,7 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
   const usage={};for(const c of S.contis)for(const it of allItems(c)){const k=it.songId||it.title;usage[k]=(usage[k]||0)+1;}
   const FL=[["all","전체"],["fav","☆ 즐겨찾기"],["score","악보 있는 곡"],["lyrics","가사 있는 곡"],["nolyrics","가사 없는 곡"],["hymn","새찬송가"],["tongil","통일찬송가"]];
   const canDel=S.canWrite&&!S.memberOnly&&!!S.db;if(!S.songSel)S.songSel=null;
-  const chips=h("div",{class:"chipbar"},FL.map(([k,l])=>h("button",{type:"button",class:"fchip","aria-pressed":String(F.f===k),text:l,onclick:e=>{F.f=k;[...chips.querySelectorAll(".fchip")].forEach(b=>b.setAttribute("aria-pressed",String(b===e.currentTarget)));draw();}})),
+  const chips=h("div",{class:"chipbar"},FL.map(([k,l])=>h("button",{type:"button",class:"fchip","aria-pressed":String(F.f===k),text:l,onclick:e=>{F.f=F.f===k&&k!=="all"?"all":k;const on=FL.findIndex(([kk])=>kk===F.f);[...chips.querySelectorAll(".fchip")].forEach((b,i)=>b.setAttribute("aria-pressed",String(i===on)));draw();}})),
     h("select",{id:"song-sort","aria-label":"정렬",onchange:e=>{F.sort=e.target.value;draw();}},[["used","많이 부른 순"],["abc","가나다순"]].map(([v,l])=>h("option",{value:v,text:l,selected:F.sort===v}))));
   const newT=h("input",{type:"text",id:"song-new",placeholder:"새 곡 제목 (유튜브 주소를 같이 붙여도 돼요)"});
   m.append(h("div",{class:"sheet"},h("h2",{},"찬양 라이브러리",h("span",{class:"sub",text:`모두 ${S.songs.length}곡 · 교회 전체가 함께 써요`})),
