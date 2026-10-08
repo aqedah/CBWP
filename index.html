@@ -72,7 +72,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .links a{height:34px;box-sizing:border-box}
 .links a:hover{border-color:var(--accent);color:var(--ink)}
 .links svg{width:16px;height:16px;flex:none}
-.brand .links{gap:8px}.wordin{margin:14px 0 0;box-shadow:none;border:1px solid var(--line);background:var(--soft)}.wordin h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wordin .wb-word{max-height:55vh;overflow:auto}.instchip{gap:4px}.brandname{line-height:1.12;font-size:.92em;white-space:nowrap}.brand h1>a{min-width:0}.brand h1>a>span{min-width:0;overflow-wrap:anywhere}
+.brand .links{gap:8px}.wordin{margin:4px 0 6px;box-shadow:none;border:1px solid var(--line);background:var(--soft)}.wordin h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wordin .wb-word{max-height:55vh;overflow:auto}.instchip{gap:4px}.brandname{line-height:1.12;font-size:.92em;white-space:nowrap}.brand h1>a{min-width:0}.brand h1>a>span{min-width:0;overflow-wrap:anywhere}
 @media (max-width:700px){.brand{padding-right:96px}.instchip{height:36px;width:36px;padding:0;justify-content:center;font-size:1.05rem}.instchip .instlabel{display:none}.brandlogo{height:34px}.brand h1{font-size:1.25rem}.links a{padding:8px;border-radius:999px}.links a .ytlabel{display:none}.links svg{width:20px;height:20px}}
 /* bottom nav (4 big groups) + sub-tabs */
 .bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--sheet);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgb(0 0 0 / .06);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -995,9 +995,10 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       fld("f-wtype","예배",h("div",{style:"display:flex;flex-direction:column;gap:6px"},wsel,custom)),
       fld("f-passage","본문",h("div",{class:"row",style:"flex-wrap:nowrap"},inp("f-passage","passage","예: 요한복음 15:1-8"),
         h("button",{type:"button",class:"btn sm",id:"wordToggle",text:S.wordOpen&&!isWide()?"말씀 접기":"말씀 펼치기",title:"본문 말씀과 묵상 메모를 이 아래에 펼쳐요",onclick:()=>toggleWord(c,editable)}))),
+      h("div",{id:"wordSlot",style:"grid-column:1/-1"}),
       fld("f-title","설교 제목",inp("f-title","sermonTitle","예: 참포도나무")),
       fld("f-preacher","설교자",inp("f-preacher","preacher","예: 이삭 목사")),
-      fld("f-reflist","레퍼런스 재생목록",h("div",{style:"display:flex;flex-direction:column;gap:4px"},refPlaylistLink(c),h("span",{class:"hint",text:"곡마다 붙인 유튜브 주소를 콘티 순서대로 이어 들어요"})))),h("div",{id:"wordSlot"})));
+      fld("f-reflist","레퍼런스 재생목록",h("div",{style:"display:flex;flex-direction:column;gap:4px"},refPlaylistLink(c),h("span",{class:"hint",text:"곡마다 붙인 유튜브 주소를 콘티 순서대로 이어 들어요"}))))));
   if(S.wordOpen&&!isWide())setTimeout(()=>toggleWord(c,editable,true),0);
   /* roster */
   const rosterBox=h("div",{class:"roster",id:"rosterBox"});
@@ -1038,8 +1039,8 @@ function toggleWord(c,editable,keep){if(isWide()){const w=$(".wb-l .wb-word");if
   if(!keep&&S.wordOpen&&slot.firstChild){S.wordOpen=false;slot.replaceChildren();if(btn)btn.textContent="말씀 펼치기";return;}
   S.wordOpen=true;if(btn)btn.textContent="말씀 접기";
   const pnl=wordPanel(c,editable);pnl.classList.add("wordin");
-  pnl.querySelector("h2").append(h("button",{type:"button",class:"btn sm ghost",style:"margin-left:auto",text:"▲ 접기",onclick:()=>{S.wordOpen=false;slot.replaceChildren();const b=$("#wordToggle");if(b)b.textContent="말씀 펼치기";$("#f-passage").scrollIntoView({block:"center"});}}));
-  slot.replaceChildren(pnl);if(!keep)pnl.scrollIntoView({behavior:"smooth",block:"nearest"});}
+  pnl.querySelector("h2").append(h("button",{type:"button",class:"btn sm ghost",style:"margin-left:auto",text:"▲ 접기",onclick:()=>{S.wordOpen=false;slot.replaceChildren();const b=$("#wordToggle");if(b)b.textContent="말씀 펼치기";}}));
+  slot.replaceChildren(pnl);}
 /* PC 작업대: 넓은 화면(1200px~)에서 콘티 작성을 3단으로 — 예배 정보 · 참여자 · 말씀 | 콘티 | 곡 찾기 */
 const isWide=()=>window.innerWidth>=1200;
 {let wasWide=isWide(),t=null;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(()=>{const w=isWide();if(w!==wasWide){wasWide=w;if(S.tab==="write")render();}},250);});}
