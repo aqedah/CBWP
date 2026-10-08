@@ -1040,8 +1040,9 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 다음 단계"}),h("span",{class:"status",id:"saveStatus2"})),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},h("button",{class:"btn primary",disabled:!editable,onclick:()=>saveConti(),text:"콘티 저장"}),
       h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"}),
-      h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 흐름 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 편집 →"})),
-    h("p",{class:"hint",style:"margin:8px 0 0",text:"악보 편집 → 연습 일정 · 콘티 출력 · 공지 → PPT 만들기 순서로 이어져요"})));
+      h("button",{class:"btn",onclick:()=>songListNotice(S.cur),title:"날짜 · 제목 · 설교자 · 본문 · 묵상 · 송리스트를 먼저 알려요 (악보 없이)",text:"📋 송리스트 공지"}),
+      h("button",{class:"btn",onclick:()=>{const y=teamCfg().yt;if(y&&y.clientId&&y.playlistId)return ytAddModal(S.cur);toast(`${teamName(S.team)} 재생목록에 담기는 준비 중이에요. 담당자와 유튜브 연결을 마치면 쓸 수 있어요`,4000);},title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${teamName(S.team)} 재생목록에 담기`}),
+      h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 흐름 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 편집 →"}))));
   [...fs.querySelectorAll(".sheet > h2")].forEach((h2,i)=>{const first=h2.firstChild;const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
   if(isWide())workbench(fs,c,editable);else document.body.classList.remove("wb-on");
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updateStatus();updUndo();}
@@ -1213,7 +1214,6 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"다음 단계"}),h("span",{class:"sub",text:"연습 일정 · 출력 · 공지 → PPT 만들기"})),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
-      h("button",{class:"btn",onclick:()=>{const y=teamCfg().yt;if(y&&y.clientId&&y.playlistId)return ytAddModal(S.cur);toast(`${teamName(S.team)} 재생목록에 담기는 준비 중이에요. 담당자와 유튜브 연결을 마치면 쓸 수 있어요`,4000);},title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${teamName(S.team)} 재생목록에 담기`}),
       h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
       h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}),
       h("button",{class:"btn",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"PPT 만들기 →"}))));
@@ -3695,6 +3695,22 @@ function meditSheet(){const c=S.cur;const can=!!c&&curEditable();
 const contiLink=c=>`${location.origin}${location.pathname}#t=${encodeURIComponent(teamOf(c)||S.team||"")}${c.id?`&c=${c.id}`:""}${c.date?`&d=${c.date}`:""}`;
 async function shareText(text,title){try{if(navigator.share){await navigator.share({title:title||"워십플래너",text});return true;}}catch(e){if(e&&e.name==="AbortError")return false;}
   try{await navigator.clipboard.writeText(text);toast("복사했어요. 카톡방에 붙여 넣으세요");return true;}catch(e){toast("복사하지 못했어요. 글을 길게 눌러 복사해 주세요");return false;}}
+/* 송리스트 공지: 악보 없이 날짜 · 제목 · 설교자 · 본문(말씀) · 묵상 · 곡 목록만 먼저 알려요 */
+function songListNotice(c){if(!c)return;if(!allItems(c).length)return toast("콘티에 곡이 없어요");
+  askConfirm("송리스트 공지",[h("p",{text:"악보 편집 없이 공지할까요?"}),h("p",{class:"hint",text:"날짜 · 제목 · 설교자 · 본문 · 묵상 · 송리스트만 먼저 알려요. 악보까지 마친 뒤에는 「콘티 공지」로 악보와 함께 다시 알릴 수 있어요."})],"공지 쓰기",async()=>{
+    let verses="";const r=parseRef((c.passage||"").trim());if(r){try{await loadBible();if(BIB[r.b]&&BIB[r.b][r.ch-1])verses=refRows(r).map(([ch,v,t])=>`${v} ${t}`).join("\n");}catch(e){}}
+    let n=0;const lines=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 송리스트`,"",
+      c.sermonTitle?`제목: 「${c.sermonTitle}」`:"",c.preacher?`설교: ${c.preacher}`:"",c.passage?`본문: ${c.passage}`:"",verses?`\n${verses}`:"",
+      c.meditation?`\n[묵상]\n${c.meditation.trim()}`:"","",
+      ...SECTIONS.filter(([k])=>(c[k]||[]).length).flatMap(([k,l])=>[`<${l}>`,...c[k].map(it=>`${++n}. ${it.title}${it.key?` (${it.key})`:""}`),""]),
+      `👉 콘티 보기 / 참여 응답: ${contiLink(c)}`];
+    const text=lines.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+    const ta=h("textarea",{style:"min-height:300px;font-size:.92rem;line-height:1.6",value:text});
+    const md=modal("송리스트 공지",h("div",{class:"panel-body"},ta,h("p",{class:"hint",text:"고쳐서 쓸 수 있어요. 「📤 카톡으로 보내기」를 누르면 카톡을 골라 바로 보낼 수 있어요(PC는 복사돼요)."})),
+      [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn",text:"복사",onclick:async()=>{try{await navigator.clipboard.writeText(ta.value);toast("복사했어요");}catch(e){ta.select();toast("글을 골라 두었어요. 복사해 주세요");}}}),
+        h("button",{class:"btn primary",text:"📤 카톡으로 보내기",onclick:()=>shareText(ta.value,`${dLabel(c.date)} 송리스트`)}),
+        S.canWrite&&S.db?h("button",{class:"btn primary",text:"공지로 올리기",onclick:async()=>{const nn={id:uid(8),text:ta.value.trim(),by:S.myId||null,name:myName(),at:Date.now(),pin:true};
+          if(await saveNotices([nn,...notices().map(x=>({...x,pin:false}))].slice(0,30))){md.close();toast("홈 공지 맨 위에 올렸어요");}}}):null]);});}
 function contiNotice(c){if(!c)return;const ids=refIds(c);let n=0;
   const lines=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 콘티`,
     c.passage||c.sermonTitle?`말씀: ${[c.passage,c.sermonTitle&&`「${c.sermonTitle}」`].filter(Boolean).join(" ")}`:"",c.preacher?`설교: ${c.preacher}`:"",
