@@ -4430,6 +4430,10 @@ function tplPreview(t,lines,kind){ensureWebFont(t.font);ensureWebFont(t.titleFon
     lineHeight:String(1.15*(t.lnSpc||1)),textShadow:t.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none"});
   if(isT&&t.titleGrad){Object.assign(tx.style,{backgroundImage:gradCss(t.titleGrad),webkitBackgroundClip:"text",backgroundClip:"text",color:"transparent",webkitTextFillColor:"transparent",textShadow:"none"});tx.style.setProperty("-webkit-background-clip","text");}
   if(isT){Object.assign(tx.style,{fontFamily:`"${t.titleFont||t.font}",sans-serif`,fontWeight:(t.titleBold??t.bold)||boldName(t.titleFont||t.font)?"700":"400",textAlign:t.titleAlign||t.align||"center"});if(t.titleShadow===false)tx.style.textShadow="none";
+    /* PPT 파일과 똑같이: 곡 제목은 한 줄, 길면 글자를 줄여서 넣어요 */
+    {const sw=t.slideW||10,sh=t.slideH?t.slideH*72:405;const left=(t.titleAlign||t.align)==="left";const bw=left?Math.max(b.w,.98-b.x):b.w;
+      const tLen=[...lines.join(" ")].reduce((n,ch)=>n+(/[가-힣]/.test(ch)?1:/\s/.test(ch)?.35:.6),0);const base=t.titleSize||Math.round(t.size*1.15);
+      const fs=Math.max(12,Math.min(base,Math.floor(bw*sw*72/(Math.max(1,tLen)*1.15))));tx.style.fontSize=`${(fs/sh*100).toFixed(2)}cqh`;tx.style.whiteSpace="nowrap";if(left)tx.style.width=bw*100+"%";}
     for(const d of t.titleDeco||[]){const el=d.kind==="img"?h("img",{src:d.src,alt:""}):h("div");Object.assign(el.style,{position:"absolute",left:d.x*100+"%",top:d.y*100+"%",width:d.w*100+"%",height:d.h*100+"%",objectFit:"contain"});
       if(d.kind!=="img"){const c=d.hex||"000000";el.style.background=`rgba(${parseInt(c.substr(0,2),16)},${parseInt(c.substr(2,2),16)},${parseInt(c.substr(4,2),16)},${d.alpha??1})`;if(d.prst==="roundRect")el.style.borderRadius=`${Math.min(d.h,d.w*ar)*16.67}cqh`;}
       box.append(el);}}
