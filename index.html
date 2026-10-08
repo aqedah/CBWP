@@ -994,12 +994,12 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
         if(!c.wtypeTouched){const g=guessWtype(c.date);c.wtype=g.wtype;c.wtypeCustom=g.custom;wsel.value=g.wtype;custom.value=g.custom;custom.hidden=g.wtype!=="직접쓰기";}markDirty();}})),
       fld("f-wtype","예배",h("div",{style:"display:flex;flex-direction:column;gap:6px"},wsel,custom)),
       fld("f-passage","본문",h("div",{class:"row",style:"flex-wrap:nowrap"},inp("f-passage","passage","예: 요한복음 15:1-8"),
-        h("button",{type:"button",class:"btn sm",id:"wordToggle",text:S.wordOpen&&!isWide()?"말씀 접기":"말씀 펼치기",title:"본문 말씀과 묵상 메모를 이 아래에 펼쳐요",onclick:()=>toggleWord(c,editable)}))),
+        h("button",{type:"button",class:"btn sm",id:"wordToggle",text:S.wordOpen?"말씀 접기":"말씀 펼치기",title:"본문 말씀과 묵상 메모를 이 아래에 펼쳐요",onclick:()=>toggleWord(c,editable)}))),
       h("div",{id:"wordSlot",style:"grid-column:1/-1"}),
       fld("f-title","설교 제목",inp("f-title","sermonTitle","예: 참포도나무")),
       fld("f-preacher","설교자",inp("f-preacher","preacher","예: 이삭 목사")),
       fld("f-reflist","레퍼런스 재생목록",h("div",{style:"display:flex;flex-direction:column;gap:4px"},refPlaylistLink(c),h("span",{class:"hint",text:"곡마다 붙인 유튜브 주소를 콘티 순서대로 이어 들어요"}))))));
-  if(S.wordOpen&&!isWide())setTimeout(()=>toggleWord(c,editable,true),0);
+  if(S.wordOpen)setTimeout(()=>toggleWord(c,editable,true),0);
   /* roster */
   const rosterBox=h("div",{class:"roster",id:"rosterBox"});
   const newPos=h("input",{type:"text",id:"f-newpos",placeholder:"자리 이름 (예: 바이올린)",style:"max-width:220px"});
@@ -1034,7 +1034,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   if(isWide())workbench(fs,c,editable);else document.body.classList.remove("wb-on");
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updateStatus();updUndo();}
 /* 콘티 작성 안에서 말씀 · 묵상 메모 펼치기/접기 */
-function toggleWord(c,editable,keep){if(isWide()){const w=$(".wb-l .wb-word");if(w)w.closest(".sheet").scrollIntoView({behavior:"smooth",block:"start"});return;}
+function toggleWord(c,editable,keep){
   const slot=$("#wordSlot"),btn=$("#wordToggle");if(!slot)return;
   if(!keep&&S.wordOpen&&slot.firstChild){S.wordOpen=false;slot.replaceChildren();if(btn)btn.textContent="말씀 펼치기";return;}
   S.wordOpen=true;if(btn)btn.textContent="말씀 접기";
@@ -1046,7 +1046,7 @@ const isWide=()=>window.innerWidth>=1200;
 {let wasWide=isWide(),t=null;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(()=>{const w=isWide();if(w!==wasWide){wasWide=w;if(S.tab==="write")render();}},250);});}
 function workbench(fs,c,editable){document.body.classList.add("wb-on");const sh=[...fs.children];const nSec=SECTIONS.length;
   const colL=h("div",{class:"wb-col wb-l"}),colC=h("div",{class:"wb-col wb-c"}),colR=h("div",{class:"wb-col wb-r"});
-  colL.append(sh[0],sh[1],wordPanel(c,editable));colC.append(...sh.slice(2,2+nSec),...sh.slice(2+nSec));colR.append(libPanel(c,editable));
+  colL.append(sh[0],sh[1]);colC.append(...sh.slice(2,2+nSec),...sh.slice(2+nSec));colR.append(libPanel(c,editable));
   fs.replaceChildren(h("div",{class:"wb"},colL,colC,colR));}
 function wordPanel(c,editable){const box=h("div",{class:"wb-word"});const r=parseRef((c.passage||"").trim());
   const memo=h("textarea",{id:"wb-med",value:c.meditation||"",placeholder:"묵상 메모 (콘티 공지에 함께 들어가요)",style:"min-height:80px",disabled:!editable,oninput:e=>{c.meditation=e.target.value;markDirty();}});
