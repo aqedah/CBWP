@@ -1010,7 +1010,7 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       fld("f-title","설교 제목",inp("f-title","sermonTitle","예: 참포도나무")),
       fld("f-preacher","설교자",inp("f-preacher","preacher","예: 이삭 목사")),
       isProject()?fld("f-leadteam","찬양 섬김 팀",h("div",{},h("input",{type:"text",id:"f-leadteam",list:"leadteam-dl",placeholder:"예: 중앙성서워십 · 드림교회",value:c.leadTeam||"",oninput:e=>{c.leadTeam=e.target.value;markDirty();}}),h("datalist",{id:"leadteam-dl"},[...new Set([...TEAMS.map(t=>t.name),...S.contis.map(x=>x.leadTeam).filter(Boolean)])].map(v=>h("option",{value:v}))))):null,
-      fld("f-reflist","레퍼런스 재생목록",h("div",{style:"display:flex;flex-direction:column;gap:4px"},refPlaylistLink(c),h("span",{class:"hint",text:"곡마다 붙인 유튜브 주소를 콘티 순서대로 이어 들어요"}))))));
+      )));
   if(S.wordOpen)setTimeout(()=>toggleWord(c,editable,true),0);
   /* roster */
   const rosterBox=h("div",{class:"roster",id:"rosterBox"});
@@ -1037,10 +1037,10 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
     h("textarea",{id:"f-memo",placeholder:"리허설 시간, 전달 사항 등",value:c.memo||"",oninput:e=>{c.memo=e.target.value;markDirty();}})));
   m.append(fs);
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 다음 단계"}),h("span",{class:"status",id:"saveStatus2"})),
-    h("div",{class:"row"},h("button",{class:"btn primary",disabled:!editable,onclick:()=>saveConti(),text:"콘티 저장"}),
-      h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"})),
-    h("div",{class:"row",style:"margin-top:10px"},h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 흐름 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 편집 →"}),
-      h("span",{class:"hint",text:"악보 편집 → 콘티 공지 → PPT 만들기 순서로 이어져요"}))));
+    h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},h("button",{class:"btn primary",disabled:!editable,onclick:()=>saveConti(),text:"콘티 저장"}),
+      h("button",{class:"btn danger",disabled:S.curId?!S.canWrite:!editable,onclick:e=>resetConti(e.currentTarget),title:S.curId?"이 콘티는 그대로 두고 빈 새 콘티를 시작해요":"날짜만 남기고 이 콘티의 내용을 모두 비워요",text:"초기화"}),
+      h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 흐름 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 편집 →"})),
+    h("p",{class:"hint",style:"margin:8px 0 0",text:"악보 편집 → 연습 일정 · 콘티 출력 · 공지 → PPT 만들기 순서로 이어져요"})));
   [...fs.querySelectorAll(".sheet > h2")].forEach((h2,i)=>{const first=h2.firstChild;const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
   if(isWide())workbench(fs,c,editable);else document.body.classList.remove("wb-on");
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updateStatus();updUndo();}
@@ -1212,6 +1212,7 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
   m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"다음 단계"}),h("span",{class:"sub",text:"연습 일정 · 출력 · 공지 → PPT 만들기"})),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
+      refPlaylistLink(S.cur),h("button",{class:"btn",onclick:()=>ytAddModal(S.cur),title:"이 콘티 곡들의 유튜브 영상을 팀 유튜브 재생목록에 넣어요",text:`🎵 ${(teamCfg().yt||{}).name||teamName(S.team)} 재생목록에 담기`}),
       h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
       h("button",{class:"btn",onclick:()=>contiNotice(S.cur),text:"📣 콘티 공지"}),
       h("button",{class:"btn",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"PPT 만들기 →"}))));
@@ -1493,8 +1494,55 @@ function updateStatus(){for(const el of document.querySelectorAll("#saveStatus,#
 /* YouTube can play a list of videos without an account: watch_videos?video_ids=a,b,c (up to 50) */
 const refIds=c=>[...new Set(allItems(c).map(i=>i.yt).filter(Boolean))].slice(0,50);
 function refPlaylistLink(c){const a=h("a",{id:"f-reflist",class:"btn",target:"_blank",rel:"noopener",href:"#"});
-  const upd=()=>{const ids=refIds(S.cur||c);a.textContent=ids.length?`▶ 유튜브에서 이어 듣기 (${ids.length}곡)`:"곡에 유튜브 주소를 넣으면 생겨요";a.href=ids.length?`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`:"#";a.classList.toggle("disabled",!ids.length);};
+  const upd=()=>{const ids=refIds(S.cur||c);a.textContent=ids.length?`▶ 곡 이어 듣기 (${ids.length}곡)`:"▶ 곡 이어 듣기 (유튜브 주소 없음)";a.title="곡마다 붙인 유튜브 주소를 콘티 순서대로 이어 들어요 (임시 재생목록)";a.href=ids.length?`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`:"#";a.classList.toggle("disabled",!ids.length);};
   a.addEventListener("click",e=>{upd();if(a.getAttribute("href")==="#")e.preventDefault();});upd();refPlaylistLink.upd=upd;return a;}
+/* ===== 유튜브 재생목록에 담기: 재생목록 주인이 구글로 로그인해서 허락하면 이 콘티의 곡 영상을 넣어요 =====
+   팀 설정(teams 문서)의 yt = {clientId, playlistId, name}. 로그인 토큰은 이 화면에만 잠깐 있고 저장하지 않아요. */
+const GIS_URL="https://accounts.google.com/gsi/client",YT_API="https://www.googleapis.com/youtube/v3";
+let ytTok=null;
+async function ytToken(clientId){if(ytTok&&ytTok.cid===clientId&&ytTok.exp>Date.now()+60000)return ytTok.t;await loadScript(GIS_URL);
+  return await new Promise((res,rej)=>{try{const tc=window.google.accounts.oauth2.initTokenClient({client_id:clientId,scope:"https://www.googleapis.com/auth/youtube",
+      callback:r=>{if(r&&r.access_token){ytTok={t:r.access_token,exp:Date.now()+(+r.expires_in||3000)*1000,cid:clientId};res(r.access_token);}else rej(new Error(r&&r.error||"denied"));},
+      error_callback:e=>rej(new Error(e&&e.type||"popup"))});tc.requestAccessToken();}catch(e){rej(e);}});}
+async function ytCall(tok,method,path,body){const r=await fetch(`${YT_API}/${path}`,{method,headers:{Authorization:`Bearer ${tok}`,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+  if(!r.ok){let msg="";try{const j=await r.json();msg=(j.error&&(j.error.errors||[])[0]&&j.error.errors[0].reason)||(j.error&&j.error.message)||"";}catch(e){}const err=new Error(msg||r.status);err.status=r.status;err.reason=msg;throw err;}
+  return r.status===204?null:r.json();}
+const playlistIdOf=v=>{v=String(v||"").trim();const m=v.match(/[?&]list=([A-Za-z0-9_-]+)/);return m?m[1]:/^[A-Za-z0-9_-]{10,}$/.test(v)?v:"";};
+function ytSetupModal(after){const y=teamCfg().yt||{};
+  const cid=h("input",{type:"text",value:y.clientId||"",placeholder:"예: 1234567890-abc...apps.googleusercontent.com"});
+  const pl=h("input",{type:"text",value:y.playlistId?`https://www.youtube.com/playlist?list=${y.playlistId}`:"",placeholder:"https://www.youtube.com/playlist?list=..."});
+  const nm=h("input",{type:"text",value:y.name||teamName(S.team),placeholder:"예: 기드온"});
+  const md=modal("유튜브 재생목록 연결",h("div",{class:"panel-body"},
+    h("p",{class:"hint",text:"재생목록 주인이 한 번만 준비하면 돼요. 구글 개발자 콘솔에서 받은 「클라이언트 ID」와 재생목록 주소를 넣어 주세요. 비밀번호 같은 것은 여기 넣지 않아요."}),
+    h("div",{class:"field"},h("label",{text:"재생목록 주소"}),pl),h("div",{class:"field"},h("label",{text:"부를 이름 (단추에 보여요)"}),nm),h("div",{class:"field"},h("label",{text:"구글 OAuth 클라이언트 ID"}),cid)),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:async()=>{const pid=playlistIdOf(pl.value);const c2=cid.value.trim();
+      if(!pid)return toast("재생목록 주소를 알아보지 못했어요 (주소에 list=… 가 있어야 해요)");if(!/\.apps\.googleusercontent\.com$/.test(c2))return toast("클라이언트 ID는 …apps.googleusercontent.com 으로 끝나요");
+      const yt={clientId:c2,playlistId:pid,name:nm.value.trim()||teamName(S.team)};try{await S.db.doc(`teams/${S.team}`).set({...teamCfg(),yt,updatedAt:Date.now()});S.teamCfgs[S.team]={...teamCfg(),yt};md.close();toast("유튜브 재생목록을 연결했어요");after&&after();}catch(e){toast("저장하지 못했어요");}}})]);}
+function ytAddModal(c){if(!c)return;const y=teamCfg().yt;const can=S.canWrite&&!!S.db;
+  if(!y||!y.clientId||!y.playlistId){if(!can)return toast("팀 유튜브 재생목록이 아직 연결되지 않았어요");return ytSetupModal(()=>ytAddModal(c));}
+  const ids=[...new Set(allItems(c).map(i=>i.yt).filter(Boolean))];const noYt=allItems(c).filter(i=>!i.yt).map(i=>i.title);
+  let mode="add";const st=h("p",{class:"hint"});
+  const opt=(v,l,sub)=>h("label",{class:"pick",style:"align-items:flex-start"},h("input",{type:"radio",name:"ytm",checked:mode===v,onchange:()=>{mode=v;}}),h("span",{},h("b",{text:l}),h("div",{class:"hint",text:sub})));
+  const go=h("button",{class:"btn primary",text:"구글로 로그인하고 담기",disabled:!ids.length,onclick:async()=>{go.disabled=true;
+    try{st.textContent="구글 로그인 창에서 재생목록 주인 계정으로 허락해 주세요…";const tok=await ytToken(y.clientId);
+      st.textContent="재생목록을 확인하는 중…";const have=[];let page="";do{const r=await ytCall(tok,"GET",`playlistItems?part=snippet&maxResults=50&playlistId=${y.playlistId}${page?`&pageToken=${page}`:""}`);for(const it of r.items||[])have.push({id:it.id,v:it.snippet&&it.snippet.resourceId&&it.snippet.resourceId.videoId});page=r.nextPageToken||"";}while(page);
+      let del=0,add=0,skip=0;
+      if(mode==="replace"){for(const x of have){st.textContent=`예전 영상 빼는 중… ${++del}/${have.length}`;await ytCall(tok,"DELETE",`playlistItems?id=${x.id}`);}}
+      const haveV=new Set(mode==="replace"?[]:have.map(x=>x.v));
+      for(const v of ids){if(haveV.has(v)){skip++;continue;}st.textContent=`영상 넣는 중… ${add+1}/${ids.length-skip}`;await ytCall(tok,"POST","playlistItems?part=snippet",{snippet:{playlistId:y.playlistId,resourceId:{kind:"youtube#video",videoId:v}}});add++;haveV.add(v);}
+      st.textContent="";md.close();toast(`${y.name} 재생목록에 ${add}곡을 넣었어요${skip?` (이미 있던 ${skip}곡은 그대로)`:""}${del?` · 예전 영상 ${del}개 뺌`:""}`,4500);}
+    catch(e){console.error(e);go.disabled=false;const r=e.reason||e.message||"";
+      st.textContent=/popup|denied|access_denied/.test(r)?"로그인을 취소했거나 팝업이 막혔어요. 팝업을 허용하고 다시 눌러 주세요.":
+        /forbidden|insufficient|playlistItemsNotAccessible|playlistForbidden/i.test(r)||e.status===403?"이 계정으로는 재생목록을 고칠 수 없어요. 재생목록 주인 계정으로 로그인해 주세요. (하루 사용량을 넘긴 경우에도 이렇게 나와요)":
+        /playlistNotFound/.test(r)||e.status===404?"재생목록을 찾지 못했어요. 「연결 설정」에서 주소를 확인해 주세요.":
+        /videoNotFound/.test(r)?"찾을 수 없는 영상이 있어요 (비공개 · 삭제된 영상). 그 곡의 유튜브 주소를 확인해 주세요.":`담지 못했어요 (${r})`;}}});
+  const md=modal(`🎵 ${y.name} 재생목록에 담기`,h("div",{class:"panel-body"},
+    h("p",{},`이 콘티에서 유튜브 주소가 있는 곡 `,h("b",{text:`${ids.length}곡`}),`을 `,h("a",{href:`https://www.youtube.com/playlist?list=${y.playlistId}`,target:"_blank",rel:"noopener",text:`${y.name} 재생목록 ↗`}),`에 넣어요.`),
+    noYt.length?h("p",{class:"hint",text:`유튜브 주소가 없는 곡: ${noYt.join(", ")}`}):null,
+    h("div",{class:"picklist"},opt("add","새 곡만 뒤에 더하기","이미 들어 있는 영상은 그대로 두고, 없는 곡만 끝에 더해요"),opt("replace","이 콘티 곡으로 새로 채우기","재생목록의 예전 영상을 모두 빼고, 이 콘티 순서대로 다시 넣어요")),
+    h("p",{class:"hint",text:"처음에는 구글이 「확인되지 않은 앱」이라고 알려 줄 수 있어요. 우리 교회 앱이니 「고급 → 계속」을 누르면 돼요."}),st,
+    can?h("button",{class:"btn sm ghost",text:"연결 설정 바꾸기",onclick:()=>{md.close();ytSetupModal(()=>ytAddModal(c));}}):null),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);}
 /* the day before the service: practice */
 function addPracticeEvent(){const c=S.cur||{};const d=c.date||nextSunday();
   eventModal(null,{date:addDays(d,-(((parseD(d).getDay()+1)%7)||7)),time:"11:00",kind:"practice",title:"찬양 연습",memo:`${fmtDate(d)} ${wtypeOf(c)||"예배"} 준비`});}
