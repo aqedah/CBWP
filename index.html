@@ -4344,14 +4344,21 @@ function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
   const cnt=h("span",{class:"hint"});const upd=()=>{cnt.textContent=`슬라이드 ${lyricSlides(ta.value,per).length}장 (한 장에 ${per}줄까지)`;};ta.addEventListener("input",upd);upd();ta.addEventListener("paste",()=>setTimeout(()=>{ta.value=cleanLyrics(ta.value);upd();},0));
   const can=S.canWrite&&!!S.db;
   const q=splitTitle(it.title).base.replace(/\([^)]*\)/g,"").trim()||it.title;
+  let armedTa=0;const confirmTa=()=>{if(Date.now()-armedTa<4000)return true;armedTa=Date.now();toast("가사 칸에 이미 글이 있어요. 바꾸려면 한 번 더 눌러 주세요",3500);return false;};
   const paste=h("button",{type:"button",class:"btn sm",text:"📋 붙여넣기",onclick:async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim())return toast("복사한 가사가 없어요");ta.value=cleanLyrics(t);upd();}catch(e){ta.focus();toast("가사 칸을 길게 누르거나 Ctrl+V로 붙여 넣어 주세요");}}});
   const md=modal(`가사 · ${it.title}`,h("div",{class:"panel-body"},
     h("div",{class:"row"},h("span",{class:"lab",style:"margin:0",text:"가사 찾기"}),
       h("a",{class:"btn sm",href:`https://music.bugs.co.kr/search/integrated?q=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"벅스 ↗"}),
       h("a",{class:"btn sm",href:`http://ccmgasa.com/wordpress/?s=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"CCM가사 ↗"}),
       h("a",{class:"btn sm",href:`https://cwy0675.tistory.com/search/${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"PPT악보 블로그 ↗"}),
-      h("a",{class:"btn sm",href:(song&&song.ccli)?ssSong(song.ccli):ssSearch(q),target:"_blank",rel:"noopener",text:"SongSelect ↗"}),paste),
-    h("p",{class:"hint",style:"margin:0",text:"곡을 찾아 가사를 복사한 뒤 「붙여넣기」를 누르거나 아래 칸에 붙여 넣으세요."}),
+      h("a",{class:"btn sm",href:(song&&song.ccli)?ssSong(song.ccli):ssSearch(q),target:"_blank",rel:"noopener",text:"SongSelect ↗"}),paste,
+      song&&song.ppt&&(song.ppt.slides||[]).length?h("button",{type:"button",class:"btn sm",text:"📂 넣어 둔 PPT에서 가져오기",title:"이 곡에 넣어 둔 PPT의 가사를 아래 칸에 넣어요",onclick:()=>{if(ta.value.trim()&&!confirmTa())return;ta.value=song.ppt.slides.join("\n\n");upd();toast(`PPT ${song.ppt.slides.length}장의 가사를 넣었어요. 확인하고 「가사 저장」을 눌러 주세요`,3500);}}):
+      h("label",{class:"btn sm filebtn",title:"이 곡의 가사 PPT(.pptx)를 골라 가사를 읽어 와요. 곡에 PPT도 함께 넣어 둬요"},"📂 PPT에서 가져오기",h("input",{type:"file",accept:".pptx",onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+        if(ta.value.trim()&&!confirmTa())return;toast("PPT에서 가사를 읽는 중…");
+        try{const sl=await pptLyricSlides(it.title,await f.arrayBuffer());if(!sl.length)return toast("PPT에서 가사 글자를 찾지 못했어요 (그림으로 된 슬라이드일 수 있어요)",3500);
+          ta.value=sl.map(x=>x.join("\n")).join("\n\n");upd();toast(`PPT에서 가사 ${sl.length}장을 읽었어요. 확인하고 「가사 저장」을 눌러 주세요`,3500);
+          if(can&&song&&!String(song.id).startsWith("local-")&&!(song.ppt&&(song.ppt.slides||[]).length))uploadSongPpt(song,f);}catch(err){console.error(err);toast("PPT를 읽지 못했어요");}}}))),
+    h("p",{class:"hint",style:"margin:0",text:"곡을 찾아 가사를 복사한 뒤 「붙여넣기」를 누르거나 아래 칸에 붙여 넣으세요. 가사 PPT가 있으면 「PPT에서 가져오기」로 바로 읽어 와요."}),
     h("p",{class:"hint",text:song&&!song.id.startsWith("local-")?"곡에 저장돼서 다음에 이 곡을 넣을 때도 그대로 쓰여요. 교회 전체가 함께 써요.":"이 콘티에만 저장돼요."}),ta,cnt),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can||!song?h("button",{class:"btn primary",text:"가사 저장",onclick:async()=>{const v=ta.value.replace(/\r/g,"").trim();
       if(song&&!song.id.startsWith("local-")&&S.db){try{await S.db.doc(`songs/${song.id}`).update({lyrics:v,updatedAt:Date.now()});song.lyrics=v;}catch(e){return toast("저장하지 못했어요");}}
@@ -5025,10 +5032,13 @@ function tplNameOf(fname){const toks=fname.replace(/\.pptx$/i,"").split(/[_\s\-�
   const wt=WTYPES.filter(w=>names.some(n=>nk(n)===nk(w)||(n==="오후찬양예배"&&w==="주일오후예배")));
   return{name:names.join(" · ")||"새 템플릿",wtypes:wt};}
 /* 곡 하나의 PPT: 올리기(원본도 보관) · 보기 · 받기 */
+/* PPT 파일에서 이 곡의 가사 장을 읽어요 (장마다 줄 배열) */
+async function pptLyricSlides(title,buf){await loadScript(JSZIP_URL);let slides=null;
+  try{const sv=splitServicePpt(await pptxSlidesRich(buf));const k=nk(splitTitle(title).base);const hit=sv.find(x=>nk(x.title.split("+")[0]).includes(k)||k.includes(nk(x.title.split("+")[0])))||(sv.length===1?sv[0]:null);if(hit)slides=hit.lyr.split(/\n\s*\n/).map(b=>b.split("\n").filter(Boolean));}catch(e){}
+  if(!slides){const raw=await pptxSlidesText(buf);const ly=lyricsFromSlides(raw,splitTitle(title).base);slides=ly.split(/\n\s*\n/).map(b=>b.split("\n").filter(Boolean)).filter(x=>x.length);}
+  return slides;}
 async function uploadSongPpt(sg,file){if(!S.db)return toast("팀 저장소에 연결되지 않았어요");toast("PPT를 읽는 중…");
-  try{await loadScript(JSZIP_URL);const buf=await file.arrayBuffer();let slides=null;
-    try{const sv=splitServicePpt(await pptxSlidesRich(buf));const k=nk(splitTitle(sg.title).base);const hit=sv.find(x=>nk(x.title.split("+")[0]).includes(k)||k.includes(nk(x.title.split("+")[0])))||(sv.length===1?sv[0]:null);if(hit)slides=hit.lyr.split(/\n\s*\n/).map(b=>b.split("\n").filter(Boolean));}catch(e){}
-    if(!slides){const raw=await pptxSlidesText(buf);const ly=lyricsFromSlides(raw,splitTitle(sg.title).base);slides=ly.split(/\n\s*\n/).map(b=>b.split("\n").filter(Boolean)).filter(x=>x.length);}
+  try{const buf=await file.arrayBuffer();const slides=await pptLyricSlides(sg.title,buf);
     if(!slides.length)return toast("PPT에서 가사 글자를 찾지 못했어요 (그림으로 된 슬라이드일 수 있어요)",3500);
     let fileId="";if(buf.byteLength<=2500000){let bin="";const u8=new Uint8Array(buf);for(let i=0;i<u8.length;i+=0x8000)bin+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));
       fileId=await storeImage({url:"data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,"+btoa(bin),w:0,h:0});}
