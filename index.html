@@ -2155,10 +2155,14 @@ function newHymnFixModal(){const list=S.songs.filter(x=>OLD_HYMN.test(x.title||"
 const BARE_NEW=/\s*[\(\[]?\s*새\s*찬송가\s*[\)\]]?\s*$/;
 function hymnIndex(){const cat=S.catalogs.find(c=>c.id==="hymns");if(!cat)return null;const m=new Map();
   for(const[t]of catItems(cat)){const sp=splitTitle(t);if(!sp.hymn)continue;const k=nk(sp.base);if(k.length<2)continue;if(!m.has(k))m.set(k,[]);m.get(k).push({n:sp.hymn,base:sp.base});}return m;}
+const NUM_TAIL=/\s*(?:[\(\[]\s*(\d{1,3})\s*장\s*[\)\]]|(\d{1,3})\s*장)\s*$/;
 function hymnFixRows(){const idx=hymnIndex();if(!idx)return null;const rows=[];
-  for(const x of S.songs){const t=x.title||"";if(/통일/.test(t))continue;const sp=splitTitle(t);if(sp.hymn)continue;
-    const bare=BARE_NEW.test(t);const base=bare?t.replace(BARE_NEW,"").trim():t.trim();const hits=idx.get(nk(base))||[];
-    if(hits.length)rows.push({song:x,base,kind:"add",nums:hits.map(h=>h.n),n:hits[0].n,on:hits.length===1,to:`${base} (새찬송가 ${hits[0].n}장)`});
+  for(const x of S.songs){const t=x.title||"";if(/통일/.test(t))continue;const sp=splitTitle(t);
+    if(sp.hymn){const m=sp.base.match(NUM_TAIL);if(m){const b=sp.base.slice(0,m.index).trim();if(b)rows.push({song:x,base:b,kind:"dup",on:true,to:joinTitle(b,sp.hymn,sp.arr)});}continue;}
+    const bare=BARE_NEW.test(t);let base=bare?t.replace(BARE_NEW,"").trim():t.trim();const nm=base.match(NUM_TAIL);let want=null;
+    if(nm&&base.slice(0,nm.index).trim()){want=+(nm[1]||nm[2]);base=base.slice(0,nm.index).trim();}
+    let hits=idx.get(nk(base))||[];if(want&&hits.some(h=>h.n===want))hits=[...hits.filter(h=>h.n===want),...hits.filter(h=>h.n!==want)];
+    if(hits.length)rows.push({song:x,base,kind:"add",nums:hits.map(h=>h.n),n:hits[0].n,on:hits.length===1||(want&&hits[0].n===want),to:`${base} (새찬송가 ${hits[0].n}장)`});
     else if(bare)rows.push({song:x,base,kind:"strip",on:true,to:base});}
   return rows;}
 function hymnFixModal(){const rows=hymnFixRows();if(!rows)return toast("21세기 찬송가 목록을 아직 못 불러왔어요. 잠시 뒤 다시 눌러 주세요");if(!rows.length)return toast("바로잡을 곡이 없어요");
@@ -2174,7 +2178,8 @@ function hymnFixModal(){const rows=hymnFixRows();if(!rows)return toast("21세기
     md.close();toast(`${ok}곡의 제목을 바로잡았어요. 이 곡이 들어간 콘티 제목도 함께 바뀌었어요`,4000);render();};
   const md=modal("새찬송가 표시 바로잡기",h("div",{class:"panel-body"},h("p",{class:"hint",text:"21세기 찬송가 645장 목록과 제목을 맞춰 봤어요. 체크된 곡만 바뀌어요."}),
     sec("strip","찬송가가 아닌데 「새찬송가」가 붙은 곡","목록에 없는 제목이에요. 뒤의 「새찬송가」를 빼요."),
-    sec("add","찬송가인데 장 번호가 없는 곡","목록과 제목이 같아요. 뒤에 「(새찬송가 N장)」을 붙여요."),st),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);upd();}
+    sec("add","찬송가인데 장 번호가 없는 곡","목록과 제목이 같아요. 뒤에 「(새찬송가 N장)」을 붙여요. 「(261장)」처럼 따로 쓴 번호는 정리해요."),
+    sec("dup","장 번호가 두 번 붙은 곡","「(261장)」처럼 따로 쓴 번호를 빼고 「(새찬송가 N장)」 하나만 남겨요."),st),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);upd();}
 /* 「제목(통일찬송가)」 → 「제목 (통일 N장)」 한꺼번에 */
 const TONGIL_TAG=/\s*\(\s*통일\s*(?:찬송가)?\s*\)\s*$/;
 function tongilFixModal(){const cands=S.songs.filter(x=>TONGIL_TAG.test(x.title||""));if(!cands.length)return toast("「(통일찬송가)」로 된 곡이 없어요");
@@ -2672,7 +2677,20 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
   const regCard=(big)=>{const t=q.trim();if(!t||!S.canWrite)return null;const yid=ytId(t);const show=yid?cleanTitle(t):t;if(!show)return null;
     return h("div",{class:big?"empty":"hint",style:big?"display:flex;flex-direction:column;align-items:center;gap:8px":"text-align:center;margin:8px 0"},
       big?h("span",{text:`「${show}」은(는) 라이브러리에 없어요. 새 곡으로 등록할까요?`}):h("span",{text:`찾는 곡이 없나요? `}),
-      h("button",{type:"button",class:big?"btn primary":"btn sm",text:big?"+ 새 곡으로 등록":`「${show}」 새 곡으로 등록`,onclick:()=>regNew(t)}));};
+      h("button",{type:"button",class:big?"btn primary":"btn sm",text:big?"+ 새 곡으로 등록":"+ 새 곡 등록",onclick:()=>regModal(t)}));};
+  /* 새 곡 등록 창: 찾던 글자를 넣어 두되, 초성만 썼으면 비워 두고 제목을 고쳐 쓰게 해요 */
+  const regModal=raw=>{const yid=ytId(raw);const show=yid?cleanTitle(raw):String(raw||"").trim();const jamoOnly=/^[\sㄱ-ㅎㅏ-ㅣ]+$/.test(show)||/^\d+$/.test(show);
+    const tIn=h("input",{type:"text",value:jamoOnly?"":show,placeholder:"곡 제목 (예: 감사와 찬양을 드리며)","aria-label":"곡 제목",style:"width:100%"});
+    const yIn=h("input",{type:"text",value:yid?raw.trim():"",placeholder:"유튜브 주소 (없으면 비워 두세요)","aria-label":"유튜브 주소",style:"width:100%"});
+    const warn=h("p",{class:"hint",style:"color:var(--warn);min-height:1.2em"});
+    const chk=()=>{const v=tIn.value.trim();const same=v&&S.songs.find(x=>norm(x.title)===norm(v));warn.textContent=same?`이미 「${same.title}」이(가) 라이브러리에 있어요.`:"";};tIn.addEventListener("input",chk);
+    const go=async()=>{const v=tIn.value.trim();if(!v){tIn.focus();return toast("곡 제목을 써 주세요");}if(/^[\sㄱ-ㅎㅏ-ㅣ]+$/.test(v))return toast("초성 말고 곡 제목을 온전히 써 주세요");
+      if(S.songs.some(x=>norm(x.title)===norm(v)))return toast("이미 있는 곡이에요");md.close();await createSong(v,ytId(yIn.value)||"");toast(`「${v}」을(를) 새 곡으로 등록했어요`);q=v;const si=document.getElementById("song-q");if(si)si.value=v;draw();};
+    const ek=e=>{if(e.key==="Enter"){e.preventDefault();go();}};tIn.addEventListener("keydown",ek);yIn.addEventListener("keydown",ek);
+    const md=modal("새 곡 등록",h("div",{class:"panel-body",style:"display:flex;flex-direction:column;gap:10px"},
+      jamoOnly?h("p",{class:"hint",text:`「${show}」(으)로 찾았지만 없었어요. 곡 제목을 온전히 써 주세요.`}):h("p",{class:"hint",text:"제목을 확인하고 고칠 게 있으면 고쳐 주세요."}),
+      h("label",{class:"hint",text:"곡 제목"}),tIn,h("label",{class:"hint",text:"유튜브 주소 (선택)"}),yIn,warn),
+      [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"등록",onclick:go})]);chk();setTimeout(()=>tIn.focus(),50);};
   function draw(){box.replaceChildren();drawMore();
     let arr=S.songs.slice();const qn=/^\d+$/.test(q.trim())?+q.trim():null;if(q.trim())arr=arr.filter(s=>qn!=null?splitTitle(s.title).hymn===qn:matchRank(s.title,q)>-1);
     const fv=favs();const hasScore=s=>{const v=teamVer(s);return !!(v&&v.pages.length);};
