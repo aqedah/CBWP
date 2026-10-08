@@ -3519,10 +3519,10 @@ function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!
       if(r.specialBy){c.specialBy=r.specialBy;got.push("특송");}if(r.special){c.special=[itemByTitle(r.special)];if(!got.includes("특송"))got.push("특송");}
       if(r.after&&r.after.length){c.after=r.after.map(itemByTitle);got.push(`설교 후 찬양 ${r.after.length}곡`);}
       if(r.songs&&r.songs.length){const items=songsFromText(kt.value);
-        c.before=items;got.push(`예배 찬양 ${items.length}곡`);}
+        c.before=items;got.push(`예배 찬양 ${items.length}곡(콘티 작성에 넣음)`);}
       markDirty();saveDraft();toast(got.length?`${got.join(" · ")}을(를) 채웠어요. 맞는지 확인해 주세요`:"알아본 내용이 없어요. 아래 칸에 직접 써 주세요",3500);if(photo===true&&c.sermonTitle&&c.passage&&!/\s/.test(c.sermonTitle))loadBible().then(()=>{const rr=parseRef(c.passage);if(!rr)return;const txt=refRows(rr).map(x=>x[2]).join(" ");
         const re=new RegExp([...c.sermonTitle].map(ch=>ch.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s*"));const m=txt.match(re);if(m){c.sermonTitle=m[0];markDirty();saveDraft();}}).catch(()=>{});
-      if(photo===true&&r.songs&&r.songs.length)setTab("write");else render();};
+      render();};   /* 사진으로 넣어도 말씀 · 묵상에 그대로 있어요 (곡은 콘티 작성 「예배 찬양」에 들어가요) */
     m.append(h("div",{class:"sheet"},h("h2",{},"예배 정보",h("span",{class:"sub",text:can?`콘티 작성 「1. 예배 정보」와 같이 바뀌어요`:"지금 열린 콘티는 고칠 수 없어요"})),
       can?h("div",{class:"field"},h("label",{htmlFor:"kk-text",text:"카톡에서 받은 글"}),kt,h("div",{class:"row"},h("span",{class:"hint",text:"날짜 · 예배 · 본문 · 제목 · 설교자 · 특송 · 설교 후 찬양을 알아서 나눠 넣어요"}),h("span",{class:"spacer"}),h("span",{class:"btn filebtn",title:"설교자가 보낸 사진(본문·찬양 목록)을 글자로 읽어요"},"📷 사진으로 넣기",h("input",{type:"file",accept:"image/*",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)ocrPhoto(f);}})),
         h("button",{class:"btn primary",text:"칸에 채우기",onclick:()=>fill()}))):null,
