@@ -4191,7 +4191,7 @@ function pptTemplateModal(tpl){if(tpl&&tpl.isTrusted!==undefined)tpl=null;if(!tp
   const draw=async()=>{prev.style.aspectRatio=cfg.ratio==="4:3"?"4/3":"16/9";prev.style.background=cfg.bgColor;prev.style.backgroundSize="cover";prev.style.backgroundPosition="center";
     if(cfg.bgId){const u=await getImg(cfg.bgId);if(u)prev.style.backgroundImage=`url("${u}")`;}else prev.style.backgroundImage="none";
     prev.style.justifyContent=cfg.valign==="bottom"?"flex-end":"center";
-    ttl.style.color=cfg.color;ttl.style.fontFamily=`"${cfg.font}",sans-serif`;ttl.style.fontWeight=cfg.bold?"700":"400";ttl.style.fontSize=`${(cfg.size*(cfg.ratio==="4:3"?.139:.139)).toFixed(2)}cqw`;ttl.style.textShadow=cfg.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none";
+    ensureWebFont(cfg.font);ttl.style.color=cfg.color;ttl.style.fontFamily=`"${cfg.font}",sans-serif`;ttl.style.fontWeight=cfg.bold||boldName(cfg.font)?"700":"400";ttl.style.fontSize=`${(cfg.size*(cfg.ratio==="4:3"?.139:.139)).toFixed(2)}cqw`;ttl.style.textShadow=cfg.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none";
     ttl.textContent=["주 품에 품으소서","능력의 팔로 덮으소서","주의 이름을 높이며","그 사랑 노래하네"].slice(0,cfg.lines).join("\n");
     tprev.replaceChildren(...(cfg.titleSlide?[h("div",{class:"hint",text:"곡 제목 장"}),tplPreview(cfg,["태산을 넘어 험곡에 가도"],"title")]:[]));};
   prev.append(ttl);const tprev=h("div",{class:"tplone"});
@@ -4410,16 +4410,23 @@ function lyricsDbModal(initFiles){if(!S.canWrite||!S.db)return toast("팀 비밀
 /* =========================================================
    가사 PPT 탭: 템플릿(예배마다) · 콘티로 PPT 만들기 · 가사 모으기
    ========================================================= */
-function tplPreview(t,lines,kind){const ar=t.slideW&&t.slideH?t.slideW/t.slideH:(t.ratio==="4:3"?4/3:16/9);
+/* PPT 글꼴이 이 기기에 없을 때 미리보기용으로 인터넷에서 불러오는 글꼴 (설치돼 있으면 설치된 것을 먼저 써요) */
+const WEBFONTS=[[/경기천년제목|gyeonggi\s*title/i,"https://cdn.jsdelivr.net/npm/@noonnu/gyeonggi-title-m@0.1.0/fonts/gyeonggititlem-normal.woff"],
+  [/경기천년바탕|gyeonggi\s*batang/i,"https://cdn.jsdelivr.net/npm/@noonnu/gyeonggi-batang@0.1.0/fonts/gyeonggibatang-normal.woff"]];
+const webFontDone=new Set();
+function ensureWebFont(name){name=String(name||"").replace(/"/g,"").trim();if(!name||webFontDone.has(name))return;webFontDone.add(name);const m=WEBFONTS.find(([re])=>re.test(name));if(!m)return;
+  const st=document.createElement("style");st.textContent=`@font-face{font-family:"${name}";src:local("${name}"),url("${m[1]}") format("woff");font-display:swap}`;document.head.append(st);}
+const boldName=n=>/bold|볼드|\sB$|[^A-Z]B$/i.test(String(n||"").trim());
+function tplPreview(t,lines,kind){ensureWebFont(t.font);ensureWebFont(t.titleFont);const ar=t.slideW&&t.slideH?t.slideW/t.slideH:(t.ratio==="4:3"?4/3:16/9);
   const box=h("div",{class:"tpv"});box.style.aspectRatio=String(ar);box.style.background=t.bgColor||"#000";
   if(t.bgId)getImg(t.bgId).then(u=>{if(u){box.style.backgroundImage=`url("${u}")`;}});else if(t.bgPreview)box.style.backgroundImage=`url("${t.bgPreview}")`;
   const isT=kind==="title";const b=(isT?(t.titleBox||{x:.04,y:.35,w:.92,h:.3}):null)||t.box||(t.valign==="bottom"?{x:.04,y:.62,w:.92,h:.32}:{x:.04,y:.12,w:.92,h:.76});
   const tx=h("div",{class:"tpv-t",text:isT?lines.join(" "):lines.slice(0,kind==="lyric"?99:(t.lines||2)).join("\n")});
-  Object.assign(tx.style,{left:b.x*100+"%",top:b.y*100+"%",width:b.w*100+"%",height:b.h*100+"%",color:t.color,fontFamily:`"${t.font}",sans-serif`,fontWeight:t.bold?"700":"400",
+  Object.assign(tx.style,{left:b.x*100+"%",top:b.y*100+"%",width:b.w*100+"%",height:b.h*100+"%",color:t.color,fontFamily:`"${t.font}",sans-serif`,fontWeight:t.bold||boldName(t.font)?"700":"400",
     fontSize:`${((isT?(t.titleSize||Math.round(t.size*1.15)):t.size)/(t.slideH?t.slideH*72:405)*100).toFixed(2)}cqh`,color:isT?(t.titleColor||t.color):t.color,textAlign:t.align||"center",justifyContent:{t:"flex-start",b:"flex-end"}[isT?(t.titleAnchor||"ctr"):t.anchor]||(t.valign==="bottom"?"flex-end":"center"),
     lineHeight:String(1.15*(t.lnSpc||1)),textShadow:t.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none"});
   if(isT&&t.titleGrad){Object.assign(tx.style,{backgroundImage:gradCss(t.titleGrad),webkitBackgroundClip:"text",backgroundClip:"text",color:"transparent",webkitTextFillColor:"transparent",textShadow:"none"});tx.style.setProperty("-webkit-background-clip","text");}
-  if(isT){Object.assign(tx.style,{fontFamily:`"${t.titleFont||t.font}",sans-serif`,fontWeight:(t.titleBold??t.bold)?"700":"400",textAlign:t.titleAlign||t.align||"center"});if(t.titleShadow===false)tx.style.textShadow="none";
+  if(isT){Object.assign(tx.style,{fontFamily:`"${t.titleFont||t.font}",sans-serif`,fontWeight:(t.titleBold??t.bold)||boldName(t.titleFont||t.font)?"700":"400",textAlign:t.titleAlign||t.align||"center"});if(t.titleShadow===false)tx.style.textShadow="none";
     for(const d of t.titleDeco||[]){const el=d.kind==="img"?h("img",{src:d.src,alt:""}):h("div");Object.assign(el.style,{position:"absolute",left:d.x*100+"%",top:d.y*100+"%",width:d.w*100+"%",height:d.h*100+"%",objectFit:"contain"});
       if(d.kind!=="img"){const c=d.hex||"000000";el.style.background=`rgba(${parseInt(c.substr(0,2),16)},${parseInt(c.substr(2,2),16)},${parseInt(c.substr(4,2),16)},${d.alpha??1})`;if(d.prst==="roundRect")el.style.borderRadius=`${Math.min(d.h,d.w*ar)*16.67}cqh`;}
       box.append(el);}}
