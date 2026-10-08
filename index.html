@@ -719,7 +719,10 @@ const choOf=ch=>{const c=ch.charCodeAt(0);return c>=0xAC00&&c<=0xD7A3?CHO[Math.f
 const choStr=s=>[...(s||"")].map(choOf).join("");
 const norm=s=>(s||"").toLowerCase().replace(/\s+/g,"");
 const isCons=ch=>CHO.includes(ch);
-function matchRank(title,q){const t=norm(title),qq=norm(q);if(!qq)return -1;const i=t.indexOf(qq);if(i===0)return 0;if(i>0)return 1;
+/* 초성 검색: 키보드가 ㅂ+ㅅ을 「ㅄ」으로 붙여 써도 ㅂㅅ으로 나눠서 찾아요 */
+const JAMO2={"ㄳ":"ㄱㅅ","ㄵ":"ㄴㅈ","ㄶ":"ㄴㅎ","ㄺ":"ㄹㄱ","ㄻ":"ㄹㅁ","ㄼ":"ㄹㅂ","ㄽ":"ㄹㅅ","ㄾ":"ㄹㅌ","ㄿ":"ㄹㅍ","ㅀ":"ㄹㅎ","ㅄ":"ㅂㅅ"};
+const splitJamo=q=>q.replace(/[ㄳㄵㄶㄺㄻㄼㄽㄾㄿㅀㅄ]/g,c=>JAMO2[c]);
+function matchRank(title,q){const t=norm(title),qq=splitJamo(norm(q));if(!qq)return -1;const i=t.indexOf(qq);if(i===0)return 0;if(i>0)return 1;
   const tc=[...t],qc=[...qq];
   for(let s=0;s+qc.length<=tc.length;s++){let ok=true;for(let j=0;j<qc.length;j++){const a=qc[j],b=tc[s+j];if(a===b)continue;if(isCons(a)&&choOf(b)===a)continue;ok=false;break;}if(ok)return s===0?2:3;}
   return -1;}
@@ -864,7 +867,7 @@ function catIndex(){if(SIDX.cats===S.catalogs&&SIDX.len===S.catalogs.length)retu
   const list=[],dup={};for(const cat of S.catalogs)for(const[title,...alts]of catItems(cat)){const nt=norm(title);dup[nt]=(dup[nt]||0)+1;
     list.push({title,alts,nt,ct:choStr(nt),na:alts.map(norm),ca:alts.map(a=>choStr(norm(a))),hymn:splitTitle(title).hymn});}
   SIDX.cats=S.catalogs;SIDX.len=S.catalogs.length;SIDX.list=list;SIDX.dup=dup;return SIDX;}
-function prepQ(q){const qq=norm(q);const qc=[...qq];return{qq,qc,allCons:qc.length>0&&qc.every(isCons),anyCons:qc.some(isCons)};}
+function prepQ(q){const qq=splitJamo(norm(q));const qc=[...qq];return{qq,qc,allCons:qc.length>0&&qc.every(isCons),anyCons:qc.some(isCons)};}
 function rankN(nt,ct,Q){if(!Q.qq)return -1;const i=nt.indexOf(Q.qq);if(i===0)return 0;if(i>0)return 1;if(!Q.anyCons)return -1;
   if(Q.allCons){const j=ct.indexOf(Q.qq);return j<0?-1:j===0?2:3;}
   const tc=[...nt],cc=[...ct],qc=Q.qc;for(let s=0;s+qc.length<=tc.length;s++){let ok=true;for(let j=0;j<qc.length;j++){const a=qc[j];if(a===tc[s+j]||(isCons(a)&&cc[s+j]===a))continue;ok=false;break;}if(ok)return s===0?2:3;}return -1;}
