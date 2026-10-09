@@ -207,10 +207,11 @@ details.pastdet[open]>summary{margin-bottom:12px}
 .fb-in .status{flex:1;min-width:0;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fb-next{margin-left:auto;flex:none}
 /* 콘티 작성 탭: 아래 상자에 붙은 폴더 탭 모양 */
-.wtabs{display:flex;gap:4px;margin:0 0 -17px;padding:0;align-items:flex-end;position:relative;z-index:1}
-.wtab{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-bottom:none;background:var(--soft);color:var(--muted);border-radius:12px 12px 0 0;padding:0 22px;height:46px;box-sizing:border-box;line-height:1;font:inherit;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:-1px}
+.wtabs{display:flex;gap:4px;margin:0 0 -16px;padding:0;align-items:flex-end;position:relative;z-index:1}
+.wtab{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-bottom:none;background:var(--soft);color:var(--muted);border-radius:12px 12px 0 0;padding:0 22px;height:45px;box-sizing:border-box;line-height:1;font:inherit;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:0}
 .wtab:hover{color:var(--ink)}
-.wtab[aria-selected="true"]{background:var(--sheet);color:var(--team,var(--accent));box-shadow:inset 0 3px 0 var(--team,var(--accent))}
+/* 고른 탭만 1px 내려와 상자 윗줄을 덮어요 — 윗선은 모든 탭이 같은 높이 */
+.wtab[aria-selected="true"]{height:46px;margin-bottom:-1px;background:var(--sheet);color:var(--team,var(--accent));box-shadow:inset 0 3px 0 var(--team,var(--accent))}
 .wtab .wtn:not(:empty){min-width:20px;height:20px;border-radius:10px;background:var(--team,var(--accent));color:#fff;font-size:.72rem;display:inline-grid;place-items:center;padding:0 5px}
 .wpanel>.sheet:first-child,.wb-c>.wpanel>.sheet:first-child{border-top-left-radius:0;margin-top:0}
 .wtn:empty{display:none}.wtn{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,currentColor 18%,transparent);font-size:.74rem;display:inline-flex;align-items:center;justify-content:center}
