@@ -557,6 +557,7 @@ body.devmode #main *:hover,body.devmode .bnav *:hover,body.devmode .modal:not(.d
 .dtsel select:last-child{flex-grow:1.4}
 @media (min-width:700px){.grid>.field:has(.dtsel){grid-column:span 2}}
 body.guest .bnav,body.guest .teamchip,body.guest #adminRow{display:none!important}
+.ly-x{position:absolute;top:-11px;right:-11px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;background:#d64545;color:#fff;font:700 12px/1 system-ui;display:grid;place-items:center;cursor:pointer;z-index:5;padding:0;box-shadow:0 1px 4px rgb(0 0 0 / .3)}
 .gosongs{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1px dashed color-mix(in srgb,var(--team,var(--accent)) 55%,var(--line));background:color-mix(in srgb,var(--team,var(--accent)) 6%,var(--sheet));color:var(--ink);border-radius:12px;padding:16px 20px;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;text-align:left}
 .gosongs:hover{border-style:solid}.gosongs .gs-go{color:var(--team,var(--accent));font-size:.9rem;white-space:nowrap}
 .tourcard{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(460px,calc(100vw - 24px));background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-top:4px solid #2f62d6;border-radius:14px;box-shadow:0 14px 40px rgb(0 0 0 / .22);padding:12px 14px 12px}
@@ -1285,14 +1286,14 @@ const TOURS={
     {base:()=>S.lyMoved||0,t:"⑯ 악보 옮기기 · 크기 바꾸기",x:"종이 위 악보 하나를 마우스(손가락)로 끌어서 옮겨 보세요. 오른쪽 아래 점을 끌면 크기도 바뀌어요.",sel:()=>document.querySelector(".ly-stagewrap"),done:st=>(S.lyMoved||0)>st.b0,ok:"원하는 자리에 놓였어요. 다음엔 악보에 구간 표시를 붙여 볼 거예요."},
     {base:()=>S.lyLbl||0,t:"⑰ 구간 표시 붙이기",x:"「🏷 구간 표시」를 누르고, 나오는 이름표(Intro · Verse · Chorus …) 가운데 하나를 고른 뒤 악보 위 붙일 자리를 눌러 보세요. 「🖍 형광펜」으로 칠할 수도 있어요.",sel:()=>lyBtn("구간 표시"),done:st=>(S.lyLbl||0)>st.b0,ok:"이름표가 붙었어요. 다음엔 편집한 것을 콘티에 저장해 볼 거예요."},
     {base:()=>S.lySaved||0,t:"⑱ 콘티에 저장",x:"아래 「콘티에 저장」을 눌러 보세요. 출력할 때 이 모양 그대로 나가요. 「⬇ PDF · 그림」으로 바로 받을 수도 있어요.",sel:()=>lyBtn("콘티에 저장"),done:st=>(S.lySaved||0)>st.b0,ok:"저장됐어요. 이게 이 앱의 가장 큰 장점이에요. 이제 창을 닫고 출력을 볼 거예요."},
-    {need:"sheet",t:"⑲ 콘티 출력",x:"「🖨 콘티 출력」을 눌러 보세요. 곡마다 악보, A3 한 장 압축, 인도자 콘티를 PDF나 그림으로 뽑을 수 있어요.",sel:byBtn("콘티 출력"),done:()=>!!document.querySelector('.panel[aria-label="콘티 출력"]'),ok:"원하는 모양을 골라 「만들기」를 누르면 돼요. 이제 콘티 준비가 끝났어요!"},
+    {need:"sheet",pre:()=>{const m=lyModal();if(m){const c=m.querySelector(".panel-head button");if(c)c.click();else m.closest(".modal").remove();}},t:"⑲ 콘티 출력",x:"「🖨 콘티 출력」을 눌러 보세요. 곡마다 악보, A3 한 장 압축, 인도자 콘티를 PDF나 그림으로 뽑을 수 있어요.",sel:byBtn("콘티 출력"),done:()=>!!document.querySelector('.panel[aria-label="콘티 출력"]'),ok:"원하는 모양을 골라 「만들기」를 누르면 돼요. 이제 콘티 준비가 끝났어요!"},
     {t:"🎉 콘티 작성 연습 끝!",x:"수고하셨어요! 새 콘티 열기 → 예배 정보 → 참여자 → 곡 · 키 · 메모 → 저장 → 공지 → 악보 편집 → 자유롭게 편집 → 출력까지, 실제로 쓰는 순서 그대로 해 보셨어요."}]},
   practicePpt:{name:"PPT 만들기 연습",practice:true,steps:[
     {go:"sheet",t:"PPT 만들기 연습을 시작해요",x:"지금은 「콘티 › 악보 편집」 화면이에요. 악보를 다 꾸몄으면 그 자리에서 바로 PPT로 넘어가요. 화면을 옮겨 다닐 필요 없이 순서대로 해 봐요. 준비되면 「시작 →」을 누르세요."},
     {t:"① 악보 편집에서 PPT로",x:"악보 편집 아래쪽 「다음: PPT 만들기 →」를 눌러 보세요. 콘티의 곡 가사가 장마다 나뉜 미리보기가 열려요.",sel:byBtn("다음: PPT 만들기"),done:()=>!!document.querySelector('.panel[aria-label^="가사 PPT 미리보기"]'),ok:"미리보기가 열렸어요. 다음엔 템플릿을 바꿔 볼 거예요."},
     {t:"② 템플릿 바꿔 보기",x:"미리보기 위쪽 「템플릿」에서 「금요기도회 (예시)」를 골라 보세요. 배경이 바뀌고 가사가 화면 아래쪽에 두 줄로 나와요. 실제로는 교회 예배 PPT를 올려 두면 그 모양 그대로 나와요.",
       sel:()=>tplSelEl(),done:()=>{const s=tplSelEl();return !!s&&/금요/.test((s.selectedOptions[0]||{}).textContent||"");},ok:"모양이 바로 바뀌었죠? 예배 종류에 맞춰 템플릿이 저절로 골라지게 할 수도 있어요. 다음엔 PPT 파일을 받아 볼 거예요."},
-    {base:()=>S.lastPptExport||0,t:"③ PPT 받기",x:"미리보기 창 아래 「⬇ PPT 받기」를 눌러 보세요. (창을 닫았다면 「다음: PPT 만들기 →」를 다시 누르면 돼요)",sel:byBtn("다음: PPT 만들기"),done:st=>(S.lastPptExport||0)>st.b0,ok:"PPT 파일이 만들어졌어요. 실제로는 이 파일을 방송실에 넘기면 돼요. 다음엔 라이브러리에서 무엇을 준비해 두면 좋은지 알아볼 거예요."},
+    {base:()=>S.lastPptExport||0,t:"③ PPT 받기",x:"미리보기 창 아래 「⬇ PPT 받기」를 눌러 보세요. (창을 닫았다면 「다음: PPT 만들기 →」를 다시 누르면 돼요)",sel:()=>{const m=document.querySelector('.panel[aria-label^="가사 PPT 미리보기"]');return (m&&[...m.querySelectorAll("button")].find(b=>b.textContent.includes("PPT 받기")))||byBtn("다음: PPT 만들기")();},done:st=>(S.lastPptExport||0)>st.b0,ok:"PPT 파일이 만들어졌어요. 실제로는 이 파일을 방송실에 넘기면 돼요. 다음엔 라이브러리에서 무엇을 준비해 두면 좋은지 알아볼 거예요."},
     {go:"ppt",t:"[라이브러리] PPT 템플릿",x:"여기는 「라이브러리 › PPT 라이브러리」예요. 실제로 쓰는 예배 PPT를 「PPT 템플릿」에 한 번 올려 두면, 배경 · 글꼴 · 글자 크기 · 위치를 읽어 템플릿으로 만들어요. 그다음부터 PPT가 우리 교회 모양 그대로 나와요.",sel:()=>byH2("PPT 템플릿")()},
     {t:"[라이브러리] 곡별 PPT · 가사",x:"「곡별 PPT」에는 곡마다 가사가 모여 있어요. 「가사로 PPT 만들 수 있음」이면 그대로 쓰면 되고, 「PPT · 가사 없음」인 곡은 「가사 넣기」로 가사를 채우거나 곡 PPT 파일을 「PPT 넣기」로 올려 두면 돼요.",sel:()=>byH2("곡별 PPT")()},
     {t:"🎉 PPT 만들기 연습 끝!",x:"수고하셨어요! 악보 편집 → PPT 미리보기 → PPT 받기, 그리고 라이브러리에서 템플릿 · 가사를 준비하는 법까지 알아봤어요."}]},
@@ -1371,8 +1372,9 @@ function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg"
   const path=document.createElementNS(NS,"path");path.setAttribute("fill-rule","evenodd");path.setAttribute("fill","rgba(10,14,25,.58)");svg.append(path);const ring=document.createElementNS(NS,"path");ring.setAttribute("fill","none");ring.setAttribute("stroke","#2f62d6");ring.setAttribute("stroke-width","3");svg.append(ring);document.body.append(svg);
   const rr=(x,y,w,h,r)=>`M${x+r} ${y}H${x+w-r}A${r} ${r} 0 0 1 ${x+w} ${y+r}V${y+h-r}A${r} ${r} 0 0 1 ${x+w-r} ${y+h}H${x+r}A${r} ${r} 0 0 1 ${x} ${y+h-r}V${y+r}A${r} ${r} 0 0 1 ${x+r} ${y}Z`;
   let last="";const tick=()=>{if(!document.getElementById("tourspot"))return;const W=innerWidth,H=innerHeight;
-    const modalUp=practice&&[...document.querySelectorAll(".modal")].some(m=>!m.classList.contains("devedit"));svg.style.display=modalUp?"none":"";
-    const holes=getEls().map(e=>{const r=e.getBoundingClientRect();return [r.left-6,r.top-6,r.width+12,r.height+12];}).filter(([x,y,w,h])=>w>12&&h>12&&y<H&&y+h>0);
+    const els=getEls();const inModal=els.some(e=>e.closest(".modal"));
+    const modalUp=practice&&!inModal&&[...document.querySelectorAll(".modal")].some(m=>!m.classList.contains("devedit"));svg.style.display=modalUp?"none":"";
+    const holes=els.map(e=>{const r=e.getBoundingClientRect();return [r.left-6,r.top-6,r.width+12,r.height+12];}).filter(([x,y,w,h])=>w>12&&h>12&&y<H&&y+h>0);
     const key=W+","+H+holes.map(a=>a.map(Math.round).join(",")).join(";");if(key!==last){last=key;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
       path.setAttribute("d",`M0 0H${W}V${H}H0Z`+holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));ring.setAttribute("d",holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));}
     TOUR&&(TOUR.raf=requestAnimationFrame(tick));};tick();}
@@ -1789,7 +1791,11 @@ function layoutEditor(c,onSave){const editable=curEditable();
       if(e.border)n.style.border=`${Math.max(1,.5*sc)}px solid ${e.color||"#111"}`;if(e.round)n.style.borderRadius="50%";if(e.fill)n.style.background=e.fill;n.append(t);
       if(editing===e.id){t.contentEditable="true";setTimeout(()=>{t.focus();const r=document.createRange();r.selectNodeContents(t);r.collapse(false);const s2=getSelection();s2.removeAllRanges();s2.addRange(r);},0);
         t.addEventListener("blur",()=>{e.text=t.innerText.replace(/\n$/,"");editing=null;commit();draw();});t.addEventListener("pointerdown",ev=>ev.stopPropagation());}}
-    if(sel.size===1&&sel.has(e.id)&&editable)n.append(h("div",{class:"ly-h br","data-h":"br"}),h("div",{class:"ly-h r","data-h":"r"}),h("div",{class:"ly-h b","data-h":"b"}));
+    if(sel.size===1&&sel.has(e.id)&&editable){n.append(h("div",{class:"ly-h br","data-h":"br"}),h("div",{class:"ly-h r","data-h":"r"}),h("div",{class:"ly-h b","data-h":"b"}));
+      /* 고른 것 오른쪽 위 ✕: 바로 지우기 (되돌리기로 살릴 수 있어요) */
+      const x=h("button",{type:"button",class:"ly-x","aria-label":"지우기",title:"지우기 (↶로 되돌릴 수 있어요)",text:"✕"});
+      x.addEventListener("pointerdown",ev=>{ev.stopPropagation();ev.preventDefault();});
+      x.addEventListener("click",ev=>{ev.stopPropagation();const i=page().els.findIndex(z=>z.id===e.id);if(i>=0)page().els.splice(i,1);sel.clear();commit();draw();});n.append(x);}
     return n;}
   function draw(){sheet.replaceChildren(...page().els.map(elNode),gV,gH);gV.hidden=gH.hidden=true;sheet.classList.toggle("hlmode",tool==="hl"||tool==="lbl");
     prevB.hidden=pi<=0;nextB.hidden=pi>=L.pages.length-1;
