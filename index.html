@@ -1135,7 +1135,7 @@ async function uiTextSave(from,to){const m=new Map(DEV.map);if(to==null||to===fr
 function devToggle(force){DEV.on=force!=null?force:!DEV.on;document.body.classList.toggle("devmode",DEV.on&&DEV.edit);let bar=document.getElementById("devbar");if(bar)bar.remove();
   if(DEV.on){const sw=h("button",{type:"button",class:"btn sm"+(DEV.edit?" primary":""),text:DEV.edit?"✏️ 글자 고치기 켜짐":"✏️ 글자 고치기 꺼짐 (앱 그대로 쓰기)",onclick:()=>{DEV.edit=!DEV.edit;devToggle(true);}});
     bar=h("div",{id:"devbar",class:"devbar"},h("b",{text:"🛠 개발자 모드"}),h("span",{class:"hint",text:DEV.edit?"고칠 글자를 누르세요":"화면을 옮겨 다닐 땐 끄고, 고칠 때 켜요"}),sw,
-      h("button",{type:"button",class:"btn sm",text:`바꾼 글자 ${DEV.map.size}개`,onclick:devListModal}),h("button",{type:"button",class:"btn sm ghost",text:"끝내기",onclick:()=>devToggle(false)}));document.body.append(bar);}
+      h("button",{type:"button",class:"btn sm",text:`바꾼 글자 ${DEV.map.size}개`,onclick:devListModal}),h("button",{type:"button",class:"btn sm",text:"📚 비슷한 말 묶음",onclick:wordGroupsModal}),h("button",{type:"button",class:"btn sm ghost",text:"끝내기",onclick:()=>devToggle(false)}));document.body.append(bar);}
   drawAdminRow();}
 /* 글자 고치기: 누른 자리의 글자 한 덩어리를 골라요 */
 document.addEventListener("click",e=>{if(!DEV.on||!DEV.edit)return;const el=e.target;if(!el||!el.closest||el.closest("#devbar,.devedit"))return;
@@ -1151,6 +1151,13 @@ function devEditModal(from,cur){const inp=h("input",{type:"text",value:cur,style
     h("p",{class:"hint",style:"margin-top:8px",text:"같은 글자가 앱 어디에 있든 모두 함께 바뀌어요. 숫자 · 이름처럼 그때그때 바뀌는 글자는 고칠 수 없어요."})),
     [DEV.map.has(from)?h("button",{class:"btn ghost danger",text:"원래대로",onclick:async()=>{if(await uiTextSave(from,null)){md.close();toast("원래 글자로 돌렸어요");}}}):null,h("span",{class:"spacer"}),h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"바꾸기",onclick:go})].filter(Boolean),"devedit");
   setTimeout(()=>{inp.focus();inp.select();},50);}
+/* 비슷한 말 묶음 고치기 (낱말로 곡 찾기에 쓰여요) — 한 줄에 한 묶음, 낱말은 띄어 쓰기 */
+function wordGroupsModal(){const ta=h("textarea",{value:WORD_GROUPS.map(g=>g.map(w=>w.replace(/ /g,"_")).join(" ")).join("\n"),style:"min-height:420px;font-size:.95rem;line-height:1.7"});
+  const save=async lines=>{try{await S.db.doc("catalog/wordgroups").set({lines,updatedAt:Date.now()});setWordGroups(lines.length?{lines}:null);md.close();toast(lines.length?`비슷한 말 묶음 ${WORD_GROUPS.length}개를 저장했어요`:"처음 목록으로 돌렸어요");}catch(e){console.error(e);toast("저장하지 못했어요");}};
+  const md=modal("비슷한 말 묶음",h("div",{class:"panel-body devedit"},h("p",{class:"hint",text:"「낱말로 곡 찾기」에서 한 낱말을 찾으면 같은 줄의 말도 함께 찾아요. 한 줄에 한 묶음, 낱말은 띄어 쓰세요. 한 글자 낱말(물 · 피 · 빛)은 낱말 첫머리에서만 찾아요. 띄어 쓴 말은 _ 로 이어 써요 (예: 새_생명)."}),ta,
+      h("p",{class:"hint",text:S.wgCustom?"지금은 고친 목록을 쓰고 있어요.":"지금은 처음 목록이에요."})),
+    [S.wgCustom?h("button",{class:"btn ghost danger",text:"처음 목록으로",onclick:()=>save([])}):null,h("span",{class:"spacer"}),h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),
+      h("button",{class:"btn primary",text:"저장",onclick:()=>save(ta.value.split("\n").map(l=>l.trim().split(/\s+/).filter(Boolean).join(" ")).filter(l=>l.split(" ").length>1))})].filter(Boolean),"devedit");}
 function devListModal(){const rows=[...DEV.map];
   const md=modal(`바꾼 글자 ${rows.length}개`,h("div",{class:"panel-body devedit"},rows.length?h("div",{style:"display:flex;flex-direction:column;gap:6px"},rows.map(([a,b])=>h("div",{class:"card row",style:"gap:8px;align-items:center;flex-wrap:wrap"},
       h("span",{style:"flex:1;min-width:200px"},h("span",{class:"hint",text:a}),h("br"),h("b",{text:`→ ${b}`})),h("button",{class:"btn sm",text:"고치기",onclick:()=>{md.close();devEditModal(a,b);}}),
@@ -4285,34 +4292,48 @@ const reEsc=w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function wordRe(w){return [...w].length<=1?new RegExp(`(?<![가-힣])${reEsc(w)}(?=(?:${JOSA})?(?![가-힣]))`,"g"):new RegExp(reEsc(w),"g");}
 const wordHit=(text,w)=>{const r=wordRe(w);return r.test(text||"");};
 /* 비슷한 말 묶음: 한 낱말을 찾으면 같은 묶음의 말도 함께 찾아요 (필요하면 더 늘려요) */
-const WORD_GROUPS=[
-  "물 생수 생명수 강물 시내 샘 샘물 강 바다 단비 이슬 목마른 목마름 갈급",
-  "피 보혈 흘리신 속죄 대속 어린양",
-  "전쟁 전투 싸움 싸우 승리 이기 군대 군사 용사 대장 칼 방패 갑옷 원수 대적",
-  "빛 등불 광채 비추 어둠 새벽 아침 별",
-  "불 불꽃 타오르 불길",
-  "바람 숨결 호흡 생기",
-  "목자 양떼 초장 물가 인도",
-  "반석 피난처 산성 요새 바위 방패",
-  "왕 보좌 다스리 통치 주권 면류관 왕관",
-  "사랑 은혜 긍휼 자비 인자",
-  "평안 평강 안식 위로 쉼",
-  "기쁨 기뻐 즐거움 춤 노래 찬양",
-  "십자가 고난 갈보리 죽으심",
-  "부활 살아나 무덤",
-  "생명 영생 살리",
-  "치유 고치 회복 상처 병",
-  "용서 회개 정결 깨끗 죄",
-  "눈물 슬픔 애통 탄식",
-  "믿음 신뢰 의지 맡기",
-  "소망 기다리 약속",
-  "예배 경배 엎드려 무릎",
-  "길 걸어 동행 따라가 인도",
-  "아버지 아빠 자녀 품",
-  "떡 빵 만나 양식",
-  "열매 포도나무 가지 추수 씨",
-  "열방 민족 땅끝 복음 선교 나라",
-  "성령 기름 충만 바람 불"].map(g=>g.split(" ").filter(Boolean));
+const WORD_GROUPS_DEF=`물 생수 생명수 강물 시내 샘 샘물 강 바다 단비 이슬 목마른 목마름 갈급 적시
+피 보혈 흘리신 속죄 대속 어린양
+전쟁 전투 싸움 싸우 승리 이기신 이기네 군대 군사 용사 대장 칼 방패 갑옷 원수 대적 무너뜨
+빛 등불 광채 비추 어둠 새벽 아침 별 밝히
+불 불꽃 타오르 불길 태우
+성령 기름 충만 바람 생기 숨결 호흡 임하
+목자 양떼 초장 물가 인도 지팡이
+반석 피난처 산성 요새 바위 방패 숨는
+왕 보좌 다스리 통치 주권 면류관 왕관 존귀 위엄
+사랑 은혜 긍휼 자비 인자 신실
+평안 평강 안식 위로 쉼 잠잠
+기쁨 기뻐 즐거움 춤 노래 환호 웃음
+찬양 찬송 높이 송축 할렐루야 영광
+예배 경배 엎드려 무릎 제단 향기 드리
+십자가 고난 갈보리 가시관 죽으심
+부활 살아나 무덤 사망 이기신
+생명 영생 살리 새_생명 거듭나
+치유 고치 회복 상처 병 아픔 싸매
+죄 용서 회개 씻 정결 깨끗 허물
+눈물 슬픔 애통 탄식 울음
+믿음 신뢰 의지 맡기 붙들
+소망 기다리 약속 바라봐 소원
+길 걸어 동행 따라가 인도 발걸음
+아버지 아빠 자녀 품 안기
+떡 빵 만나 양식 배부르 잔치
+열매 포도나무 가지 추수 거두
+열방 민족 땅끝 복음 선교 나라 전하
+말씀 진리 음성 들으
+은혜 선물 값없이 넘치 부으
+구원 건지 구속 해방 자유 속량
+하늘 천국 영원 본향 새_하늘
+다시_오 재림 신랑 마라나타
+교회 성전 지체 공동체
+거룩 성결 구별
+능력 권능 힘 강하
+순종 따르 헌신 내려놓
+기도 부르짖 간구 구하
+광야 사막 메마른 골짜기
+시온 언덕 산
+신부 신랑 혼인`.split("\n");
+let WORD_GROUPS=WORD_GROUPS_DEF.map(g=>g.split(/\s+/).filter(Boolean).map(w=>w.replace(/_/g," ")));
+function setWordGroups(doc){const lines=doc&&Array.isArray(doc.lines)&&doc.lines.length?doc.lines:WORD_GROUPS_DEF;WORD_GROUPS=lines.map(g=>String(g).split(/\s+/).filter(Boolean).map(w=>w.replace(/_/g," "))).filter(g=>g.length>1);S.wgCustom=!!(doc&&doc.lines&&doc.lines.length);}
 function relWords(w){const out=new Set();for(const g of WORD_GROUPS)if(g.includes(w))g.forEach(x=>{if(x!==w)out.add(x);});return [...out];}
 let bibLast=null;
 /* 콘티 작성: 말씀에서 곡 찾기 — 본문 낱말 가운데 우리 곡 가사·제목에 실제로 나오는 말을 골라 보여 줘요 */
@@ -4333,7 +4354,7 @@ function songHelpSheet(rows,label){const c=S.cur;const kin=h("input",{type:"sear
     hits.sort((a,b)=>b.d-a.d||b.r-a.r||(usage[b.sg.id]||0)-(usage[a.sg.id]||0));
     if(ks.some(k=>relWords(k).length))res.append(h("div",{class:"row",style:"gap:6px;align-items:center;flex-wrap:wrap"},
       h("label",{class:"fchk",style:"font-size:.85rem"},h("input",{type:"checkbox",checked:S.shRel!==false,onchange:e=>{S.shRel=e.target.checked;draw();}}),"비슷한 말도 찾기"),
-      S.shRel!==false?h("span",{class:"hint",text:`함께 찾은 말: ${rel.join(" · ")}`}):null));
+      null));
     res.append(h("div",{class:"hint",text:hits.length?`${hits.length}곡${hits.length>12?" 중 12곡":""}`:"맞는 곡이 없어요. 낱말을 바꿔 보세요."}));
     for(const {sg,m:mm}of hits.slice(0,12)){const line=((sg.lyrics||"").split(/\n/).find(l=>mm.some(k=>wordHit(l,k)))||"").trim();
       res.append(h("div",{class:"card row",style:"flex-wrap:nowrap;align-items:flex-start"},h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"},
@@ -5581,7 +5602,7 @@ if(!S.team||!loadDraft())S.cur=blankConti();
 /* stand-alone listeners: shared data (songs, title lists) and one team's data */
 const RR={rerender:()=>render(),onErr:e=>console.warn(e),shared:false,team:null,offs:[]};
 function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
-  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));S.catalogs=all.filter(x=>x.id!=="uitext");RR.rerender();},RR.onErr);
+  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.catalogs=all.filter(x=>x.id!=="uitext"&&x.id!=="wordgroups");RR.rerender();},RR.onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();},RR.onErr);}
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
@@ -5614,7 +5635,7 @@ render();
   let f1=0,f2=0,f3=0,f4=0,f5=0,f6=0;
   db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members","attend","lineup"].includes(S.tab))rerender();},onErr);
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
-  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));S.catalogs=all.filter(x=>x.id!=="uitext");if(!f4++)done();else rerender();},onErr);
+  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.catalogs=all.filter(x=>x.id!=="uitext"&&x.id!=="wordgroups");if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f2++)done();else rerender();},onErr);
   db.collection("contis").onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f3++)done();else rerender();},onErr);
