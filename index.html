@@ -2902,8 +2902,8 @@ function catalogSheet(){
       h("div",{class:"lab",text:"목록에 없는 제목 넣기"}),ta,preview,h("div",{class:"row"},h("span",{class:"spacer"}),go)));}
 /* 곡 카드 제목: 입력칸을 글자 길이에 맞춰 「(새찬송가 N장)」이 제목 바로 뒤에 붙어 보이게 */
 function fitTitle(box){const inp=box.querySelector("input");const cv=fitTitle.cv||(fitTitle.cv=document.createElement("canvas"));
-  inp.style.flex="0 1 auto";inp.style.minWidth="3em";const fit=()=>{const cs=getComputedStyle(inp);const x=cv.getContext("2d");x.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;inp.style.width=Math.ceil(x.measureText(inp.value||inp.placeholder||" ").width+18)+"px";};
-  inp.addEventListener("input",fit);setTimeout(fit,0);return box;}
+  inp.style.flex="0 1 auto";inp.style.minWidth="3em";const fit=()=>{const cs=getComputedStyle(inp);const x=cv.getContext("2d");x.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;inp.style.paddingRight="0";const pad=parseFloat(cs.paddingLeft)||0;inp.style.width=Math.ceil(x.measureText(inp.value||inp.placeholder||" ").width+pad+1)+"px";};
+  inp.addEventListener("input",fit);setTimeout(fit,0);try{document.fonts&&document.fonts.ready.then(()=>setTimeout(fit,0));}catch(e){}return box;}
 function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canWrite&&!local&&S.db;
   const keyIn=h("input",{type:"text",id:`sk-${s.id}`,"aria-label":"기본 키",placeholder:"Key",value:s.key||"",style:"width:72px;text-align:center;font-weight:700",disabled:!can,onchange:()=>save()});
   const sp=splitTitle(s.title);
