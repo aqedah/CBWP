@@ -1156,9 +1156,9 @@ const TOURS={
     {tab:"home",t:"① 콘티 · 악보 보기",x:"「콘티 · 악보 보기」를 누르면 이번 주 곡 순서 · 키 · 악보 · 레퍼런스 영상을 한 화면에서 봐요. 휴대폰으로 보기 좋게 만들어져 있어요.",sel:byBtn("콘티 · 악보 보기")},
     {tab:"home",t:"② 연습 모드",x:"「🎼 연습 모드」는 태블릿이나 휴대폰을 악보대처럼 써요. 곡마다 한 화면씩, 좌우로 넘기고 화면이 꺼지지 않아요. 연습 · 예배 때 그대로 쓰면 돼요.",sel:byBtn("연습 모드")},
     {tab:"home",t:"③ 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 또는 「어려워요」를 눌러 알려 주세요. 어려울 때는 사유를 짧게 남기면 리더가 편성할 때 참고해요.",sel:byH2("참여 응답")},
-    {tab:"cal",t:"④ 일정",x:"연습 · 모임 날짜와 장소를 확인해요. 일정을 눌러 참여 여부를 남길 수도 있어요.",sel:()=>document.querySelector("#main .sheet")},
-    {tab:"songs",t:"⑤ 찬양 라이브러리",x:"곡 이름이나 초성(예: ㅁㅂㅇ)으로 찾아요. 썸네일을 누르면 악보가 크게 열리고, 「가사」로 가사를 볼 수 있어요. 미리 예습할 때 좋아요.",sel:()=>document.querySelector("#song-q")},
-    {tab:"list",t:"⑥ 지난 콘티",x:"지난주에 무슨 곡을 불렀는지, 그때 악보와 메모를 다시 볼 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
+    {tab:"list",t:"④ 콘티 · 지난 콘티",x:"아래 메뉴 「콘티」의 「지난 콘티」에서 지난주에 무슨 곡을 불렀는지, 그때 악보와 메모를 다시 볼 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
+    {tab:"songs",t:"⑤ 라이브러리",x:"곡 이름이나 초성(예: ㅁㅂㅇ)으로 찾아요. 썸네일을 누르면 악보가 크게 열리고, 「가사」로 가사를 볼 수 있어요. 미리 예습할 때 좋아요.",sel:()=>document.querySelector("#song-q")},
+    {tab:"cal",t:"⑥ 우리 팀 · 일정",x:"아래 메뉴 「우리 팀」에서 연습 · 모임 날짜와 장소를 확인해요. 일정을 눌러 참여 여부를 남길 수도 있어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"me",t:"⑦ 나",x:"내 이름 · 사진 · 맡는 자리를 정해요. 「다른 기기 연결」로 휴대폰과 태블릿을 함께 쓸 수 있어요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]}};
 let TOUR=null;
 function tourStart(kind){const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR_LAST=null;const pl=document.getElementById("tourpill");if(pl)pl.remove();TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
