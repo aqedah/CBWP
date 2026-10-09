@@ -572,7 +572,7 @@ body.touring{padding-bottom:240px}
 body.fb-pad .tourpill{bottom:calc(140px + env(safe-area-inset-bottom,0px))}body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .tour-spot{position:relative;z-index:59!important;box-shadow:0 0 0 4px #2f62d6,0 0 0 100vmax rgb(10 14 25 / .58)!important;border-radius:12px;background-clip:padding-box}
 .bnav.tour-spot,.bnav .tour-spot{position:relative}
-.tourspot{position:fixed;inset:0;width:100vw;height:100vh;z-index:58;pointer-events:none}
+.tourspot{position:fixed;left:0;top:0;z-index:58;pointer-events:none}
 .tourdim{position:fixed;inset:0;z-index:58;background:rgb(10 14 25 / .58);pointer-events:none}
 .rolepick{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.rolecard{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--sheet)}.rolecard p{margin:0 0 4px}
 .demoban.mini{display:flex;align-items:center;gap:8px;padding:6px 12px}
@@ -1379,7 +1379,9 @@ function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];
       if(ok){clearInterval(iv);const tk=$("#tc-task");if(tk){tk.className="tc-task ok";tk.textContent=`👏 ${["잘하셨어요!","좋아요!","훌륭해요!","완벽해요!","멋져요!"][TOUR.i%5]} ${st.ok||""}`;}const nb=$("#tc-next");if(nb){nb.disabled=false;nb.classList.add("pulse");}const sk=card.querySelector(".tc-skip");if(sk)sk.remove();}};
     const iv=setInterval(chk,500);TOUR.iv=iv;}
   setTimeout(()=>{if(!TOUR)return;let els=st.sel?st.sel():null;els=(Array.isArray(els)?els:[els]).filter(Boolean);
-    if(els.length)els[0].scrollIntoView({behavior:"smooth",block:"center"});else window.scrollTo({top:0,behavior:"smooth"});
+    if(els.length){const e0=els[0];if(e0.closest(".modal")||e0.closest(".bnav")||getComputedStyle(e0).position==="fixed")e0.scrollIntoView({behavior:"smooth",block:"center"});else{
+      const hd=document.querySelector("header.top"),cd=document.getElementById("tourcard");const top=hd?Math.max(0,hd.getBoundingClientRect().bottom):0,bot=cd?cd.getBoundingClientRect().top:innerHeight;
+      const r=e0.getBoundingClientRect(),room=Math.max(80,bot-top-16);const want=r.height>=room?top+8:top+8+(room-r.height)/2;window.scrollTo({top:Math.max(0,scrollY+r.top-want),behavior:"smooth"});}}else window.scrollTo({top:0,behavior:"smooth"});
     spotOn(()=>{let e=st.sel?st.sel():null;return (Array.isArray(e)?e:[e]).filter(x=>x&&x.isConnected&&x.getClientRects().length>0);},T.practice);},350);}
 /* 반투명 어두운 막 + 구멍(설명하는 곳만 밝게) — 누르는 건 막지 않아요. 실습 중 다른 창(모달)이 뜨면 잠깐 걷어요 */
 function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg";const svg=document.createElementNS(NS,"svg");svg.id="tourspot";svg.setAttribute("class","tourspot");
@@ -1389,7 +1391,7 @@ function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg"
     const els=getEls();const inModal=els.some(e=>e.closest(".modal"));
     const modalUp=practice&&!inModal&&[...document.querySelectorAll(".modal")].some(m=>!m.classList.contains("devedit"));svg.style.display=modalUp?"none":"";
     const nv=document.getElementById("tabsNav"),nb=nv&&!nv.hidden?nv.getBoundingClientRect().top:H;const holes=els.map(e=>{const r=e.getBoundingClientRect();const inNav=nv&&nv.contains(e);const bot=inNav?r.bottom+6:Math.min(r.bottom+6,nb-2);return [r.left-6,r.top-6,r.width+12,bot-(r.top-6)];}).filter(([x,y,w,h])=>w>12&&h>12&&y<H&&y+h>0);
-    const key=W+","+H+holes.map(a=>a.map(Math.round).join(",")).join(";");if(key!==last){last=key;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+    const key=W+","+H+holes.map(a=>a.map(Math.round).join(",")).join(";");if(key!==last){last=key;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("preserveAspectRatio","none");svg.style.width=W+"px";svg.style.height=H+"px";
       path.setAttribute("d",`M0 0H${W}V${H}H0Z`+holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));ring.setAttribute("d",holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));}
     TOUR&&(TOUR.raf=requestAnimationFrame(tick));};tick();}
 function spotOff(){const s=document.getElementById("tourspot");if(s)s.remove();if(TOUR&&TOUR.raf)cancelAnimationFrame(TOUR.raf);}
