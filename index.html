@@ -1170,7 +1170,7 @@ async function uiTextSave(from,to){const m=new Map(DEV.map);if(to==null||to===fr
 function devToggle(force){DEV.on=force!=null?force:!DEV.on;document.body.classList.toggle("devmode",DEV.on&&DEV.edit);let bar=document.getElementById("devbar");if(bar)bar.remove();
   if(DEV.on){const sw=h("button",{type:"button",class:"btn sm"+(DEV.edit?" primary":""),text:DEV.edit?"✏️ 글자 고치기 켜짐":"✏️ 글자 고치기 꺼짐 (앱 그대로 쓰기)",onclick:()=>{DEV.edit=!DEV.edit;devToggle(true);}});
     bar=h("div",{id:"devbar",class:"devbar"},h("b",{text:"🛠 개발자 모드"}),h("span",{class:"hint",text:DEV.edit?"고칠 글자를 누르세요":"화면을 옮겨 다닐 땐 끄고, 고칠 때 켜요"}),sw,
-      h("button",{type:"button",class:"btn sm",text:`바꾼 글자 ${DEV.map.size}개`,onclick:devListModal}),h("button",{type:"button",class:"btn sm",text:"📚 비슷한 말 묶음",onclick:wordGroupsModal}),h("button",{type:"button",class:"btn sm ghost",text:"끝내기",onclick:()=>devToggle(false)}));document.body.append(bar);}
+      h("button",{type:"button",class:"btn sm",text:`바꾼 글자 ${DEV.map.size}개`,onclick:devListModal}),h("button",{type:"button",class:"btn sm",text:"📚 비슷한 말 묶음",onclick:wordGroupsModal}),h("button",{type:"button",class:"btn sm",text:"🧹 제목 사전 정리",onclick:catalogCleanModal}),h("button",{type:"button",class:"btn sm",text:"💾 저장 공간",onclick:storageModal}),h("button",{type:"button",class:"btn sm ghost",text:"끝내기",onclick:()=>devToggle(false)}));document.body.append(bar);}
   drawAdminRow();}
 /* 글자 고치기: 누른 자리의 글자 한 덩어리를 골라요 */
 document.addEventListener("click",e=>{if(!DEV.on||!DEV.edit)return;const el=e.target;if(!el||!el.closest||el.closest("#devbar,.devedit"))return;
@@ -1187,6 +1187,46 @@ function devEditModal(from,cur){const inp=h("input",{type:"text",value:cur,style
     [DEV.map.has(from)?h("button",{class:"btn ghost danger",text:"원래대로",onclick:async()=>{if(await uiTextSave(from,null)){md.close();toast("원래 글자로 돌렸어요");}}}):null,h("span",{class:"spacer"}),h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"바꾸기",onclick:go})].filter(Boolean),"devedit");
   setTimeout(()=>{inp.focus();inp.select();},50);}
 /* 비슷한 말 묶음 고치기 (낱말로 곡 찾기에 쓰여요) — 한 줄에 한 묶음, 낱말은 띄어 쓰기 */
+/* ===== 제목 사전 정리: 찬송가와 같은 곡 빼기 · 겹치는 제목 하나만 (띄어쓰기 된 쪽) ===== */
+function catalogClean(){const NK=t=>String(t||"").replace(/\((?:새)?찬송가[^)]*\)/g,"").replace(/[\s\p{P}\p{S}_]/gu,"").toLowerCase();
+  const hy=S.catalogs.find(c=>c.id==="hymns");const hyK=new Set(hy?catItems(hy).map(r=>NK(r[0])):[]);
+  const lists=S.catalogs.filter(c=>c.id!=="hymns"&&(c.kind==="titles"||c.id==="extra")).sort((a,b)=>(a.id==="extra"?1:0)-(b.id==="extra"?1:0)||String(a.id).localeCompare(String(b.id)));
+  const keep=new Map();const out={};let hymnDup=0,dup=0,spaced=0;
+  for(const c of lists){out[c.id]=[];for(const r of catItems(c)){const k=NK(r[0]);if(!k)continue;if(hyK.has(k)){hymnDup++;continue;}
+      const prev=keep.get(k);if(!prev){const row=r.slice();keep.set(k,{id:c.id,row});out[c.id].push(row);continue;}
+      dup++;if(!/\s/.test(prev.row[0])&&/\s/.test(r[0])){prev.row[0]=r[0];spaced++;}
+      for(const a of r.slice(1))if(a&&!prev.row.slice(1).includes(a))prev.row.push(a);}}
+  return{lists,out,hymnDup,dup,spaced,before:lists.reduce((n,c)=>n+catItems(c).length,0),after:Object.values(out).reduce((n,a)=>n+a.length,0)};}
+function catalogCleanModal(){if(!S.db||!S.canWrite)return toast("쓰기 비밀번호를 넣은 기기에서만 할 수 있어요");const R=catalogClean();
+  const hyN=(S.catalogs.find(c=>c.id==="hymns")?catItems(S.catalogs.find(c=>c.id==="hymns")).length:0);
+  const go=h("button",{class:"btn primary",text:"정리하기",disabled:R.after===R.before&&!R.spaced,onclick:async()=>{go.disabled=true;
+    try{for(const c of R.lists){const items=R.out[c.id].map(r=>r.join("\t"));if(items.length===catItems(c).length&&!R.spaced)continue;await S.db.doc(`catalog/${c.id}`).update({items,updatedAt:Date.now()});}
+      md.close();toast(`제목 사전을 정리했어요 (${R.before.toLocaleString()} → ${R.after.toLocaleString()}곡)`,3500);}catch(e){console.error(e);toast("정리하지 못했어요");go.disabled=false;}}});
+  const md=modal("🧹 제목 사전 정리",h("div",{class:"panel-body"},
+    h("p",{text:`찬송가 ${hyN}곡은 그대로 두고, 찬양 제목 ${R.before.toLocaleString()}곡을 정리해요.`}),
+    h("ul",{style:"line-height:1.8;margin:0;padding-left:20px"},
+      h("li",{text:`찬송가와 같은 곡 ${R.hymnDup}개 빼기 → 늘 「(찬송가 N장)」이 붙은 쪽으로 잡혀요`}),
+      h("li",{text:`겹치는 제목 ${R.dup}개를 하나로 · 그중 ${R.spaced}개는 띄어쓰기 된 제목으로 바꿔요 (첫 소절은 합쳐서 남겨요)`}),
+      h("li",{text:`정리 뒤: 찬양 제목 ${R.after.toLocaleString()}곡 + 찬송가 ${hyN}곡`})),
+    h("p",{class:"hint",text:"라이브러리에 이미 있는 곡은 바뀌지 않아요. 곡 찾기 추천과 제목 맞추기에만 쓰이는 목록이에요."})),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);}
+/* ===== 저장 공간: 무료 1GB 중 얼마나 썼는지 (눌렀을 때만 셈) ===== */
+async function storageModal(){if(!S.db)return toast("서버에 연결되지 않았어요");const body=h("div",{class:"panel-body"},h("p",{text:"세는 중… (악보 그림 목록을 한 번 읽어요)"}));const md=modal("💾 저장 공간",body,[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);
+  try{const js=x=>{try{return JSON.stringify(x).length;}catch(e){return 0;}};
+    const im=await S.db.collection("imgs").get();let imgB=0;im.docs.forEach(d=>{const n=d.data().n||1;imgB+=(n-.5)*CHUNK;});
+    let tplB=0,tplN=0;try{const tp=await S.db.collection("tplFiles").get();tp.docs.forEach(d=>{tplN++;tplB+=(d.data().size||0)*1.34;});}catch(e){}
+    const txt=js(S.allContis||S.contis)+js(S.songs)+js(S.catalogs)+js(S.events||[])+js(S.posts||[])+js(S.members||[]);
+    const tot=imgB+tplB+txt,GB=1024**3,MB=x=>(x/1048576).toFixed(x<10*1048576?1:0)+"MB",pct=Math.min(100,tot/GB*100);
+    const per=im.size?imgB/im.size:350000;const left=Math.max(0,Math.floor((GB-tot)/per));
+    body.replaceChildren(h("div",{style:"font-size:1.6rem;font-weight:800",text:`${MB(tot)} / 1GB (${pct.toFixed(1)}%)`}),
+      h("div",{style:"height:10px;border-radius:5px;background:var(--line);overflow:hidden;margin:6px 0 12px"},h("div",{style:`height:100%;width:${Math.max(.5,pct)}%;background:${pct>80?"#d64545":"#2f62d6"}`})),
+      h("table",{class:"tbl",style:"width:100%"},h("tbody",{},
+        h("tr",{},h("td",{text:`악보 그림 ${im.size.toLocaleString()}장`}),h("td",{style:"text-align:right",text:MB(imgB)})),
+        h("tr",{},h("td",{text:`예배 PPT 틀 ${tplN}개`}),h("td",{style:"text-align:right",text:MB(tplB)})),
+        h("tr",{},h("td",{text:"콘티 · 곡 · 가사 · 일정 (글자)"}),h("td",{style:"text-align:right",text:MB(txt)})))),
+      h("p",{style:"margin-top:10px",text:`지금 속도면 악보 그림을 약 ${left.toLocaleString()}장 더 넣을 수 있어요.`}),
+      h("p",{class:"hint",text:"어림값이에요. 서버가 따로 쓰는 색인 공간 때문에 실제는 조금 더 클 수 있어요. 정확한 값은 Firebase 콘솔 › Firestore › 사용량에서 볼 수 있어요. 이 계산은 악보 그림 수만큼 읽기를 써요."}));}
+  catch(e){console.error(e);body.replaceChildren(h("p",{text:"세지 못했어요. 인터넷 연결이나 권한을 확인해 주세요."}));}}
 function wordGroupsModal(){const ta=h("textarea",{value:WORD_GROUPS.map(g=>g.map(w=>w.replace(/ /g,"_")).join(" ")).join("\n"),style:"min-height:420px;font-size:.95rem;line-height:1.7"});
   const save=async lines=>{try{await S.db.doc("catalog/wordgroups").set({lines,updatedAt:Date.now()});setWordGroups(lines.length?{lines}:null);md.close();toast(lines.length?`비슷한 말 묶음 ${WORD_GROUPS.length}개를 저장했어요`:"처음 목록으로 돌렸어요");}catch(e){console.error(e);toast("저장하지 못했어요");}};
   const md=modal("비슷한 말 묶음",h("div",{class:"panel-body devedit"},h("p",{class:"hint",text:"「낱말로 곡 찾기」에서 한 낱말을 찾으면 같은 줄의 말도 함께 찾아요. 한 줄에 한 묶음, 낱말은 띄어 쓰세요. 한 글자 낱말(물 · 피 · 빛)은 낱말 첫머리에서만 찾아요. 띄어 쓴 말은 _ 로 이어 써요 (예: 새_생명)."}),ta,
