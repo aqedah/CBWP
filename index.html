@@ -1245,7 +1245,7 @@ const byBtn=t=>()=>[...document.querySelectorAll("#main button,#main a.btn")].fi
 const TOURS={
   leader:{name:"인도자 튜토리얼",then:["practiceConti","✍️ 네, 콘티 짜는 연습 해 볼게요","이제 직접 콘티를 짜 볼까요? 방금 본 순서대로, 하나씩 눌러 보며 연습해요."],steps:[
     {tab:"home",t:"화면 아래 메뉴부터 볼까요?",x:"밝게 보이는 화면 맨 아래가 앱의 큰 메뉴예요. 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개가 있어요. 메뉴마다 먼저 전체를 소개하고, 그 안의 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
-    {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 나의 섬김 · 참여 응답 · 공지 · 앞으로 2주 일정이 모여 있어요. 하나씩 볼게요.",sel:null},
+    {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 나의 섬김 · 참여 응답 · 공지 · 앞으로 2주 일정이 모여 있어요. 하나씩 볼게요.",sel:()=>[...document.querySelectorAll("#main .sheet")].filter(x=>!x.parentElement.closest("#main .sheet"))},
     {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요. 「콘티 · 악보 보기」로 곡 순서와 악보를 보고, 「🎼 연습 모드」로 곡마다 한 화면씩 넘기며 연습해요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"[홈] 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 · 「어려워요」를 눌러 알려요. 인도자 · 리더는 팀원들의 응답을 보고 편성을 짜요.",sel:byH2("참여 응답")},
     {tab:"home",t:"[홈] 앞으로 2주 일정",x:"앞으로 2주 동안의 예배 · 연습 · 모임이 날짜순으로 나와요. 「+ 일정」으로 바로 넣고, 「달력 보기」로 한 달을 한눈에 봐요.",sel:()=>byH2("앞으로 2주 일정")()||byH2("다가오는 일정")()},
@@ -1388,7 +1388,7 @@ function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg"
   let last="";const tick=()=>{if(!document.getElementById("tourspot"))return;const W=innerWidth,H=innerHeight;
     const els=getEls();const inModal=els.some(e=>e.closest(".modal"));
     const modalUp=practice&&!inModal&&[...document.querySelectorAll(".modal")].some(m=>!m.classList.contains("devedit"));svg.style.display=modalUp?"none":"";
-    const holes=els.map(e=>{const r=e.getBoundingClientRect();return [r.left-6,r.top-6,r.width+12,r.height+12];}).filter(([x,y,w,h])=>w>12&&h>12&&y<H&&y+h>0);
+    const nv=document.getElementById("tabsNav"),nb=nv&&!nv.hidden?nv.getBoundingClientRect().top:H;const holes=els.map(e=>{const r=e.getBoundingClientRect();const inNav=nv&&nv.contains(e);const bot=inNav?r.bottom+6:Math.min(r.bottom+6,nb-2);return [r.left-6,r.top-6,r.width+12,bot-(r.top-6)];}).filter(([x,y,w,h])=>w>12&&h>12&&y<H&&y+h>0);
     const key=W+","+H+holes.map(a=>a.map(Math.round).join(",")).join(";");if(key!==last){last=key;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
       path.setAttribute("d",`M0 0H${W}V${H}H0Z`+holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));ring.setAttribute("d",holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));}
     TOUR&&(TOUR.raf=requestAnimationFrame(tick));};tick();}
