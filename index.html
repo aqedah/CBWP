@@ -547,6 +547,9 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 body.wide-conti .wrap{max-width:1280px}
 .wb{display:grid;grid-template-columns:minmax(300px,1fr) minmax(420px,1.5fr) minmax(300px,1fr);gap:16px;align-items:start}.wb-col{display:flex;flex-direction:column;gap:16px;min-width:0}
 .jumphl{animation:jumphl 1.2s ease-out 2;border-color:var(--accent)}@keyframes jumphl{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
+.devbar{position:fixed;z-index:70;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:#1d2433;color:#fff;border-radius:14px;padding:8px 12px;box-shadow:0 10px 30px rgb(0 0 0 / .3);max-width:calc(100vw - 16px)}
+.devbar .hint{color:#c9d1e3}.devbar .btn{border-color:#3b4660;background:#2a3347;color:#fff}.devbar .btn.primary{background:#e0566b;border-color:#e0566b}
+body.devmode #main *:hover,body.devmode .bnav *:hover,body.devmode .modal:not(.devedit) *:hover{outline:1px dashed #e0566b;outline-offset:1px;cursor:text}
 .gosongs{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1px dashed color-mix(in srgb,var(--team,var(--accent)) 55%,var(--line));background:color-mix(in srgb,var(--team,var(--accent)) 6%,var(--sheet));color:var(--ink);border-radius:12px;padding:16px 20px;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;text-align:left}
 .gosongs:hover{border-style:solid}.gosongs .gs-go{color:var(--team,var(--accent));font-size:.9rem;white-space:nowrap}
 .tourcard{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(460px,calc(100vw - 24px));background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-top:4px solid #2f62d6;border-radius:14px;box-shadow:0 14px 40px rgb(0 0 0 / .22);padding:12px 14px 12px}
@@ -1110,8 +1113,51 @@ function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{t
       h("b",{text:"체험 찬양팀"}),h("small",{text:"예시 콘티 · 악보 · 멤버 · 실제 자료와 따로"}),h("span",{text:"둘러보기 →"}))),
     h("div",{class:"row",style:"gap:8px;margin-top:12px;flex-wrap:wrap;align-items:stretch"},h("span",{class:"hint",style:"flex-basis:100%",text:"처음이라면 역할에 맞는 튜토리얼로 한 단계씩 따라가 보세요."}),
       h("a",{class:"btn primary",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=leader",text:"🎤 인도자 튜토리얼"}),h("a",{class:"btn",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=member",text:"🎸 싱어 · 악기팀 튜토리얼"}))));}
+
+/* =========================================================
+   개발자 모드 (관리자): 화면의 글자(탭 이름 · 단추 · 제목 · 안내)를 눌러 바로 고쳐요
+   바꾼 글자는 교회 공용 저장소(catalog/uitext)에 「원래 글자 → 새 글자」로 남고, 모든 팀 · 기기에 똑같이 보여요
+   ========================================================= */
+const DEV={on:false,edit:true,map:new Map(),rev:new Map(),orig:new WeakMap()};
+function setUiText(doc){const pairs=(doc&&doc.pairs)||[];DEV.map=new Map(pairs.filter(p=>p&&p[0]&&p[1]!=null).map(p=>[p[0],p[1]]));DEV.rev=new Map([...DEV.map].map(([a,b])=>[b,a]));uiTextApply(document.body);}
+const uiSkip=el=>!el||el.closest("textarea,input,select,[contenteditable],#devbar,.devedit,script,style");
+function uiTextNode(n){if(!DEV.map.size)return;const raw=n.nodeValue;const t=raw.trim();if(!t||!DEV.map.has(t))return;const to=DEV.map.get(t);if(to===t)return;
+  if(!DEV.orig.has(n))DEV.orig.set(n,t);n.nodeValue=raw.replace(t,to);}
+function uiTextApply(root){if(!root||!DEV.map.size)return;if(root.nodeType===3){if(!uiSkip(root.parentElement))uiTextNode(root);return;}if(root.nodeType!==1||uiSkip(root))return;
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))if(!uiSkip(n.parentElement))uiTextNode(n);
+  root.querySelectorAll&&root.querySelectorAll("input[placeholder],textarea[placeholder]").forEach(i=>{if(i.closest("#devbar,.devedit"))return;const t=i.dataset.ph0||i.placeholder;if(DEV.map.has(t)){i.dataset.ph0=t;i.placeholder=DEV.map.get(t);}});}
+new MutationObserver(ms=>{if(!DEV.map.size)return;for(const m of ms){if(m.type==="characterData")uiTextNode(m.target);else m.addedNodes.forEach(uiTextApply);}}).observe(document.body,{childList:true,subtree:true,characterData:true});
+async function uiTextSave(from,to){const m=new Map(DEV.map);if(to==null||to===from)m.delete(from);else m.set(from,to);
+  const pairs=[...m].map(([a,b])=>[a,b]);try{await S.db.doc("catalog/uitext").set({pairs,updatedAt:Date.now()});}catch(e){console.error(e);toast("저장하지 못했어요 (팀 비밀번호로 들어와 있어야 해요)",3500);return false;}
+  /* 화면에 이미 바뀌어 있던 글자를 원래대로 돌려놓고 다시 적용 */
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){const o=DEV.orig.get(n);if(o&&o===from){n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),from);DEV.orig.delete(n);}}
+  setUiText({pairs});if(DEV.on)devToggle(true);return true;}
+function devToggle(force){DEV.on=force!=null?force:!DEV.on;document.body.classList.toggle("devmode",DEV.on&&DEV.edit);let bar=document.getElementById("devbar");if(bar)bar.remove();
+  if(DEV.on){const sw=h("button",{type:"button",class:"btn sm"+(DEV.edit?" primary":""),text:DEV.edit?"✏️ 글자 고치기 켜짐":"✏️ 글자 고치기 꺼짐 (앱 그대로 쓰기)",onclick:()=>{DEV.edit=!DEV.edit;devToggle(true);}});
+    bar=h("div",{id:"devbar",class:"devbar"},h("b",{text:"🛠 개발자 모드"}),h("span",{class:"hint",text:DEV.edit?"고칠 글자를 누르세요":"화면을 옮겨 다닐 땐 끄고, 고칠 때 켜요"}),sw,
+      h("button",{type:"button",class:"btn sm",text:`바꾼 글자 ${DEV.map.size}개`,onclick:devListModal}),h("button",{type:"button",class:"btn sm ghost",text:"끝내기",onclick:()=>devToggle(false)}));document.body.append(bar);}
+  drawAdminRow();}
+/* 글자 고치기: 누른 자리의 글자 한 덩어리를 골라요 */
+document.addEventListener("click",e=>{if(!DEV.on||!DEV.edit)return;const el=e.target;if(!el||!el.closest||el.closest("#devbar,.devedit"))return;
+  let node=null;const cr=document.caretRangeFromPoint?document.caretRangeFromPoint(e.clientX,e.clientY):null;if(cr&&cr.startContainer&&cr.startContainer.nodeType===3&&cr.startContainer.nodeValue.trim())node=cr.startContainer;
+  if(!node||!el.contains(node)){const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))if(n.nodeValue.trim()){node=n;break;}}
+  let ph=null;if(!node&&(el.tagName==="INPUT"||el.tagName==="TEXTAREA")&&el.placeholder)ph=el;
+  if(!node&&!ph)return;e.preventDefault();e.stopPropagation();
+  const cur=node?node.nodeValue.trim():ph.placeholder;const from=node?(DEV.orig.get(node)||DEV.rev.get(cur)||cur):(ph.dataset.ph0||ph.placeholder);devEditModal(from,cur);},true);
+function devEditModal(from,cur){const inp=h("input",{type:"text",value:cur,style:"width:100%;font-size:1.05rem"});
+  const go=async()=>{const v=inp.value;if(!v.trim())return toast("빈 글자로는 바꿀 수 없어요. 「원래대로」를 쓰세요");if(await uiTextSave(from,v)){md.close();toast("바꿨어요. 모든 팀 · 기기에 똑같이 보여요");}};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go();}});
+  const md=modal("글자 고치기",h("div",{class:"panel-body devedit"},h("p",{class:"hint",text:"원래 글자"}),h("p",{style:"margin:0 0 10px;font-weight:700",text:from}),h("label",{class:"hint",text:"새 글자"}),inp,
+    h("p",{class:"hint",style:"margin-top:8px",text:"같은 글자가 앱 어디에 있든 모두 함께 바뀌어요. 숫자 · 이름처럼 그때그때 바뀌는 글자는 고칠 수 없어요."})),
+    [DEV.map.has(from)?h("button",{class:"btn ghost danger",text:"원래대로",onclick:async()=>{if(await uiTextSave(from,null)){md.close();toast("원래 글자로 돌렸어요");}}}):null,h("span",{class:"spacer"}),h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"바꾸기",onclick:go})].filter(Boolean),"devedit");
+  setTimeout(()=>{inp.focus();inp.select();},50);}
+function devListModal(){const rows=[...DEV.map];
+  const md=modal(`바꾼 글자 ${rows.length}개`,h("div",{class:"panel-body devedit"},rows.length?h("div",{style:"display:flex;flex-direction:column;gap:6px"},rows.map(([a,b])=>h("div",{class:"card row",style:"gap:8px;align-items:center;flex-wrap:wrap"},
+      h("span",{style:"flex:1;min-width:200px"},h("span",{class:"hint",text:a}),h("br"),h("b",{text:`→ ${b}`})),h("button",{class:"btn sm",text:"고치기",onclick:()=>{md.close();devEditModal(a,b);}}),
+      h("button",{class:"btn sm ghost danger",text:"원래대로",onclick:async()=>{if(await uiTextSave(a,null)){md.close();devListModal();}}})))):h("div",{class:"empty",text:"아직 바꾼 글자가 없어요."})),
+    [h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})],"devedit");}
 function drawAdminRow(){const r=$("#adminRow");if(!r)return;r.hidden=!window.CBWP;if(!window.CBWP)return;
-  r.replaceChildren(...(S.isOwner?[h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}),h("button",{class:"btn sm",text:"관리자 로그아웃",onclick:adminLogout})]:[]));if(S.isOwner)return;r.append(h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
+  r.replaceChildren(...(S.isOwner?[h("button",{class:"btn sm"+(DEV.on?" primary":""),text:DEV.on?"🛠 개발자 모드 끄기":"🛠 개발자 모드",onclick:()=>devToggle()}),h("button",{class:"btn sm ghost",text:"자료 가져오기 (관리자)",onclick:importModal}),h("button",{class:"btn sm",text:"관리자 로그아웃",onclick:adminLogout})]:[]));if(S.isOwner)return;r.append(h("button",{class:"btn sm ghost",style:"color:var(--muted)",text:"관리자",onclick:()=>unlockModal("admin")}));}
 function logoutModal(){if(!window.CBWP)return;if(!window.CBWP.logoutKeys)return toast("앱이 예전 버전이에요. 새로고침(PC는 Ctrl+Shift+R)한 뒤 다시 눌러 주세요",4000);const t=S.team;
   const run=async(drop,all,msg)=>{md.close();const w=modal("로그아웃 중",h("div",{class:"panel-body"},h("p",{text:"잠시만요…"})),null);
     try{await window.CBWP.logoutKeys(drop,all);}catch(e){console.error(e);}
@@ -5496,7 +5542,7 @@ if(!S.team||!loadDraft())S.cur=blankConti();
 /* stand-alone listeners: shared data (songs, title lists) and one team's data */
 const RR={rerender:()=>render(),onErr:e=>console.warn(e),shared:false,team:null,offs:[]};
 function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
-  db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();},RR.onErr);
+  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));S.catalogs=all.filter(x=>x.id!=="uitext");RR.rerender();},RR.onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();},RR.onErr);}
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
@@ -5529,7 +5575,7 @@ render();
   let f1=0,f2=0,f3=0,f4=0,f5=0,f6=0;
   db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members","attend","lineup"].includes(S.tab))rerender();},onErr);
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
-  db.collection("catalog").onSnapshot(s=>{S.catalogs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f4++)done();else rerender();},onErr);
+  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));S.catalogs=all.filter(x=>x.id!=="uitext");if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f2++)done();else rerender();},onErr);
   db.collection("contis").onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f3++)done();else rerender();},onErr);
