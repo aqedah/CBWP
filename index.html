@@ -5182,7 +5182,7 @@ function renderPpt(m){const can=S.canWrite&&!!S.db;const list=pptTpls();const de
     t.kind==="full"?h("div",{class:"hint"},h("div",{style:"color:var(--ink);font-weight:600",text:`가사 글꼴 ${t.font||"-"} · ${t.size||"-"}pt · 한 장 ${t.lines||"-"}줄${(()=>{const f=t._ft||t;return t.titleSlide&&f.titleSize?` · 곡 제목 ${f.titleFont||t.font} ${f.titleSize}pt`:"";})()}`}),h("b",{text:"예배 전체 틀"}),` · ${(t.full||{}).slides||"?"}장 · 찬양 자리 ${((t.full||{}).slots||[]).map(slotLbl).join(", ")||"-"} · `,(()=>{const sp=h("span",{text:"파일 확인 중…"});fullBlobOf(t).then(b=>{sp.textContent=b?"이 기기에 파일 있음":"이 기기에 파일 없음 (만들 때 골라요)";});return sp;})()):
     h("div",{class:"hint",text:`${t.font} · ${t.size}pt · 한 장 ${t.lines}줄${t.titleSlide?" · 곡 제목 장":""}${t.box?" · 글자 위치 PPT 그대로":""}`}),
     can?h("div",{class:"row"},t.kind==="full"?h("button",{class:"btn sm",text:"틀 파일 다시 넣기",onclick:()=>pickFullFile(t,()=>{toast("틀 파일을 이 기기에 넣었어요");render();})}):h("button",{class:"btn sm",text:"고치기",onclick:()=>pptTemplateModal(t)}),t.id!==defId?h("button",{class:"btn sm",text:"기본으로",onclick:async()=>{if(await saveTpls(pptTpls(),t.id)){toast("기본 템플릿으로 정했어요");render();}}}):null,
-      h("span",{class:"spacer"}),h("button",{class:"btn sm ghost danger",text:"지우기",onclick:async()=>{if(await saveTpls(pptTpls().filter(x=>x.id!==t.id),defId===t.id?"":defId)){toast("템플릿을 지웠어요");render();}}})):null));
+      h("span",{class:"spacer"}),h("button",{class:"btn sm ghost danger",text:"지우기",onclick:async()=>{if(await saveTpls(pptTpls().filter(x=>x.id!==t.id),defId===t.id?"":defId)){if(t.kind==="full")tplRemoveServer(t);toast("템플릿을 지웠어요");render();}}})):null));
   const nLy=S.songs.filter(x=>(x.lyrics||"").trim()).length;const fold=!!S.tplFold;
   const nPpt=S.songs.filter(x=>x.ppt&&(x.ppt.slides||[]).length).length;
   m.append(h("div",{class:"sheet"},h("h2",{},"PPT 라이브러리",h("span",{class:"sub",text:`올린 PPT ${nPpt}곡 · 가사로 만들 수 있음 ${S.songs.filter(x=>!(x.ppt&&(x.ppt.slides||[]).length)&&(x.lyrics||"").trim()).length}곡 · 둘 다 없음 ${S.songs.filter(x=>!(x.ppt&&(x.ppt.slides||[]).length)&&!(x.lyrics||"").trim()).length}곡 · 템플릿 ${list.length}개`})),
@@ -5492,10 +5492,54 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   const out=await zip.generateAsync({type:"blob",compression:"STORE",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
   return{blob:out,A,regions,total:newTags.length};}
 /* 기기에 틀 파일이 없을 때 고르게 해요 */
-function pickFullFile(t,cb){const fin=h("input",{type:"file",accept:".pptx",onchange:async e=>{const f=e.target.files[0];if(!f)return;md.close();try{await idb.put(fullKey(t),f);}catch(err){}cb(f);}});
-  const md=modal("예배 틀 파일 고르기",h("div",{class:"panel-body"},h("p",{text:`「${tplShort(t)}」 틀 파일이 이 기기에 없어요. 처음 올린 PPT 파일(${t.full&&t.full.fileName||".pptx"})을 골라 주세요. 한 번 고르면 이 기기에 보관돼요.`}),
+function pickFullFile(t,cb){const fin=h("input",{type:"file",accept:".pptx",onchange:async e=>{const f=e.target.files[0];if(!f)return;md.close();let fb=f;const pg=tplProg("예배 틀 넣는 중");
+  try{fb=await slimPptx(f,(a,b)=>pg.set(a,b));}catch(err){fb=f;}try{await idb.put(fullKey(t),fb);}catch(err){}
+  if(!DEMO&&S.db&&S.canWrite){try{await tplUpload(t,fb,(a,b)=>pg.set(a,b));}catch(err){console.error(err);}}pg.close();cb(fb);}});
+  const md=modal("예배 틀 파일 고르기",h("div",{class:"panel-body"},h("p",{text:`「${tplShort(t)}」 틀 파일이 서버와 이 기기에 없어요. 처음 올린 PPT 파일(${t.full&&t.full.fileName||".pptx"})을 골라 주세요. 한 번 고르면 서버에도 올라가서 다른 기기에서도 쓸 수 있어요.`}),
     h("span",{class:"btn primary filebtn"},"📂 틀 파일 고르기",fin)),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()})]);}
-async function fullBlobOf(t){const b=await idb.get(fullKey(t));return b||null;}
+/* ===== 예배 틀 파일: 서버(Firestore)에 잘게 나눠 보관 · 기기마다 한 번 받아서 보관 ===== */
+const TPL_CHUNK=700000;
+const b64Of=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).replace(/^data:[^,]*,/,""));r.onerror=rej;r.readAsDataURL(blob);});
+const binOf=b64=>{const s=atob(b64);const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
+function tplProg(title){const bar=h("div",{style:"height:8px;border-radius:4px;background:var(--line);overflow:hidden"},h("div",{style:"height:100%;width:0;background:#2f62d6;transition:width .2s"}));const tx=h("p",{class:"hint",text:"준비하고 있어요…"});
+  const md=modal(title,h("div",{class:"panel-body"},tx,bar),null);return{set:(t,f)=>{tx.textContent=t;if(f!=null)bar.firstChild.style.width=Math.round(f*100)+"%";},close:()=>md.close()};}
+async function tplUpload(t,blob,pg){if(!S.db)return false;const key=fullKey(t);let old=0;try{const m=await S.db.doc(`tplFiles/${key}`).get();if(m.exists)old=m.data().n||0;}catch(e){}
+  const n=Math.ceil(blob.size/TPL_CHUNK);let done=0;const idx=[...Array(n).keys()];
+  const worker=async()=>{while(idx.length){const i=idx.shift();const d=await b64Of(blob.slice(i*TPL_CHUNK,(i+1)*TPL_CHUNK));await S.db.doc(`tplChunks/${key}.${i}`).set({d});done++;pg&&pg(`서버에 올리는 중… ${done}/${n}`,done/n);}};
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  for(let i=n;i<old;i++){try{await S.db.doc(`tplChunks/${key}.${i}`).delete();}catch(e){}}
+  const at=Date.now();await S.db.doc(`tplFiles/${key}`).set({n,size:blob.size,name:(t.full&&t.full.fileName)||"",team:S.team,at,by:S.myId||null});try{await idb.put(key+"_at",at);}catch(e){}return true;}
+async function tplRemoveServer(t){if(!S.db)return;const key=fullKey(t);try{const m=await S.db.doc(`tplFiles/${key}`).get();if(!m.exists)return;const n=m.data().n||0;
+  for(let i=0;i<n;i++){try{await S.db.doc(`tplChunks/${key}.${i}`).delete();}catch(e){}}await S.db.doc(`tplFiles/${key}`).delete();}catch(e){console.warn(e);}}
+async function fullBlobOf(t){const key=fullKey(t);let b=null,at=0;try{b=await idb.get(key);at=(await idb.get(key+"_at"))||0;}catch(e){}
+  let meta=null;if(S.db&&!DEMO){try{const m=await S.db.doc(`tplFiles/${key}`).get();if(m.exists)meta=m.data();}catch(e){}}
+  if(meta&&(!b||at<meta.at)){const pg=tplProg("예배 틀 받는 중");try{const parts=new Array(meta.n);let done=0;const idx=[...Array(meta.n).keys()];
+      const worker=async()=>{while(idx.length){const i=idx.shift();const d=await S.db.doc(`tplChunks/${key}.${i}`).get();if(!d.exists)throw new Error("chunk "+i);parts[i]=binOf(d.data().d);done++;pg.set(`틀 파일을 받는 중… ${Math.round(done/meta.n*100)}% (${(meta.size/1e6).toFixed(0)}MB · 이 기기에서는 처음 한 번만)`,done/meta.n);}};
+      await Promise.all([worker(),worker(),worker(),worker()]);b=new Blob(parts,{type:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
+      try{await idb.put(key,b);await idb.put(key+"_at",meta.at);}catch(e){}pg.close();}catch(e){console.error(e);pg.close();toast("서버에서 틀을 받지 못했어요"+(b?". 이 기기에 있던 틀로 만들어요":""),3500);}}
+  else if(b&&!meta&&S.db&&!DEMO&&S.canWrite&&!S._tplUp?.[key]){(S._tplUp=S._tplUp||{})[key]=1;tplUpload(t,b).then(ok=>{if(ok)toast("이 틀을 서버에도 올려 두었어요. 이제 다른 기기에서도 쓸 수 있어요",3500);}).catch(e=>console.warn(e));}
+  return b||null;}
+/* 틀 파일 가볍게: 큰 그림을 화면 크기(가로 1920)에 맞추고, 투명한 곳이 없는 그림은 JPG로 · 똑같은 그림은 하나로 */
+async function slimPptx(file,pg){await loadScript(JSZIP_URL);const zip=await window.JSZip.loadAsync(file);const media=Object.keys(zip.files).filter(n=>/^ppt\/media\/[^/]+\.(png|jpe?g|bmp|tiff?)$/i.test(n));
+  const ren={};const seen={};let k=0;
+  for(const n of media){k++;pg&&pg(`그림 줄이는 중… ${k}/${media.length}`,k/media.length);const raw=await zip.file(n).async("uint8array");
+    const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-1",raw))).map(x=>x.toString(16).padStart(2,"0")).join("");
+    if(seen[hash]){ren[n]=seen[hash];zip.remove(n);continue;}seen[hash]=n;
+    if(raw.length<400000)continue;
+    try{const bmp=await createImageBitmap(new Blob([raw]));const sc=Math.min(1,1920/Math.max(bmp.width,bmp.height));const w=Math.max(1,Math.round(bmp.width*sc)),hh=Math.max(1,Math.round(bmp.height*sc));
+      const cv=document.createElement("canvas");cv.width=w;cv.height=hh;const x=cv.getContext("2d");x.drawImage(bmp,0,0,w,hh);
+      let alpha=false;if(/\.png$/i.test(n)){const d=x.getImageData(0,0,w,hh).data;let tr=0,tot=0;for(let i=3;i<d.length;i+=16){tot++;if(d[i]<250)tr++;}alpha=tr/tot>.01;/* 가장자리 한두 줄만 투명한 배경 그림은 JPG로 */
+        if(!alpha&&tr){const c2=document.createElement("canvas");c2.width=w;c2.height=hh;const y=c2.getContext("2d");y.fillStyle="#000";y.fillRect(0,0,w,hh);y.drawImage(cv,0,0);x.clearRect(0,0,w,hh);x.drawImage(c2,0,0);}}
+      const out=await new Promise(r=>cv.toBlob(r,alpha?"image/png":"image/jpeg",.88));if(!out||out.size>=raw.length*.9)continue;
+      const nn=alpha?n:n.replace(/\.(png|bmp|tiff?|jpe?g)$/i,".jpeg");zip.remove(n);zip.file(nn,await out.arrayBuffer());if(nn!==n){ren[n]=nn;seen[hash]=nn;}}catch(e){console.warn("slim",n,e);}}
+  /* 지운 · 이름 바꾼 그림을 가리키는 곳 고치기 */
+  for(const [a,b] of Object.entries(ren))if(ren[b])ren[a]=ren[b];
+  if(Object.keys(ren).length){for(const r of Object.keys(zip.files).filter(f=>/\.rels$/.test(f))){let x=await zip.file(r).async("string");let ch=false;
+      for(const [a,b] of Object.entries(ren)){const an=a.split("/").pop(),bn=b.split("/").pop();if(x.includes("media/"+an+'"')){x=x.split("media/"+an+'"').join("media/"+bn+'"');ch=true;}}if(ch)zip.file(r,x);}
+    let ct=await zip.file("[Content_Types].xml").async("string");if(!/Extension="jpeg"/i.test(ct))ct=ct.replace("<Types ",'<Types ').replace(/(<Types[^>]*>)/,'$1<Default Extension="jpeg" ContentType="image/jpeg"/>');
+    for(const a of Object.keys(ren))ct=ct.replace(new RegExp(`<Override PartName="/${a.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}"[^>]*/>`),"");zip.file("[Content_Types].xml",ct);}
+  pg&&pg("파일로 묶는 중…",1);const out=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6},mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
+  return out.size<file.size?out:file;}
 async function exportFullPpt(c,t,slotMap){const go=async blob=>{const md=modal("예배 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"fp-st",text:"준비하고 있어요…"})),null);const st=$("#fp-st",md.el);
     try{const r=await buildFullPpt(blob,c,t,slotMap,s=>{st.textContent=s;});const fname=`${teamName(c.team||S.team)}_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|]/g,"")}_${c.date||"날짜미정"}.pptx`;md.close();
       if(S.downloads){try{await S.downloads.save({filename:fname,data:r.blob});toast(`예배 PPT를 저장했어요 (${r.total}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
@@ -5525,7 +5569,10 @@ async function fullTplModal(file,style,A0){const st=h("p",{class:"hint",text:"�
     h("p",{class:"hint",text:`파일이 커서(${(file.size/1048576).toFixed(0)}MB) 교회 저장소가 아니라 이 기기에 보관해요. 다른 컴퓨터에서는 처음 한 번 파일을 골라 주면 돼요.`})),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"템플릿 저장",onclick:async()=>{
       cfg.id=uid(6);cfg.name=(cfg.name||"").trim()||"예배 틀";cfg.wtypes=[...wt];cfg.full={fileName:file.name,size:file.size,slides:A.order.length,slots:A.slots.map(s=>`${n1(s.idx[0])}-${n1(s.idx[s.idx.length-1])}`),sermon:A.sermon?A.sermon.i:-1,special:A.special?A.special.i:-1};
-      try{await idb.put(fullKey(cfg),file);}catch(e){toast("이 기기에 파일을 보관하지 못했어요. 만들 때마다 파일을 골라야 해요",4000);}
+      let fb=file;const pg=tplProg("예배 틀 저장 중");try{fb=await slimPptx(file,(t,f)=>pg.set(t,f));}catch(e){console.warn(e);fb=file;}
+      pg.set(`${(file.size/1e6).toFixed(0)}MB → ${(fb.size/1e6).toFixed(0)}MB로 줄였어요`,0);
+      try{await idb.put(fullKey(cfg),fb);}catch(e){toast("이 기기에 파일을 보관하지 못했어요",4000);}
+      if(!DEMO&&S.db){try{await tplUpload(cfg,fb,(t,f)=>pg.set(t,f));}catch(e){console.error(e);toast("서버에 올리지 못했어요. 이 기기에서는 쓸 수 있어요",4000);}}pg.close();
       const list=pptTpls().filter(t=>t.id!==cfg.id).map(t=>({...t,wtypes:(t.wtypes||[]).filter(w=>!wt.has(w))}));list.push(cfg);
       if(await saveTpls(list,teamCfg().pptDefault||cfg.id)){md.close();toast("예배 전체 틀을 저장했어요");render();}}})]);
   st.textContent="";}

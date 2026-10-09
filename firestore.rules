@@ -4,60 +4,83 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function codes() { return get(/databases/$(database)/documents/secrets/codes).data; }
     function hasUnlock(key) { return exists(/databases/$(database)/documents/unlocks/$(request.auth.uid + '_' + key)); }
-    function canTeam(team) { return signedIn() && (hasUnlock(team) || hasUnlock('admin')); }
-    function canShared() { return signedIn() && (hasUnlock('any') || hasUnlock('admin')); }
-    function canLead(team) { return signedIn() && (hasUnlock(team + '_lead') || hasUnlock('admin')); }
 
-    // 팀 비밀번호: 콘솔에서만 보고 고칠 수 있어요
+    // 쓰기: 팀 비밀번호(인도자 · 서기 · 리더) 또는 관리자 · 좋은만남의축제는 어느 팀이든 팀 비밀번호
+    function canTeam(team) { return signedIn() && (hasUnlock(team) || hasUnlock('admin') || (team == 'festival' && hasUnlock('any'))); }
+    // 보기: 위 + 팀원 비밀번호(팀이름_member) · 좋은만남의축제는 어느 팀이든 팀원 비밀번호
+    function canRead(team) { return canTeam(team) || (signedIn() && (hasUnlock(team + '_member') || (team == 'festival' && hasUnlock('anyread')))); }
+    function canLead(team) { return signedIn() && (hasUnlock(team + '_lead') || hasUnlock('admin')); }
+    // 교회 공용(곡 · 악보): 보기는 팀원도, 고치기는 팀 비밀번호
+    function canSharedRead() { return signedIn() && (hasUnlock('any') || hasUnlock('anyread') || hasUnlock('admin')); }
+    function canSharedWrite() { return signedIn() && (hasUnlock('any') || hasUnlock('admin')); }
+    // 팀원도 쓸 수 있는 events: 참여 응답(avail_) · 프로필 사진(ph_) · 한마디 · 기도제목 · 나눔
+    function memberEvent(id, d) { return id.matches('avail_.*') || id.matches('ph_.*') || (d.post is string && d.post in ['talk', 'prayer', 'share', 'avail', 'photo']); }
+
     match /secrets/{doc} { allow read, write: if false; }
 
-    // 비밀번호를 맞게 넣은 기기 표시 (맞을 때만 만들어져요)
     match /unlocks/{key} {
       allow read: if signedIn() && resource.data.uid == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && key == request.auth.uid + '_' + request.resource.data.team
-        && ((request.resource.data.team == 'any' && request.resource.data.code in codes().values())
-            || (request.resource.data.team != 'any' && request.resource.data.code == codes()[request.resource.data.team]));
+        && (
+          (request.resource.data.team == 'any' && request.resource.data.src is string
+             && !request.resource.data.src.matches('.*_member') && request.resource.data.code == codes()[request.resource.data.src])
+          || (request.resource.data.team == 'anyread' && request.resource.data.src is string
+             && request.resource.data.code == codes()[request.resource.data.src])
+          || (!(request.resource.data.team in ['any', 'anyread']) && request.resource.data.code == codes()[request.resource.data.team])
+        );
       allow update, delete: if false;
     }
 
-    // 작성자 이름
     match /users/{uid} {
-      allow read: if canShared();
+      allow read: if canSharedRead();
       allow write: if signedIn() && (request.auth.uid == uid || hasUnlock('admin'));
     }
 
-    // 팀별 자료: 보기와 쓰기 모두 그 팀 비밀번호(또는 관리자)
+    // 콘티: 보기는 팀원도, 쓰기는 팀 비밀번호
     match /contis/{id} {
-      allow read: if canTeam(resource.data.team);
+      allow read: if canRead(resource.data.team);
       allow create, update: if canTeam(request.resource.data.team);
       allow delete: if canTeam(resource.data.team);
     }
-    // 멤버 명단: 보기는 팀원 누구나, 등록·고치기·빼기는 팀 리더 비밀번호(또는 관리자)
+    // 멤버 명단: 보기는 팀원도, 고치기는 리더 비밀번호(또는 관리자)
     match /members/{id} {
-      allow read: if canTeam(resource.data.team);
+      allow read: if canRead(resource.data.team);
       allow create, update: if canLead(request.resource.data.team);
       allow delete: if canLead(resource.data.team);
     }
+    // 일정 · 편성 · 출결 · 게시글: 팀 비밀번호 / 팀원은 참여 응답 · 사진 · 한마디 · 기도제목 · 나눔만
     match /events/{id} {
-      allow read: if canTeam(resource.data.team);
-      allow create, update: if canTeam(request.resource.data.team);
-      allow delete: if canTeam(resource.data.team);
+      allow read: if canRead(resource.data.team);
+      allow create, update: if canTeam(request.resource.data.team)
+        || (canRead(request.resource.data.team) && memberEvent(id, request.resource.data));
+      allow delete: if canTeam(resource.data.team)
+        || (canRead(resource.data.team) && memberEvent(id, resource.data) && resource.data.by == request.auth.uid);
     }
+    // 팀 설정(공지 · 템플릿 · 편성 …): 보기는 팀원도, 고치기는 팀 비밀번호
     match /teams/{team} {
-      allow read: if canTeam(team);
+      allow read: if canRead(team);
       allow write: if canTeam(team);
     }
 
-    // 회칙: 팀마다 따로 — 그 팀 비밀번호로 읽고, 올리기는 관리자만
-    match /bylaws/{team} { allow read: if canTeam(team); allow write: if signedIn() && hasUnlock('admin'); }
-    match /bylawsChunks/{id} { allow read: if canTeam(resource.data.team); allow write: if signedIn() && hasUnlock('admin'); }
+    match /bylaws/{team} { allow read: if canRead(team); allow write: if signedIn() && hasUnlock('admin'); }
+    match /bylawsChunks/{id} { allow read: if canRead(resource.data.team); allow write: if signedIn() && hasUnlock('admin'); }
 
-    // 교회 공용 자료: 곡 · 악보 · 제목 목록 (어느 팀이든 비밀번호를 넣은 기기만)
-    match /songs/{id} { allow read, write: if canShared(); }
-    match /catalog/{id} { allow read, write: if canShared(); }
-    match /imgs/{id} { allow read, write: if canShared(); }
-    match /imgChunks/{id} { allow read, write: if canShared(); }
+    // 교회 공용 자료: 곡 · 제목 목록은 팀 비밀번호로 고치기, 그림(악보 · 프로필 사진)은 팀원도 올리기
+    match /songs/{id} { allow read: if canSharedRead(); allow write: if canSharedWrite(); }
+    match /catalog/{id} { allow read: if canSharedRead(); allow write: if canSharedWrite(); }
+    // 그림: 주소(긴 번호)를 아는 사람은 한 장씩 볼 수 있어요 (공유 콘티의 악보) · 목록 보기와 올리기는 팀원만
+    match /imgs/{id} { allow get: if true; allow list, write: if canSharedRead(); }
+    match /imgChunks/{id} { allow get: if true; allow list, write: if canSharedRead(); }
+    match /tplFiles/{id} { allow read, write: if canSharedRead(); }
+    match /tplChunks/{id} { allow read, write: if canSharedRead(); }
+    // 공유 콘티(보기 전용 사본): 공지 주소를 받은 누구나 보기 · 만들고 고치기는 그 팀 비밀번호
+    match /shares/{id} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if canTeam(request.resource.data.team);
+      allow delete: if canTeam(resource.data.team);
+    }
   }
 }
