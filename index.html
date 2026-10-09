@@ -1175,14 +1175,18 @@ const TOURS={
     {tab:"stats",t:"[우리 팀] 출결 · 결산 · 회칙",x:"「출결」에서 연습 · 주일 출석을 체크하면, 「결산」이 한 해 동안 누가 몇 번 섬겼는지, 어떤 곡을 많이 불렀는지 모아 줘요. 「회칙」에는 팀 규칙을 적어 둬요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"me",t:"[나] 한눈에",x:"내 이름 · 사진 · 맡는 자리를 정하고, 「다른 기기 연결」로 휴대폰 · 태블릿 · 컴퓨터를 함께 써요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]},
   member:{name:"싱어 · 악기팀 튜토리얼",steps:[
-    {tab:"home",t:"팀원으로 시작해요",x:"싱어 「박소망」으로 들어와 있어요. 팀원은 매주 이 홈 화면만 봐도 충분해요. 위쪽 「나의 섬김」에 내가 들어간 콘티와 맡은 자리가 나와요.",sel:()=>document.querySelector("#main .sheet.myserve")},
-    {tab:"home",t:"① 콘티 · 악보 보기",x:"「콘티 · 악보 보기」를 누르면 이번 주 곡 순서 · 키 · 악보 · 레퍼런스 영상을 한 화면에서 봐요. 휴대폰으로 보기 좋게 만들어져 있어요.",sel:byBtn("콘티 · 악보 보기")},
-    {tab:"home",t:"② 연습 모드",x:"「🎼 연습 모드」는 태블릿이나 휴대폰을 악보대처럼 써요. 곡마다 한 화면씩, 좌우로 넘기고 화면이 꺼지지 않아요. 연습 · 예배 때 그대로 쓰면 돼요.",sel:byBtn("연습 모드")},
-    {tab:"home",t:"③ 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 또는 「어려워요」를 눌러 알려 주세요. 어려울 때는 사유를 짧게 남기면 리더가 편성할 때 참고해요.",sel:byH2("참여 응답")},
-    {tab:"list",t:"④ 콘티 · 지난 콘티",x:"아래 메뉴 「콘티」의 「지난 콘티」에서 지난주에 무슨 곡을 불렀는지, 그때 악보와 메모를 다시 볼 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
-    {tab:"songs",t:"⑤ 라이브러리",x:"곡 이름이나 초성(예: ㅁㅂㅇ)으로 찾아요. 썸네일을 누르면 악보가 크게 열리고, 「가사」로 가사를 볼 수 있어요. 미리 예습할 때 좋아요.",sel:()=>document.querySelector("#song-q")},
-    {tab:"cal",t:"⑥ 우리 팀 · 일정",x:"아래 메뉴 「우리 팀」에서 연습 · 모임 날짜와 장소를 확인해요. 일정을 눌러 참여 여부를 남길 수도 있어요.",sel:()=>document.querySelector("#main .sheet")},
-    {tab:"me",t:"⑦ 나",x:"내 이름 · 사진 · 맡는 자리를 정해요. 「다른 기기 연결」로 휴대폰과 태블릿을 함께 쓸 수 있어요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]}};
+    {tab:"home",t:"팀원으로 시작해요",x:"싱어 「박소망」으로 들어와 있어요. 화면 아래 메뉴는 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개예요. 메뉴마다 먼저 전체를 소개하고, 팀원이 자주 쓰는 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
+    {tab:"home",t:"[홈] 한눈에",x:"팀원은 매주 이 홈 화면만 봐도 충분해요. 위쪽 「나의 섬김」에 내가 들어간 콘티와 맡은 자리가 나오고, 아래에는 참여 응답과 팀 공지가 있어요.",sel:()=>document.querySelector("#main .sheet.myserve")},
+    {tab:"home",t:"[홈] 콘티 · 악보 보기",x:"「콘티 · 악보 보기」를 누르면 이번 주 곡 순서 · 키 · 악보 · 레퍼런스 영상을 한 화면에서 봐요. 휴대폰으로 보기 좋게 만들어져 있어요.",sel:byBtn("콘티 · 악보 보기")},
+    {tab:"home",t:"[홈] 연습 모드",x:"「🎼 연습 모드」는 태블릿이나 휴대폰을 악보대처럼 써요. 곡마다 한 화면씩, 좌우로 넘기고 화면이 꺼지지 않아요. 연습 · 예배 때 그대로 쓰면 돼요.",sel:byBtn("연습 모드")},
+    {tab:"home",t:"[홈] 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 또는 「어려워요」를 눌러 알려 주세요. 어려울 때는 사유를 짧게 남기면 리더가 편성할 때 참고해요.",sel:byH2("참여 응답")},
+    {tab:"list",t:"[콘티] 한눈에",x:"콘티 메뉴는 인도자가 예배를 준비하는 곳이에요. 말씀 · 묵상 → 콘티 작성 → 악보 편집 → PPT 만들기 순서로 칸이 있어요. 팀원은 주로 맨 끝 「지난 콘티」를 써요.",sel:()=>document.querySelector("#main .subtabs")},
+    {tab:"list",t:"[콘티] 지난 콘티",x:"지난주에 무슨 곡을 불렀는지, 그때 악보와 메모를 다시 볼 수 있어요. 다음 콘티도 확정되면 여기서 미리 볼 수 있어요.",sel:()=>document.querySelector("#main .subtabs+.sheet")||document.querySelectorAll("#main .sheet")[1]},
+    {tab:"songs",t:"[라이브러리] 한눈에",x:"라이브러리는 교회 전체가 함께 쓰는 곡 모음이에요. 「찬양 라이브러리」에는 곡과 악보가, 「PPT 라이브러리」에는 화면에 띄울 가사가 있어요.",sel:()=>document.querySelector("#main .subtabs")},
+    {tab:"songs",t:"[라이브러리] 찬양 라이브러리",x:"곡 이름이나 초성(예: ㅁㅂㅇ)으로 찾아요. 썸네일을 누르면 악보가 크게 열리고, 「가사 보기」로 가사를 볼 수 있어요. 미리 예습할 때 좋아요.",sel:()=>document.querySelector("#song-q")},
+    {tab:"cal",t:"[우리 팀] 한눈에",x:"우리 팀 메뉴에는 일정 · 멤버 · 편성 · 출결 · 결산 · 회칙이 있어요. 팀원은 주로 「일정」과 「편성」(내가 언제 섬기는지)을 봐요.",sel:()=>document.querySelector("#main .subtabs")},
+    {tab:"cal",t:"[우리 팀] 일정",x:"연습 · 모임 날짜와 장소를 확인해요. 날짜를 누르면 그날 일정을 보고, 참여 여부를 남길 수 있어요.",sel:()=>document.querySelector("#main .subtabs+.sheet")||document.querySelectorAll("#main .sheet")[1]},
+    {tab:"me",t:"[나] 한눈에",x:"내 이름 · 사진 · 맡는 자리를 정해요. 「다른 기기 연결」로 휴대폰과 태블릿을 함께 쓸 수 있어요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]}};
 let TOUR=null;
 function tourStart(kind){const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR_LAST=null;const pl=document.getElementById("tourpill");if(pl)pl.remove();TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
 let TOUR_LAST=null;
