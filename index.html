@@ -569,7 +569,8 @@ body.guest .bnav,body.guest .teamchip,body.guest #adminRow{display:none!importan
 body.touring{padding-bottom:240px}
 .tourpill{position:fixed;z-index:59;left:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;background:#2f62d6;color:#fff;border-radius:999px;box-shadow:0 8px 24px rgb(0 0 0 / .2);overflow:hidden}
 .tourpill button{border:0;background:none;color:#fff;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer;padding:10px 6px 10px 14px}.tourpill .tp-x{padding:10px 12px 10px 6px;opacity:.8}
-body.fb-pad .tourpill{bottom:calc(140px + env(safe-area-inset-bottom,0px))}body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+body.fb-pad .tourpill{bottom:calc(140px + env(safe-area-inset-bottom,0px))}body.tour-view .floatbar{display:none!important}
+body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .tour-spot{position:relative;z-index:59!important;box-shadow:0 0 0 4px #2f62d6,0 0 0 100vmax rgb(10 14 25 / .58)!important;border-radius:12px;background-clip:padding-box}
 .bnav.tour-spot,.bnav .tour-spot{position:relative}
 .tourspot{position:fixed;left:0;top:0;z-index:58;pointer-events:none}
@@ -1354,7 +1355,7 @@ const PRACTICE_AUTO={
 function demoEditable(){if(!DEMO||!S.cur||!isLocked(S.cur))return;const c=S.allContis.find(x=>x.id==="c1");if(!c)return;S.cur=fixConti(clone(c));delete S.cur.id;S.curId="c1";S.dirty=false;if(typeof H!=="undefined"){H.owner=S.cur;H.last=JSON.stringify(S.cur);H.list=[];}toast("연습용 체험 콘티를 열었어요",2500);}
 function tourStart(kind){if(DEMO){const mem=!!(TOURS[kind]&&TOURS[kind].member);if(!!S.demoMember!==mem){S.demoMember=mem;setAccess();}}const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR_LAST=null;const pl=document.getElementById("tourpill");if(pl)pl.remove();TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
 let TOUR_LAST=null;
-function tourEnd(done){if(TOUR)clearInterval(TOUR.iv);if(DEMO)setTimeout(()=>{if(!TOUR)render();},0);spotOff();document.getElementById("tourdim")?.remove();document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");tourPill();}
+function tourEnd(done){if(TOUR)clearInterval(TOUR.iv);if(DEMO)setTimeout(()=>{if(!TOUR)render();},0);spotOff();document.getElementById("tourdim")?.remove();document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring","tour-view");tourPill();}
 /* 끝까지 안 보고 ✕로 닫았으면: 왼쪽 아래 「이어 보기」 단추를 남겨요 */
 function tourPill(){let p=document.getElementById("tourpill");if(p)p.remove();if(!TOUR_LAST||TOUR)return;const T=TOURS[TOUR_LAST.kind];
   p=h("div",{id:"tourpill",class:"tourpill"},h("button",{type:"button",class:"tp-go",text:`📘 ${T.name} 이어 보기 (${TOUR_LAST.i+1}/${T.steps.length})`,onclick:()=>{TOUR={...TOUR_LAST};TOUR_LAST=null;p.remove();tourShow();}}),
@@ -1364,7 +1365,7 @@ function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];
   clearInterval(TOUR.iv);spotOff();document.getElementById("tourdim")?.remove();
   if(T.practice){if(st.go){document.querySelectorAll(".modal:not(.devedit)").forEach(m=>m.remove());if(S.tab!==st.go)setTab(st.go);}if(st.pre)st.pre();TOUR.b0=st.base?st.base():0;TOUR.ok=!st.done;}
   else{if(st.wt)S.wTab=st.wt;if(S.tab!==st.tab||st.wt)setTab(st.tab);}
-  let card=document.getElementById("tourcard");if(!card){card=h("div",{id:"tourcard",class:"tourcard",role:"dialog","aria-label":T.name});document.body.append(card);}document.body.classList.add("touring");
+  let card=document.getElementById("tourcard");if(!card){card=h("div",{id:"tourcard",class:"tourcard",role:"dialog","aria-label":T.name});document.body.append(card);}document.body.classList.add("touring");document.body.classList.toggle("tour-view",!T.practice);
   const n=T.steps.length,last=TOUR.i===n-1;
   card.replaceChildren(...[h("div",{class:"tc-top"},h("b",{text:T.name}),h("span",{class:"tc-n",text:`${TOUR.i+1} / ${n}`}),h("button",{type:"button",class:"tc-x","aria-label":"튜토리얼 닫기 (이어 보기 가능)",title:"닫기 · 왼쪽 아래 「이어 보기」로 다시 열 수 있어요",text:"✕",onclick:()=>tourEnd(false)})),
     h("div",{class:"tc-bar"},h("i",{style:`width:${(TOUR.i+1)/n*100}%`})),
