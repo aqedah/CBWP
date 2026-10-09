@@ -628,6 +628,9 @@ table.t.ctr td,table.t.ctr td.n,table.t.ctr thead th{text-align:center}.t.ctr th
 .songthumb.click{cursor:zoom-in;position:relative;padding:0;font:inherit}.songthumb.click:hover{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
 .songthumb .thn{position:absolute;right:-6px;bottom:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:#fff;font:700 .7rem/18px system-ui;font-style:normal;text-align:center;padding:0 4px}
 .sbadge.mkppt{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--sheet))}
+.vs-modes{display:flex;gap:8px;flex-wrap:wrap;flex-basis:100%}.vs-mode{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;background:var(--sheet);flex:1;min-width:180px}
+.vs-mode.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}.vs-mode span{display:flex;flex-direction:column}.vs-mode small{color:var(--muted);font-size:.8rem}
+.vs-pgbar{display:flex;justify-content:flex-start;margin:6px 0}
 .vs-wrap{position:relative;display:flex;flex-direction:column;gap:6px}.vs-wrap>.vs-item{padding-right:84px}
 .vs-ren{position:absolute;right:8px;top:8px}
 .vs-edit{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--sheet)}
@@ -2032,7 +2035,7 @@ function songBrowse(addItem){let mode=null,sub=null;const res=h("div",{class:"sb
 /* ---------- score versions (조성 · 편곡별로 여러 악보) ---------- */
 function vers(s){if(!s)return[];if(Array.isArray(s.versions))return s.versions;return(s.pages||[]).length?[{vid:"v0",name:"기본 악보",key:s.key||"",pages:s.pages}]:[];}
 function teamVer(s){const vs=vers(s);return vs.find(v=>v.vid===(s.teamVer||{})[S.team])||vs[0]||null;}
-const verLabel=v=>[v.name||"이름 없는 악보",v.key&&`Key ${v.key}`,`${(v.pages||[]).length}장`].filter(Boolean).join(" · ");
+const verLabel=v=>[v.name||"이름 없는 악보",v.key&&`Key ${v.key}`,v.alt?`이미지 ${(v.pages||[]).length}가지`:`${(v.pages||[]).length}장`].filter(Boolean).join(" · ");
 async function saveVersions(s,versions,extra={}){if(!s||String(s.id).startsWith("local-")||!S.db||!S.canWrite)return false;
   s.versions=versions;s.pages=[];Object.assign(s,extra);
   try{await S.db.doc(`songs/${s.id}`).update({versions:clone(versions),pages:[],...clone(extra),updatedAt:Date.now()});return true;}catch(e){toast("악보 정보를 저장하지 못했어요");return false;}}
@@ -2048,7 +2051,9 @@ async function rememberScore(songId,verId,pages,meta={}){const s=S.songs.find(x=
   const ok=await saveVersions(s,vs,{teamVer:{...(s.teamVer||{}),[S.team]:v.vid}});return ok?v.vid:null;}
 function itemFromSong(song,yt){const v=teamVer(song);return{uid:uid(8),songId:song.id,title:song.title,key:(v&&v.key)||song.key||"",yt:yt||"",memo:"",verId:v?v.vid:"",pages:verPages(v)};}
 /* 곡에 저장된 악보를 콘티로 가져올 때: 표시(형광펜 · 구간)는 「곡에도 반영」을 직접 고른 악보만 따라와요 */
-const verPages=v=>clone(v?v.pages||[]:[]).map(p=>v.keepMarks?p:{...p,marks:[]});
+const verPagesAll=v=>clone(v?v.pages||[]:[]).map(p=>v.keepMarks?p:{...p,marks:[]});
+/* alt: 같은 코드의 「다른 이미지」 묶음이면 기본(첫 번째) 이미지 하나만 콘티에 써요 */
+const verPages=v=>{const ps=verPagesAll(v);return v&&v.alt?ps.slice(0,1):ps;};
 
 /* ===== 인도자 콘티: 곡마다 흐름 · 인트로 · 연주 시간 ===== */
 const CIRC="①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
@@ -2931,8 +2936,6 @@ function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canW
           can?h("input",{type:"file",id:`snew-${s.id}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
             const pages=[];toast("악보를 올리는 중이에요…");const n=await uploadInto(pages,files,()=>{});if(!n)return;const vs=clone(vers(s));vs.push({vid:uid(6),name:`악보 ${vs.length+1}`,key:s.key||"",pages,by:S.myId||null,at:Date.now()});
             if(await saveVersions(s,vs))toast(`악보(${n}장)를 넣었어요. 「자세히 보기」에서 편집할 수 있어요`);}}):null),
-        (()=>{const hp=!!(s.ppt&&(s.ppt.slides||[]).length),hl=!!(s.lyrics||"").trim();
-          return h("button",{type:"button",class:"sbadge"+(hp?" ok":hl?" mkppt":" no"),title:"PPT 라이브러리에서 이 곡을 열어요",onclick:()=>openInPptLib(s)},hp?`화면용 · 올린 PPT ${s.ppt.slides.length}장 →`:hl?"화면용 · 가사로 만들 수 있음 →":"화면용 · 없음 →");})(),
         h("button",{type:"button",class:"sbadge"+(s.lyrics?" ok":" no"),title:s.lyrics?"가사 보기 · 고치기":"가사 넣기",onclick:()=>lyricsModal({songId:s.id,title:s.title},()=>{renderSongs.redraw&&renderSongs.redraw();})},s.lyrics?"가사 보기 · 고치기":"가사 넣기"),
         used?h("span",{class:"hint",text:`부른 횟수 ${used}회`}):null),
       h("div",{class:"row"},addBtn,(s.yt||[])[0]?h("a",{class:"btn sm",href:ytUrl(s.yt[0]),target:"_blank",rel:"noopener",text:"▶ 듣기"}):null,h("span",{class:"spacer"}),can?del:null))),
@@ -5230,7 +5233,7 @@ function versionsViewer(song,startVid){const vs=vers(song).filter(v=>(v.pages||[
   let cur=vs.find(v=>v.vid===startVid)||vs[0];const list=h("div",{class:"vs-list"}),prev=h("div",{class:"vs-prev"});let editing=null;const canEd=S.canWrite&&!String(song.id).startsWith("local-");
   const draw=()=>{list.replaceChildren(...vs.map(v=>{const th=h("span",{class:"vthumb"});getImg(v.pages[0].imgId).then(u=>{if(u)th.style.backgroundImage=`url("${u}")`;});
       const def=Object.entries(song.teamVer||{}).filter(([,id])=>id===v.vid).map(([t])=>teamName(t)+" 기본").join(" · ");
-      const item=h("button",{type:"button",class:"vs-item"+(v===cur?" on":""),onclick:()=>{cur=v;editing=null;draw();}},th,h("span",{class:"vtext"},h("b",{text:v.name||verLabel(v)}),h("small",{text:[v.key&&`Key ${v.key}`,`${v.pages.length}장`,def].filter(Boolean).join(" · ")})));
+      const item=h("button",{type:"button",class:"vs-item"+(v===cur?" on":""),onclick:()=>{cur=v;editing=null;draw();}},th,h("span",{class:"vtext"},h("b",{text:v.name||verLabel(v)}),h("small",{text:[v.key&&`Key ${v.key}`,v.alt?`이미지 ${v.pages.length}가지`:`${v.pages.length}장`,def].filter(Boolean).join(" · ")})));
       if(!canEd)return item;
       if(editing!==v.vid)return h("div",{class:"vs-wrap"},item,h("button",{type:"button",class:"btn sm ghost vs-ren",text:"제목 변경",onclick:()=>{editing=v.vid;draw();}}));
       const nIn=h("input",{type:"text",value:v.name||"",placeholder:"악보 제목 (예: D코드)","aria-label":"악보 제목",style:"flex:1;min-width:110px"});
@@ -5241,10 +5244,17 @@ function versionsViewer(song,startVid){const vs=vers(song).filter(v=>(v.pages||[
       const ek=e=>{if(e.key==="Enter"){e.preventDefault();sv();}else if(e.key==="Escape"){e.stopPropagation();editing=null;draw();}};nIn.addEventListener("keydown",ek);kIn.addEventListener("keydown",ek);
       setTimeout(()=>nIn.focus(),0);
       return h("div",{class:"vs-wrap"},item,h("div",{class:"vs-edit"},nIn,h("span",{class:"hint",text:"Key"}),kIn,h("button",{class:"btn sm primary",text:"저장",onclick:sv}),h("button",{class:"btn sm ghost",text:"취소",onclick:()=>{editing=null;draw();}})));}));
-    pagesInto(prev,verPages(cur),song.title);
-    if(S.canWrite&&!String(song.id).startsWith("local-")&&cur.pages.length>1)prev.insertBefore(h("div",{class:"vs-split"},
-      h("span",{text:`이 악보에 ${cur.pages.length}쪽이 함께 들어 있어요. 서로 다른 코드 악보라면 쪽마다 나눌 수 있어요.`}),
-      h("button",{class:"btn sm primary",text:"✂ 쪽마다 따로 나누기",onclick:()=>splitVer(cur)})),prev.firstChild);
+    pagesInto(prev,verPagesAll(cur),song.title);
+    if(cur.pages.length>1){const me=cur;
+      const save=async fn=>{const all=clone(vers(song));const x=all.find(y=>y.vid===me.vid);if(!x)return;fn(x);if(!await saveVersions(song,all))return;
+        vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));cur=vs.find(y=>y.vid===me.vid)||vs[0];draw();renderSongs.redraw&&renderSongs.redraw();};
+      /* 쪽마다: 기본 이미지 표시 · 「기본으로」 */
+      if(cur.alt)[...prev.querySelectorAll(".vw-page")].forEach((cv,i)=>{cv.insertAdjacentElement("beforebegin",h("div",{class:"vs-pgbar"},i===0?h("span",{class:"sbadge ok",text:"⭐ 기본 이미지 · 콘티에 들어가요"}):
+        canEd?h("button",{type:"button",class:"btn sm",text:"⭐ 이 이미지를 기본으로",onclick:()=>save(x=>{const [pg]=x.pages.splice(i,1);x.pages.unshift(pg);}).then(()=>toast("기본 이미지를 바꿨어요"))}):h("span",{class:"hint",text:`${i+1}번째 이미지`})));});
+      if(canEd){const mode=(alt,label,sub)=>h("label",{class:"vs-mode"+(!!cur.alt===alt?" on":"")},h("input",{type:"radio",name:"vsmode",checked:!!cur.alt===alt,onchange:()=>save(x=>{if(alt)x.alt=true;else delete x.alt;}).then(()=>toast(alt?"같은 악보의 다른 이미지로 정했어요. 첫 번째가 기본이에요":"한 곡의 여러 쪽으로 정했어요"))}),h("span",{},h("b",{text:label}),h("small",{text:sub})));
+        prev.insertBefore(h("div",{class:"vs-split"},h("span",{text:`이 악보에 ${cur.pages.length}${cur.alt?"가지 이미지가":"쪽이"} 들어 있어요. 어떤 묶음인가요?`}),
+          h("div",{class:"vs-modes"},mode(false,"한 곡의 여러 쪽","쪽을 모두 콘티에 넣어요"),mode(true,"같은 악보의 다른 이미지","기본 이미지 하나만 콘티에 넣어요")),
+          cur.alt?null:h("button",{class:"btn sm",text:"✂ 서로 다른 코드라면 쪽마다 나누기",onclick:()=>splitVer(cur)})),prev.firstChild);}}
     list.append(h("div",{class:"hint",style:"margin-top:4px",text:`${vs.length}가지 악보 · 누르면 오른쪽에 크게 보여요`}));
     const hd=list.closest(".panel");if(hd){const t=hd.querySelector(".panel-head h3");if(t)t.textContent=`${song.title} · 악보 ${vs.length}개`;}};
   const splitVer=v=>{const ins=v.pages.map((p,i)=>h("input",{type:"text",value:i===0?(v.key||""):"",placeholder:"예: D",style:"width:90px","aria-label":`${i+1}쪽 코드`}));
