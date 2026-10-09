@@ -1822,8 +1822,10 @@ function ytAddModal(c,onDone){if(!c)return;const y=teamCfg().yt;const can=S.canW
     can?h("button",{class:"btn sm ghost",text:"연결 설정 바꾸기",onclick:()=>{md.close();ytSetupModal(()=>ytAddModal(c));}}):null),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);}
 /* the day before the service: practice */
-function addPracticeEvent(){const c=S.cur||{};const d=c.date||nextSunday();
-  eventModal(null,{date:addDays(d,-(((parseD(d).getDay()+1)%7)||7)),time:"11:00",kind:"practice",title:"찬양 연습",memo:`${fmtDate(d)} ${wtypeOf(c)||"예배"} 준비`});}
+function addPracticeEvent(){const c=S.cur||{};const d=c.date||nextSunday();const pd=addDays(d,-(((parseD(d).getDay()+1)%7)||7));
+  /* 같은 날 연습이 이미 있으면 새로 만들지 않고 그 일정을 열어요 (두 번 생기지 않게) */
+  const ex=(S.events||[]).find(e=>e.kind==="practice"&&e.date===pd);if(ex){toast(`${dLabel(pd)} 연습 일정이 이미 있어요. 그 일정을 열게요`,3000);return eventModal(ex);}
+  eventModal(null,{date:pd,time:"11:00",kind:"practice",title:"찬양 연습",memo:`${fmtDate(d)} ${wtypeOf(c)||"예배"} 준비`});}
 
 function renderRoster(){const box=$("#rosterBox");if(!box)return;box.replaceChildren();const c=S.cur;
   c.roster.forEach((slot,si)=>{
@@ -3018,7 +3020,7 @@ function availSheet(){const me=myName();if(!me||!S.team)return null;const mb=S.m
   const prRow=e=>{const key=`pr-${e.id}`;const r=respOf(key,me);
     const no=()=>{const ni=h("input",{type:"text",placeholder:"사유 (예: 가족 일정, 시험)",value:r&&!r.ok?r.note:""});
       const md=modal(`${dLabel(e.date)} 연습 불참`,h("div",{class:"panel-body"},ni),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn danger",text:"불참으로 알리기",onclick:()=>{md.close();setAvail(key,false,ni.value.trim());}})]);setTimeout(()=>ni.focus(),50);};
-    return h("div",{class:"availrow practice"},h("div",{class:"availd"},h("b",{text:`🎼 ${dLabel(e.date)}${e.time?` ${e.time}`:""}`}),h("span",{class:"hint",text:[e.title||"찬양 연습",e.place].filter(Boolean).join(" · ")})),
+    return h("div",{class:"availrow practice"},h("div",{class:"availd"},h("b",{text:`🎼 ${dLabel(e.date)}${e.time?` ${e.time}`:""}`}),h("span",{class:"hint",text:[e.title||"찬양 연습",e.place,e.memo].filter(Boolean).join(" · ")})),
       h("div",{class:"availbtns"},h("button",{class:"btn sm"+(r&&r.ok?" okon":""),disabled:!can,text:r&&r.ok?"✓ 참여 가능":"참여 가능",onclick:()=>setAvail(key,true,"")}),
         h("button",{class:"btn sm"+(r&&!r.ok?" noon":""),disabled:!can,text:r&&!r.ok?`✕ 불참${r.note?` (${r.note})`:""}`:"어려워요",onclick:no})));};
   return h("div",{class:"sheet"},h("h2",{},"참여 응답",h("span",{class:"sub",text:"리더가 편성할 때 참고해요"})),
