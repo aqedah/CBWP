@@ -571,6 +571,7 @@ body.touring{padding-bottom:240px}
 body.fb-pad .tourpill{bottom:calc(140px + env(safe-area-inset-bottom,0px))}body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .tour-spot{position:relative;z-index:59!important;box-shadow:0 0 0 4px #2f62d6,0 0 0 100vmax rgb(10 14 25 / .58)!important;border-radius:12px;background-clip:padding-box}
 .bnav.tour-spot,.bnav .tour-spot{position:relative}
+.tourspot{position:fixed;inset:0;width:100vw;height:100vh;z-index:58;pointer-events:none}
 .tourdim{position:fixed;inset:0;z-index:58;background:rgb(10 14 25 / .58);pointer-events:none}
 .tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
 .tourcard .tc-then b{font-size:.92rem;word-break:keep-all}
@@ -1262,8 +1263,9 @@ const TOURS={
     {base:()=>((S.cur||{}).roster||[]).reduce((n,r)=>n+(r.people||[]).length,0),t:"④ 참여자 불러오기",x:"「02 참여자」 오른쪽 「불러오기」를 누르고 「편성 A」를 골라 보세요. 자리마다 + 를 눌러 한 사람씩 넣어도 돼요.",
       sel:()=>{const b=$("#rosterBox");return b&&b.closest(".sheet");},done:st=>((S.cur||{}).roster||[]).reduce((n,r)=>n+(r.people||[]).length,0)>st.b0,ok:"참여자가 채워졌어요. 다음엔 「찬양」 탭으로 넘어가 곡을 고를 거예요."},
     {t:"⑤ 찬양 탭 열기",x:"위쪽 「찬양」 탭을 눌러 보세요. (예배 정보 맨 아래 「🎵 찬양을 선곡할까요?」를 눌러도 돼요)",sel:()=>document.querySelector('.wtab[data-wt="songs"]'),done:()=>S.wTab==="songs",ok:"다음엔 예배 찬양에 곡을 넣어 볼 거예요."},
-    {t:"⑥ 곡 3곡 넣기",x:"「예배 찬양」 빈 칸을 누르면 곡 찾기로 가요. 곡 이름을 쓰거나 「최근 부른 곡」의 + 를 눌러 3곡을 넣어 보세요.",sel:()=>$("#list-before"),done:()=>((S.cur||{}).before||[]).length>=3,ok:"벌써 3곡! 다음엔 키(Key)를 정해 볼 거예요."},
-    {t:"⑦ 키 정하기",x:"첫 번째 곡의 「Key」 칸에 키를 써 보세요. (예: G)",sel:()=>document.querySelector("#list-before input.key"),done:()=>!!((((S.cur||{}).before||[])[0]||{}).key||"").trim(),ok:"다음엔 팀원에게 전할 메모를 남겨 볼 거예요."},
+    {t:"⑥ 곡 3곡 넣기",x:"「예배 찬양」 빈 칸을 누르면 곡 찾기로 가요. 곡 이름을 쓰거나 「최근 부른 곡」의 + 를 눌러 3곡을 넣어 보세요.",sel:()=>[$("#list-before"),document.querySelector(".wb-lib")].filter(Boolean),done:()=>((S.cur||{}).before||[]).length>=3,ok:"벌써 3곡! 다음엔 키(Key)를 정해 볼 거예요."},
+    {base:()=>((((S.cur||{}).before||[])[0]||{}).key||"").trim(),t:"⑦ 키(Key) 정하기",x:"「Key」 칸에는 이번 예배에서 실제로 부를 키, 곧 악보에 나가는 키를 적어요. 곡을 넣으면 라이브러리에 저장된 기본 키(예: G)가 먼저 들어와 있어요. 이번 주에 한 키 낮춰 부른다면 F처럼 바꿔 적으면 돼요. 첫 곡의 Key를 다른 키로 바꿔 보세요.",
+      sel:()=>document.querySelector("#list-before input.key"),done:st=>{const k=((((S.cur||{}).before||[])[0]||{}).key||"").trim();return !!k&&k!==st.b0;},ok:"키가 바뀌었어요. 콘티 보기 · 공지 · 출력에 이 키로 나가요. 다음엔 팀원에게 전할 메모를 남겨 볼 거예요."},
     {t:"⑧ 곡 메모 쓰기",x:"아무 곡이나 메모 칸에 연주 방법을 적어 보세요. (예: 2절 후 브릿지, 후렴 반키업)",sel:()=>document.querySelector("#list-before input.memo"),done:()=>((S.cur||{}).before||[]).some(i=>(i.memo||"").trim()),ok:"메모는 콘티 보기 · 출력에 함께 나와요. 다음엔 저장해 볼 거예요."},
     {t:"⑨ 저장하기",x:"아래 「저장」을 눌러 보세요. 처음 한 번 저장하면 그다음부터는 저절로 저장돼요.",sel:()=>$("#saveBtn"),done:()=>!!S.curId,ok:"저장됐어요. 다음엔 팀원에게 보낼 송리스트 공지를 만들어 볼 거예요."},
     {t:"⑩ 송리스트 공지 만들기",x:"아래 「📋 송리스트 공지」를 눌러 보세요. 단톡방에 붙여 넣을 글이 저절로 만들어져요.",sel:byBtn("송리스트 공지"),done:()=>!!document.querySelector('.panel[aria-label*="송리스트"]'),ok:"공지 글이 만들어졌어요. 「복사」나 「📤 카톡으로 보내기」로 바로 보내면 돼요."},
@@ -1296,14 +1298,14 @@ function tabLabel(tab,wt){const g=Object.keys(NAVG).find(k=>NAVG[k].some(([t])=>
   const sub=(NAVG[g]||[]).find(([t])=>t===tab);const sl=sub&&NAVG[g].length>1?sub[1]:"";return `「${[gl,sl,wt==="songs"?"찬양 탭":wt==="info"?"예배 정보 탭":""].filter(Boolean).join(" › ")}」`;}
 function tourStart(kind){const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR_LAST=null;const pl=document.getElementById("tourpill");if(pl)pl.remove();TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
 let TOUR_LAST=null;
-function tourEnd(done){if(TOUR)clearInterval(TOUR.iv);document.getElementById("tourdim")?.remove();document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");tourPill();}
+function tourEnd(done){if(TOUR)clearInterval(TOUR.iv);spotOff();document.getElementById("tourdim")?.remove();document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");tourPill();}
 /* 끝까지 안 보고 ✕로 닫았으면: 왼쪽 아래 「이어 보기」 단추를 남겨요 */
 function tourPill(){let p=document.getElementById("tourpill");if(p)p.remove();if(!TOUR_LAST||TOUR)return;const T=TOURS[TOUR_LAST.kind];
   p=h("div",{id:"tourpill",class:"tourpill"},h("button",{type:"button",class:"tp-go",text:`📘 ${T.name} 이어 보기 (${TOUR_LAST.i+1}/${T.steps.length})`,onclick:()=>{TOUR={...TOUR_LAST};TOUR_LAST=null;p.remove();tourShow();}}),
     h("button",{type:"button",class:"tp-x","aria-label":"이어 보기 단추 닫기",text:"✕",onclick:()=>{TOUR_LAST=null;p.remove();}}));document.body.append(p);}
 function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];document.querySelectorAll(".tour-hl,.tour-spot").forEach(e=>e.classList.remove("tour-hl","tour-spot"));
   if(!T.practice)document.querySelectorAll(".modal").forEach(m=>m.remove());
-  clearInterval(TOUR.iv);document.getElementById("tourdim")?.remove();
+  clearInterval(TOUR.iv);spotOff();document.getElementById("tourdim")?.remove();
   if(T.practice){if(st.go&&S.tab!==st.go)setTab(st.go);if(st.pre)st.pre();TOUR.b0=st.base?st.base():0;TOUR.ok=!st.done;}
   else{if(st.wt)S.wTab=st.wt;if(S.tab!==st.tab||st.wt)setTab(st.tab);}
   let card=document.getElementById("tourcard");if(!card){card=h("div",{id:"tourcard",class:"tourcard",role:"dialog","aria-label":T.name});document.body.append(card);}document.body.classList.add("touring");
@@ -1318,9 +1320,20 @@ function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];
   if(st.done){const chk=()=>{if(!TOUR||TOURS[TOUR.kind]!==T||T.steps[TOUR.i]!==st)return clearInterval(iv);let ok=false;try{ok=st.done({b0:TOUR.b0});}catch(e){}
       if(ok){clearInterval(iv);const tk=$("#tc-task");if(tk){tk.className="tc-task ok";tk.textContent=`👏 ${["잘하셨어요!","좋아요!","훌륭해요!","완벽해요!","멋져요!"][TOUR.i%5]} ${st.ok||""}`;}const nb=$("#tc-next");if(nb){nb.disabled=false;nb.classList.add("pulse");}const sk=card.querySelector(".tc-skip");if(sk)sk.remove();}};
     const iv=setInterval(chk,500);TOUR.iv=iv;}
-  setTimeout(()=>{if(!TOUR)return;const el=st.sel&&st.sel();
-    if(el){el.classList.add(T.practice?"tour-hl":"tour-spot");el.scrollIntoView({behavior:"smooth",block:"center"});}
-    else{if(!T.practice)document.body.append(h("div",{id:"tourdim",class:"tourdim"}));window.scrollTo({top:0,behavior:"smooth"});}},350);}
+  setTimeout(()=>{if(!TOUR)return;let els=st.sel?st.sel():null;els=(Array.isArray(els)?els:[els]).filter(Boolean);
+    if(els.length)els[0].scrollIntoView({behavior:"smooth",block:"center"});else window.scrollTo({top:0,behavior:"smooth"});
+    spotOn(()=>{let e=st.sel?st.sel():null;return (Array.isArray(e)?e:[e]).filter(x=>x&&x.isConnected&&x.offsetParent!==null);},T.practice);},350);}
+/* 반투명 어두운 막 + 구멍(설명하는 곳만 밝게) — 누르는 건 막지 않아요. 실습 중 다른 창(모달)이 뜨면 잠깐 걷어요 */
+function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg";const svg=document.createElementNS(NS,"svg");svg.id="tourspot";svg.setAttribute("class","tourspot");
+  const path=document.createElementNS(NS,"path");path.setAttribute("fill-rule","evenodd");path.setAttribute("fill","rgba(10,14,25,.58)");svg.append(path);const ring=document.createElementNS(NS,"path");ring.setAttribute("fill","none");ring.setAttribute("stroke","#2f62d6");ring.setAttribute("stroke-width","3");svg.append(ring);document.body.append(svg);
+  const rr=(x,y,w,h,r)=>`M${x+r} ${y}H${x+w-r}A${r} ${r} 0 0 1 ${x+w} ${y+r}V${y+h-r}A${r} ${r} 0 0 1 ${x+w-r} ${y+h}H${x+r}A${r} ${r} 0 0 1 ${x} ${y+h-r}V${y+r}A${r} ${r} 0 0 1 ${x+r} ${y}Z`;
+  let last="";const tick=()=>{if(!document.getElementById("tourspot"))return;const W=innerWidth,H=innerHeight;
+    const modalUp=practice&&[...document.querySelectorAll(".modal")].some(m=>!m.classList.contains("devedit"));svg.style.display=modalUp?"none":"";
+    const holes=getEls().map(e=>{const r=e.getBoundingClientRect();return [r.left-6,r.top-6,r.width+12,r.height+12];}).filter(([x,y,w,h])=>w>12&&h>12&&y<H&&y+h>0);
+    const key=W+","+H+holes.map(a=>a.map(Math.round).join(",")).join(";");if(key!==last){last=key;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+      path.setAttribute("d",`M0 0H${W}V${H}H0Z`+holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));ring.setAttribute("d",holes.map(([x,y,w,h])=>rr(x,y,w,h,12)).join(""));}
+    TOUR&&(TOUR.raf=requestAnimationFrame(tick));};tick();}
+function spotOff(){const s=document.getElementById("tourspot");if(s)s.remove();if(TOUR&&TOUR.raf)cancelAnimationFrame(TOUR.raf);}
 function tourFromUrl(){try{const k=new URLSearchParams(location.search).get("tour");if(k&&TOURS[k])tourStart(k);}catch(e){}}
 function render(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(h("div",{class:"banner demoban"},h("b",{text:"👀 체험판 "}),"실제 교회 자료가 아니라 예시예요. 눌러 보고 고쳐 볼 수 있지만 저장되지 않고, 새로고침하면 처음으로 돌아가요. ",h("button",{type:"button",class:"btn sm",text:"🎤 인도자 튜토리얼",onclick:()=>tourStart("leader")})," ",h("button",{type:"button",class:"btn sm",text:"🎸 싱어 · 악기팀 튜토리얼",onclick:()=>tourStart("member")})," ",h("button",{type:"button",class:"btn sm",text:"✍️ 콘티 작성 연습",onclick:()=>tourStart("practiceConti")})," ",h("button",{type:"button",class:"btn sm",text:"🖥 PPT 만들기 연습",onclick:()=>tourStart("practicePpt")})," ",h("button",{type:"button",class:"btn sm",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}})));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
