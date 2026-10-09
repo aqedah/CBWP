@@ -4427,6 +4427,7 @@ function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!
     const pIn=h("input",{type:"text",id:"kk-passage",value:c.passage||"",disabled:!can,placeholder:"예: 요 15:1-8",onchange:e=>{set("passage",e.target.value.trim());bibQ=c.passage;q.value=bibQ;go();}});
     const tIn=h("input",{type:"text",id:"kk-title",value:c.sermonTitle||"",disabled:!can,placeholder:"예: 참포도나무",oninput:e=>set("sermonTitle",e.target.value)});
     const prIn=h("input",{type:"text",id:"kk-preacher",value:c.preacher||"",disabled:!can,placeholder:"예: 이삭 목사",oninput:e=>set("preacher",e.target.value)});
+    const orgIn=h("input",{type:"text",id:"kk-porg",value:c.preacherOrg||"",disabled:!can,placeholder:"예: 한울교회 원로목사 (비우면 PPT 틀 그대로)",oninput:e=>set("preacherOrg",e.target.value)});
     /* 특송: 곡명은 모르면 비워 둬도 돼요 */
     const setSpecial=t=>{t=(t||"").trim();const cur=(c.special||[])[0];c.special=t?[cur&&cur.title===t?cur:itemByTitle(t)]:[];markDirty();saveDraft();};
     const spIn=h("input",{type:"text",id:"kk-spsong",list:"kk-spdl",value:((c.special||[])[0]||{}).title||"",disabled:!can,placeholder:"없으면 비워 두세요",onchange:e=>setSpecial(e.target.value)});
@@ -4449,7 +4450,7 @@ function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!
       can?h("div",{class:"field"},h("label",{htmlFor:"kk-text",text:"카톡에서 받은 글"}),kt,h("div",{class:"row"},h("span",{class:"hint",text:"날짜 · 예배 · 본문 · 제목 · 설교자 · 특송 · 설교 후 찬양을 알아서 나눠 넣어요"}),h("span",{class:"spacer"}),h("span",{class:"btn filebtn",title:"설교자가 보낸 사진(본문·찬양 목록)을 글자로 읽어요"},"📷 사진으로 넣기",h("input",{type:"file",accept:"image/*",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)ocrPhoto(f);}})),
         h("button",{class:"btn primary",text:"칸에 채우기",onclick:()=>fill()}))):null,
       h("div",{class:"grid",style:"margin-top:8px"},h("div",{class:"field"},h("label",{htmlFor:"kk-date",text:"날짜"}),dateIn),h("div",{class:"field"},h("label",{htmlFor:"kk-wtype",text:"예배"}),h("div",{style:"display:flex;flex-direction:column;gap:6px"},wsel,wc)),
-        h("div",{class:"field"},h("label",{htmlFor:"kk-passage",text:"본문"}),pIn),h("div",{class:"field"},h("label",{htmlFor:"kk-title",text:"설교 제목"}),tIn),h("div",{class:"field"},h("label",{htmlFor:"kk-preacher",text:"설교자"}),prIn),
+        h("div",{class:"field"},h("label",{htmlFor:"kk-passage",text:"본문"}),pIn),h("div",{class:"field"},h("label",{htmlFor:"kk-title",text:"설교 제목"}),tIn),h("div",{class:"field"},h("label",{htmlFor:"kk-preacher",text:"설교자"}),prIn),h("div",{class:"field"},h("label",{htmlFor:"kk-porg",text:"설교자 소속"}),orgIn),
         h("div",{class:"field"},h("label",{htmlFor:"kk-spsong",text:"특송곡"}),spIn,spDl),h("div",{class:"field"},h("label",{htmlFor:"kk-spby",text:"특송자"}),sbIn),
         /* 설교 후 찬양: 특송 옆 빈 칸에 */
         h("div",{class:"field kk-after"},h("label",{htmlFor:"q-kkafter",text:"설교 후 찬양"}),can?(()=>{const ss=songSearch("kkafter",item=>{c.after.push(item);markDirty();saveDraft();drawAfter();});const i=ss.querySelector("input");if(i)i.placeholder="곡 제목 · 초성으로 찾기";return ss;})():null,afterBox))));}
@@ -5383,7 +5384,7 @@ async function fullAnalyze(zip){const rd=async p=>{const f=zip.file(p);return f?
       for(let i=ref.i;i<Math.min(order.length,ref.i+12);i++){const s=order[i].sps.find(hit);if(s){if(body.length&&body[body.length-1].i!==i-1)break;const n=normV(s.t);body.push({i,s,nv:Math.max(1,old.filter(v=>n.includes(v.slice(0,10))).length)});}else if(body.length)break;}}}
   let sermon=null;order.forEach((o,i)=>{if(sermon||o.sps.some(s=>/축\s*도|benediction/i.test(s.t)))return;const pr=o.sps.flatMap(s=>s.ps).find(p=>/^[가-힣\s]{2,12}(담임)?\s*(목사|전도사|강도사|선교사)$/.test(p.t));if(!pr)return;
     const all=o.sps.flatMap(s=>s.ps).filter(p=>p!==pr);const q=all.find(p=>/^[“"'‘].+[”"'’]$/.test(p.t));
-    const big=all.filter(p=>!/설교|sermon|말씀|교회$|^\d+$/i.test(p.t)).sort((a,b)=>b.sz-a.sz)[0];const tt=q?q.t.slice(1,-1).trim():big&&big.t;if(tt)sermon={i,title:tt,preacher:pr.t};});
+    const big=all.filter(p=>!/설교|sermon|말씀|교회$|^\d+$/i.test(p.t)).sort((a,b)=>b.sz-a.sz)[0];const tt=q?q.t.slice(1,-1).trim():big&&big.t;if(tt){const og=all.find(p=>p.t!==tt&&p.t.length<=30&&/(교회|선교회|대학원?|대학교|신학교|미니스트리|선교부|연합회?|총회|노회|기도원)/.test(p.t));sermon={i,title:tt,preacher:pr.t,org:og?og.t:null};}});
   /* 특송 안내 장: 「특송」 글자와 곡 제목(“곡” - 하는 사람) */
   let special=null;order.forEach((o,i)=>{if(special)return;const ps=o.sps.flatMap(s=>s.ps);if(!ps.some(p=>/^특\s*송$/.test(p.t)))return;const q=ps.find(p=>!/^특\s*송$/.test(p.t)&&p.t.length<=60);special={i,line:q?q.t:null};});
   return{order,lsz,lines,slots,dates,ref:ref&&{i:ref.i,str:ref.str,ko:ref.ko},body,sermon,special};}
@@ -5437,7 +5438,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
     if(A.special&&i===A.special.i&&A.special.line){const sp=(c.special||[])[0];const by0=(c.specialBy||"").trim();if(!sp&&by0)x=editPara(x,t=>t.trim()===A.special.line?by0:null);if(sp){const by=by0;const m=A.special.line.match(/^\s*([“"'‘])(.*?)([”"'’])\s*(?:([-–—])\s*(.*))?$/);
       const nl=m?`${m[1]}${sp.title}${m[3]}${by?` ${m[4]||"-"} ${by}`:""}`:`"${sp.title}"${by?` - ${by}`:""}`;x=editPara(x,t=>t.trim()===A.special.line?nl:null);}}
     if(A.sermon&&i===A.sermon.i){const T=(c.sermonTitle||"").trim(),P=(c.preacher||"").trim();
-      x=editPara(x,t=>{const tt=t.trim();if(T&&(tt===A.sermon.title||tt.replace(/^[“"'‘]|[”"'’]$/g,"").trim()===A.sermon.title))return t.replace(A.sermon.title,T);
+      const O=(c.preacherOrg||"").trim();x=editPara(x,t=>{const tt=t.trim();if(O&&A.sermon.org&&tt===A.sermon.org)return O;if(T&&(tt===A.sermon.title||tt.replace(/^[“"'‘]|[”"'’]$/g,"").trim()===A.sermon.title))return t.replace(A.sermon.title,T);
         if(P&&tt===A.sermon.preacher){const sp=/^([가-힣] ){2,}/.test(tt);const nm=P.replace(/\s*(담임)?\s*(목사|전도사|강도사|선교사)\s*$/,"");if(nm.replace(/\s/g,"")===tt.replace(/\s*(담임)?\s*(목사|전도사|강도사|선교사)\s*$/,"").replace(/\s/g,""))return null;const role=(P.match(/(목사|전도사|강도사|선교사)\s*$/)||tt.match(/((담임)?\s*(목사|전도사|강도사|선교사))$/)||["","목사"])[1];
           return sp?`${nm.replace(/\s/g,"").split("").join(" ")} ${role}`:(/담임/.test(tt)&&!/(목사|전도사|강도사|선교사)\s*$/.test(P)?`${nm} 담임목사`:`${nm} ${role}`);}return null;});}
     return x;};
@@ -5482,6 +5483,10 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
     prels=prels.replace(new RegExp(`<Relationship [^>]*Id="${o.rid}"[^>]*/>`),"");}
   pres=pres.replace(/<p:sldIdLst>[\s\S]*?<\/p:sldIdLst>/,`<p:sldIdLst>${newTags.join("")}</p:sldIdLst>`);
   pres=pres.replace(/<p14:sldId id="(\d+)"\/>/g,(m,id)=>secMap[id]?secMap[id].map(n=>`<p14:sldId id="${n}"/>`).join(""):m);
+  /* 틀에 「쓴 글자만」 넣어 둔 글꼴(부분 포함)이 있으면, 새로 넣은 글자(예: 누가복음의 「누」)가 안 보여요 → 그 글꼴 묶음을 빼서 컴퓨터 글꼴로 보이게 해요 */
+  if(/saveSubsetFonts="(1|true)"/.test(pres)&&/<p:embeddedFontLst>/.test(pres)){const fr=[...prels.matchAll(/<Relationship [^>]*Type="[^"]*\/font"[^>]*\/>/g)].map(m=>m[0]);
+    for(const r of fr){const t=(r.match(/Target="([^"]+)"/)||[])[1];if(t)zip.remove("ppt/"+t.replace(/^\/?ppt\//,"").replace(/^\.\//,""));prels=prels.replace(r,"");}
+    pres=pres.replace(/<p:embeddedFontLst>[\s\S]*?<\/p:embeddedFontLst>/,"").replace(/\s(saveSubsetFonts|embedTrueTypeFonts)="[^"]*"/g,"");S.subsetFontsDropped=true;}
   zip.file("[Content_Types].xml",ct);zip.file("ppt/_rels/presentation.xml.rels",prels);zip.file("ppt/presentation.xml",pres);
   const app=await rd("docProps/app.xml");if(app)zip.file("docProps/app.xml",app.replace(/<Slides>\d+<\/Slides>/,`<Slides>${newTags.length}</Slides>`));
   onSt&&onSt("파일로 묶는 중… (큰 파일이라 조금 걸려요)");
