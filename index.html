@@ -848,6 +848,9 @@ const wtypeOf=c=>c.wtype==="직접쓰기"?(c.wtypeCustom||"직접쓰기"):normWt
 const leaderOf=c=>((c.roster||[]).find(r=>r.pos==="인도자")?.people||[]).map(p=>p.name).join(", ");
 /* 공지용: 멤버에 직분을 골라 둔 사람은 이름 뒤에 붙여요 (예: 이삭 목사) */
 const withTitle=n=>{const mb=(S.allMembers||S.members||[]).find(x=>normName(x.name)===normName(n))||(S.members||[]).find(x=>normName(x.name)===normName(n));return mb&&mb.title&&!String(n).endsWith(mb.title)?`${n} ${mb.title}`:n;};
+/* 악기: 인도자 · 싱어 · 방송 쪽(PPT · 음향 · 영상 · 조명 · 방송)을 뺀 자리 — 「드럼 정평안 · 베이스 강믿음」 */
+const NOT_INST=["인도자","싱어","PPT","음향","영상","조명","방송","자막","촬영"];
+const instrumentsOf=c=>(c.roster||[]).filter(r=>(r.people||[]).length&&!NOT_INST.includes(r.pos)).map(r=>`${r.pos} ${r.people.map(p=>p.name).join(", ")}`).join(" · ");
 const singersOf=c=>((c.roster||[]).find(r=>r.pos==="싱어")?.people||[]).map(p=>p.name).join(", ");
 const leaderTitled=c=>((c.roster||[]).find(r=>r.pos==="인도자")?.people||[]).map(p=>withTitle(p.name)).join(", ");
 
@@ -1617,7 +1620,7 @@ function lyAuto(c,paper){const P=PAPER[paper];const M=10,GAP=paper==="a3l"?7:6,C
   const items=[];let no=0;for(const[k]of SECTIONS)for(const it of c[k]||[]){no++;const r=(it.pages||[]).reduce((a,p)=>a+(p.w||1)/(p.h||1.414),0);items.push({it,no,r,units:!r?1:Math.min(COLS,r<=.95?1:r<=1.75?2:r<=2.5?3:4)});}
   const groups=[];let cur=[],used=0;for(const s of items){if(used+s.units>COLS&&cur.length){groups.push(cur);cur=[];used=0;}cur.push(s);used+=s.units;}if(cur.length)groups.push(cur);
   for(const g of groups){let u=g.reduce((a,s)=>a+s.units,0);while(u<COLS){const t=g.filter(s=>s.r).sort((a,b)=>b.r/b.units-a.r/a.units)[0];if(!t)break;t.units++;u++;}let col=0;for(const s of g){s.col=col;col+=s.units;}}
-  const tm=contiTimes(c);const head=`■  ${fmtDate(c.date)}  ${wtypeOf(c)} 찬양악보${leaderOf(c)?`     인도 ${leaderOf(c)}`:""}${singersOf(c)?`   싱어 ${singersOf(c)}`:""}`;const FS=paper==="a3l"?4.4:4,LH=FS*1.35;
+  const tm=contiTimes(c);const head=`■  ${fmtDate(c.date)}  ${wtypeOf(c)} 찬양악보${leaderOf(c)?`     인도 ${leaderOf(c)}`:""}${singersOf(c)?`   싱어 ${singersOf(c)}`:""}${instrumentsOf(c)?`   악기 ${instrumentsOf(c)}`:""}`;const FS=paper==="a3l"?4.4:4,LH=FS*1.35;
   const pages=groups.map(g=>{const els=[];els.push({id:uid(6),type:"text",x:M,y:M-2,w:P.w-2*M,h:10,text:head,size:paper==="a3l"?7:6,bold:true});
     const flows=g.map(s=>{const L=[];if(s.it.intro&&s.it.intro.text)L.push(`*Intro : ${s.it.intro.text.replace(/\s+/g,"  ")}`);flowLines(s.it).forEach((t,i)=>L.push(`${circ(i+1)}  ${t}`));return L;});
     const nl=Math.min(10,Math.max(3,...flows.map(l=>l.length)));const topY=M+12,topH=nl*LH+4,midY=topY+topH+2,botY=P.h-M-8,midH=botY-midY-3;
@@ -1642,7 +1645,7 @@ function lyCompact(c,paper){const P=PAPER[paper];const M=10,GAP=4,CAP=6,HEAD=12;
   let pages=[lay(items,HEAD)];
   if(items.length>1){const cand=[];for(let k=1;k<items.length;k++){const a=lay(items.slice(0,k),HEAD),b=lay(items.slice(k),HEAD);if(a&&b)cand.push({k,sc:Math.min(a.sc,b.sc),pp:[a,b]});}
     const top=Math.max(...cand.map(x=>x.sc));const b2=cand.filter(x=>x.sc>=top*.85).sort((x,y)=>Math.abs(x.k-items.length/2)-Math.abs(y.k-items.length/2))[0];if(b2&&b2.sc>pages[0].sc*1.3)pages=b2.pp;}
-  const head=`■  ${fmtDate(c.date)}  ${wtypeOf(c)} 찬양악보${leaderOf(c)?`     인도 ${leaderOf(c)}`:""}${singersOf(c)?`   싱어 ${singersOf(c)}`:""}`;
+  const head=`■  ${fmtDate(c.date)}  ${wtypeOf(c)} 찬양악보${leaderOf(c)?`     인도 ${leaderOf(c)}`:""}${singersOf(c)?`   싱어 ${singersOf(c)}`:""}${instrumentsOf(c)?`   악기 ${instrumentsOf(c)}`:""}`;
   return{paper,pages:pages.map(pg=>{const els=[{id:uid(6),type:"text",x:M,y:M-2,w:P.w-2*M,h:10,text:head,size:paper==="a3l"?7:6,bold:true}];
     const{cols,cw,ch,arr}=pg;const rows=Math.ceil(arr.length/cols);const rowH=[];arr.forEach((o,j)=>{const r=Math.floor(j/cols);rowH[r]=Math.max(rowH[r]||0,Math.min(ch,cw/o.r));});
     let y=M+HEAD;const rowY=rowH.map(hh=>{const v=y;y+=hh+CAP+GAP;return v;});
@@ -4460,7 +4463,7 @@ const songLines=c=>{let n=0;return SECTIONS.filter(([k])=>(c[k]||[]).length).fla
 const teamPlUrl=c=>{const y=(S.teamCfgs[teamOf(c)]||{}).yt;return y&&y.playlistId?`https://www.youtube.com/playlist?list=${y.playlistId}`:"";};
 /* 확정 후 최종 송리스트 공지 */
 function finalNotice(c){if(!allItems(c).length)return toast("콘티에 곡이 없어요");const pl=teamPlUrl(c);
-  const text=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 최종 송리스트 🔒`,"",c.sermonTitle?`제목: 「${c.sermonTitle}」`:"",c.preacher?`설교: ${c.preacher}`:"",c.passage?`본문: ${c.passage}`:"",leaderOf(c)?`인도: ${leaderTitled(c)}`:"",singersOf(c)?`싱어: ${singersOf(c)}`:"","",
+  const text=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 최종 송리스트 🔒`,"",c.sermonTitle?`제목: 「${c.sermonTitle}」`:"",c.preacher?`설교: ${c.preacher}`:"",c.passage?`본문: ${c.passage}`:"",leaderOf(c)?`인도: ${leaderTitled(c)}`:"",singersOf(c)?`싱어: ${singersOf(c)}`:"",instrumentsOf(c)?`악기: ${instrumentsOf(c)}`:"","",
     ...songLines(c),pl?`🎵 연습 재생목록: ${pl}`:"",`👉 콘티 보기: ${contiLink(c)}`].join("\n").replace(/\n{3,}/g,"\n\n").trim();
   noticeTextModal("최종 송리스트 공지",text,`${dLabel(c.date)} 최종 송리스트`);}
 /* 다시 확정할 때 달라진 점 */
@@ -4507,7 +4510,7 @@ function songListNotice(c){if(!c)return;if(!allItems(c).length)return toast("콘
   askConfirm("송리스트 공지",[h("p",{text:"악보 편집 없이 공지할까요?"}),h("p",{class:"hint",text:"날짜 · 제목 · 설교자 · 본문 · 묵상 · 송리스트만 먼저 알려요. 악보까지 마친 뒤에는 「콘티 공지」로 악보와 함께 다시 알릴 수 있어요."})],"공지 쓰기",async()=>{
     let verses="";const r=parseRef((c.passage||"").trim());if(r){try{await loadBible();if(BIB[r.b]&&BIB[r.b][r.ch-1])verses=refRows(r).map(([ch,v,t])=>`${v} ${t}`).join("\n");}catch(e){}}
     let n=0;const lines=[`[${teamName(teamOf(c))}] ${dLabel(c.date)} ${wtypeOf(c)} 송리스트`,"",
-      c.sermonTitle?`제목: 「${c.sermonTitle}」`:"",c.preacher?`설교: ${c.preacher}`:"",c.passage?`본문: ${c.passage}`:"",leaderOf(c)?`인도: ${leaderTitled(c)}`:"",singersOf(c)?`싱어: ${singersOf(c)}`:"",verses?`\n${verses}`:"",
+      c.sermonTitle?`제목: 「${c.sermonTitle}」`:"",c.preacher?`설교: ${c.preacher}`:"",c.passage?`본문: ${c.passage}`:"",leaderOf(c)?`인도: ${leaderTitled(c)}`:"",singersOf(c)?`싱어: ${singersOf(c)}`:"",instrumentsOf(c)?`악기: ${instrumentsOf(c)}`:"",verses?`\n${verses}`:"",
       c.meditation?`\n[묵상]\n${c.meditation.trim()}`:"","",
       ...SECTIONS.filter(([k])=>(c[k]||[]).length).flatMap(([k,l])=>[`<${l}>`,...c[k].map(it=>`${++n}. ${it.title}${it.key?` (${it.key})`:""}`),""]),
       `👉 콘티 보기 / 참여 응답: ${contiLink(c)}`];
@@ -5571,7 +5574,7 @@ async function exportCompact(c,opt){if(!c)return;
       x.fillStyle="#fff";x.fillRect(0,0,W,H);x.textBaseline="alphabetic";
       if(pn===0){x.fillStyle="#2b3f8f";x.fillRect(M,M,8,64);
         x.fillStyle="#18213a";const t=`${fmtDate(c.date)}  ${wtypeOf(c)}${c.sermonTitle?"  ·  "+c.sermonTitle:""}`;fitText(x,t,W-2*M-30,44,"700",FD);x.fillText(ellipsize(x,t,W-2*M-30),M+26,M+46);
-        const info=[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`,leaderOf(c)&&`인도 ${leaderOf(c)}`,singersOf(c)&&`싱어 ${singersOf(c)}`].filter(Boolean).join("   ");
+        const info=[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`,leaderOf(c)&&`인도 ${leaderOf(c)}`,singersOf(c)&&`싱어 ${singersOf(c)}`,instrumentsOf(c)&&`악기 ${instrumentsOf(c)}`].filter(Boolean).join("   ");
         const order=secs.filter(([,a])=>a.length).map(([l,a])=>`${l}: `+a.map(it=>it.title+(it.key?`(${it.key})`:"")).join(" → ")).join("   |   ");
         x.font=`500 24px ${FB}`;x.fillStyle="#4a5370";x.fillText(ellipsize(x,info,W-2*M-30),M+26,M+90);
         x.font=`600 22px ${FB}`;x.fillStyle="#18213a";x.fillText(ellipsize(x,order,W-2*M),M,M+128);
@@ -5615,11 +5618,12 @@ async function exportLeader(c,opt){if(!c)return;const items=[];let no=0;for(cons
     for(const pg of pages){let u=pg.reduce((a,s)=>a+s.units,0);while(u<COLS){const sq=s=>{const r=(s.it.pages||[]).reduce((a,p)=>a+(p.w||1)/(p.h||1.414),0);return r/s.units;};const t=pg.slice().sort((a,b)=>sq(b)-sq(a))[0];if(!t||!(t.it.pages||[]).length)break;t.units++;u++;}
       let col=0;for(const s of pg){s.col=col;col+=s.units;}}
     const tm=contiTimes(c);const title=`■  ${fmtDate(c.date)}  ${wtypeOf(c)} 찬양악보`;
-    const right=[leaderOf(c)&&`인도 ${leaderOf(c)}`,singersOf(c)&&`싱어 ${singersOf(c)}`,tm.total?`전체 ${fmtDur(tm.total)}`:""].filter(Boolean).join("   ·   ");
+    const right=[leaderOf(c)&&`인도 ${leaderOf(c)}`,singersOf(c)&&`싱어 ${singersOf(c)}`,instrumentsOf(c)&&`악기 ${instrumentsOf(c)}`,tm.total?`전체 ${fmtDur(tm.total)}`:""].filter(Boolean).join("   ·   ");
     const cvs=pages.map((pg,pn)=>{const cv=document.createElement("canvas");cv.width=W;cv.height=H;const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);x.textBaseline="alphabetic";
       /* 머리 */
       x.fillStyle="#111";x.font=`700 54px ${FB}`;x.fillText(title,M,M+54);
-      if(right){x.font=`500 34px ${FB}`;x.fillStyle="#4a5370";const rw=x.measureText(right).width;x.fillText(right,W-M-rw,M+50);}
+      if(right){const tw=x.measureText(title).width;const room=W-2*M-tw-40;let fs=34;x.font=`500 ${fs}px ${FB}`;while(fs>20&&x.measureText(right).width>room){fs-=2;x.font=`500 ${fs}px ${FB}`;}
+        const rt=ellipsize(x,right,room);x.fillStyle="#4a5370";const rw=x.measureText(rt).width;x.fillText(rt,W-M-rw,M+50);}
       /* 위 칸 높이: 이 장에서 가장 긴 흐름에 맞춰 */
       const FS=36,LH=50,NUMW=96;const lines=pg.map(s=>{const sw=s.units*uw+(s.units-1)*GAP-NUMW;x.font=`500 ${FS}px ${FB}`;const L=[];
         if(s.it.intro&&s.it.intro.text)L.push(...wrapText(x,`*Intro : ${s.it.intro.text.replace(/\s+/g,"  ")}`,sw));
