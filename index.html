@@ -4374,9 +4374,7 @@ function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
           ta.value=sl.map(x=>x.join("\n")).join("\n\n");upd();toast(`PPT에서 가사 ${sl.length}장을 읽었어요. 확인하고 「가사 저장」을 눌러 주세요`,3500);
           if(can&&song&&!String(song.id).startsWith("local-")&&!(song.ppt&&(song.ppt.slides||[]).length))uploadSongPpt(song,f);}catch(err){console.error(err);toast("PPT를 읽지 못했어요");}}}))),
     h("div",{class:"row"},h("span",{class:"lab",style:"margin:0;min-width:7em",text:"② 인터넷에서"}),
-      h("a",{class:"btn sm",href:`https://music.bugs.co.kr/search/integrated?q=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"벅스 ↗"}),
-      h("a",{class:"btn sm",href:`http://ccmgasa.com/wordpress/?s=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"CCM가사 ↗"}),
-      h("a",{class:"btn sm",href:`https://cwy0675.tistory.com/search/${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"PPT악보 블로그 ↗"}),
+      h("a",{class:"btn sm",href:`https://music.bugs.co.kr/search/lyrics?q=${encodeURIComponent(q)}`,target:"_blank",rel:"noopener",text:"벅스 가사 ↗",title:"벅스의 「가사」 검색 결과가 바로 열려요"}),
       h("a",{class:"btn sm",href:(song&&song.ccli)?ssSong(song.ccli):ssSearch(q),target:"_blank",rel:"noopener",text:"SongSelect ↗"}),paste),
     h("p",{class:"hint",style:"margin:0",text:"가사 PPT가 있으면 ①로 바로 읽어 와요. 없으면 ②에서 찾아 복사한 뒤 「붙여넣기」를 누르세요."}),
     h("p",{class:"hint",style:"margin:0 0 6px",text:song&&!song.id.startsWith("local-")?"저장하면 다음에 이 곡을 넣을 때도 그대로 쓰여요. 교회 전체가 함께 써요.":"이 콘티에만 저장돼요."}),ta,cnt),
