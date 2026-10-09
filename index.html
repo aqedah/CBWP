@@ -4279,6 +4279,41 @@ function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!
     h("div",{class:"savebar"},h("button",{class:"btn primary",id:"saveBtn",disabled:!can,onclick:()=>saveConti(),text:"저장"}),h("span",{class:"status",id:"saveStatus3"}),h("span",{class:"spacer"}),
       h("button",{class:"btn primary",onclick:()=>setTab("write"),text:"다음: 콘티 작성 →"}))));
   if(bibQ)go();else loadBible().then(()=>{fillCh();}).catch(()=>{});}
+/* 낱말 찾기: 한 글자 낱말(물 · 피 · 빛 …)은 낱말 첫머리에서만, 뒤에 조사만 붙은 경우에 맞춰요 — 「하물며」 「제물」 「물리치다」는 빼요 */
+const JOSA="이여|에서|에게|으로|처럼|같이|보다|까지|부터|이라|이요|이네|이니|이고|이며|이|가|을|를|은|는|에|로|과|와|도|만|의|여|야|아|라|요|네|니|고|며";
+const reEsc=w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+function wordRe(w){return [...w].length<=1?new RegExp(`(?<![가-힣])${reEsc(w)}(?=(?:${JOSA})?(?![가-힣]))`,"g"):new RegExp(reEsc(w),"g");}
+const wordHit=(text,w)=>{const r=wordRe(w);return r.test(text||"");};
+/* 비슷한 말 묶음: 한 낱말을 찾으면 같은 묶음의 말도 함께 찾아요 (필요하면 더 늘려요) */
+const WORD_GROUPS=[
+  "물 생수 생명수 강물 시내 샘 샘물 강 바다 단비 이슬 목마른 목마름 갈급",
+  "피 보혈 흘리신 속죄 대속 어린양",
+  "전쟁 전투 싸움 싸우 승리 이기 군대 군사 용사 대장 칼 방패 갑옷 원수 대적",
+  "빛 등불 광채 비추 어둠 새벽 아침 별",
+  "불 불꽃 타오르 불길",
+  "바람 숨결 호흡 생기",
+  "목자 양떼 초장 물가 인도",
+  "반석 피난처 산성 요새 바위 방패",
+  "왕 보좌 다스리 통치 주권 면류관 왕관",
+  "사랑 은혜 긍휼 자비 인자",
+  "평안 평강 안식 위로 쉼",
+  "기쁨 기뻐 즐거움 춤 노래 찬양",
+  "십자가 고난 갈보리 죽으심",
+  "부활 살아나 무덤",
+  "생명 영생 살리",
+  "치유 고치 회복 상처 병",
+  "용서 회개 정결 깨끗 죄",
+  "눈물 슬픔 애통 탄식",
+  "믿음 신뢰 의지 맡기",
+  "소망 기다리 약속",
+  "예배 경배 엎드려 무릎",
+  "길 걸어 동행 따라가 인도",
+  "아버지 아빠 자녀 품",
+  "떡 빵 만나 양식",
+  "열매 포도나무 가지 추수 씨",
+  "열방 민족 땅끝 복음 선교 나라",
+  "성령 기름 충만 바람 불"].map(g=>g.split(" ").filter(Boolean));
+function relWords(w){const out=new Set();for(const g of WORD_GROUPS)if(g.includes(w))g.forEach(x=>{if(x!==w)out.add(x);});return [...out];}
 let bibLast=null;
 /* 콘티 작성: 말씀에서 곡 찾기 — 본문 낱말 가운데 우리 곡 가사·제목에 실제로 나오는 말을 골라 보여 줘요 */
 const THEME="사랑 은혜 십자가 피 빛 생명 구원 평강 평안 믿음 소망 영광 찬양 기쁨 목자 반석 성령 말씀 진리 나라 승리 능력 자비 긍휼 회개 용서 예수 하나님 아버지 어린양 성전 예배 축복 열매 가지 포도나무 생수 마음 영혼 노래 감사 거룩 공의 신실 언약 약속 위로 부활 영생 하늘 세상 은총 주님 보좌 이름 신부 등불 소금 열방 교회 영원 왕 길 문 물 불 손 눈물 바람 날개 씨 떡".split(" ");
@@ -4287,16 +4322,20 @@ function passageWords(rows){const text=rows.map(x=>x[2]).join(" ");const cand=ne
   for(let w of text.replace(/[^가-힣\s]/g," ").split(/\s+/)){for(const e of ["하시니라","하였더라","이니라","하니라","에게서","으로써","에서는","하시고","하시며","하시매","하시되","니라","하라","하며","하고","하여","하면","에서","에게","께서","으로","이라","이요","이니","이며","은","는","이","가","을","를","에","의","로","와","과","도","만","요"])if(w.length>e.length+1&&w.endsWith(e)){w=w.slice(0,-e.length);break;}
     if(w.length>=2)cand.add(w);}
   const songs=S.songs.map(sg=>((sg.title||"")+"\n"+(sg.lyrics||"")));const theme=new Set([...THEME,...GLOSS_KEYS]);
-  return [...cand].map(w=>({w,n:songs.filter(x=>x.includes(w)).length,t:theme.has(w)})).filter(x=>x.n>0&&(x.t||(x.w.length>=3&&!/[는게고며어아지면다니라에서도만요든]$/.test(x.w)&&!/^(그|이|저|내|네|너|우리|나)/.test(x.w))))
+  return [...cand].map(w=>({w,n:songs.filter(x=>wordHit(x,w)).length,t:theme.has(w)})).filter(x=>x.n>0&&(x.t||(x.w.length>=3&&!/[는게고며어아지면다니라에서도만요든]$/.test(x.w)&&!/^(그|이|저|내|네|너|우리|나)/.test(x.w))))
     .sort((a,b)=>(b.t-a.t)||b.n-a.n).slice(0,16);}
 function songHelpSheet(rows,label){const c=S.cur;const kin=h("input",{type:"search",id:"sh-q",placeholder:"찾을 낱말 (띄어서 여러 개)",value:S.shQ||"",oninput:e=>{S.shQ=e.target.value;draw();}});
   const words=h("div",{class:"pchips"});const res=h("div",{class:"cards"});
   const usage={};for(const x of S.contis)for(const it of allItems(x)){const k=it.songId||it.title;usage[k]=(usage[k]||0)+1;}
   function draw(){const ks=(S.shQ||"").split(/\s+/).filter(Boolean);res.replaceChildren();if(!ks.length)return;
-    const hits=[];for(const sg of S.songs){const hay=(sg.title||"")+"\n"+(sg.lyrics||"");const mm=ks.filter(k=>hay.includes(k));if(mm.length)hits.push({sg,m:mm});}
-    hits.sort((a,b)=>b.m.length-a.m.length||(usage[b.sg.id]||0)-(usage[a.sg.id]||0));
+    const rel=S.shRel===false?[]:[...new Set(ks.flatMap(relWords))].filter(w=>!ks.includes(w));
+    const hits=[];for(const sg of S.songs){const hay=(sg.title||"")+"\n"+(sg.lyrics||"");const mm=ks.filter(k=>wordHit(hay,k));const rr=rel.filter(k=>wordHit(hay,k));if(mm.length||rr.length)hits.push({sg,m:[...mm,...rr],d:mm.length,r:rr.length});}
+    hits.sort((a,b)=>b.d-a.d||b.r-a.r||(usage[b.sg.id]||0)-(usage[a.sg.id]||0));
+    if(ks.some(k=>relWords(k).length))res.append(h("div",{class:"row",style:"gap:6px;align-items:center;flex-wrap:wrap"},
+      h("label",{class:"fchk",style:"font-size:.85rem"},h("input",{type:"checkbox",checked:S.shRel!==false,onchange:e=>{S.shRel=e.target.checked;draw();}}),"비슷한 말도 찾기"),
+      S.shRel!==false?h("span",{class:"hint",text:`함께 찾은 말: ${rel.join(" · ")}`}):null));
     res.append(h("div",{class:"hint",text:hits.length?`${hits.length}곡${hits.length>12?" 중 12곡":""}`:"맞는 곡이 없어요. 낱말을 바꿔 보세요."}));
-    for(const {sg,m:mm}of hits.slice(0,12)){const line=((sg.lyrics||"").split(/\n/).find(l=>mm.some(k=>l.includes(k)))||"").trim();
+    for(const {sg,m:mm}of hits.slice(0,12)){const line=((sg.lyrics||"").split(/\n/).find(l=>mm.some(k=>wordHit(l,k)))||"").trim();
       res.append(h("div",{class:"card row",style:"flex-wrap:nowrap;align-items:flex-start"},h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"},
         h("div",{class:"row",style:"gap:6px"},h("b",{text:sg.title}),sg.key?h("span",{class:"vw-key",text:sg.key}):null,usage[sg.id]?h("span",{class:"hint",text:`${usage[sg.id]}번 부름`}):null),
         line?h("div",{class:"hint",style:"overflow-wrap:anywhere"},"「",...markWords(line,mm),"」"):h("div",{class:"hint",text:`제목에 「${mm.join("」「")}」`})),
@@ -4308,7 +4347,7 @@ function songHelpSheet(rows,label){const c=S.cur;const kin=h("input",{type:"sear
   return h("details",{class:"songhelp",open:!!S.shOpen,ontoggle:e=>{S.shOpen=e.target.open;}},h("summary",{},"📖 본문 낱말로 곡 찾기",h("span",{class:"hint",text:label?` · ${label}`:" · 1번에 본문을 넣으면 낱말이 나와요"})),
     h("div",{class:"songhelp-in"},
       list.length?words:rows?h("p",{class:"hint",text:"본문 낱말과 겹치는 곡 가사가 아직 없어요. 가사를 넣은 곡이 많아질수록 잘 찾아져요."}):null,h("div",{style:"height:8px"}),kin,h("div",{style:"height:10px"}),res));}
-function markWords(t,ws){const re=new RegExp(ws.map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|"),"g");const out=[];let last=0;t.replace(re,(mm,i)=>{out.push(t.slice(last,i),h("mark",{text:mm}));last=i+mm.length;return mm;});out.push(t.slice(last));return out;}
+function markWords(t,ws){const re=new RegExp(ws.map(w=>wordRe(w).source).join("|"),"g");const out=[];let last=0;t.replace(re,(mm,i)=>{out.push(t.slice(last,i),h("mark",{text:mm}));last=i+mm.length;return mm;});out.push(t.slice(last));return out;}
 function meditSheet(){const c=S.cur;const can=!!c&&curEditable();
   const ta=h("textarea",{id:"medit",style:"min-height:110px",value:(c&&c.meditation)||"",disabled:!can,placeholder:"말씀을 읽고 받은 마음, 이번 예배의 흐름을 적어 두세요. 콘티 공지에 함께 들어가요.",oninput:e=>{c.meditation=e.target.value;markDirty();saveDraft();}});
   return h("div",{class:"sheet"},h("h2",{},"묵상 메모",h("span",{class:"sub",text:can?"지금 쓰는 콘티에 함께 저장돼요":"콘티를 쓰는 인도자만 적을 수 있어요"})),ta,
