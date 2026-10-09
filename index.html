@@ -550,6 +550,9 @@ body.wide-conti .wrap{max-width:1280px}
 .devbar{position:fixed;z-index:70;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:#1d2433;color:#fff;border-radius:14px;padding:8px 12px;box-shadow:0 10px 30px rgb(0 0 0 / .3);max-width:calc(100vw - 16px)}
 .devbar .hint{color:#c9d1e3}.devbar .btn{border-color:#3b4660;background:#2a3347;color:#fff}.devbar .btn.primary{background:#e0566b;border-color:#e0566b}
 body.devmode #main *:hover,body.devmode .bnav *:hover,body.devmode .modal:not(.devedit) *:hover{outline:1px dashed #e0566b;outline-offset:1px;cursor:text}
+.dtsel{display:flex;gap:4px;flex-wrap:nowrap}.dtsel select{width:auto;flex:1 1 0;min-width:0;padding-left:8px;padding-right:20px;background-position:right 4px center;font-size:.92rem;text-overflow:clip}
+.dtsel select:last-child{flex-grow:1.4}
+@media (min-width:700px){.grid>.field:has(.dtsel){grid-column:span 2}}
 .gosongs{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1px dashed color-mix(in srgb,var(--team,var(--accent)) 55%,var(--line));background:color-mix(in srgb,var(--team,var(--accent)) 6%,var(--sheet));color:var(--ink);border-radius:12px;padding:16px 20px;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;text-align:left}
 .gosongs:hover{border-style:solid}.gosongs .gs-go{color:var(--team,var(--accent));font-size:.9rem;white-space:nowrap}
 .tourcard{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(460px,calc(100vw - 24px));background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-top:4px solid #2f62d6;border-radius:14px;box-shadow:0 14px 40px rgb(0 0 0 / .22);padding:12px 14px 12px}
@@ -3698,15 +3701,39 @@ const EVKINDS=[["practice","찬양 연습"],["group","소모임"],["service","�
 const evKindName=(k,e)=>k==="custom"?((e&&e.kindName)||"직접 입력"):k==="etc"?"기타":(EVKINDS.find(x=>x[0]===k)||EVKINDS[3])[1];
 const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const addDays=(ds,n)=>{const d=parseD(ds)||new Date();d.setDate(d.getDate()+n);return ymd(d);};
+/* 날짜 · 시간을 칸마다 골라요 (년 · 월 · 일 / 오전·오후 · 시 · 분) — 달력을 열지 않아도 돼요 */
+function dateSel({id,value,disabled,empty}){const now=new Date();const [y0,m0,d0]=(value||"").split("-").map(Number);
+  const opt=(v,t,sel)=>h("option",{value:String(v),text:t,selected:sel});
+  const ys=[];for(let y=now.getFullYear()-1;y<=now.getFullYear()+2;y++)ys.push(y);
+  const yS=h("select",{id,"aria-label":"연도",disabled},[empty?opt("","연도",!y0):null,...ys.map(y=>opt(y,`${y}년`,y===y0))].filter(Boolean));
+  const mS=h("select",{"aria-label":"월",disabled},[empty?opt("","월",!m0):null,...Array.from({length:12},(_,i)=>opt(i+1,`${i+1}월`,i+1===m0))].filter(Boolean));
+  const dS=h("select",{"aria-label":"일",disabled});
+  const fillD=()=>{const y=+yS.value||now.getFullYear(),m=+mS.value||1;const n=new Date(y,m,0).getDate();const cur=+dS.value||d0;
+    dS.replaceChildren(...[empty?opt("","일",!cur):null,...Array.from({length:n},(_,i)=>{const dd=i+1;const wd="일월화수목금토"[new Date(y,m-1,dd).getDay()];return opt(dd,`${dd}일 (${wd})`,dd===Math.min(cur||0,n));})].filter(Boolean));};
+  fillD();yS.addEventListener("change",fillD);mS.addEventListener("change",fillD);
+  const box=h("span",{class:"dtsel"},yS,mS,dS);
+  Object.defineProperty(box,"value",{get:()=>yS.value&&mS.value&&dS.value?`${yS.value}-${String(mS.value).padStart(2,"0")}-${String(dS.value).padStart(2,"0")}`:"",
+    set:v=>{const [a,b,c]=(v||"").split("-").map(Number);yS.value=a?String(a):"";mS.value=b?String(b):"";fillD();dS.value=c?String(c):"";}});
+  box.focus=()=>yS.focus();return box;}
+function timeSel({id,value,disabled}){const [h0,mi0]=(value||"").split(":").map(Number);const has=!!value;
+  const opt=(v,t,sel)=>h("option",{value:String(v),text:t,selected:sel});
+  const ap=h("select",{id,"aria-label":"오전 · 오후",disabled},[opt("","시간 없음",!has),opt("am","오전",has&&h0<12),opt("pm","오후",has&&h0>=12)]);
+  const hS=h("select",{"aria-label":"시",disabled},Array.from({length:12},(_,i)=>{const v=i===0?12:i;return opt(v,`${v}시`,has&&((h0%12)||12)===v);}));
+  const mS=h("select",{"aria-label":"분",disabled},[0,10,15,20,30,40,45,50].concat(has&&![0,10,15,20,30,40,45,50].includes(mi0)?[mi0]:[]).sort((a,b)=>a-b).map(m=>opt(m,`${String(m).padStart(2,"0")}분`,has&&m===mi0)));
+  const sync=()=>{const on=!!ap.value;hS.disabled=mS.disabled=disabled||!on;hS.style.opacity=mS.style.opacity=on?"":".45";};ap.addEventListener("change",()=>{if(ap.value&&!has&&hS.value==="12"&&ap.value==="am"){hS.value="11";}sync();});sync();
+  if(!has){hS.value="11";mS.value="0";}
+  const box=h("span",{class:"dtsel"},ap,hS,mS);
+  Object.defineProperty(box,"value",{get:()=>{if(!ap.value)return"";let hh=+hS.value%12;if(ap.value==="pm")hh+=12;return `${String(hh).padStart(2,"0")}:${String(mS.value).padStart(2,"0")}`;}});
+  box.focus=()=>ap.focus();return box;}
 function eventModal(ev,preset={}){const can=S.canWrite&&!S.memberOnly&&!!S.db;const e=ev?clone(ev):{date:preset.date||todayStr(),time:preset.time||"",title:preset.title||"",kind:preset.kind||"practice",place:preset.place||"",memo:preset.memo||""};
   if(e.kind==="etc"){e.kind="custom";e.kindName=e.kindName||"기타";}
   if(!ev&&!e.time&&e.kind==="practice")e.time="11:00";   /* 연습은 기본 오전 11시 */
   const kindName=h("input",{type:"text",id:"ev-kindname",placeholder:"종류 이름 (예: 수련회, 회의)",value:e.kindName||"",disabled:!can,oninput:x=>{if(!titleIn.value.trim()||titleIn.value===titleIn.dataset.auto){titleIn.value=x.target.value;titleIn.dataset.auto=x.target.value;}}});
   kindName.hidden=e.kind!=="custom";
   const kindSel=h("select",{id:"ev-kind",disabled:!can,onchange:x=>{const old=evKindName(e.kind,e);e.kind=x.target.value;kindName.hidden=e.kind!=="custom";if(e.kind==="custom"){kindName.focus();if(titleIn.value===old)titleIn.value="";}else if(!titleIn.value.trim()||titleIn.value===old)titleIn.value=evKindName(e.kind);}},EVKINDS.filter(k=>k[0]!=="service").map(([v,l])=>h("option",{value:v,text:l,selected:e.kind===v})));
-  const dateIn=h("input",{type:"date",id:"ev-date",value:e.date,disabled:!can});
-  const endIn=h("input",{type:"date",id:"ev-end",value:e.endDate||"",disabled:!can});
-  const timeIn=h("input",{type:"time",id:"ev-time",value:e.time||"",disabled:!can});
+  const dateIn=dateSel({id:"ev-date",value:e.date,disabled:!can});
+  const endIn=dateSel({id:"ev-end",value:e.endDate||"",disabled:!can,empty:true});
+  const timeIn=timeSel({id:"ev-time",value:e.time||"",disabled:!can});
   const titleIn=h("input",{type:"text",id:"ev-title",value:e.title||evKindName(e.kind),placeholder:"예: 찬양 연습",disabled:!can});
   const placeIn=h("input",{type:"text",id:"ev-place",value:e.place||"",placeholder:"예: 본당",disabled:!can});
   const memoIn=h("textarea",{id:"ev-memo",value:e.memo||"",placeholder:"예: 10/11 주일예배 곡 연습, 6시 30분까지 세팅",disabled:!can,style:"min-height:70px"});
