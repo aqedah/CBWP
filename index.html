@@ -5306,11 +5306,7 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
   const drawFull=()=>{if(base.kind!=="full"){fullBox.replaceChildren();fmap=null;return;}const fs=(base.full||{}).slots||[];fmap=fullSlotMap(fs.map(x=>+String(x).split("-")[0]-1),(base.full||{}).sermon??-1,curC(),fs.map(x=>{const[a,b]=String(x).split("-").map(Number);return (b||a)-a+1;}),(base.full||{}).special??-1);
     {const sv=pref()&&pref().tpl===base.id&&pref().slots;if(Array.isArray(sv)&&sv.length===fmap.length)fmap=sv.map(v=>v==null?null:String(v).split(",").filter(Boolean));}
     const OPTS=[["keep","틀에 있던 곡 그대로"],["opening","여는 찬양"],["before","예배 찬양"],["special","특송"],["after","설교 후 찬양"],["opening,before","여는 + 예배 찬양"],["opening,before,after","모든 곡"],["","비우기 (이 자리 빼기)"]];
-    fullBox.replaceChildren(h("div",{class:"banner",style:"margin-top:8px"},h("b",{text:"예배 전체 틀로 만들어요. "}),"순서 장은 틀 그대로 두고 날짜 · 성경봉독 · 본문 · 설교 제목 · 설교자 · 특송 · 찬양만 바꿔 넣어요. 아래 그림은 찬양 장 미리보기예요.",
-      h("div",{class:"row",style:"margin-top:8px;gap:6px;flex-wrap:wrap"},h("b",{text:"특송"}),
-        h("input",{type:"text",list:"spec-dl","aria-label":"특송 곡",value:specT,placeholder:"특송곡 (없으면 비워 두세요)",style:"width:auto;min-width:220px;flex:1",onchange:e=>{specT=e.target.value;drawFull();}}),
-        h("input",{type:"text","aria-label":"특송자",value:specBy,placeholder:"특송자 (예: 샬롬전도회)",style:"width:auto;min-width:150px",oninput:e=>{specBy=e.target.value;}}),
-        h("datalist",{id:"spec-dl"},S.songs.slice(0,4000).map(x=>h("option",{value:x.title})))),
+    fullBox.replaceChildren(h("div",{class:"banner",style:"margin-top:8px"},h("b",{text:"예배 전체 틀로 만들어요. "}),"순서 장은 틀 그대로 두고 날짜 · 성경봉독 · 본문 · 설교 제목 · 설교자 · 특송 · 찬양만 바꿔 넣어요. 특송은 콘티 작성에 적은 대로 들어가요. 아래 그림은 찬양 장 미리보기예요.",
       h("div",{class:"pchips",style:"margin-top:6px"},((base.full||{}).slots||[]).map((sl,i)=>h("label",{class:"row",style:"gap:4px"},h("span",{class:"hint",text:`찬양 자리 ${i+1} (${slotLbl(sl)})`}),
         h("select",{style:"width:auto",onchange:e=>{const v=e.target.value;fmap[i]=v==="keep"?null:v?v.split(","):[];syncMem();}},OPTS.map(([v,l])=>h("option",{value:v,text:l,selected:fmap[i]===null?v==="keep":fmap[i].join(",")===v}))))))));};
   const memHint=h("span",{class:"hint"});
