@@ -5562,7 +5562,7 @@ async function fullTplModal(file,style,A0){const st=h("p",{class:"hint",text:"�
   const md=modal("예배 전체 틀",h("div",{class:"panel-body"},
     h("p",{class:"hint",text:"예배 순서 PPT를 그대로 두고, 아래 자리만 콘티 내용으로 바꿔 넣어요. 나머지 장(기도, 광고 등)은 그대로예요."}),info,st,
     h("div",{class:"field"},h("label",{text:"템플릿 이름"}),nameIn),h("div",{class:"field"},h("label",{text:"이 틀을 쓰는 예배"}),wtBox),
-    h("p",{class:"hint",text:`「템플릿 저장」을 누르면 그림을 알맞게 줄인 뒤(지금 ${(file.size/1048576).toFixed(0)}MB) 교회 서버에 올려요. 다른 컴퓨터에서는 처음 쓸 때 한 번 자동으로 받아 와요.`})),
+    h("p",{class:"hint",text:`파일 크기를 알맞게 줄인 뒤(지금 ${(file.size/1048576).toFixed(0)}MB) 서버에 올릴게요. 다른 컴퓨터에서는 처음 쓸 때 한 번 자동으로 받아 와요.`})),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"템플릿 저장",onclick:async()=>{
       cfg.id=uid(6);cfg.name=(cfg.name||"").trim()||"예배 틀";cfg.wtypes=[...wt];cfg.full={fileName:file.name,size:file.size,slides:A.order.length,slots:A.slots.map(s=>`${n1(s.idx[0])}-${n1(s.idx[s.idx.length-1])}`),sermon:A.sermon?A.sermon.i:-1,special:A.special?A.special.i:-1};
       let fb=file;const pg=tplProg("예배 틀 저장 중");try{fb=await slimPptx(file,(t,f)=>pg.set(t,f));}catch(e){console.warn(e);fb=file;}
