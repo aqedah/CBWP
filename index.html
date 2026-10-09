@@ -207,10 +207,10 @@ details.pastdet[open]>summary{margin-bottom:12px}
 .fb-in .status{flex:1;min-width:0;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fb-next{margin-left:auto;flex:none}
 /* 콘티 작성 탭: 아래 상자에 붙은 폴더 탭 모양 */
-.wtabs{display:flex;gap:4px;margin:0 0 -17px;padding:0 0 0 14px;align-items:flex-end;position:relative;z-index:1}
-.wtab{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-bottom:none;background:var(--soft);color:var(--muted);border-radius:12px 12px 0 0;padding:10px 22px 11px;font:inherit;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:-1px}
+.wtabs{display:flex;gap:4px;margin:0 0 -17px;padding:0;align-items:flex-end;position:relative;z-index:1}
+.wtab{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-bottom:none;background:var(--soft);color:var(--muted);border-radius:12px 12px 0 0;padding:0 22px;height:46px;box-sizing:border-box;line-height:1;font:inherit;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:-1px}
 .wtab:hover{color:var(--ink)}
-.wtab[aria-selected="true"]{background:var(--sheet);color:var(--team,var(--accent));box-shadow:inset 0 3px 0 var(--team,var(--accent));padding-bottom:12px}
+.wtab[aria-selected="true"]{background:var(--sheet);color:var(--team,var(--accent));box-shadow:inset 0 3px 0 var(--team,var(--accent))}
 .wtab .wtn:not(:empty){min-width:20px;height:20px;border-radius:10px;background:var(--team,var(--accent));color:#fff;font-size:.72rem;display:inline-grid;place-items:center;padding:0 5px}
 .wpanel>.sheet:first-child,.wb-c>.wpanel>.sheet:first-child{border-top-left-radius:0;margin-top:0}
 .wtn:empty{display:none}.wtn{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,currentColor 18%,transparent);font-size:.74rem;display:inline-flex;align-items:center;justify-content:center}
@@ -543,6 +543,8 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .pm-dots{display:flex;gap:6px}.pm-dot{width:12px;height:12px;border-radius:50%;border:0;background:#555;padding:0;cursor:pointer}.pm-dot.on{background:#f5c542}
 body.wide-conti .wrap{max-width:1280px}
 .wb{display:grid;grid-template-columns:minmax(300px,1fr) minmax(420px,1.5fr) minmax(300px,1fr);gap:16px;align-items:start}.wb-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.gosongs{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1px dashed color-mix(in srgb,var(--team,var(--accent)) 55%,var(--line));background:color-mix(in srgb,var(--team,var(--accent)) 6%,var(--sheet));color:var(--ink);border-radius:12px;padding:16px 20px;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;text-align:left}
+.gosongs:hover{border-style:solid}.gosongs .gs-go{color:var(--team,var(--accent));font-size:.9rem;white-space:nowrap}
 .tourcard{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(460px,calc(100vw - 24px));background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-top:4px solid #2f62d6;border-radius:14px;box-shadow:0 14px 40px rgb(0 0 0 / .22);padding:12px 14px 12px}
 .tourcard .tc-top{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted)}.tourcard .tc-top b{color:#2f62d6}.tourcard .tc-n{margin-left:auto;font-variant-numeric:tabular-nums}
 .tourcard .tc-x{border:0;background:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:2px 4px}
@@ -1278,7 +1280,8 @@ det.append(h("summary",{},h2),...[...d.childNodes]);secEls.special=det;}
   /* 번호 01~07 그대로, 칸은 탭 4개로 묶어요 */
   [sI,sR,sM,secEls.opening,secEls.before,secEls.special,secEls.after].forEach((el,i)=>{const h2=el.querySelector(":scope > h2, :scope > summary > h2");if(!h2)return;const first=h2.firstChild;
     const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
-  const WT=[["info","예배 정보",[],[sI,sR,sM]],["songs","찬양",["opening","before","special","after"],[secEls.opening,secEls.before,secEls.special,secEls.after]]];
+  const goSongs=h("button",{type:"button",class:"gosongs",onclick:()=>{setWT("songs");}},h("span",{text:"🎵 찬양을 선곡할까요?"}),h("span",{class:"gs-go",text:"찬양 탭으로 →"}));
+  const WT=[["info","예배 정보",[],[sI,sR,sM,goSongs]],["songs","찬양",["opening","before","special","after"],[secEls.opening,secEls.before,secEls.special,secEls.after]]];
   if(["opening","before","after"].includes(S.wTab))S.wTab="songs";if(!WT.some(x=>x[0]===S.wTab))S.wTab="info";
   const panels=WT.map(([id,,,els])=>h("div",{class:"wpanel","data-wt":id,hidden:id!==S.wTab},els));
   const wtabs=h("div",{class:"wtabs",role:"tablist","aria-label":"콘티 작성 칸"},WT.map(([id,label,keys])=>h("button",{type:"button",role:"tab",class:"wtab","data-wt":id,"data-keys":keys.join(","),"aria-selected":String(id===S.wTab),onclick:()=>setWT(id)},
