@@ -466,6 +466,7 @@ footer.foot a{color:var(--ink2)}
 .footverse span{font-family:var(--font-body);font-size:.78rem;color:var(--muted);margin-left:4px}
 .teampick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:6px}
 .teambtn{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;cursor:pointer;border:1px solid var(--line);border-top:5px solid var(--tc);border-radius:12px;background:var(--sheet);padding:18px 18px 16px;min-height:150px;transition:transform .15s,box-shadow .15s}
+.teambtn.curteam{opacity:.6;cursor:default;transform:none!important;box-shadow:none!important}
 .teambtn:hover,.teambtn:focus-visible{transform:translateY(-2px);box-shadow:0 8px 22px rgb(0 0 0 / .08);border-color:var(--tc)}
 .teambtn .tno{position:absolute;top:14px;right:16px;font-size:.78rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 .teambtn .tnote{font-size:1.4rem;line-height:1;color:var(--tc);margin-bottom:8px}
@@ -1069,7 +1070,15 @@ function pickTeam(id){if(window.CBWP&&!canIn(id)){unlockModal(id,()=>pickTeam(id
   S.team=id;try{localStorage.setItem(TEAM_KEY,id);}catch(e){}applyTeam();setAccess();
   if(!loadDraft()){S.cur=blankConti();S.curId=null;S.dirty=false;}S.past=null;S.tab="home";
   render();window.scrollTo({top:0});}
-function switchTeam(){saveDraft();S.team=null;try{localStorage.removeItem(TEAM_KEY);}catch(e){}render();window.scrollTo({top:0});}
+/* 팀 바꾸기: 첫 화면으로 돌아가지 않고 팝업에서 바로 골라요 */
+function switchTeam(){if(DEMO){saveDraft();S.team=null;render();return;}
+  const card=(t,proj,i)=>{const cur=t.id===S.team;const locked=window.CBWP&&!canIn(t.id);
+    return h("button",{type:"button",class:"teambtn"+(proj?" proj":"")+(cur?" curteam":""),style:`--tc:${t.color}`,disabled:cur,onclick:()=>{md.close();saveDraft();pickTeam(t.id);}},
+      h("span",{class:"tno",text:proj?"P":String(i+1).padStart(2,"0")}),h("span",{class:"tnote","aria-hidden":"true",text:proj?"✦":"♪"}),h("b",{text:t.name}),h("small",{text:proj?(t.note||""):t.en}),
+      h("span",{text:cur?"✓ 지금 팀":locked?"🔒 비밀번호로 들어가기":"들어가기 →"}));};
+  const md=modal("팀 바꾸기",h("div",{class:"panel-body"},h("div",{class:"teampick"},TEAMS.map((t,i)=>card(t,false,i))),
+    PROJECTS.length?h("h3",{style:"margin:16px 0 8px;font-size:1rem",text:"프로젝트"}):null,PROJECTS.length?h("div",{class:"teampick"},PROJECTS.map(t=>card(t,true))):null),
+    [h("button",{class:"btn ghost",text:"첫 화면으로",title:"팀 고르기 첫 화면 · 체험판",onclick:()=>{md.close();saveDraft();S.team=null;try{localStorage.removeItem(TEAM_KEY);}catch(e){}render();window.scrollTo({top:0});}}),h("span",{class:"spacer"}),h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
 const VERSE=["호흡이 있는 자마다 여호와를 찬양할지어다 할렐루야","시편 150:6"];
 /* 링크로 들어왔을 때 (#t=팀&c=콘티) : 팀을 열고 데이터가 오면 그 콘티를 보여 줘요 */
 const DEEP=(()=>{try{const q=new URLSearchParams((location.hash||"").replace(/^#/,""));const t=q.get("t");if(!t)return null;return{t,c:q.get("c"),d:q.get("d")};}catch(e){return null;}})();
