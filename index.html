@@ -1273,14 +1273,9 @@ const TOURS={
   practicePpt:{name:"PPT 만들기 연습",practice:true,steps:[
     {go:"home",t:"PPT 만들기 연습을 시작해요",x:"콘티의 곡 가사로 예배 PPT를 만드는 법을 직접 해 봐요. 준비되면 「시작 →」을 누르세요."},
     {t:"① PPT 만들기로 가기",x:"아래 메뉴 「콘티」를 누른 뒤, 위쪽 칸 메뉴에서 「PPT 만들기」를 눌러 보세요.",sel:()=>document.querySelector('.bnav button[data-group="conti"]'),done:()=>S.tab==="pptmake",ok:"PPT 만들기 화면이에요. 다음엔 PPT를 미리 볼 거예요."},
-    {t:"② 미리보기 열기",x:"이번 콘티의 「미리보기」를 눌러 보세요. 곡마다 가사가 장으로 나뉘어 보여요.",sel:byBtn("미리보기"),done:()=>!!document.querySelector('.panel[aria-label^="가사 PPT 미리보기"]'),ok:"가사 장이 보이죠? 템플릿을 바꾸면 모양이 바로 바뀌어요. 다음엔 가사가 없는 곡을 채워 볼 거예요."},
-    {t:"③ PPT 라이브러리로 가기",x:"미리보기를 닫고, 아래 메뉴 「라이브러리」 → 위쪽 「PPT 라이브러리」로 가 보세요.",sel:()=>document.querySelector('.bnav button[data-group="songs"]'),done:()=>S.tab==="ppt",ok:"다음엔 가사 없는 곡에 가사를 넣어 볼 거예요."},
-    {pre:()=>{S.pptF={all:true,p:true,l:true,q:"새 노래로"};S.pptSig=null;if(S.tab==="ppt")render();else setTab("ppt");},
-      t:"④ 가사 넣기",x:"가사가 없는 「새 노래로 (예시곡)」을 찾아 두었어요. 밝게 보이는 줄의 「가사 넣기」를 누르고, 아무 가사나 두세 줄 써서 「저장」해 보세요. (빈 줄을 두면 다음 장으로 넘어가요)",
-      sel:()=>{const r=[...document.querySelectorAll("#main .pmrow")].find(x=>/새 노래로/.test(x.textContent));if(!r)return null;const b=[...r.querySelectorAll("button")].find(x=>/가사 (넣기|고치기)/.test(x.textContent));return b?[r]:[r];},
-      done:()=>!!(((S.songs||[]).find(x=>/새 노래로/.test(x.title||""))||{}).lyrics||"").trim(),ok:"가사가 들어갔어요. 이제 이 곡도 PPT로 만들 수 있어요. 다음엔 PPT 파일을 받아 볼 거예요."},
-    {t:"⑤ PPT 받기",x:"다시 「콘티 → PPT 만들기 → 미리보기」로 가서 「⬇ PPT 받기」를 눌러 보세요.",sel:()=>document.querySelector('.bnav button[data-group="conti"]'),base:()=>S.lastPptExport||0,done:st=>(S.lastPptExport||0)>st.b0,ok:"PPT 파일이 만들어졌어요. 실제로는 이 파일을 방송실에 넘기면 돼요."},
-    {t:"🎉 PPT 만들기 연습 끝!",x:"수고하셨어요! 미리보기 → 가사 채우기 → PPT 받기까지 해 보셨어요. 우리 교회 PPT 모양을 쓰려면 「PPT 라이브러리 → PPT 템플릿」에 실제 예배 PPT를 한 번 올려 두세요."}]},
+    {t:"② 미리보기 열기",x:"이번 콘티의 「미리보기」를 눌러 보세요. 곡마다 가사가 장으로 나뉘어 보여요.",sel:byBtn("미리보기"),done:()=>!!document.querySelector('.panel[aria-label^="가사 PPT 미리보기"]'),ok:"가사 장이 보이죠? 템플릿을 바꾸면 모양이 바로 바뀌어요. 다음엔 PPT 파일을 받아 볼 거예요."},
+    {t:"③ PPT 받기",x:"미리보기 창 아래 「⬇ PPT 받기」를 눌러 보세요. (창을 닫았다면 「미리보기」를 다시 누르면 돼요)",sel:byBtn("미리보기"),base:()=>S.lastPptExport||0,done:st=>(S.lastPptExport||0)>st.b0,ok:"PPT 파일이 만들어졌어요. 실제로는 이 파일을 방송실에 넘기면 돼요."},
+    {t:"🎉 PPT 만들기 연습 끝!",x:"수고하셨어요! PPT 만들기 → 미리보기 → PPT 받기까지 해 보셨어요. 가사가 없는 곡은 「라이브러리 → PPT 라이브러리」에서 「가사 넣기」로 채우면 돼요. 우리 교회 PPT 모양을 쓰려면 「PPT 라이브러리 → PPT 템플릿」에 실제 예배 PPT를 한 번 올려 두세요."}]},
   member:{name:"싱어 · 악기팀 튜토리얼",steps:[
     {tab:"home",t:"팀원으로 시작해요",x:"싱어 「박소망」으로 들어와 있어요. 화면 아래 메뉴는 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개예요. 메뉴마다 먼저 전체를 소개하고, 팀원이 자주 쓰는 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
     {tab:"home",t:"[홈] 한눈에",x:"팀원은 매주 이 홈 화면만 봐도 충분해요. 위쪽 「나의 섬김」에 내가 들어간 콘티와 맡은 자리가 나오고, 아래에는 참여 응답과 팀 공지가 있어요.",sel:()=>document.querySelector("#main .sheet.myserve")},
