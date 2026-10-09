@@ -4831,13 +4831,8 @@ function lyricSlides(text,per){const out=[];
 const songOf=it=>it&&it.songId?(S.songs.find(s=>s.id===it.songId)||S.songs.find(s=>(s.aliasIds||[]).includes(it.songId))):undefined; /* 합친 곡은 옛 번호로도 찾아요 */
 const lyricsOf=it=>{const s=songOf(it);return (s&&s.lyrics)||it.lyrics||"";};
 /* PPT 라이브러리: 곡 가사 고치기 (곡에 저장) */
-function songLyricsEdit(x,onDone){const per=pptCfg().lines;
-  const ta=h("textarea",{value:x.lyrics||"",placeholder:"가사를 붙여 넣으세요.\n\n빈 줄을 두면 거기서 다음 장으로 넘어가요.\n[1절] [후렴] 같은 표시 줄은 슬라이드에 나오지 않아요.",style:"min-height:340px;font-size:1rem;line-height:1.6"});
-  const cnt=h("span",{class:"hint"});const upd=()=>{cnt.textContent=`슬라이드 ${lyricSlides(ta.value,per).length}장 (한 장에 ${per}줄까지)`;};ta.addEventListener("input",upd);upd();
-  const save=async v=>{try{await S.db.doc(`songs/${x.id}`).update({lyrics:v,updatedAt:Date.now()});x.lyrics=v;md.close(true);toast(v?"가사를 고쳤어요":"가사를 지웠어요");onDone&&onDone();}catch(e){toast("저장하지 못했어요");}};
-  const del=h("button",{class:"btn ghost danger",text:"가사 모두 지우기",onclick:e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? · 한 번 더"))return;save("");}});
-  const md=modal(`가사 고치기 · ${x.title}`,h("div",{class:"panel-body"},ta,cnt),[(x.lyrics||"").trim()?del:null,h("span",{class:"spacer"}),h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:()=>save(cleanLyrics(ta.value).trim())})].filter(Boolean));
-  setTimeout(()=>ta.focus(),50);}
+/* PPT 라이브러리의 「가사 고치기」도 콘티 작성의 가사 창과 똑같은 창을 써요 */
+function songLyricsEdit(x,onDone){lyricsModal({title:x.title,songId:x.id},onDone);}
 function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
   const ta=h("textarea",{id:"ly-text",value:lyricsOf(it),placeholder:"가사를 붙여 넣으세요.\n\n빈 줄을 두면 거기서 다음 장으로 넘어가요.\n[1절] [후렴] 같은 표시 줄은 슬라이드에 나오지 않아요.",style:"min-height:320px;font-size:1rem;line-height:1.6"});
   const cnt=h("span",{class:"hint"});const upd=()=>{cnt.textContent=`슬라이드 ${lyricSlides(ta.value,per).length}장 (한 장에 ${per}줄까지)`;};ta.addEventListener("input",upd);upd();ta.addEventListener("paste",()=>setTimeout(()=>{ta.value=cleanLyrics(ta.value);upd();},0));
@@ -4862,7 +4857,9 @@ function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
       h("a",{class:"btn sm",href:(song&&song.ccli)?ssSong(song.ccli):ssSearch(q),target:"_blank",rel:"noopener",text:"SongSelect ↗"}),paste),
     h("p",{class:"hint",style:"margin:0",text:"가사 PPT가 있으면 ①로 바로 읽어 와요. 없으면 ②에서 찾아 복사한 뒤 「붙여넣기」를 누르세요."}),
     h("p",{class:"hint",style:"margin:0 0 6px",text:song&&!song.id.startsWith("local-")?"저장하면 다음에 이 곡을 넣을 때도 그대로 쓰여요. 교회 전체가 함께 써요.":"이 콘티에만 저장돼요."}),ta,cnt),
-    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can||!song?h("button",{class:"btn primary",text:"가사 저장",onclick:async()=>{const v=ta.value.replace(/\r/g,"").trim();
+    [can&&song&&!String(song.id).startsWith("local-")&&(song.lyrics||"").trim()?h("button",{class:"btn ghost danger",text:"가사 모두 지우기",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? · 한 번 더"))return;
+      try{await S.db.doc(`songs/${song.id}`).update({lyrics:"",updatedAt:Date.now()});song.lyrics="";md.close();toast("가사를 지웠어요");onSaved&&onSaved();}catch(err){toast("지우지 못했어요");}}}):null,h("span",{class:"spacer"}),
+    h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),can||!song?h("button",{class:"btn primary",text:"가사 저장",onclick:async()=>{const v=ta.value.replace(/\r/g,"").trim();
       if(song&&!song.id.startsWith("local-")&&S.db){try{await S.db.doc(`songs/${song.id}`).update({lyrics:v,updatedAt:Date.now()});song.lyrics=v;}catch(e){return toast("저장하지 못했어요");}}
       else{it.lyrics=v;if(typeof markDirty==="function"&&S.cur&&allItems(S.cur).includes(it))markDirty();}
       md.close();toast("가사를 저장했어요");onSaved&&onSaved();}}):null]);
