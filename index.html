@@ -5181,7 +5181,7 @@ function renderPpt(m){const can=S.canWrite&&!!S.db;const list=pptTpls();const de
     h("div",{class:"hint",text:(t.wtypes||[]).length?`쓰는 예배: ${t.wtypes.join(", ")}`:"쓰는 예배: (정하지 않음 · 기본일 때 모든 예배)"}),
     t.kind==="full"?h("div",{class:"hint"},h("div",{style:"color:var(--ink);font-weight:600",text:`가사 글꼴 ${t.font||"-"} · ${t.size||"-"}pt · 한 장 ${t.lines||"-"}줄${(()=>{const f=t._ft||t;return t.titleSlide&&f.titleSize?` · 곡 제목 ${f.titleFont||t.font} ${f.titleSize}pt`:"";})()}`}),h("b",{text:"예배 전체 틀"}),` · ${(t.full||{}).slides||"?"}장 · 찬양 자리 ${((t.full||{}).slots||[]).map(slotLbl).join(", ")||"-"} · `,(()=>{const sp=h("span",{text:"파일 확인 중…"});fullBlobOf(t).then(b=>{sp.textContent=b?"이 기기에 파일 있음":"이 기기에 파일 없음 (만들 때 골라요)";});return sp;})()):
     h("div",{class:"hint",text:`${t.font} · ${t.size}pt · 한 장 ${t.lines}줄${t.titleSlide?" · 곡 제목 장":""}${t.box?" · 글자 위치 PPT 그대로":""}`}),
-    can?h("div",{class:"row"},t.kind==="full"?h("button",{class:"btn sm",text:"틀 파일 다시 넣기",onclick:()=>pickFullFile(t,()=>{toast("틀 파일을 이 기기에 넣었어요");render();})}):h("button",{class:"btn sm",text:"고치기",onclick:()=>pptTemplateModal(t)}),t.id!==defId?h("button",{class:"btn sm",text:"기본으로",onclick:async()=>{if(await saveTpls(pptTpls(),t.id)){toast("기본 템플릿으로 정했어요");render();}}}):null,
+    can?h("div",{class:"row"},t.kind==="full"?h("button",{class:"btn sm",text:"틀 파일 다시 넣기",onclick:()=>pickFullFile(t,()=>{toast("틀 파일을 서버와 이 기기에 넣었어요");render();})}):h("button",{class:"btn sm",text:"고치기",onclick:()=>pptTemplateModal(t)}),t.id!==defId?h("button",{class:"btn sm",text:"기본으로",onclick:async()=>{if(await saveTpls(pptTpls(),t.id)){toast("기본 템플릿으로 정했어요");render();}}}):null,
       h("span",{class:"spacer"}),h("button",{class:"btn sm ghost danger",text:"지우기",onclick:async()=>{if(await saveTpls(pptTpls().filter(x=>x.id!==t.id),defId===t.id?"":defId)){if(t.kind==="full")tplRemoveServer(t);toast("템플릿을 지웠어요");render();}}})):null));
   const nLy=S.songs.filter(x=>(x.lyrics||"").trim()).length;const fold=!!S.tplFold;
   const nPpt=S.songs.filter(x=>x.ppt&&(x.ppt.slides||[]).length).length;
@@ -5331,7 +5331,7 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();if(base.kind==="full")return exportFullPpt(curC(),base,fmap);exportLyricsPpt(c,tpl&&(tpl.id||deco.value!=="keep")?tpl:null,true);}})],"editor");}
 /* =========================================================
    예배 전체 틀  (예배 순서가 다 들어 있는 PPT를 그대로 두고, 날짜·본문·설교·찬양만 바꿔 넣어요)
-   파일이 커서(수십 MB) 교회 저장소가 아니라 이 기기(브라우저)에 보관해요.
+   그림을 줄인 뒤 교회 서버(tplFiles · tplChunks)에 잘게 나눠 올리고, 기기마다 한 번 받아 보관해요.
    ========================================================= */
 const idb=(()=>{let dbp=null;const open=()=>dbp||(dbp=new Promise((res,rej)=>{try{const r=indexedDB.open("cbwp-files",1);r.onupgradeneeded=()=>r.result.createObjectStore("f");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}}));
   const tx=async(mode,fn)=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction("f",mode);const st=t.objectStore("f");const rq=fn(st);t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);});};
@@ -5566,7 +5566,7 @@ async function fullTplModal(file,style,A0){const st=h("p",{class:"hint",text:"�
   const md=modal("예배 전체 틀",h("div",{class:"panel-body"},
     h("p",{class:"hint",text:"예배 순서 PPT를 그대로 두고, 아래 자리만 콘티 내용으로 바꿔 넣어요. 나머지 장(기도, 광고 등)은 그대로예요."}),info,st,
     h("div",{class:"field"},h("label",{text:"템플릿 이름"}),nameIn),h("div",{class:"field"},h("label",{text:"이 틀을 쓰는 예배"}),wtBox),
-    h("p",{class:"hint",text:`파일이 커서(${(file.size/1048576).toFixed(0)}MB) 교회 저장소가 아니라 이 기기에 보관해요. 다른 컴퓨터에서는 처음 한 번 파일을 골라 주면 돼요.`})),
+    h("p",{class:"hint",text:`「템플릿 저장」을 누르면 그림을 알맞게 줄인 뒤(지금 ${(file.size/1048576).toFixed(0)}MB) 교회 서버에 올려요. 다른 컴퓨터에서는 처음 쓸 때 한 번 자동으로 받아 와요.`})),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"템플릿 저장",onclick:async()=>{
       cfg.id=uid(6);cfg.name=(cfg.name||"").trim()||"예배 틀";cfg.wtypes=[...wt];cfg.full={fileName:file.name,size:file.size,slides:A.order.length,slots:A.slots.map(s=>`${n1(s.idx[0])}-${n1(s.idx[s.idx.length-1])}`),sermon:A.sermon?A.sermon.i:-1,special:A.special?A.special.i:-1};
       let fb=file;const pg=tplProg("예배 틀 저장 중");try{fb=await slimPptx(file,(t,f)=>pg.set(t,f));}catch(e){console.warn(e);fb=file;}
