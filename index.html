@@ -1285,16 +1285,16 @@ const TOURS={
     {t:"⑬ 연습 영상 붙이기",x:"「확정 후 마무리」의 첫 곡 칸에 유튜브 주소를 붙여 넣어 보세요. 팀원이 연습할 때 이 영상을 봐요.",sel:()=>document.querySelector("#finishPanel input")||$("#finishPanel"),done:()=>allItems(S.cur||{}).some(i=>(i.yt||"").trim()),ok:"영상이 붙었어요. 다음엔 팀 재생목록을 콘티 순서대로 바꿔 볼 거예요."},
     {base:()=>S.demoPl||0,t:"⑭ 재생목록 업데이트",x:"「🎵 … 재생목록 업데이트」를 눌러 보세요. 팀 유튜브 재생목록이 콘티 순서대로 바뀌어요. (체험판은 흉내만 내요)",sel:byBtn("재생목록 업데이트"),done:st=>(S.demoPl||0)>st.b0,ok:"재생목록이 콘티 순서대로 바뀌었어요. 마지막으로 최종 공지를 만들 거예요."},
     {t:"⑮ 최종 송리스트 공지",x:"「📣 최종 송리스트 공지」를 눌러 보세요. 순서 · Key · 인도 · 싱어 · 악기 · 재생목록 · 콘티 주소가 저절로 들어가요. 「복사」해서 단톡방에 붙이면 끝이에요.",sel:byBtn("최종 송리스트 공지"),done:()=>!!document.querySelector('.panel[aria-label*="최종 송리스트"]'),ok:"공지 글이 만들어졌어요."},
-    {t:"🎉 첫 콘티를 완성했어요!",x:"새 콘티 → 본문 · 참여자 → 곡 · Key · 메모 → 저장 → 악보 편집 → 확정 → 연습 영상 · 재생목록 → 최종 공지까지, 실제로 쓰는 순서 그대로 해 보셨어요."}]},
+    {t:"🎉 첫 콘티를 완성했어요!",pre:()=>{document.querySelectorAll(".modal:not(.devedit)").forEach(m=>{const c=m.querySelector(".panel-head button");if(c)c.click();else m.remove();});},x:"새 콘티 → 본문 · 참여자 → 곡 · Key · 메모 → 저장 → 악보 편집 → 확정 → 연습 영상 · 재생목록 → 최종 공지까지, 실제로 쓰는 순서 그대로 해 보셨어요."}]},
   /* ===== B. 악보 꾸미기 (실습) ===== */
   practiceSheet:{name:"악보 꾸미기",practice:true,then:[["practicePpt","🖥 PPT 만들기 해 볼래요"],["","그냥 둘러볼게요"]],thenMsg:"악보 준비가 끝났어요. PPT도 만들어 볼까요?",steps:[
     {go:"sheet",pre:()=>demoEditable(),t:"악보 꾸미기를 해 봐요",x:"「콘티 › 악보 편집」에서 곡 흐름 · 연주 시간을 정리하고, 이 앱의 자랑인 「자유롭게 편집」으로 출력할 악보를 꾸며 봐요. 「시작 →」을 누르세요."},
     {need:"sheet",t:"① 곡 흐름 열기",x:"아무 곡이나 「흐름 · 인트로 · 시간」을 눌러 열어 보세요. 곡 순서(1절 · 후렴 × 2 …)를 한 줄씩 적는 곳이에요.",sel:()=>document.querySelector(".flowbox"),done:()=>!!document.querySelector(".flowbox[open]"),ok:"다음엔 연주 시간을 적어 볼 거예요."},
     {need:"sheet",pre:()=>{const d=document.querySelector(".flowbox");if(d&&!d.open)d.open=true;},t:"② 연주 시간 적기",x:"「연주 시간」에 3:30처럼 적어 보세요. 곡마다 적으면 전체 시간이 저절로 계산돼요.",sel:()=>document.querySelector(".flowbox[open] input[aria-label='연주 시간']")||document.querySelector(".flowbox"),done:()=>allItems(S.cur||{}).some(i=>(i.dur||"").trim()),ok:"다음엔 「자유롭게 편집」을 열 거예요."},
-    {need:"sheet",t:"③ 자유롭게 편집 열기",x:"곡 탭 왼쪽 「🧩 자유롭게 편집」을 눌러 보세요. 악보를 종이 위에 마음대로 놓고 표시해서 그대로 출력하는 곳이에요.",sel:()=>document.querySelector(".sh-free"),done:()=>!!lyModal(),ok:"큰 종이(A3)가 열렸어요. 다음엔 악보를 한 번에 깔아 볼 거예요."},
+    {need:"sheet",skipTo:"⑧ 콘티 출력",t:"③ 자유롭게 편집 열기",x:"곡 탭 왼쪽 「🧩 자유롭게 편집」을 눌러 보세요. 악보를 종이 위에 마음대로 놓고 표시해서 그대로 출력하는 곳이에요.",sel:()=>document.querySelector(".sh-free"),done:()=>!!lyModal(),ok:"큰 종이(A3)가 열렸어요. 다음엔 악보를 한 번에 깔아 볼 거예요."},
     {base:()=>S.lyAct||0,t:"④ 압축 배치",x:"위쪽 「🗜 압축 배치」를 눌러 보세요. 모든 악보가 제목과 함께 한 장에 깔려요. (이미 놓인 게 있으면 한 번 더 누르세요)",sel:()=>lyBtn("압축 배치"),done:st=>(S.lyAct||0)>st.b0,ok:"한 장에 다 들어갔어요. 다음엔 악보를 옮겨 볼 거예요."},
     {base:()=>S.lyMoved||0,t:"⑤ 악보 옮기기",x:"악보 하나를 끌어서 옮겨 보세요. 오른쪽 아래 점을 끌면 크기가 바뀌어요.",sel:()=>document.querySelector(".ly-stagewrap"),done:st=>(S.lyMoved||0)>st.b0,ok:"다음엔 구간 표시를 붙여 볼 거예요."},
-    {base:()=>S.lyLbl||0,t:"⑥ 구간 표시 붙이기",x:"「🏷 구간 표시」를 누르고 이름표 하나를 고른 뒤, 악보 위 붙일 자리를 눌러 보세요. 「🖍 형광펜」으로 칠할 수도 있어요.",sel:()=>lyBtn("구간 표시"),done:st=>(S.lyLbl||0)>st.b0,ok:"이름표가 붙었어요. 다음엔 저장할 거예요."},
+    {base:()=>S.lyLbl||0,t:"⑥ 구간 표시 붙이기",x:"「🏷 구간 표시」를 누르고 이름표 하나를 고른 뒤, 악보 위 붙일 자리를 눌러 보세요. 「🖍 형광펜」으로 칠할 수도 있어요.",sel:()=>{const m=lyModal();const intro=m?[...m.querySelectorAll("button")].find(b=>b.textContent.trim()==="Intro"):null;return [lyBtn("구간 표시"),lyBtn("형광펜"),intro&&intro.parentElement,m&&m.querySelector(".ly-stagewrap")];},done:st=>(S.lyLbl||0)>st.b0,ok:"이름표가 붙었어요. 다음엔 저장할 거예요."},
     {base:()=>S.lySaved||0,t:"⑦ 콘티에 저장",x:"아래 「콘티에 저장」을 눌러 보세요. 출력할 때 이 모양 그대로 나가요.",sel:()=>lyBtn("콘티에 저장"),done:st=>(S.lySaved||0)>st.b0,ok:"저장됐어요. 다음엔 출력을 볼 거예요."},
     {need:"sheet",pre:()=>{const m=lyModal();if(m){const c=m.querySelector(".panel-head button");if(c)c.click();else m.closest(".modal").remove();}},t:"⑧ 콘티 출력",x:"「🖨 콘티 출력」을 눌러 보세요. 곡마다 악보, A3 압축, 인도자 콘티를 PDF나 그림으로 뽑아요.",sel:byBtn("콘티 출력"),done:()=>!!document.querySelector('.panel[aria-label="콘티 출력"]'),ok:"원하는 모양을 골라 「만들기」를 누르면 돼요."},
     {t:"🎉 악보 꾸미기 끝!",x:"곡 흐름 · 연주 시간 → 자유롭게 편집(압축 배치 · 옮기기 · 구간 표시) → 출력까지 해 보셨어요."}]},
@@ -1373,7 +1373,7 @@ function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];
       if(T.practice){if(!nx.go||nx.go===S.tab)return null;return h("p",{class:"tc-nexthint",text:`👉 「다음 →」을 누르면 ${tabLabel(nx.go)} 화면으로 넘어가요.`});}
       if(nx.tab===st.tab&&(nx.wt||"")===(st.wt||""))return null;const lb=tabLabel(nx.tab,nx.wt);return h("p",{class:"tc-nexthint",text:`👉 「다음 →」을 누르면 ${lb} 화면으로 넘어가요.`});})(),st.done?h("div",{class:"tc-task",id:"tc-task",text:"👆 직접 해 보세요. 하면 저절로 알려 드려요."}):null,
     h("div",{class:"tc-btns"},TOUR.i?h("button",{type:"button",class:"btn sm",text:"← 이전",onclick:()=>{TOUR.i--;tourShow();}}):h("span"),
-      st.done?h("button",{type:"button",class:"btn sm ghost tc-skip",text:"건너뛰기",title:"이 단계를 대신 해 두고 넘어가요",onclick:async()=>{const f=PRACTICE_AUTO[st.t];if(f){try{await f();}catch(e){console.warn(e);}}TOUR.i++;setTimeout(tourShow,f?250:0);}}):null,
+      st.done?h("button",{type:"button",class:"btn sm ghost tc-skip",text:"건너뛰기",title:"이 단계를 대신 해 두고 넘어가요",onclick:async()=>{if(st.skipTo){const j=T.steps.findIndex(x=>x.t===st.skipTo);if(j>0){TOUR.i=j;tourShow();return;}}const f=PRACTICE_AUTO[st.t];if(f){try{await f();}catch(e){console.warn(e);}}TOUR.i++;setTimeout(tourShow,f?250:0);}}):null,
       h("button",{type:"button",id:"tc-next",disabled:!!st.done,class:last&&T.then?"btn sm":"btn sm primary",text:last?(T.then?(Array.isArray(T.then[0])?"닫기":"다음에 할게요"):"끝내기 ✓"):T.practice&&TOUR.i===0?"시작 →":"다음 →",onclick:()=>{if(last)return tourEnd(true);TOUR.i++;tourShow();}}))].filter(Boolean));
   if(st.done){const chk=()=>{if(!TOUR||TOURS[TOUR.kind]!==T||T.steps[TOUR.i]!==st)return clearInterval(iv);let ok=false;try{ok=(!st.need||S.tab===st.need)&&st.done({b0:TOUR.b0});}catch(e){}
       if(ok){clearInterval(iv);const tk=$("#tc-task");if(tk){tk.className="tc-task ok";tk.textContent=`👏 ${["잘하셨어요!","좋아요!","훌륭해요!","완벽해요!","멋져요!"][TOUR.i%5]} ${st.ok||""}`;}const nb=$("#tc-next");if(nb){nb.disabled=false;nb.classList.add("pulse");}const sk=card.querySelector(".tc-skip");if(sk)sk.remove();}};
@@ -1396,10 +1396,10 @@ function spotOff(){const s=document.getElementById("tourspot");if(s)s.remove();i
 function tourFromUrl(){try{const k=new URLSearchParams(location.search).get("tour");if(k&&TOURS[k])tourStart(k);}catch(e){}}
 function render(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(TOUR?h("div",{class:"banner demoban mini"},h("b",{text:"👀 체험판"}),h("span",{class:"spacer"}),h("button",{type:"button",class:"btn sm",text:"나가기",onclick:()=>{location.href=location.pathname;}})):
     h("div",{class:"banner demoban"},h("div",{},h("b",{text:"👀 체험판 "}),"실제 교회 자료가 아니라 예시예요. 마음껏 눌러 보세요. 새로고침하면 처음으로 돌아가요."),
-      h("div",{class:"row",style:"gap:6px;margin-top:6px;flex-wrap:wrap"},h("b",{class:"hint",text:"🎤 인도자"}),h("button",{type:"button",class:"btn sm",text:"빠르게 둘러보기",onclick:()=>tourStart("leader")}),h("button",{type:"button",class:"btn sm primary",text:"첫 콘티 만들기",onclick:()=>tourStart("practiceConti")}),
-        h("button",{type:"button",class:"btn sm ghost",text:"악보 꾸미기",onclick:()=>tourStart("practiceSheet")}),h("button",{type:"button",class:"btn sm ghost",text:"PPT 만들기",onclick:()=>tourStart("practicePpt")})),
-      h("div",{class:"row",style:"gap:6px;margin-top:4px;flex-wrap:wrap"},h("b",{class:"hint",text:"🎸 팀원"}),h("button",{type:"button",class:"btn sm",text:"내 섬김 알아보기",onclick:()=>tourStart("member")}),h("span",{class:"spacer"}),
-        S.memberOnly?h("button",{type:"button",class:"btn sm ghost",text:"인도자 화면으로",onclick:()=>{S.demoMember=false;setAccess();window.DEMO_NAME="김하늘";render();}}):null,h("button",{type:"button",class:"btn sm",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}}))));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
+      h("div",{class:"row",style:"display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;width:100%"},h("b",{class:"hint",style:"min-width:4.5em",text:"🎤 인도자"}),h("button",{type:"button",class:"btn sm",text:"빠르게 둘러보기",onclick:()=>tourStart("leader")}),h("button",{type:"button",class:"btn sm",text:"첫 콘티 만들기",onclick:()=>tourStart("practiceConti")}),
+        h("button",{type:"button",class:"btn sm",text:"악보 꾸미기",onclick:()=>tourStart("practiceSheet")}),h("button",{type:"button",class:"btn sm",text:"PPT 만들기",onclick:()=>tourStart("practicePpt")})),
+      h("div",{class:"row",style:"display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;width:100%"},h("b",{class:"hint",style:"min-width:4.5em",text:"🎸 팀원"}),h("button",{type:"button",class:"btn sm",text:"내 섬김 알아보기",onclick:()=>tourStart("member")}),h("span",{class:"spacer"}),
+        S.memberOnly?h("button",{type:"button",class:"btn sm ghost",text:"인도자 화면으로",onclick:()=>{S.demoMember=false;setAccess();window.DEMO_NAME="김하늘";render();}}):null,h("button",{type:"button",class:"btn sm ghost",style:"text-decoration:underline",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}}))));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
   if((S.tab==="write"||S.tab==="sheet")&&S.team&&!S.curId&&!isWriter())S.tab="list";
   syncNav();
@@ -1812,8 +1812,8 @@ function layoutEditor(c,onSave){const editable=curEditable();
         t.addEventListener("blur",()=>{e.text=t.innerText.replace(/\n$/,"");editing=null;commit();draw();});t.addEventListener("pointerdown",ev=>ev.stopPropagation());}}
     const selOne=sel.size===1&&sel.has(e.id)&&editable;
     if(selOne)n.append(h("div",{class:"ly-h br","data-h":"br"}),h("div",{class:"ly-h r","data-h":"r"}),h("div",{class:"ly-h b","data-h":"b"}));
-    /* ✕ 바로 지우기: 형광펜은 늘(형광펜을 쓰는 중에도), 나머지는 골랐을 때 · 되돌리기(↶)로 살릴 수 있어요 */
-    if(editable&&(selOne||e.type==="hl")){
+    /* ✕ 바로 지우기: 눌러서 고른 것에만 · 되돌리기(↶)로 살릴 수 있어요 */
+    if(selOne){
       const x=h("button",{type:"button",class:"ly-x","aria-label":"지우기",title:"지우기 (↶로 되돌릴 수 있어요)",text:"✕"});
       x.addEventListener("pointerdown",ev=>{ev.stopPropagation();ev.preventDefault();});
       x.addEventListener("click",ev=>{ev.stopPropagation();const i=page().els.findIndex(z=>z.id===e.id);if(i>=0)page().els.splice(i,1);sel.clear();commit();draw();});n.append(x);}
@@ -1836,6 +1836,9 @@ function layoutEditor(c,onSave){const editable=curEditable();
   let lastTap={};
   const ptMM=ev=>{const r=sheet.getBoundingClientRect();return{x:(ev.clientX-r.left)/sc,y:(ev.clientY-r.top)/sc};};
   sheet.addEventListener("pointerdown",ev=>{if(!editable)return;
+    if(tool==="lbl"||tool==="hl"){if(ev.target.closest(".ly-x"))return;const hitN=ev.target.closest(".ly-el");const hit=hitN&&page().els.find(z=>z.id===hitN.dataset.id);
+      if(hit&&(hit.type==="lbl"||hit.type==="hl")){ev.preventDefault();sel.clear();sel.add(hit.id);draw();return;}
+      if(sel.size){sel.clear();draw();}}
     if(tool==="lbl"){ev.preventDefault();const a=ptMM(ev);const t=(lblCustom||lblText||"").trim();if(!t)return toast("붙일 이름표를 고르거나 쓰세요");const sz=4;const w=Math.max(8,t.length*sz*.62+3),hh=sz*1.5;
       const e={id:uid(6),type:"lbl",x:a.x,y:a.y-hh/2,w,h:hh,text:t,size:sz};page().els.push(e);S.lyLbl=Date.now();commit();draw();return;}
     if(tool==="hl"){ev.preventDefault();const a=ptMM(ev);const e={id:uid(6),type:"hl",x:a.x,y:a.y,w:.1,h:.1,color:hlColor};page().els.push(e);const nd=elNode(e);sheet.append(nd);
