@@ -2212,6 +2212,30 @@ function contiTimes(c){const out={};let cum=0;for(const[k]of SECTIONS)for(const 
 const flowLines=it=>String(it.flow||"").split("\n").map(l=>l.replace(/^\s*(?:[①-⑳]|\(?\d{1,2}[.)]|[-*·•])\s*/,"").trim()).filter(Boolean);
 const TRANS=["건반 전주","바로 이어짐","기도 반주","멘트 후 시작","드럼 카운트"];
 const FLOW_CHIPS=["1절","2절","3절","4절","후렴","1후","2후","3후","4후","브릿지","Intro","간주","Outro","× 2","× 3","KEY UP","기도 (반주)"];
+/* 곡 메모 → 흐름: 「후렴 세 번, 2절 후 브릿지 2번, 마지막 후렴 키업」 같은 말을 읽어 흐름 줄로 바꿔요 (못 읽으면 null) */
+function memoToFlow(memo,base){const t=String(memo||"");if(!t.trim())return null;
+  const NUM={한:1,두:2,세:3,네:4,다섯:5,여섯:6,일곱:7,여덟:8};
+  const PART=/([1-4])\s*절\s*후렴|([1-4])\s*절|후렴|코러스|chorus|브릿지|브리지|bridge|인트로|intro|전주|간주|interlude|엔딩|아웃트로|outro|후주/gi;
+  const nameOf=m=>{const s=m[0].toLowerCase();if(m[1])return `${m[1]}절 후렴`;if(m[2])return `${m[2]}절`;if(/후렴|코러스|chorus/.test(s))return "후렴";if(/브릿지|브리지|bridge/.test(s))return "브릿지";
+    if(/인트로|intro|전주/.test(s))return "Intro";if(/간주|interlude/.test(s))return "간주";return "Outro";};
+  const toks=[];for(const chunk of t.split(/[,，·\/\n;]|그리고/)){const ms=[...chunk.matchAll(PART)];ms.forEach((m,i)=>{const seg=chunk.slice(m.index+m[0].length,i+1<ms.length?ms[i+1].index:chunk.length);
+      const pre=chunk.slice(i?ms[i-1].index+ms[i-1][0].length:0,m.index);
+      const c=seg.match(/(\d+|한|두|세|네|다섯|여섯|일곱|여덟)\s*(?:번|회|바퀴)|[x×X]\s*(\d+)/);const cnt=c?(+(c[2]||c[1])||NUM[c[1]]||0):0;
+      const key=/반\s*키\s*업|반음\s*(?:업|올)/i.test(seg+pre)?"반 KEY UP":/키\s*업|key\s*up|전조|키\s*올/i.test(seg+pre)?"KEY UP":"";
+      const after=i&&/^\s*(?:후|다음|뒤|이후)/.test(chunk.slice(ms[i-1].index+ms[i-1][0].length,m.index))?nameOf(ms[i-1]):"";
+      toks.push({name:nameOf(m),cnt,key,after});});}
+  if(!toks.length||!toks.some(x=>x.cnt>1||x.key||x.after||x.name))return null;
+  const lines=String(base||"").split("\n").map(l=>l.trim()).filter(Boolean);const head=l=>l.replace(/\s*×\s*\d+/g,"").replace(/\s*(반\s*)?KEY UP/gi,"").trim();
+  const lastIdx=n=>{for(let i=lines.length-1;i>=0;i--)if(head(lines[i])===n)return i;return -1;};
+  /* 메모 순서대로: 이미 한 번 다룬 부분이 또 나오면(「후렴 세 번 … 브릿지 … 후렴 키업」) 그 뒤에 새 줄로 넣어요 */
+  const touched=new Set();let cur=-1;
+  for(const x of toks){let i=x.after||touched.has(x.name)?-1:lastIdx(x.name);touched.add(x.name);
+    if(i<0){const line=`${x.name}${x.cnt>1?` × ${x.cnt}`:""}${x.key?` ${x.key}`:""}`;const ai=x.after?lastIdx(x.after):-1;
+      let at;if(ai>=0)at=ai+1;else if(x.name==="Intro")at=0;else if(cur>=0)at=cur+1;else at=lines.length;lines.splice(at,0,line);cur=at;continue;}
+    cur=i;
+    let l=head(lines[i]);if(x.cnt>1)l+=` × ${x.cnt}`;else{const m=lines[i].match(/×\s*\d+/);if(m)l+=` ${m[0]}`;}
+    const k=x.key||((lines[i].match(/(반\s*)?KEY UP/i)||[])[0]||"");if(k)l+=` ${k}`;lines[i]=l;}
+  return lines.join("\n");}
 function flowBox(it,song,key){S.flowOpen=S.flowOpen||new Set();const ed=curEditable();
   const sum=()=>{const n=flowLines(it).length;return [n?`흐름 ${n}단계`:"",it.intro&&(it.intro.text||it.intro.imgId)?"인트로":"",it.dur?`${it.dur}`:"",it.trans||""].filter(Boolean).join(" · ")||"아직 비어 있어요";};
   const sumEl=h("span",{class:"hint",text:sum()});const upd=()=>{markDirty();sumEl.textContent=sum();updTimes();};
@@ -2242,12 +2266,18 @@ function flowBox(it,song,key){S.flowOpen=S.flowOpen||new Set();const ed=curEdita
   const tr=h("input",{type:"text",id:`tr-${it.uid}`,disabled:!ed,list:"trans-dl","aria-label":"넘어가는 방식",placeholder:"건반 전주 · 바로 이어짐…",value:it.trans||"",style:"width:180px",oninput:e=>{it.trans=e.target.value;upd();}});
   const cumEl=h("span",{class:"hint cumtime","data-uid":it.uid});
   const pref=song&&song.flowPref;
+  /* 메모에 「후렴 세 번 · 브릿지 2번 · 키업」이 있으면: 흐름이 비어 있을 때 미리 채워요 */
+  const memoFlow=()=>memoToFlow(it.memo,(pref&&pref.flow)||"1절\n후렴");let fromMemo=false;
+  if(ed&&!(it.flow||"").trim()&&(it.memo||"").trim()){const mf=memoFlow();if(mf){it.flow=mf;ta.value=mf;fromMemo=true;setTimeout(()=>{markDirty();},0);}}
+  const memoBtn=ed&&(it.memo||"").trim()&&memoFlow()?h("button",{type:"button",class:"btn sm ghost",text:"📝 메모로 흐름 채우기",title:`곡 메모 「${it.memo}」를 읽어 흐름을 만들어요`,onclick:()=>{if((it.flow||"").trim()&&!confirmInline(memoBtn))return;
+      const mf=memoFlow();it.flow=mf;ta.value=mf;upd();toast("메모를 읽어 흐름을 채웠어요. 고쳐도 돼요");}}):null;
+  const memoNote=fromMemo?h("div",{class:"hint",style:"color:var(--accent)",text:`📝 곡 메모 「${it.memo}」를 읽어 흐름을 미리 채웠어요. 맞게 고쳐 쓰세요.`}):null;
   const loadBtn=pref&&ed?h("button",{type:"button",class:"btn sm ghost",text:"↺ 지난번 흐름 불러오기",title:"이 곡을 지난번에 쓴 흐름 · 인트로 · 시간",onclick:()=>{if((it.flow||it.dur)&&!confirmInline(loadBtn))return;
       it.flow=pref.flow||"";it.dur=pref.dur||"";it.trans=pref.trans||"";if(pref.introText)it.intro={...(it.intro||{}),text:pref.introText};ta.value=it.flow;dur.value=it.dur;tr.value=it.trans;itxt.value=(it.intro&&it.intro.text)||"";upd();toast("지난번 흐름을 불러왔어요");}}):null;
   const clrBtn=ed?h("button",{type:"button",class:"btn sm ghost danger",text:"비우기",title:"이 곡의 흐름 · 인트로 · 연주 시간을 모두 지워요",onclick:()=>{if(!(it.flow||it.intro||it.dur||it.trans))return toast("이미 비어 있어요");if(!confirmInline(clrBtn,"정말 비울까요? · 한 번 더"))return;
       it.flow="";it.intro=null;it.dur="";it.trans="";ta.value="";itxt.value="";dur.value="";tr.value="";drawIntro();upd();toast("흐름 · 인트로 · 시간을 비웠어요");}}):null;
   const det=h("details",{class:"flowbox",open:S.flowOpen.has(it.uid)},h("summary",{},h("b",{text:"흐름 · 인트로 · 시간 "}),sumEl),
-    h("div",{style:"display:flex;flex-direction:column;gap:8px;margin-top:8px"},h("div",{class:"row",style:"gap:6px"},loadBtn,h("span",{class:"spacer"}),clrBtn),ta,chips,introRow,
+    h("div",{style:"display:flex;flex-direction:column;gap:8px;margin-top:8px"},h("div",{class:"row",style:"gap:6px"},loadBtn,memoBtn,h("span",{class:"spacer"}),clrBtn),memoNote,ta,chips,introRow,
       h("div",{class:"row",style:"gap:6px;flex-wrap:wrap;align-items:center"},h("b",{class:"hint",text:"연주 시간"}),dur,tr,cumEl)));
   det.addEventListener("toggle",()=>{det.open?S.flowOpen.add(it.uid):S.flowOpen.delete(it.uid);});
   setTimeout(updTimes,0);return det;}
