@@ -1272,11 +1272,16 @@ const TOURS={
     {t:"⑧ 곡 메모에 연주 방법 쓰기",x:"첫 곡의 메모 칸에 연주 방법을 적어 보세요. 예: 「후렴 세 번, 브릿지 2번, 후렴 키업」. 이렇게 적어 두면 나중에 「악보 편집」의 곡 흐름에 자동으로 들어가요. 직접 확인해 볼 거예요!",sel:()=>document.querySelector("#list-before input.memo"),done:()=>((S.cur||{}).before||[]).some(i=>(i.memo||"").trim()),ok:"메모는 콘티 보기 · 출력에도 함께 나와요. 다음엔 저장해 볼 거예요."},
     {t:"⑨ 저장하기",x:"아래 「저장」을 눌러 보세요. 처음 한 번 저장하면 그다음부터는 저절로 저장돼요.",sel:()=>$("#saveBtn"),done:()=>!!S.curId,ok:"저장됐어요. 다음엔 팀원에게 보낼 송리스트 공지를 만들어 볼 거예요."},
     {t:"⑩ 송리스트 공지 만들기",x:"아래 「📋 송리스트 공지」를 눌러 보세요. 단톡방에 붙여 넣을 글이 저절로 만들어져요.",sel:byBtn("송리스트 공지"),done:()=>!!document.querySelector('.panel[aria-label*="송리스트"]'),ok:"공지 글이 만들어졌어요. 「복사」나 「📤 카톡으로 보내기」로 바로 보내면 돼요. 다음엔 악보 편집으로 넘어갈 거예요."},
-    {t:"⑪ 악보 편집으로",x:"공지 창을 닫고, 아래 「다음: 악보 편집 →」을 눌러 보세요.",sel:byBtn("다음: 악보 편집"),done:()=>S.tab==="sheet",ok:"악보 편집 화면이에요. 곡마다 악보와 흐름 · 연주 시간을 정리하는 곳이에요. 다음엔 메모가 어떻게 들어왔는지 볼 거예요."},
-    {t:"⑫ 메모가 흐름으로",x:"메모를 적은 곡의 「흐름 · 인트로 · 시간」을 눌러 열어 보세요. 콘티 작성에서 적은 연주 방법이 흐름 줄로 자동으로 들어가 있어요.",sel:()=>document.querySelector(".flowbox"),done:()=>!!document.querySelector(".flowbox[open]"),ok:"메모가 「후렴 × 3」 「KEY UP」 같은 흐름으로 바뀌어 있죠? 틀린 데가 있으면 그대로 고쳐 쓰면 돼요. 다음엔 연주 시간을 적어 볼 거예요."},
-    {pre:()=>{const d=document.querySelector(".flowbox");if(d&&!d.open)d.open=true;},t:"⑬ 연주 시간 적기",x:"열린 칸 아래 「연주 시간」에 3:30처럼 이 곡이 걸리는 시간을 적어 보세요. 곡마다 적으면 전체 예배 찬양 시간이 저절로 계산돼요.",sel:()=>document.querySelector(".flowbox[open] input[aria-label='연주 시간']")||document.querySelector(".flowbox"),done:()=>((S.cur||{}).before||[]).some(i=>(i.dur||"").trim()),ok:"오른쪽에 누적 · 전체 시간이 보여요. 다음엔 팀원에게 줄 악보를 출력해 볼 거예요."},
-    {t:"⑭ 콘티 출력",x:"「🖨 콘티 출력」을 눌러 보세요. 곡마다 악보, A3 한 장 압축, 인도자 콘티를 PDF나 그림으로 뽑을 수 있어요.",sel:byBtn("콘티 출력"),done:()=>!!document.querySelector('.panel[aria-label="콘티 출력"]'),ok:"원하는 모양을 골라 「만들기」를 누르면 돼요. 이제 콘티 준비가 끝났어요!"},
-    {t:"🎉 콘티 작성 연습 끝!",x:"수고하셨어요! 새 콘티 열기 → 예배 정보 → 참여자 → 곡 · 키 · 메모 → 저장 → 공지 → 악보 편집 → 출력까지, 실제로 쓰는 순서 그대로 해 보셨어요."}]},
+    {t:"⑪ 악보 편집으로",x:"공지 창을 닫고, 아래 「다음: 악보 편집 →」을 눌러 보세요. (「건너뛰기」를 누르면 대신 넘어가 드려요)",sel:byBtn("다음: 악보 편집"),done:()=>S.tab==="sheet",ok:"악보 편집 화면이에요. 곡마다 악보와 흐름 · 연주 시간을 정리하는 곳이에요. 다음엔 메모가 어떻게 들어왔는지 볼 거예요."},
+    {need:"sheet",t:"⑫ 메모가 흐름으로",x:"메모를 적은 곡의 「흐름 · 인트로 · 시간」을 눌러 열어 보세요. 콘티 작성에서 적은 연주 방법이 흐름 줄로 자동으로 들어가 있어요.",sel:()=>document.querySelector(".flowbox"),done:()=>!!document.querySelector(".flowbox[open]"),ok:"메모가 「후렴 × 3」 「KEY UP」 같은 흐름으로 바뀌어 있죠? 틀린 데가 있으면 그대로 고쳐 쓰면 돼요. 다음엔 연주 시간을 적어 볼 거예요."},
+    {need:"sheet",pre:()=>{const d=document.querySelector(".flowbox");if(d&&!d.open)d.open=true;},t:"⑬ 연주 시간 적기",x:"열린 칸 아래 「연주 시간」에 3:30처럼 이 곡이 걸리는 시간을 적어 보세요. 곡마다 적으면 전체 예배 찬양 시간이 저절로 계산돼요.",sel:()=>document.querySelector(".flowbox[open] input[aria-label='연주 시간']")||document.querySelector(".flowbox"),done:()=>((S.cur||{}).before||[]).some(i=>(i.dur||"").trim()),ok:"오른쪽에 누적 · 전체 시간이 보여요. 다음엔 이 앱의 자랑, 「자유롭게 편집」을 해 볼 거예요."},
+    {need:"sheet",t:"⑭ 자유롭게 편집 열기",x:"곡 탭 왼쪽 「🧩 자유롭게 편집」을 눌러 보세요. 악보를 종이 위에 마음대로 놓고, 자르고, 표시해서 그대로 출력하는 곳이에요.",sel:()=>document.querySelector(".sh-free"),done:()=>!!lyModal(),ok:"큰 종이(A3)가 열렸어요. 다음엔 악보를 한 번에 깔아 볼 거예요."},
+    {base:()=>S.lyAct||0,t:"⑮ 압축 배치",x:"위쪽 「🗜 압축 배치」를 눌러 보세요. 모든 곡의 악보가 제목과 함께 종이 한 장에 가득 깔려요. (이미 놓인 게 있으면 한 번 더 누르라고 나와요) 「✨ 자동 배치」는 인도자 콘티 모양으로 깔아 줘요.",sel:()=>lyBtn("압축 배치"),done:st=>(S.lyAct||0)>st.b0,ok:"한 장에 다 들어갔어요! 다음엔 악보 하나를 끌어서 옮겨 볼 거예요."},
+    {base:()=>S.lyMoved||0,t:"⑯ 악보 옮기기 · 크기 바꾸기",x:"종이 위 악보 하나를 마우스(손가락)로 끌어서 옮겨 보세요. 오른쪽 아래 점을 끌면 크기도 바뀌어요.",sel:()=>document.querySelector(".ly-stagewrap"),done:st=>(S.lyMoved||0)>st.b0,ok:"원하는 자리에 놓였어요. 다음엔 악보에 구간 표시를 붙여 볼 거예요."},
+    {base:()=>S.lyLbl||0,t:"⑰ 구간 표시 붙이기",x:"「🏷 구간 표시」를 누르고, 나오는 이름표(Intro · Verse · Chorus …) 가운데 하나를 고른 뒤 악보 위 붙일 자리를 눌러 보세요. 「🖍 형광펜」으로 칠할 수도 있어요.",sel:()=>lyBtn("구간 표시"),done:st=>(S.lyLbl||0)>st.b0,ok:"이름표가 붙었어요. 다음엔 편집한 것을 콘티에 저장해 볼 거예요."},
+    {base:()=>S.lySaved||0,t:"⑱ 콘티에 저장",x:"아래 「콘티에 저장」을 눌러 보세요. 출력할 때 이 모양 그대로 나가요. 「⬇ PDF · 그림」으로 바로 받을 수도 있어요.",sel:()=>lyBtn("콘티에 저장"),done:st=>(S.lySaved||0)>st.b0,ok:"저장됐어요. 이게 이 앱의 가장 큰 장점이에요. 이제 창을 닫고 출력을 볼 거예요."},
+    {need:"sheet",t:"⑲ 콘티 출력",x:"「🖨 콘티 출력」을 눌러 보세요. 곡마다 악보, A3 한 장 압축, 인도자 콘티를 PDF나 그림으로 뽑을 수 있어요.",sel:byBtn("콘티 출력"),done:()=>!!document.querySelector('.panel[aria-label="콘티 출력"]'),ok:"원하는 모양을 골라 「만들기」를 누르면 돼요. 이제 콘티 준비가 끝났어요!"},
+    {t:"🎉 콘티 작성 연습 끝!",x:"수고하셨어요! 새 콘티 열기 → 예배 정보 → 참여자 → 곡 · 키 · 메모 → 저장 → 공지 → 악보 편집 → 자유롭게 편집 → 출력까지, 실제로 쓰는 순서 그대로 해 보셨어요."}]},
   practicePpt:{name:"PPT 만들기 연습",practice:true,steps:[
     {go:"sheet",t:"PPT 만들기 연습을 시작해요",x:"지금은 「콘티 › 악보 편집」 화면이에요. 악보를 다 꾸몄으면 그 자리에서 바로 PPT로 넘어가요. 화면을 옮겨 다닐 필요 없이 순서대로 해 봐요. 준비되면 「시작 →」을 누르세요."},
     {t:"① 악보 편집에서 PPT로",x:"악보 편집 아래쪽 「다음: PPT 만들기 →」를 눌러 보세요. 콘티의 곡 가사가 장마다 나뉜 미리보기가 열려요.",sel:byBtn("다음: PPT 만들기"),done:()=>!!document.querySelector('.panel[aria-label^="가사 PPT 미리보기"]'),ok:"미리보기가 열렸어요. 위쪽 「템플릿」을 바꾸면 모양이 바로 바뀌어요. 다음엔 PPT 파일을 받아 볼 거예요."},
@@ -1302,6 +1307,27 @@ let TOUR=null;
 /* 탭 이름: 아래 메뉴 · 위 칸 메뉴 이름으로 (예: 콘티 › 악보 편집) */
 function tabLabel(tab,wt){const g=Object.keys(NAVG).find(k=>NAVG[k].some(([t])=>t===tab));const gl={home:"홈",conti:"콘티",songs:"라이브러리",team:"우리 팀",me:"나"}[g]||"";
   const sub=(NAVG[g]||[]).find(([t])=>t===tab);const sl=sub&&NAVG[g].length>1?sub[1]:"";return `「${[gl,sl,wt==="songs"?"찬양 탭":wt==="info"?"예배 정보 탭":""].filter(Boolean).join(" › ")}」`;}
+/* 실습 「건너뛰기」: 그 단계를 대신 해 두고(임시 값) 화면도 옮겨요 */
+const lyModal=()=>document.querySelector('.panel[aria-label="🧩 자유롭게 편집"]');
+const lyBtn=t=>{const m=lyModal();return m&&[...m.querySelectorAll("button")].find(b=>b.textContent.includes(t));};
+const PRACTICE_AUTO={
+  "① 새 콘티 열기":()=>{S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();S.wTab="info";setTab("write");},
+  "② 본문 쓰기":()=>{S.cur.passage=S.cur.passage||"요한복음 15:1-8";markDirty();render();},
+  "③ 설교 제목 쓰기":()=>{S.cur.sermonTitle=S.cur.sermonTitle||"참포도나무";markDirty();render();},
+  "④ 참여자 불러오기":()=>{const add=(pos,names)=>{let r=(S.cur.roster||[]).find(x=>x.pos===pos);if(!r){r={pos,people:[]};S.cur.roster.push(r);}names.forEach(n=>{if(!r.people.some(p=>p.name===n))r.people.push({id:null,name:n});});};
+    add("인도자",["김하늘"]);add("싱어",["이은혜","박소망"]);add("메인건반",["최기쁨"]);add("드럼",["정평안"]);markDirty();render();},
+  "⑤ 찬양 탭 열기":()=>{S.wTab="songs";setTab("write");},
+  "⑥ 곡 3곡 넣기":()=>{S.wTab="songs";while(S.cur.before.length<3){const sg=S.songs[S.cur.before.length%S.songs.length];if(!sg)break;S.cur.before.push(itemFromSong(sg));}markDirty();setTab("write");},
+  "⑦ 키(Key) 정하기":()=>{const it=S.cur.before[0];if(it){it.key=it.key==="F"?"E":"F";markDirty();setTab("write");}},
+  "⑧ 곡 메모에 연주 방법 쓰기":()=>{const it=S.cur.before[0];if(it&&!(it.memo||"").trim()){it.memo="후렴 세 번, 브릿지 2번, 후렴 키업";markDirty();setTab("write");}},
+  "⑨ 저장하기":async()=>{if(!S.curId)await saveConti();},
+  "⑪ 악보 편집으로":()=>{document.querySelectorAll(".modal").forEach(m=>m.remove());setTab("sheet");},
+  "⑫ 메모가 흐름으로":()=>{if(S.tab!=="sheet")setTab("sheet");const d=document.querySelector(".flowbox");if(d)d.open=true;},
+  "⑬ 연주 시간 적기":()=>{const it=(S.cur.before||[])[0];if(it&&!(it.dur||"").trim()){it.dur="3:30";markDirty();}setTab("sheet");},
+  "⑭ 자유롭게 편집 열기":()=>{if(S.tab!=="sheet")setTab("sheet");if(!lyModal()){const b=document.querySelector(".sh-free");if(b)b.click();}},
+  "⑮ 압축 배치":()=>{const b=lyBtn("압축 배치");if(b){b.click();if(!S.lyAct||Date.now()-S.lyAct>1500)b.click();}},
+  "⑱ 콘티에 저장":()=>{const b=lyBtn("콘티에 저장");if(b)b.click();},
+  "⑲ 콘티 출력":()=>{document.querySelectorAll(".modal").forEach(m=>m.remove());}};
 function tourStart(kind){const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR_LAST=null;const pl=document.getElementById("tourpill");if(pl)pl.remove();TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
 let TOUR_LAST=null;
 function tourEnd(done){if(TOUR)clearInterval(TOUR.iv);spotOff();document.getElementById("tourdim")?.remove();document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");tourPill();}
@@ -1322,9 +1348,9 @@ function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];
       if(T.practice){if(!nx.go||nx.go===S.tab)return null;return h("p",{class:"tc-nexthint",text:`👉 「다음 →」을 누르면 ${tabLabel(nx.go)} 화면으로 넘어가요.`});}
       if(nx.tab===st.tab&&(nx.wt||"")===(st.wt||""))return null;const lb=tabLabel(nx.tab,nx.wt);return h("p",{class:"tc-nexthint",text:`👉 「다음 →」을 누르면 ${lb} 화면으로 넘어가요.`});})(),st.done?h("div",{class:"tc-task",id:"tc-task",text:"👆 직접 해 보세요. 하면 저절로 알려 드려요."}):null,
     h("div",{class:"tc-btns"},TOUR.i?h("button",{type:"button",class:"btn sm",text:"← 이전",onclick:()=>{TOUR.i--;tourShow();}}):h("span"),
-      st.done?h("button",{type:"button",class:"btn sm ghost tc-skip",text:"건너뛰기",onclick:()=>{TOUR.i++;tourShow();}}):null,
+      st.done?h("button",{type:"button",class:"btn sm ghost tc-skip",text:"건너뛰기",title:"이 단계를 대신 해 두고 넘어가요",onclick:async()=>{const f=PRACTICE_AUTO[st.t];if(f){try{await f();}catch(e){console.warn(e);}}TOUR.i++;setTimeout(tourShow,f?250:0);}}):null,
       h("button",{type:"button",id:"tc-next",disabled:!!st.done,class:last&&T.then?"btn sm":"btn sm primary",text:last?(T.then?"다음에 할게요":"끝내기 ✓"):T.practice&&TOUR.i===0?"시작 →":"다음 →",onclick:()=>{if(last)return tourEnd(true);TOUR.i++;tourShow();}}))].filter(Boolean));
-  if(st.done){const chk=()=>{if(!TOUR||TOURS[TOUR.kind]!==T||T.steps[TOUR.i]!==st)return clearInterval(iv);let ok=false;try{ok=st.done({b0:TOUR.b0});}catch(e){}
+  if(st.done){const chk=()=>{if(!TOUR||TOURS[TOUR.kind]!==T||T.steps[TOUR.i]!==st)return clearInterval(iv);let ok=false;try{ok=(!st.need||S.tab===st.need)&&st.done({b0:TOUR.b0});}catch(e){}
       if(ok){clearInterval(iv);const tk=$("#tc-task");if(tk){tk.className="tc-task ok";tk.textContent=`👏 ${["잘하셨어요!","좋아요!","훌륭해요!","완벽해요!","멋져요!"][TOUR.i%5]} ${st.ok||""}`;}const nb=$("#tc-next");if(nb){nb.disabled=false;nb.classList.add("pulse");}const sk=card.querySelector(".tc-skip");if(sk)sk.remove();}};
     const iv=setInterval(chk,500);TOUR.iv=iv;}
   setTimeout(()=>{if(!TOUR)return;let els=st.sel?st.sel():null;els=(Array.isArray(els)?els:[els]).filter(Boolean);
@@ -1774,7 +1800,7 @@ function layoutEditor(c,onSave){const editable=curEditable();
   const ptMM=ev=>{const r=sheet.getBoundingClientRect();return{x:(ev.clientX-r.left)/sc,y:(ev.clientY-r.top)/sc};};
   sheet.addEventListener("pointerdown",ev=>{if(!editable)return;
     if(tool==="lbl"){ev.preventDefault();const a=ptMM(ev);const t=(lblCustom||lblText||"").trim();if(!t)return toast("붙일 이름표를 고르거나 쓰세요");const sz=4;const w=Math.max(8,t.length*sz*.62+3),hh=sz*1.5;
-      const e={id:uid(6),type:"lbl",x:a.x,y:a.y-hh/2,w,h:hh,text:t,size:sz};page().els.push(e);commit();draw();return;}
+      const e={id:uid(6),type:"lbl",x:a.x,y:a.y-hh/2,w,h:hh,text:t,size:sz};page().els.push(e);S.lyLbl=Date.now();commit();draw();return;}
     if(tool==="hl"){ev.preventDefault();const a=ptMM(ev);const e={id:uid(6),type:"hl",x:a.x,y:a.y,w:.1,h:.1,color:hlColor};page().els.push(e);const nd=elNode(e);sheet.append(nd);
       const mv=me=>{const b=ptMM(me);e.x=Math.min(a.x,b.x);e.y=Math.min(a.y,b.y);e.w=Math.abs(b.x-a.x);e.h=Math.abs(b.y-a.y);Object.assign(nd.style,{left:`${e.x*sc}px`,top:`${e.y*sc}px`,width:`${e.w*sc}px`,height:`${e.h*sc}px`});};
       const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);if(e.w<1.5||e.h<1){page().els.splice(page().els.indexOf(e),1);}else commit();draw();};
@@ -1795,7 +1821,7 @@ function layoutEditor(c,onSave){const editable=curEditable();
         const a=snapX(XS,[e.x+nw]);if(a&&hd!=="b"){nw+=a.d;gV.hidden=false;gV.style.left=`${a.at*sc}px`;if(e.type==="img"&&hd==="br")nh=nw/(o.w/o.h);}
         e.w=nw;e.h=nh;}
       place();};
-    const up=()=>{window.removeEventListener("pointermove",mvf);window.removeEventListener("pointerup",up);gV.hidden=gH.hidden=true;if(moved){lastTap={};commit();draw();}};
+    const up=()=>{window.removeEventListener("pointermove",mvf);window.removeEventListener("pointerup",up);gV.hidden=gH.hidden=true;if(moved){lastTap={};S.lyMoved=Date.now();commit();draw();}};
     window.addEventListener("pointermove",mvf);window.addEventListener("pointerup",up);});
   /* 넣기 */
   const center=(w,hh)=>({x:(P().w-w)/2,y:(P().h-hh)/2});
@@ -1833,7 +1859,7 @@ function layoutEditor(c,onSave){const editable=curEditable();
       for(const pg of L.pages)for(const e of pg.els){e.x=e.x*k+ox;e.y=e.y*k+oy;e.w*=k;e.h*=k;if(e.size)e.size*=k;}L.paper=np;commit();fit();
       if(L.pages.some(pg=>pg.els.length))toast("종이에 맞춰 같은 비율로 맞췄어요. 「자동 배치」로 새로 깔 수도 있어요",3500);}},Object.entries(PAPER).map(([k,v])=>h("option",{value:k,text:v.name,selected:L.paper===k})));
   const undoB=h("button",{type:"button",class:"btn sm ghost",text:"↶",title:"되돌리기 (Ctrl+Z)",onclick:undo}),redoB=h("button",{type:"button",class:"btn sm ghost",text:"↷",title:"다시 하기 (Ctrl+Y)",onclick:redo});
-  const replaceAll=(nl,btn,msg)=>{if(!nl)return toast("이 콘티에는 악보가 없어요");const has=L.pages.some(p=>p.els.length);if(has&&!confirmInline(btn))return;L=nl;pi=0;sel.clear();commit();fit();toast(msg);};
+  const replaceAll=(nl,btn,msg)=>{if(!nl)return toast("이 콘티에는 악보가 없어요");const has=L.pages.some(p=>p.els.length);if(has&&!confirmInline(btn))return;L=nl;pi=0;sel.clear();commit();S.lyAct=Date.now();fit();toast(msg);};
   const autoB=h("button",{type:"button",class:"btn sm",text:"✨ 자동 배치",title:"인도자 콘티 모양으로 깔아요 (지금 놓은 것은 바뀌어요)",onclick:()=>replaceAll(lyAuto(c,L.paper),autoB,"자동으로 놓았어요. 끌어서 다듬으세요")});
   const compB=h("button",{type:"button",class:"btn sm",text:"🗜 압축 배치",title:"모든 악보를 곡 제목과 함께 적은 쪽에 가득 (지금 놓은 것은 바뀌어요)",onclick:()=>replaceAll(lyCompact(c,L.paper),compB,"악보를 압축해서 놓았어요")});
   const hlBtn=h("button",{type:"button",class:"btn sm",text:"🖍 형광펜",title:"끌어서 형광펜 칠하기 (다시 누르면 끄기)",onclick:()=>{tool=tool==="hl"?"move":"hl";sel.clear();draw();}});
@@ -1876,7 +1902,7 @@ function layoutEditor(c,onSave){const editable=curEditable();
     h("p",{class:"hint",style:"margin:4px 0 0",text:"끌어서 옮기기 · Shift+클릭으로 여러 개 · Ctrl+A 전체 선택 · 오른쪽 아래 점으로 크기 · 글상자는 두 번 눌러 쓰기 · Ctrl+휠 확대 · ◀ ▶ 쪽 넘기기"})),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),
      h("button",{class:"btn",text:"⬇ PDF · 그림",onclick:async()=>{save();const r=await exportLayout(c);if(r)outputPick(r);}}),
-     editable?h("button",{class:"btn primary",text:"콘티에 저장",onclick:async()=>{save();if(S.cur===c||!c.id){if(curEditable())await saveConti();}else toast("담았어요");}}):null],"editor layout",
+     editable?h("button",{class:"btn primary",text:"콘티에 저장",onclick:async()=>{save();S.lySaved=Date.now();if(S.cur===c||!c.id){if(curEditable())await saveConti();}else toast("담았어요");}}):null],"editor layout",
     {beforeClose:()=>{if(editing){const t=sheet.querySelector('.ly-txt[contenteditable="true"]');if(t)t.blur();}if(dirty&&editable){save();toast("편집한 내용을 콘티에 담았어요. 「저장」을 눌러야 팀원에게 보여요",3500);}document.removeEventListener("keydown",key,true);ro.disconnect();return true;}});
   ro.observe(stage);setTimeout(fit,30);}
 /* 자유 배치를 그림으로: A3 가로 3307×2339 · A4 세로 1654×2339 (약 200dpi) */
