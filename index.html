@@ -557,7 +557,7 @@ body.devmode #main *:hover,body.devmode .bnav *:hover,body.devmode .modal:not(.d
 .dtsel select:last-child{flex-grow:1.4}
 @media (min-width:700px){.grid>.field:has(.dtsel){grid-column:span 2}}
 body.guest .bnav,body.guest .teamchip,body.guest #adminRow{display:none!important}
-.ly-x{position:absolute;top:-11px;right:-11px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;background:#d64545;color:#fff;font:700 12px/1 system-ui;display:grid;place-items:center;cursor:pointer;z-index:5;padding:0;box-shadow:0 1px 4px rgb(0 0 0 / .3)}
+.ly-x{pointer-events:auto!important;position:absolute;top:-11px;right:-11px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;background:#d64545;color:#fff;font:700 12px/1 system-ui;display:grid;place-items:center;cursor:pointer;z-index:5;padding:0;box-shadow:0 1px 4px rgb(0 0 0 / .3)}
 .gosongs{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1px dashed color-mix(in srgb,var(--team,var(--accent)) 55%,var(--line));background:color-mix(in srgb,var(--team,var(--accent)) 6%,var(--sheet));color:var(--ink);border-radius:12px;padding:16px 20px;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;text-align:left}
 .gosongs:hover{border-style:solid}.gosongs .gs-go{color:var(--team,var(--accent));font-size:.9rem;white-space:nowrap}
 .tourcard{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(460px,calc(100vw - 24px));background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-top:4px solid #2f62d6;border-radius:14px;box-shadow:0 14px 40px rgb(0 0 0 / .22);padding:12px 14px 12px}
@@ -1791,8 +1791,10 @@ function layoutEditor(c,onSave){const editable=curEditable();
       if(e.border)n.style.border=`${Math.max(1,.5*sc)}px solid ${e.color||"#111"}`;if(e.round)n.style.borderRadius="50%";if(e.fill)n.style.background=e.fill;n.append(t);
       if(editing===e.id){t.contentEditable="true";setTimeout(()=>{t.focus();const r=document.createRange();r.selectNodeContents(t);r.collapse(false);const s2=getSelection();s2.removeAllRanges();s2.addRange(r);},0);
         t.addEventListener("blur",()=>{e.text=t.innerText.replace(/\n$/,"");editing=null;commit();draw();});t.addEventListener("pointerdown",ev=>ev.stopPropagation());}}
-    if(sel.size===1&&sel.has(e.id)&&editable){n.append(h("div",{class:"ly-h br","data-h":"br"}),h("div",{class:"ly-h r","data-h":"r"}),h("div",{class:"ly-h b","data-h":"b"}));
-      /* 고른 것 오른쪽 위 ✕: 바로 지우기 (되돌리기로 살릴 수 있어요) */
+    const selOne=sel.size===1&&sel.has(e.id)&&editable;
+    if(selOne)n.append(h("div",{class:"ly-h br","data-h":"br"}),h("div",{class:"ly-h r","data-h":"r"}),h("div",{class:"ly-h b","data-h":"b"}));
+    /* ✕ 바로 지우기: 형광펜은 늘(형광펜을 쓰는 중에도), 나머지는 골랐을 때 · 되돌리기(↶)로 살릴 수 있어요 */
+    if(editable&&(selOne||e.type==="hl")){
       const x=h("button",{type:"button",class:"ly-x","aria-label":"지우기",title:"지우기 (↶로 되돌릴 수 있어요)",text:"✕"});
       x.addEventListener("pointerdown",ev=>{ev.stopPropagation();ev.preventDefault();});
       x.addEventListener("click",ev=>{ev.stopPropagation();const i=page().els.findIndex(z=>z.id===e.id);if(i>=0)page().els.splice(i,1);sel.clear();commit();draw();});n.append(x);}
