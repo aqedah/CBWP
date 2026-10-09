@@ -569,6 +569,15 @@ body.touring{padding-bottom:240px}
 .tourpill{position:fixed;z-index:59;left:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;background:#2f62d6;color:#fff;border-radius:999px;box-shadow:0 8px 24px rgb(0 0 0 / .2);overflow:hidden}
 .tourpill button{border:0;background:none;color:#fff;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer;padding:10px 6px 10px 14px}.tourpill .tp-x{padding:10px 12px 10px 6px;opacity:.8}
 body.fb-pad .tourpill{bottom:calc(140px + env(safe-area-inset-bottom,0px))}body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+.tour-spot{position:relative;z-index:59!important;box-shadow:0 0 0 4px #2f62d6,0 0 0 100vmax rgb(10 14 25 / .58)!important;border-radius:12px;background-clip:padding-box}
+.bnav.tour-spot,.bnav .tour-spot{position:relative}
+.tourdim{position:fixed;inset:0;z-index:58;background:rgb(10 14 25 / .58);pointer-events:none}
+.tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
+.tourcard .tc-then b{font-size:.92rem;word-break:keep-all}
+.tourcard .tc-nexthint{margin:-4px 0 10px;font-size:.84rem;color:#2f62d6;font-weight:700}
+.tourcard .tc-task{margin:0 0 10px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,#2f62d6 9%,var(--sheet));border:1px dashed #2f62d6;font-size:.88rem;color:var(--ink)}
+.tourcard .tc-task.ok{border-style:solid;border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--sheet));font-weight:700}
+.tourcard .btn.pulse{animation:tcpulse 1s ease-in-out 3}@keyframes tcpulse{50%{transform:scale(1.08)}}
 .tour-hl{outline:3px solid #2f62d6!important;outline-offset:4px;border-radius:12px;animation:tourpulse 1.4s ease-in-out infinite}
 @keyframes tourpulse{0%,100%{outline-color:#2f62d6}50%{outline-color:color-mix(in srgb,#2f62d6 35%,transparent)}}
 .dropzone.go{cursor:pointer}.dropzone.go:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
@@ -1126,7 +1135,10 @@ function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{t
     h("div",{class:"teampick"},h("a",{class:"teambtn proj",href:"?demo=1",style:"--tc:#2f62d6;text-decoration:none"},h("span",{class:"tno",text:"D"}),h("span",{class:"tnote","aria-hidden":"true",text:"👀"}),
       h("b",{text:"체험 찬양팀"}),h("small",{text:"예시 콘티 · 악보 · 멤버 · 실제 자료와 따로"}),h("span",{text:"둘러보기 →"}))),
     h("div",{class:"row",style:"gap:8px;margin-top:12px;flex-wrap:wrap;align-items:stretch"},h("span",{class:"hint",style:"flex-basis:100%",text:"처음이라면 역할에 맞는 튜토리얼로 한 단계씩 따라가 보세요."}),
-      h("a",{class:"btn primary",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=leader",text:"🎤 인도자 튜토리얼"}),h("a",{class:"btn",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=member",text:"🎸 싱어 · 악기팀 튜토리얼"}))));}
+      h("a",{class:"btn primary",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=leader",text:"🎤 인도자 튜토리얼"}),h("a",{class:"btn",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=member",text:"🎸 싱어 · 악기팀 튜토리얼"})),
+    h("div",{class:"row",style:"gap:8px;margin-top:8px;flex-wrap:wrap;align-items:stretch"},h("span",{class:"hint",style:"flex-basis:100%",text:"익숙해지려면 직접 해 보는 연습도 있어요."}),
+      h("a",{class:"btn",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=practiceConti",text:"✍️ 콘티 작성 연습"}),
+      h("a",{class:"btn",style:"flex:1 1 0;min-width:0;justify-content:center;text-align:center;white-space:normal;padding-inline:8px;line-height:1.3",href:"?demo=1&tour=practicePpt",text:"🖥 PPT 만들기 연습"}))));}
 
 /* =========================================================
    개발자 모드 (관리자): 화면의 글자(탭 이름 · 단추 · 제목 · 안내)를 눌러 바로 고쳐요
@@ -1219,11 +1231,11 @@ function importModal(){const st=h("p",{class:"hint"});
 /* =========================================================
    체험판 튜토리얼: 인도자 / 싱어 · 악기팀 — 화면을 옮겨 가며 한 단계씩 안내해요
    ========================================================= */
-const TOUR_NAME={leader:"김하늘",member:"박소망"};
+const TOUR_NAME={leader:"김하늘",member:"박소망",practiceConti:"김하늘",practicePpt:"김하늘"};
 const byH2=t=>()=>[...document.querySelectorAll("#main .sheet")].find(x=>{const h2=x.querySelector("h2");return h2&&h2.textContent.includes(t);});
 const byBtn=t=>()=>[...document.querySelectorAll("#main button,#main a.btn")].find(b=>b.textContent.includes(t));
 const TOURS={
-  leader:{name:"인도자 튜토리얼",steps:[
+  leader:{name:"인도자 튜토리얼",then:["practiceConti","✍️ 네, 콘티 짜는 연습 해 볼게요","이제 직접 콘티를 짜 볼까요? 방금 본 순서대로, 하나씩 눌러 보며 연습해요."],steps:[
     {tab:"home",t:"인도자로 시작해요",x:"인도자 「김하늘」로 들어와 있어요. 화면 아래 메뉴는 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개예요. 메뉴마다 먼저 전체를 소개하고, 그 안의 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
     {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 다가오는 예배와 내가 맡은 섬김, 팀 공지, 팀원들의 참여 응답이 모여 있어요. 매주 여기서 시작하면 돼요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"bible",t:"[콘티] 한눈에",x:"콘티 메뉴는 예배 하나를 준비하는 순서대로 칸이 놓여 있어요. 말씀 · 묵상 → 콘티 작성 → 악보 편집 → PPT 만들기, 그리고 예전 콘티를 다시 보는 「지난 콘티」. 왼쪽부터 차례로 따라가면 준비가 끝나요.",sel:()=>document.querySelector("#main .subtabs")},
@@ -1241,6 +1253,30 @@ const TOURS={
     {tab:"members",t:"[우리 팀] 멤버 · 편성",x:"「멤버」에서 팀원 이름 · 맡는 자리 · 회원 구분을 관리해요. 「편성」에서는 주일마다 누가 어느 자리를 맡을지 미리 짜 두고, 팀원들이 남긴 「참여 가능 · 어려워요」 응답을 보며 정해요. 여기서 짠 편성은 콘티 작성의 「참여자 → 불러오기」로 그대로 들어가요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"stats",t:"[우리 팀] 출결 · 결산 · 회칙",x:"「출결」에서 연습 · 주일 출석을 체크하면, 「결산」이 한 해 동안 누가 몇 번 섬겼는지, 어떤 곡을 많이 불렀는지 모아 줘요. 「회칙」에는 팀 규칙을 적어 둬요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"me",t:"[나] 한눈에",x:"내 이름 · 사진 · 맡는 자리를 정하고, 「다른 기기 연결」로 휴대폰 · 태블릿 · 컴퓨터를 함께 써요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]},
+  /* ===== 실습: 직접 해 보며 익혀요 (done()이 참이 되면 칭찬하고 다음으로) ===== */
+  practiceConti:{name:"콘티 작성 연습",practice:true,then:["practicePpt","🖥 네, PPT도 해 볼게요","이번엔 방금 만든 콘티로 예배 PPT를 만들어 볼까요?"],steps:[
+    {go:"write",t:"콘티 작성 연습을 시작해요",x:"이번에는 직접 눌러 보며 콘티 하나를 처음부터 끝까지 만들어 봐요. 체험판이라 무엇을 눌러도 괜찮아요. 준비되면 「시작 →」을 누르세요."},
+    {t:"① 새 콘티 열기",x:"위쪽 「＋ 새로 작성하기」를 눌러 빈 콘티를 시작해 보세요.",sel:byBtn("새로 작성하기"),done:()=>!S.curId&&!((S.cur||{}).before||[]).length,ok:"빈 콘티가 열렸어요. 다음엔 예배 정보를 채워 볼 거예요."},
+    {pre:()=>{if(S.tab==="write"&&S.wTab!=="info"){S.wTab="info";render();}},t:"② 본문 쓰기",x:"「예배 정보」의 본문 칸에 「요한복음 15:1-8」처럼 설교 본문을 써 보세요.",sel:()=>$("#f-passage"),done:()=>/\d/.test((S.cur||{}).passage||""),ok:"본문이 들어갔어요. 다음엔 설교 제목을 써 볼 거예요."},
+    {t:"③ 설교 제목 쓰기",x:"설교 제목 칸에 제목을 써 보세요. (예: 참포도나무)",sel:()=>$("#f-title"),done:()=>!!((S.cur||{}).sermonTitle||"").trim(),ok:"설교 제목도 들어갔어요. 다음엔 함께 섬길 사람들을 불러올 거예요."},
+    {base:()=>((S.cur||{}).roster||[]).reduce((n,r)=>n+(r.people||[]).length,0),t:"④ 참여자 불러오기",x:"「02 참여자」 오른쪽 「불러오기」를 누르고 「편성 A」를 골라 보세요. 자리마다 + 를 눌러 한 사람씩 넣어도 돼요.",
+      sel:()=>{const b=$("#rosterBox");return b&&b.closest(".sheet");},done:st=>((S.cur||{}).roster||[]).reduce((n,r)=>n+(r.people||[]).length,0)>st.b0,ok:"참여자가 채워졌어요. 다음엔 「찬양」 탭으로 넘어가 곡을 고를 거예요."},
+    {t:"⑤ 찬양 탭 열기",x:"위쪽 「찬양」 탭을 눌러 보세요. (예배 정보 맨 아래 「🎵 찬양을 선곡할까요?」를 눌러도 돼요)",sel:()=>document.querySelector('.wtab[data-wt="songs"]'),done:()=>S.wTab==="songs",ok:"다음엔 예배 찬양에 곡을 넣어 볼 거예요."},
+    {t:"⑥ 곡 3곡 넣기",x:"「예배 찬양」 빈 칸을 누르면 곡 찾기로 가요. 곡 이름을 쓰거나 「최근 부른 곡」의 + 를 눌러 3곡을 넣어 보세요.",sel:()=>$("#list-before"),done:()=>((S.cur||{}).before||[]).length>=3,ok:"벌써 3곡! 다음엔 키(Key)를 정해 볼 거예요."},
+    {t:"⑦ 키 정하기",x:"첫 번째 곡의 「Key」 칸에 키를 써 보세요. (예: G)",sel:()=>document.querySelector("#list-before input.key"),done:()=>!!((((S.cur||{}).before||[])[0]||{}).key||"").trim(),ok:"다음엔 팀원에게 전할 메모를 남겨 볼 거예요."},
+    {t:"⑧ 곡 메모 쓰기",x:"아무 곡이나 메모 칸에 연주 방법을 적어 보세요. (예: 2절 후 브릿지, 후렴 반키업)",sel:()=>document.querySelector("#list-before input.memo"),done:()=>((S.cur||{}).before||[]).some(i=>(i.memo||"").trim()),ok:"메모는 콘티 보기 · 출력에 함께 나와요. 다음엔 저장해 볼 거예요."},
+    {t:"⑨ 저장하기",x:"아래 「저장」을 눌러 보세요. 처음 한 번 저장하면 그다음부터는 저절로 저장돼요.",sel:()=>$("#saveBtn"),done:()=>!!S.curId,ok:"저장됐어요. 다음엔 팀원에게 보낼 송리스트 공지를 만들어 볼 거예요."},
+    {t:"⑩ 송리스트 공지 만들기",x:"아래 「📋 송리스트 공지」를 눌러 보세요. 단톡방에 붙여 넣을 글이 저절로 만들어져요.",sel:byBtn("송리스트 공지"),done:()=>!!document.querySelector('.panel[aria-label*="송리스트"]'),ok:"공지 글이 만들어졌어요. 「복사」나 「📤 카톡으로 보내기」로 바로 보내면 돼요."},
+    {t:"🎉 콘티 작성 연습 끝!",x:"수고하셨어요! 새 콘티 열기 → 예배 정보 → 참여자 → 곡 넣기 → 키 · 메모 → 저장 → 공지까지, 실제로 쓰는 순서 그대로 해 보셨어요. 다음엔 「PPT 만들기 연습」도 해 보세요."}]},
+  practicePpt:{name:"PPT 만들기 연습",practice:true,steps:[
+    {go:"home",t:"PPT 만들기 연습을 시작해요",x:"콘티의 곡 가사로 예배 PPT를 만드는 법을 직접 해 봐요. 준비되면 「시작 →」을 누르세요."},
+    {t:"① PPT 만들기로 가기",x:"아래 메뉴 「콘티」를 누른 뒤, 위쪽 칸 메뉴에서 「PPT 만들기」를 눌러 보세요.",sel:()=>document.querySelector('.bnav button[data-group="conti"]'),done:()=>S.tab==="pptmake",ok:"PPT 만들기 화면이에요. 다음엔 PPT를 미리 볼 거예요."},
+    {t:"② 미리보기 열기",x:"이번 콘티의 「미리보기」를 눌러 보세요. 곡마다 가사가 장으로 나뉘어 보여요.",sel:byBtn("미리보기"),done:()=>!!document.querySelector('.panel[aria-label^="가사 PPT 미리보기"]'),ok:"가사 장이 보이죠? 템플릿을 바꾸면 모양이 바로 바뀌어요. 다음엔 가사가 없는 곡을 채워 볼 거예요."},
+    {t:"③ PPT 라이브러리로 가기",x:"미리보기를 닫고, 아래 메뉴 「라이브러리」 → 위쪽 「PPT 라이브러리」로 가 보세요.",sel:()=>document.querySelector('.bnav button[data-group="songs"]'),done:()=>S.tab==="ppt",ok:"다음엔 가사 없는 곡에 가사를 넣어 볼 거예요."},
+    {t:"④ 가사 넣기",x:"「곡별 PPT」에서 「새 노래로 (예시곡)」을 찾아 「가사 넣기」를 누르고, 아무 가사나 두세 줄 써서 「저장」해 보세요. (빈 줄을 두면 다음 장으로 넘어가요)",sel:()=>document.querySelector("#main .pmrow")&&document.querySelector("#main .pmrow").closest(".sheet"),
+      done:()=>!!(((S.songs||[]).find(x=>/새 노래로/.test(x.title||""))||{}).lyrics||"").trim(),ok:"가사가 들어갔어요. 이제 이 곡도 PPT로 만들 수 있어요. 다음엔 PPT 파일을 받아 볼 거예요."},
+    {t:"⑤ PPT 받기",x:"다시 「콘티 → PPT 만들기 → 미리보기」로 가서 「⬇ PPT 받기」를 눌러 보세요.",sel:()=>document.querySelector('.bnav button[data-group="conti"]'),base:()=>S.lastPptExport||0,done:st=>(S.lastPptExport||0)>st.b0,ok:"PPT 파일이 만들어졌어요. 실제로는 이 파일을 방송실에 넘기면 돼요."},
+    {t:"🎉 PPT 만들기 연습 끝!",x:"수고하셨어요! 미리보기 → 가사 채우기 → PPT 받기까지 해 보셨어요. 우리 교회 PPT 모양을 쓰려면 「PPT 라이브러리 → PPT 템플릿」에 실제 예배 PPT를 한 번 올려 두세요."}]},
   member:{name:"싱어 · 악기팀 튜토리얼",steps:[
     {tab:"home",t:"팀원으로 시작해요",x:"싱어 「박소망」으로 들어와 있어요. 화면 아래 메뉴는 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개예요. 메뉴마다 먼저 전체를 소개하고, 팀원이 자주 쓰는 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
     {tab:"home",t:"[홈] 한눈에",x:"팀원은 매주 이 홈 화면만 봐도 충분해요. 위쪽 「나의 섬김」에 내가 들어간 콘티와 맡은 자리가 나오고, 아래에는 참여 응답과 팀 공지가 있어요.",sel:()=>document.querySelector("#main .sheet.myserve")},
@@ -1255,26 +1291,38 @@ const TOURS={
     {tab:"cal",t:"[우리 팀] 일정",x:"연습 · 모임 날짜와 장소를 확인해요. 날짜를 누르면 그날 일정을 보고, 참여 여부를 남길 수 있어요.",sel:()=>document.querySelector("#main .subtabs+.sheet")||document.querySelectorAll("#main .sheet")[1]},
     {tab:"me",t:"[나] 한눈에",x:"내 이름 · 사진 · 맡는 자리를 정해요. 「다른 기기 연결」로 휴대폰과 태블릿을 함께 쓸 수 있어요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]}};
 let TOUR=null;
+/* 탭 이름: 아래 메뉴 · 위 칸 메뉴 이름으로 (예: 콘티 › 악보 편집) */
+function tabLabel(tab,wt){const g=Object.keys(NAVG).find(k=>NAVG[k].some(([t])=>t===tab));const gl={home:"홈",conti:"콘티",songs:"라이브러리",team:"우리 팀",me:"나"}[g]||"";
+  const sub=(NAVG[g]||[]).find(([t])=>t===tab);const sl=sub&&NAVG[g].length>1?sub[1]:"";return `「${[gl,sl,wt==="songs"?"찬양 탭":wt==="info"?"예배 정보 탭":""].filter(Boolean).join(" › ")}」`;}
 function tourStart(kind){const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR_LAST=null;const pl=document.getElementById("tourpill");if(pl)pl.remove();TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
 let TOUR_LAST=null;
-function tourEnd(done){if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");tourPill();}
+function tourEnd(done){if(TOUR)clearInterval(TOUR.iv);document.getElementById("tourdim")?.remove();document.querySelectorAll(".tour-spot").forEach(e=>e.classList.remove("tour-spot"));if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");tourPill();}
 /* 끝까지 안 보고 ✕로 닫았으면: 왼쪽 아래 「이어 보기」 단추를 남겨요 */
 function tourPill(){let p=document.getElementById("tourpill");if(p)p.remove();if(!TOUR_LAST||TOUR)return;const T=TOURS[TOUR_LAST.kind];
   p=h("div",{id:"tourpill",class:"tourpill"},h("button",{type:"button",class:"tp-go",text:`📘 ${T.name} 이어 보기 (${TOUR_LAST.i+1}/${T.steps.length})`,onclick:()=>{TOUR={...TOUR_LAST};TOUR_LAST=null;p.remove();tourShow();}}),
     h("button",{type:"button",class:"tp-x","aria-label":"이어 보기 단추 닫기",text:"✕",onclick:()=>{TOUR_LAST=null;p.remove();}}));document.body.append(p);}
-function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));
-  document.querySelectorAll(".modal").forEach(m=>m.remove());
-  if(st.wt)S.wTab=st.wt;if(S.tab!==st.tab||st.wt)setTab(st.tab);
+function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];document.querySelectorAll(".tour-hl,.tour-spot").forEach(e=>e.classList.remove("tour-hl","tour-spot"));
+  if(!T.practice)document.querySelectorAll(".modal").forEach(m=>m.remove());
+  clearInterval(TOUR.iv);document.getElementById("tourdim")?.remove();
+  if(T.practice){if(st.go&&S.tab!==st.go)setTab(st.go);if(st.pre)st.pre();TOUR.b0=st.base?st.base():0;TOUR.ok=!st.done;}
+  else{if(st.wt)S.wTab=st.wt;if(S.tab!==st.tab||st.wt)setTab(st.tab);}
   let card=document.getElementById("tourcard");if(!card){card=h("div",{id:"tourcard",class:"tourcard",role:"dialog","aria-label":T.name});document.body.append(card);}document.body.classList.add("touring");
   const n=T.steps.length,last=TOUR.i===n-1;
-  card.replaceChildren(h("div",{class:"tc-top"},h("b",{text:T.name}),h("span",{class:"tc-n",text:`${TOUR.i+1} / ${n}`}),h("button",{type:"button",class:"tc-x","aria-label":"튜토리얼 닫기 (이어 보기 가능)",title:"닫기 · 왼쪽 아래 「이어 보기」로 다시 열 수 있어요",text:"✕",onclick:()=>tourEnd(false)})),
+  card.replaceChildren(...[h("div",{class:"tc-top"},h("b",{text:T.name}),h("span",{class:"tc-n",text:`${TOUR.i+1} / ${n}`}),h("button",{type:"button",class:"tc-x","aria-label":"튜토리얼 닫기 (이어 보기 가능)",title:"닫기 · 왼쪽 아래 「이어 보기」로 다시 열 수 있어요",text:"✕",onclick:()=>tourEnd(false)})),
     h("div",{class:"tc-bar"},h("i",{style:`width:${(TOUR.i+1)/n*100}%`})),
-    h("h3",{text:st.t}),h("p",{text:st.x}),
+    h("h3",{text:st.t}),h("p",{text:st.x}),last&&T.then?h("div",{class:"tc-then"},h("b",{text:T.then[2]}),h("button",{type:"button",class:"btn primary",text:T.then[1],onclick:()=>{const k=T.then[0];tourEnd(true);setTimeout(()=>tourStart(k),50);}})):null,(()=>{if(T.practice||last)return null;const nx=T.steps[TOUR.i+1];
+      if(nx.tab===st.tab&&(nx.wt||"")===(st.wt||""))return null;const lb=tabLabel(nx.tab,nx.wt);return h("p",{class:"tc-nexthint",text:`👉 「다음 →」을 누르면 ${lb} 화면으로 넘어가요.`});})(),st.done?h("div",{class:"tc-task",id:"tc-task",text:"👆 직접 해 보세요. 하면 저절로 알려 드려요."}):null,
     h("div",{class:"tc-btns"},TOUR.i?h("button",{type:"button",class:"btn sm",text:"← 이전",onclick:()=>{TOUR.i--;tourShow();}}):h("span"),
-      h("button",{type:"button",class:"btn sm primary",text:last?"끝내기 ✓":"다음 →",onclick:()=>{if(last)return tourEnd(true);TOUR.i++;tourShow();}})));
-  setTimeout(()=>{if(!TOUR)return;const el=st.sel&&st.sel();if(el){el.classList.add("tour-hl");el.scrollIntoView({behavior:"smooth",block:"center"});}else window.scrollTo({top:0,behavior:"smooth"});},350);}
+      st.done?h("button",{type:"button",class:"btn sm ghost tc-skip",text:"건너뛰기",onclick:()=>{TOUR.i++;tourShow();}}):null,
+      h("button",{type:"button",id:"tc-next",disabled:!!st.done,class:last&&T.then?"btn sm":"btn sm primary",text:last?(T.then?"다음에 할게요":"끝내기 ✓"):T.practice&&TOUR.i===0?"시작 →":"다음 →",onclick:()=>{if(last)return tourEnd(true);TOUR.i++;tourShow();}}))].filter(Boolean));
+  if(st.done){const chk=()=>{if(!TOUR||TOURS[TOUR.kind]!==T||T.steps[TOUR.i]!==st)return clearInterval(iv);let ok=false;try{ok=st.done({b0:TOUR.b0});}catch(e){}
+      if(ok){clearInterval(iv);const tk=$("#tc-task");if(tk){tk.className="tc-task ok";tk.textContent=`👏 ${["잘하셨어요!","좋아요!","훌륭해요!","완벽해요!","멋져요!"][TOUR.i%5]} ${st.ok||""}`;}const nb=$("#tc-next");if(nb){nb.disabled=false;nb.classList.add("pulse");}const sk=card.querySelector(".tc-skip");if(sk)sk.remove();}};
+    const iv=setInterval(chk,500);TOUR.iv=iv;}
+  setTimeout(()=>{if(!TOUR)return;const el=st.sel&&st.sel();
+    if(el){el.classList.add(T.practice?"tour-hl":"tour-spot");el.scrollIntoView({behavior:"smooth",block:"center"});}
+    else{if(!T.practice)document.body.append(h("div",{id:"tourdim",class:"tourdim"}));window.scrollTo({top:0,behavior:"smooth"});}},350);}
 function tourFromUrl(){try{const k=new URLSearchParams(location.search).get("tour");if(k&&TOURS[k])tourStart(k);}catch(e){}}
-function render(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(h("div",{class:"banner demoban"},h("b",{text:"👀 체험판 "}),"실제 교회 자료가 아니라 예시예요. 눌러 보고 고쳐 볼 수 있지만 저장되지 않고, 새로고침하면 처음으로 돌아가요. ",h("button",{type:"button",class:"btn sm",text:"🎤 인도자 튜토리얼",onclick:()=>tourStart("leader")})," ",h("button",{type:"button",class:"btn sm",text:"🎸 싱어 · 악기팀 튜토리얼",onclick:()=>tourStart("member")})," ",h("button",{type:"button",class:"btn sm",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}})));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
+function render(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(h("div",{class:"banner demoban"},h("b",{text:"👀 체험판 "}),"실제 교회 자료가 아니라 예시예요. 눌러 보고 고쳐 볼 수 있지만 저장되지 않고, 새로고침하면 처음으로 돌아가요. ",h("button",{type:"button",class:"btn sm",text:"🎤 인도자 튜토리얼",onclick:()=>tourStart("leader")})," ",h("button",{type:"button",class:"btn sm",text:"🎸 싱어 · 악기팀 튜토리얼",onclick:()=>tourStart("member")})," ",h("button",{type:"button",class:"btn sm",text:"✍️ 콘티 작성 연습",onclick:()=>tourStart("practiceConti")})," ",h("button",{type:"button",class:"btn sm",text:"🖥 PPT 만들기 연습",onclick:()=>tourStart("practicePpt")})," ",h("button",{type:"button",class:"btn sm",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}})));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
   if((S.tab==="write"||S.tab==="sheet")&&S.team&&!S.curId&&!isWriter())S.tab="list";
   syncNav();
@@ -4705,7 +4753,7 @@ async function gradTitles(blob,g,mark){try{await loadScript(JSZIP_URL);const zip
   const re=new RegExp(`<a:solidFill><a:srgbClr val="${mark}"\\s*(?:/>|>[\\s\\S]*?</a:srgbClr>)</a:solidFill>`,"g");
   for(const f of Object.values(zip.files).filter(f=>/^ppt\/slides\/slide\d+\.xml$/.test(f.name))){const x=await f.async("string");if(x.includes(mark))zip.file(f.name,x.replace(re,gx));}
   return await zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});}catch(e){console.error(e);return blob;}}
-async function exportLyricsPpt(c,tplOverride,skipAsk){if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");
+async function exportLyricsPpt(c,tplOverride,skipAsk){S.lastPptExport=Date.now();if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");
   const missing=items.filter(it=>!lyricsOf(it).trim());
   const go=async()=>{const md=modal("가사 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"ppt-st",text:"준비하고 있어요…"})),null);const st=$("#ppt-st",md.el);
     try{await loadScript(PPTX_URL);const cfg=tplOverride||tplFor(c);const bg=await bgDataUrl(cfg);
