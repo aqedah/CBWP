@@ -470,6 +470,13 @@ footer.foot a{color:var(--ink2)}
 .teambtn b{font-family:var(--font-display);font-size:1.5rem;color:var(--ink)}
 .teambtn small{font-size:.7rem;font-weight:600;letter-spacing:.08em;color:var(--muted)}
 .teambtn>span:last-child{font-size:.82rem;color:var(--ink2);margin-top:6px}
+/* 휴대폰: 팀 고르기를 밭 전(田) 자 2칸 배열로, 높이도 줄여요 */
+@media (max-width:640px){.teampick{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .teambtn{min-height:0;padding:12px 12px 12px;border-top-width:4px;gap:2px}
+  .teambtn .tno{top:10px;right:10px;font-size:.7rem}.teambtn .tnote{font-size:1.1rem;margin-bottom:4px}
+  .teambtn b{font-size:1.15rem;line-height:1.25;word-break:keep-all}.teambtn small{font-size:.62rem;letter-spacing:.04em;overflow-wrap:anywhere}
+  .teambtn>span:last-child{font-size:.74rem;margin-top:4px}
+  .verse{margin:14px auto 12px}.verse blockquote{font-size:1.15rem}.verse blockquote::before{margin-bottom:10px}}
 .teamchip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:.8rem;font-weight:600;color:#fff;background:var(--team,var(--accent));border-radius:999px;padding:0 12px;height:28px;line-height:1;box-sizing:border-box}
 .teamchip button{color:#fff!important;opacity:.85}
 .teamchip .tc-nm,.teamchip button{display:inline-flex;align-items:center;height:100%;line-height:1;font-size:.8rem!important;vertical-align:middle}.teamchip button{text-underline-offset:3px}
