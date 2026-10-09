@@ -247,7 +247,8 @@ html{scrollbar-gutter:stable}
 .glpop-h{display:flex;align-items:center;gap:8px;margin-bottom:4px}.glpop-h b{font-size:1rem}.glpop-x{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font-size:1rem}.glpop p{margin:0;font-size:.9rem;line-height:1.55}
 .pager{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin:12px 0 4px}
 .pgbtn{min-width:34px;height:34px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--sheet);color:var(--ink);font:inherit;font-weight:700;font-size:.88rem;cursor:pointer;font-variant-numeric:tabular-nums}
-.pgbtn.on{background:var(--team,var(--accent));border-color:transparent;color:#fff}.pgbtn:disabled{opacity:.35;cursor:default}.pgdots{color:var(--muted);padding:0 2px}.pgjumpwrap{display:inline-flex;align-items:center;gap:4px;margin:0 6px}.pgjump{width:64px!important;height:34px;text-align:center;padding:0 4px!important;font-weight:700}.pgtotal{margin-left:8px}
+.pgbtn.on{background:var(--team,var(--accent));border-color:transparent;color:#fff}.pgbtn:disabled{opacity:.35;cursor:default}.pgdots{color:var(--muted);padding:0 2px}.pgjumpwrap{display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding-left:12px;border-left:1px solid var(--line)}
+@media (max-width:520px){.pgjumpwrap{flex-basis:100%;justify-content:center;margin:6px 0 0;padding:0;border:0}}.pgjump{width:64px!important;height:34px;text-align:center;padding:0 4px!important;font-weight:700}.pgtotal{margin-left:8px}
 .tbox{flex:1;min-width:0;display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--sheet);padding-right:12px}.tbox input{border:0!important;box-shadow:none!important;flex:0 1 auto;min-width:3em;max-width:100%;background:transparent;padding-right:2px!important}
 .tsuffix{flex:none;font-weight:700;color:var(--ink);white-space:nowrap;font-size:1.02rem;margin-right:auto}
 .wb.wb2{grid-template-columns:minmax(0,1fr) minmax(300px,380px)}
@@ -2843,13 +2844,15 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
   m.append(hymnSheet(addFromList),tongilSheet(addFromList),catalogSheet());}
 /* 쪽 나누기: ‹ 1 2 3 … N › */
 function pagerEl(total,per,page,go){const n=Math.ceil(total/per);if(n<=1)return h("span");
-  const nums=new Set([1,n,page-1,page,page+1,page-2,page+2].filter(x=>x>=1&&x<=n));const list=[...nums].sort((a,b)=>a-b);
+  const nr=window.innerWidth<520?1:2;const nums=new Set([1,n,...Array.from({length:nr*2+1},(_,i)=>page-nr+i)].filter(x=>x>=1&&x<=n));const list=[...nums].sort((a,b)=>a-b);
   const btn=(x,label,dis)=>h("button",{type:"button",class:"pgbtn"+(x===page&&!label?" on":""),disabled:!!dis,"aria-current":x===page&&!label?"page":null,"aria-label":label?(label==="‹"?"앞 쪽":"다음 쪽"):`${x}쪽`,text:label||String(x),onclick:()=>go(x)});
   const out=[btn(page-1,"‹",page<=1)];list.forEach((x,i)=>{if(i&&x-list[i-1]>1)out.push(h("span",{class:"pgdots",text:"…"}));out.push(btn(x));});out.push(btn(page+1,"›",page>=n));
-  const jump=h("input",{type:"number",min:1,max:n,value:page,class:"pgjump","aria-label":`쪽 번호 (1~${n})`,title:"쪽 번호를 쓰고 Enter",
-    onkeydown:e=>{if(e.key==="Enter"){e.preventDefault();e.target.blur();const v=Math.max(1,Math.min(n,Math.round(+e.target.value)||1));go(v);}}});
-  const mid=Math.ceil(out.length/2);out.splice(mid,0,h("span",{class:"pgjumpwrap"},jump,h("span",{class:"hint",text:`/ ${n}쪽`})));
-  return h("nav",{class:"pager","aria-label":"쪽 넘기기"},...out,h("span",{class:"hint pgtotal",text:`${total}곡`}));}
+  /* 쪽 번호 바로 가기: 번호 줄과 헷갈리지 않게 맨 뒤에 따로 */
+  const doGo=()=>{const v=Math.round(+jump.value);if(!v)return jump.focus();jump.blur();go(Math.max(1,Math.min(n,v)));};
+  const jump=h("input",{type:"number",min:1,max:n,placeholder:"쪽",class:"pgjump","aria-label":`가고 싶은 쪽 번호 (1~${n})`,title:"쪽 번호를 쓰고 Enter",
+    onkeydown:e=>{if(e.key==="Enter"){e.preventDefault();doGo();}}});
+  return h("nav",{class:"pager","aria-label":"쪽 넘기기"},...out,h("span",{class:"hint pgtotal",text:`전체 ${n}쪽 · ${total}곡`}),
+    h("span",{class:"pgjumpwrap"},jump,h("button",{type:"button",class:"btn sm",text:"쪽으로 가기",onclick:doGo})));}
 /* 찬송가 칸을 누르면: 라이브러리에 있는 그 곡의 가사 */
 function hymnLyricsModal(song,label){if(!song)return toast("라이브러리에서 이 곡을 찾지 못했어요");const ly=(song.lyrics||"").trim();
   const body=h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 8px",text:label}),
