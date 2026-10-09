@@ -549,7 +549,10 @@ body.wide-conti .wrap{max-width:1280px}
 .tourcard .tc-bar{height:3px;background:var(--line);border-radius:2px;margin:8px 0 10px;overflow:hidden}.tourcard .tc-bar i{display:block;height:100%;background:#2f62d6;transition:width .3s}
 .tourcard h3{margin:0 0 6px;font-size:1.05rem}.tourcard p{margin:0 0 10px;font-size:.9rem;line-height:1.6;color:var(--ink2);word-break:keep-all}
 .tourcard .tc-btns{display:flex;justify-content:space-between;gap:8px}
-body.touring{padding-bottom:240px}body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+body.touring{padding-bottom:240px}
+.tourpill{position:fixed;z-index:59;left:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;background:#2f62d6;color:#fff;border-radius:999px;box-shadow:0 8px 24px rgb(0 0 0 / .2);overflow:hidden}
+.tourpill button{border:0;background:none;color:#fff;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer;padding:10px 6px 10px 14px}.tourpill .tp-x{padding:10px 12px 10px 6px;opacity:.8}
+body.fb-pad .tourpill{bottom:calc(140px + env(safe-area-inset-bottom,0px))}body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .tour-hl{outline:3px solid #2f62d6!important;outline-offset:4px;border-radius:12px;animation:tourpulse 1.4s ease-in-out infinite}
 @keyframes tourpulse{0%,100%{outline-color:#2f62d6}50%{outline-color:color-mix(in srgb,#2f62d6 35%,transparent)}}
 .dropzone.go{cursor:pointer}.dropzone.go:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
@@ -1145,9 +1148,9 @@ const TOURS={
     {tab:"sheet",t:"⑤ 악보 편집",x:"곡마다 악보에 구간(Intro · 1절 · 후렴) 표시를 하고, 곡 흐름 · 연주 시간을 적어요. 「🧩 자유롭게 편집」으로 쪽을 자르고 붙일 수 있어요. 마지막에 「콘티 출력」으로 팀원에게 줄 악보 묶음을 만들어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"pptmake",t:"⑥ PPT 만들기",x:"콘티의 곡 가사로 예배 가사 PPT를 만들어요. 템플릿을 고르면 우리 교회 PPT 모양 그대로 나와요. 미리 보고 「PPT 받기」를 누르면 끝이에요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"songs",t:"⑦ 찬양 라이브러리",x:"교회 전체가 함께 쓰는 곡 목록이에요. 곡을 찾고, 없으면 바로 등록해요. 썸네일을 누르면 악보를 보고, 가사 · PPT도 여기서 넣어요. 한 번 넣어 두면 다음 콘티부터 그대로 불러와요.",sel:()=>document.querySelector("#song-q")},
-    {tab:"lineup",t:"⑧ 편성",x:"주일마다 누가 어느 자리를 맡을지 편성표를 짜요. 팀원들이 홈에서 남긴 「참여 가능 · 어려워요」 응답을 보면서 정하면 돼요.",sel:()=>document.querySelector("#main .sheet")},
-    {tab:"cal",t:"⑨ 일정",x:"연습 · 모임 · 행사 일정을 넣어요. 팀원은 일정마다 참여 여부를 알려 줘요.",sel:()=>document.querySelector("#main .sheet")},
-    {tab:"stats",t:"⑩ 출결 · 결산",x:"출결을 체크하면 한 해 동안 몇 번 섬겼는지, 어떤 곡을 많이 불렀는지 결산으로 모아 줘요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]},
+    {tab:"cal",t:"⑧ 우리 팀 탭 한눈에",x:"여기부터는 콘티와 따로, 팀을 꾸리는 곳이에요. 아래 메뉴 「우리 팀」을 누르면 위에 일정 · 멤버 · 편성 · 출결 · 결산 · 회칙이 나와요. 지금은 「일정」이에요. 연습 · 모임 · 행사를 넣으면 팀원이 홈에서 참여 여부를 알려 줘요.",sel:()=>document.querySelector("#main .subtabs")},
+    {tab:"members",t:"⑨ 멤버 · 편성",x:"「멤버」에서 팀원 이름 · 맡는 자리 · 회원 구분을 관리해요. 「편성」에서는 주일마다 누가 어느 자리를 맡을지 미리 짜 두고, 팀원들이 남긴 「참여 가능 · 어려워요」 응답을 보며 정해요. 여기서 짠 편성은 콘티 작성의 「참여자 → 불러오기」로 그대로 들어가요.",sel:()=>document.querySelector("#main .subtabs")},
+    {tab:"stats",t:"⑩ 출결 · 결산 · 회칙",x:"「출결」에서 연습 · 주일 출석을 체크하면, 「결산」이 한 해 동안 누가 몇 번 섬겼는지, 어떤 곡을 많이 불렀는지 모아 줘요. 「회칙」에는 팀 규칙을 적어 둬요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .subtabs")}]},
   member:{name:"싱어 · 악기팀 튜토리얼",steps:[
     {tab:"home",t:"팀원으로 시작해요",x:"싱어 「박소망」으로 들어와 있어요. 팀원은 매주 이 홈 화면만 봐도 충분해요. 위쪽 「나의 섬김」에 내가 들어간 콘티와 맡은 자리가 나와요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"① 콘티 · 악보 보기",x:"「콘티 · 악보 보기」를 누르면 이번 주 곡 순서 · 키 · 악보 · 레퍼런스 영상을 한 화면에서 봐요. 휴대폰으로 보기 좋게 만들어져 있어요.",sel:byBtn("콘티 · 악보 보기")},
@@ -1158,18 +1161,23 @@ const TOURS={
     {tab:"list",t:"⑥ 지난 콘티",x:"지난주에 무슨 곡을 불렀는지, 그때 악보와 메모를 다시 볼 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"me",t:"⑦ 나",x:"내 이름 · 사진 · 맡는 자리를 정해요. 「다른 기기 연결」로 휴대폰과 태블릿을 함께 쓸 수 있어요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]}};
 let TOUR=null;
-function tourStart(kind){const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
-function tourEnd(){TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");}
+function tourStart(kind){const T=TOURS[kind];if(!T)return;if(DEMO)window.DEMO_NAME=TOUR_NAME[kind];TOUR_LAST=null;const pl=document.getElementById("tourpill");if(pl)pl.remove();TOUR={kind,i:0};if(S.tab==="home")render();tourShow();}
+let TOUR_LAST=null;
+function tourEnd(done){if(TOUR&&!done&&TOUR.i<TOURS[TOUR.kind].steps.length-1)TOUR_LAST={...TOUR};else if(done)TOUR_LAST=null;TOUR=null;document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));const c=document.getElementById("tourcard");if(c)c.remove();document.body.classList.remove("touring");tourPill();}
+/* 끝까지 안 보고 ✕로 닫았으면: 왼쪽 아래 「이어 보기」 단추를 남겨요 */
+function tourPill(){let p=document.getElementById("tourpill");if(p)p.remove();if(!TOUR_LAST||TOUR)return;const T=TOURS[TOUR_LAST.kind];
+  p=h("div",{id:"tourpill",class:"tourpill"},h("button",{type:"button",class:"tp-go",text:`📘 ${T.name} 이어 보기 (${TOUR_LAST.i+1}/${T.steps.length})`,onclick:()=>{TOUR={...TOUR_LAST};TOUR_LAST=null;p.remove();tourShow();}}),
+    h("button",{type:"button",class:"tp-x","aria-label":"이어 보기 단추 닫기",text:"✕",onclick:()=>{TOUR_LAST=null;p.remove();}}));document.body.append(p);}
 function tourShow(){if(!TOUR)return;const T=TOURS[TOUR.kind],st=T.steps[TOUR.i];document.querySelectorAll(".tour-hl").forEach(e=>e.classList.remove("tour-hl"));
   document.querySelectorAll(".modal").forEach(m=>m.remove());
   if(st.wt)S.wTab=st.wt;if(S.tab!==st.tab||st.wt)setTab(st.tab);
   let card=document.getElementById("tourcard");if(!card){card=h("div",{id:"tourcard",class:"tourcard",role:"dialog","aria-label":T.name});document.body.append(card);}document.body.classList.add("touring");
   const n=T.steps.length,last=TOUR.i===n-1;
-  card.replaceChildren(h("div",{class:"tc-top"},h("b",{text:T.name}),h("span",{class:"tc-n",text:`${TOUR.i+1} / ${n}`}),h("button",{type:"button",class:"tc-x","aria-label":"튜토리얼 끝내기",text:"✕",onclick:tourEnd})),
+  card.replaceChildren(h("div",{class:"tc-top"},h("b",{text:T.name}),h("span",{class:"tc-n",text:`${TOUR.i+1} / ${n}`}),h("button",{type:"button",class:"tc-x","aria-label":"튜토리얼 닫기 (이어 보기 가능)",title:"닫기 · 왼쪽 아래 「이어 보기」로 다시 열 수 있어요",text:"✕",onclick:()=>tourEnd(false)})),
     h("div",{class:"tc-bar"},h("i",{style:`width:${(TOUR.i+1)/n*100}%`})),
     h("h3",{text:st.t}),h("p",{text:st.x}),
     h("div",{class:"tc-btns"},TOUR.i?h("button",{type:"button",class:"btn sm",text:"← 이전",onclick:()=>{TOUR.i--;tourShow();}}):h("span"),
-      h("button",{type:"button",class:"btn sm primary",text:last?"끝내기 ✓":"다음 →",onclick:()=>{if(last)return tourEnd();TOUR.i++;tourShow();}})));
+      h("button",{type:"button",class:"btn sm primary",text:last?"끝내기 ✓":"다음 →",onclick:()=>{if(last)return tourEnd(true);TOUR.i++;tourShow();}})));
   setTimeout(()=>{if(!TOUR)return;const el=st.sel&&st.sel();if(el){el.classList.add("tour-hl");el.scrollIntoView({behavior:"smooth",block:"center"});}else window.scrollTo({top:0,behavior:"smooth"});},350);}
 function tourFromUrl(){try{const k=new URLSearchParams(location.search).get("tour");if(k&&TOURS[k])tourStart(k);}catch(e){}}
 function render(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(h("div",{class:"banner demoban"},h("b",{text:"👀 체험판 "}),"실제 교회 자료가 아니라 예시예요. 눌러 보고 고쳐 볼 수 있지만 저장되지 않고, 새로고침하면 처음으로 돌아가요. ",h("button",{type:"button",class:"btn sm",text:"🎤 인도자 튜토리얼",onclick:()=>tourStart("leader")})," ",h("button",{type:"button",class:"btn sm",text:"🎸 싱어 · 악기팀 튜토리얼",onclick:()=>tourStart("member")})," ",h("button",{type:"button",class:"btn sm",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}})));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
