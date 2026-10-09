@@ -2983,8 +2983,8 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
   const card=c=>{const mine=canEditConti(c,c.id)&&S.canWrite&&!!S.db;const canDel=canDeletePast(c);
     if(c.noService)return h("div",{class:"card blankweek"},h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:"예배 없음"}),h("span",{class:"spacer"}),canDel?delBtn(c):null),
       noteRow(c,c.date,mine),mine?h("div",{class:"row"},h("button",{class:"btn sm",text:"곡 넣기",onclick:()=>editPast(c)})):null);
-    const songs=()=>h("div",{class:"songs slist"},SECTIONS.filter(([k])=>(c[k]||[]).length).map(([k,l])=>h("div",{class:"sgrp"},k==="before"&&!(c.opening||[]).length&&!(c.after||[]).length?null:h("div",{class:"sgl",text:l}),
-      k==="before"?h("ol",{},c[k].map(i=>h("li",{text:i.title}))):h("div",{class:"sone"},c[k].map(i=>h("div",{text:i.title}))))));
+    const songs=()=>h("div",{class:"songs slist"},SECTIONS.filter(([k])=>(c[k]||[]).length||(k==="special"&&(c.specialBy||"").trim())).map(([k,l])=>h("div",{class:"sgrp"},k==="before"&&!(c.opening||[]).length&&!(c.after||[]).length?null:h("div",{class:"sgl",text:l}),
+      k==="before"?h("ol",{},c[k].map(i=>h("li",{text:i.title}))):h("div",{class:"sone"},k==="special"?specLines(c):c[k].map(i=>h("div",{text:i.title}))))));
     return h("div",{class:"card"},
       h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),
         stBadge(c),
@@ -3976,9 +3976,11 @@ function renderCal(m){const today=todayStr();if(!S.calMonth)S.calMonth=today.sli
    ========================================================= */
 const notices=()=>(teamCfg().notices||[]).slice();
 async function saveNotices(list){if(!S.db||!S.team)return false;try{await S.db.doc(`teams/${S.team}`).set({...teamCfg(),notices:list,updatedAt:Date.now()});S.teamCfgs[S.team]={...teamCfg(),notices:list};return true;}catch(e){toast("저장하지 못했어요");return false;}}
-function songsBlock(c){return h("div",{class:"songs slist"},SECTIONS.filter(([k])=>(c[k]||[]).length).map(([k,l])=>h("div",{class:"sgrp"},
+/* 특송: 「특송자 · 곡 제목」 */
+function specLines(c){const by=(c.specialBy||"").trim(),arr=c.special||[];if(!arr.length)return [h("div",{text:by})];return arr.map(i=>h("div",{},by?h("b",{text:by+" · "}):null,i.title||""));}
+function songsBlock(c){return h("div",{class:"songs slist"},SECTIONS.filter(([k])=>(c[k]||[]).length||(k==="special"&&(c.specialBy||"").trim())).map(([k,l])=>h("div",{class:"sgrp"},
   k==="before"&&!(c.opening||[]).length&&!(c.after||[]).length?null:h("div",{class:"sgl",text:l}),
-  k==="before"?h("ol",{},c[k].map(i=>h("li",{text:i.title}))):h("div",{class:"sone"},c[k].map(i=>h("div",{text:i.title}))))));}
+  k==="before"?h("ol",{},c[k].map(i=>h("li",{text:i.title}))):h("div",{class:"sone"},k==="special"?specLines(c):c[k].map(i=>h("div",{text:i.title}))))));}
 /* 행사 프로젝트 홈: 집회를 주(주일~토요일) 단위로 · 집회 없는 주는 건너뛰어요 */
 const weekStart=ds=>{const d=parseD(ds);return addDays(ds,-d.getDay());};
 function projectListSheet(){const today=todayStr();const all=S.contis.filter(c=>!c.noService&&c.date).sort((a,b)=>a.date.localeCompare(b.date)||wtypeOf(a).localeCompare(wtypeOf(b)));
