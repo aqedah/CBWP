@@ -1098,8 +1098,12 @@ function role(){if(!window.CBWP)return"admin";if(S.isOwner||window.CBWP.isAdmin(
   const me=normName(myName());const mb=me&&S.members.find(x=>normName(x.name)===me);if(mb&&mb.role==="서기")return"clerk";return"member";}
 const ROLE_TABS={member:{home:1,team:["cal"],me:1},clerk:{home:1,team:["cal","members","lineup","attend","stats","bylaws"],me:1}};
 /* 팀마다 끈 메뉴 (관리자가 개발자 모드 「🧩 메뉴 켜고 끄기」에서 정해요) · 정하지 않았으면 출결은 기드온만 */
-const TOGGLE_TABS=Object.entries(NAVG).flatMap(([g,l])=>l.filter(([k])=>!["home","me","write"].includes(k)).map(([k,lb])=>({g,k,lb})));
-function offTabsOf(t){const c=(S.teamCfgs||{})[t]||{};return Array.isArray(c.offTabs)?c.offTabs:(t==="gideon"||DEMO?[]:["attend"]);}
+/* 메뉴 속 작은 칸(수습 기록 등)도 함께 켜고 꺼요 · 이런 칸은 기드온 말고는 처음에 꺼져 있어요 (켜면 onTabs에 남아요) */
+const TOGGLE_EXTRA=[{g:"team",k:"probation",lb:"멤버 › 수습 기록"}];
+const TOGGLE_TABS=Object.entries(NAVG).flatMap(([g,l])=>l.filter(([k])=>!["home","me","write"].includes(k)).map(([k,lb])=>({g,k,lb}))).concat(TOGGLE_EXTRA);
+function offTabsOf(t){const c=(S.teamCfgs||{})[t]||{};const base=Array.isArray(c.offTabs)?c.offTabs.slice():(t==="gideon"||DEMO?[]:["attend"]);
+  if(t!=="gideon"&&!DEMO)for(const{k}of TOGGLE_EXTRA)if(!base.includes(k)&&!(c.onTabs||[]).includes(k))base.push(k);return base;}
+const partOn=k=>!(S.team&&offTabsOf(S.team).includes(k));
 function tabAllowed(g,k){if(S.team&&!isProject()&&offTabsOf(S.team).includes(k))return false;const r=ROLE_TABS[role()];if(isProject()){if(!PROJ_G.includes(g))return false;if(g==="team"&&!PROJ_TEAM.includes(k))return false;}
   if(!r)return true;const a=r[g];if(!a)return false;return a===1||a.includes(k);}
 const subsOf=g=>{const w=isWriter()||!!S.curId;const l=NAVG[g].filter(([k])=>((k!=="write"&&k!=="sheet")||w)&&tabAllowed(g,k));return g==="conti"&&!w?l.slice().sort((a,b)=>(a[0]==="list"?-1:0)-(b[0]==="list"?-1:0)):l;};
@@ -1251,7 +1255,7 @@ function featureModal(){if(!S.db||!S.canWrite)return toast("쓰기 비밀번호�
     h("tbody",{},...TOGGLE_TABS.map(({g,k,lb})=>h("tr",{},h("td",{},h("small",{class:"hint",text:(GN[g]||g)+" › "}),lb),
       ...TEAMS.map(t=>h("td",{style:"text-align:center"},h("input",{type:"checkbox","aria-label":`${t.name} ${lb}`,checked:!st[t.id].has(k),onchange:e=>{e.target.checked?st[t.id].delete(k):st[t.id].add(k);}})))))));
   const go=h("button",{class:"btn primary",text:"저장",onclick:async()=>{go.disabled=true;try{for(const t of TEAMS){const off=[...st[t.id]];const cur=offTabsOf(t.id);if(off.length===cur.length&&off.every(x=>cur.includes(x))&&Array.isArray((S.teamCfgs[t.id]||{}).offTabs))continue;
-        const next={...(S.teamCfgs[t.id]||{}),offTabs:off,updatedAt:Date.now()};await S.db.doc(`teams/${t.id}`).set(next);S.teamCfgs[t.id]=next;}
+        const next={...(S.teamCfgs[t.id]||{}),offTabs:off,onTabs:TOGGLE_EXTRA.map(x=>x.k).filter(k=>!off.includes(k)),updatedAt:Date.now()};await S.db.doc(`teams/${t.id}`).set(next);S.teamCfgs[t.id]=next;}
       md.close();toast("메뉴를 바꿨어요");render();}catch(e){console.error(e);toast("저장하지 못했어요");go.disabled=false;}}});
   const md=modal("🧩 메뉴 켜고 끄기",h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0",text:"체크를 풀면 그 팀 화면에서 그 메뉴가 사라져요. 자료는 지워지지 않고, 다시 체크하면 그대로 돌아와요. 홈 · 콘티 작성 · 나는 늘 보여요."}),
     h("div",{style:"overflow-x:auto"},tbl)),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);}
@@ -3477,7 +3481,7 @@ function renderMembers(m){const f={name:"",tier:"정회원",positions:[]};let ed
           h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,h("span",{class:`tier t${tierOf(mb)}`,text:tierLabel(mb)})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",mb.tierNote||""].filter(Boolean).join("  ·  ")})),
           h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!canLead(),text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=tierOf(mb);tierIn.value=mb.tierCustom||"";tierIn.hidden=tierSel.value!=="직접입력";titleSel.value=mb.title||"";roleSel.value=mb.role==="담당자"?"직접입력":(mb.role||"");dutyIn.value=mb.duty||"";dutyIn.hidden=roleSel.value!=="직접입력";f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));}))));}}
   draw();renderMembers.redraw=draw;
-  m.append(probationSheet());}
+  if(partOn("probation"))m.append(probationSheet());}
 
 /* =========================================================
    주간 편성 (리더) · 참여 응답 (팀원)
