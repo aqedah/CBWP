@@ -5367,7 +5367,8 @@ const pptCfg=()=>tplFor(null);
 async function saveTpls(list,def){const before=new Set(pptTpls().map(t=>t.id));const patch={pptTemplates:list};if(def!==undefined)patch.pptDefault=def;const ok=await saveTeamCfg(patch);
   if(ok&&S.afterTplSave){const fn=S.afterTplSave;S.afterTplSave=null;const nu=(list||[]).find(t=>!before.has(t.id));setTimeout(()=>fn(nu&&nu.id),50);}return ok;}
 const cleanLyrics=t=>String(t||"").replace(/\r/g,"").split("\n").map(l=>l.replace(/\s+$/,"")).join("\n").replace(/\n{3,}/g,"\n\n").trim();
-const SEC_LABEL=/^\s*(\[.*\]|\(.*\)|\d+\s*절|후렴|브릿지|간주|bridge|chorus|verse\s*\d*|pre-?chorus|tag|ending|intro|outro)\s*:?\s*$/i;
+/* 구간 표시 줄(슬라이드에 안 나와요): [1절] · (후렴) 처럼 짧은 표시만. 「(온 맘과 정성을 다해)」 같은 괄호 가사는 그대로 나와요 */
+const SEC_LABEL=/^\s*(\[.*\]|\(\s*(?:\d+\s*절|후렴|브릿지|간주|bridge|chorus|verse\s*\d*|pre-?chorus|tag|ending|intro|outro|[x×]\s*\d+|\d+\s*(?:번|회)|반복)\s*\)|\d+\s*절|후렴|브릿지|간주|bridge|chorus|verse\s*\d*|pre-?chorus|tag|ending|intro|outro)\s*:?\s*$/i;
 function lyricSlides(text,per){const out=[];
   for(const para of String(text||"").replace(/\r/g,"").split(/\n\s*\n/)){const lines=para.split("\n").map(l=>l.trim()).filter(l=>l&&!SEC_LABEL.test(l));
     for(let i=0;i<lines.length;i+=per)out.push(lines.slice(i,i+per));}
@@ -5911,10 +5912,13 @@ async function chorusMarkFix(btn){const list=S.songs.filter(hasChorusMark);if(!l
    흐름이 없는 곡 · 흐름에 있는 구간이 가사에 없는 곡은 본래 순서 그대로 */
 const SEC_TAGS=["V1","V2","V3","V4","V5","Pre","C","B","-"];
 const SEC_NAME={V1:"1절",V2:"2절",V3:"3절",V4:"4절",V5:"5절",Pre:"프리코러스",C:"후렴",B:"브릿지","-":"안 씀"};
-function slidesPlain(it,cfg){const sg=songOf(it);if(sg&&sg.ppt&&(sg.ppt.slides||[]).length&&!it.lyrics)return sg.ppt.slides.map(x=>Array.isArray(x)?x.slice():String(x).split("\n"));return lyricSlides(lyricsOf(it),cfg.lines);}
+/* 곡에 저장된 PPT 장(가져온 그대로)과 가사가 같으면 PPT 장 나눔을 쓰고, 가사를 나중에 고쳤으면(더하거나 바꿈) 가사를 써요 */
+const pptSlidesUsable=(sg,it)=>{if(!(sg&&sg.ppt&&(sg.ppt.slides||[]).length)||(it&&it.lyrics))return false;const ly=(sg.lyrics||"").trim();if(!ly)return true;
+  return nk(sg.ppt.slides.map(x=>Array.isArray(x)?x.join("\n"):String(x)).join("\n").replace(CHORUS_MARK,""))===nk(ly.replace(CHORUS_MARK,""));};
+function slidesPlain(it,cfg){const sg=songOf(it);if(pptSlidesUsable(sg,it))return sg.ppt.slides.map(x=>Array.isArray(x)?x.slice():String(x).split("\n"));return lyricSlides(lyricsOf(it),cfg.lines);}
 /* 가사 덩어리: PPT가 있으면 슬라이드 한 장 = 한 덩어리, 아니면 빈 줄로 나눈 문단 하나 = 한 덩어리 (문단은 줄 수대로 여러 장) */
 function lyricBlocks(it,cfg){const sg=songOf(it);const per=(cfg&&cfg.lines)||2;
-  if(sg&&sg.ppt&&(sg.ppt.slides||[]).length&&!it.lyrics)return sg.ppt.slides.map(x=>{const ls=(Array.isArray(x)?x:String(x).split("\n")).map(l=>String(l).trim()).filter(Boolean);return{text:ls.join("\n"),label:"",slides:[ls]};});
+  if(pptSlidesUsable(sg,it))return sg.ppt.slides.map(x=>{const ls=(Array.isArray(x)?x:String(x).split("\n")).map(l=>String(l).trim()).filter(Boolean);return{text:ls.join("\n"),label:"",slides:[ls]};});
   const out=[];for(const para of String(lyricsOf(it)||"").replace(/\r/g,"").split(/\n\s*\n/)){const all=para.split("\n").map(l=>l.trim()).filter(Boolean);const lab=all.find(l=>SEC_LABEL.test(l))||"";const lines=all.filter(l=>!SEC_LABEL.test(l));if(!lines.length)continue;
     const sl=[];for(let i=0;i<lines.length;i+=per)sl.push(lines.slice(i,i+per));out.push({text:lines.join("\n"),label:lab,slides:sl});}return out;}
 const blocksKey=bl=>{let h0=5381;const t=bl.map(b=>nk(b.text)).join("|");for(let i=0;i<t.length;i++)h0=((h0*33)^t.charCodeAt(i))>>>0;return bl.length+":"+h0.toString(36);};
