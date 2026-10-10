@@ -5279,8 +5279,8 @@ const GFONTS=[
   {name:"NanumSquare Neo Bold",ko:"나눔스퀘어 네오 굵게",css:"NanumSquare Neo Bold",url:"https://cdn.jsdelivr.net/npm/typeface-nanum-square-neo@0.0.6/ttf/NanumSquareNeo-cBd.ttf",bold:0,by:"네이버 · 무료(상업 사용 가능)"},
   /* 교회 문서에 쓰는 무료 글꼴 (OFL은 아니지만 상업 사용까지 무료) */
   {name:"KoPub돋움체 Bold",ko:"KoPub 돋움 굵게",css:"KoPubDotum Bold",url:"https://cdn.jsdelivr.net/npm/font-kopub@1.0.2/fonts/KoPubDotum-Bold.ttf",bold:0,by:"한국출판인회의 · 무료"},
-  {name:"NEXON Lv2 Gothic Bold",ko:"넥슨 Lv2 고딕 굵게",css:"NEXON Lv2 Gothic Bold",url:"https://cdn.jsdelivr.net/npm/@kfonts/nexon-lv2-gothic@0.2.0/src/NEXON_Lv2_Gothic_Bold.ttf",bold:1,by:"넥슨 · 무료(상업 사용 가능)"},
-  {name:"S-Core Dream 6 Bold",ko:"에스코어드림 6 굵게",css:"S-Core Dream 6 Bold",url:"https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-6Bold.woff",bold:0,noEmbed:1,by:"에스코어 · 무료 · PPT에 파일은 못 넣어요(설치 필요)"}];
+  {name:"NEXON Lv2 Gothic Bold",ko:"넥슨 Lv2 고딕 굵게",css:"NEXON Lv2 Gothic Bold",url:"https://cdn.jsdelivr.net/npm/@kfonts/nexon-lv2-gothic@0.2.0/src/NEXON_Lv2_Gothic_Bold.ttf",bold:1,by:"넥슨 · 무료(상업 사용 가능)"}];
+
 const gfOf=name=>{const n=String(name||"").replace(/\s/g,"").toLowerCase();if(!n)return null;return GFONTS.find(g=>[g.name,g.css,g.ko,g.file].filter(Boolean).some(x=>x.replace(/\s/g,"").toLowerCase()===n))||null;};
 const gfBold=name=>{const g=gfOf(name);return !!(g&&g.bold);};
 /* WOFF(1) → TTF/OTF */
