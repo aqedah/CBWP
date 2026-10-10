@@ -554,6 +554,8 @@ body.wide-conti .wrap{max-width:1280px}
 .jumphl{animation:jumphl 1.2s ease-out 2;border-color:var(--accent)}@keyframes jumphl{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
 .devbar{position:fixed;z-index:70;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:#1d2433;color:#fff;border-radius:14px;padding:8px 12px;box-shadow:0 10px 30px rgb(0 0 0 / .3);max-width:calc(100vw - 16px)}
 .pdfpg.skip{opacity:.55;border-style:dashed}.pdfpg.skip img{filter:grayscale(1)}.pdf-warn{margin:6px 0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--warn,#c77a00) 12%,transparent);color:var(--ink,inherit);font-size:.9rem;line-height:1.5}
+.kf-list{display:flex;flex-direction:column;gap:4px}.modal .kf-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto 70px;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:8px}.kf-row.off{opacity:.5}.kf-row input[type=checkbox]{width:auto}.kf-t{font-weight:600;overflow-wrap:anywhere}.kf-how{font-size:.75rem;max-width:180px}.modal .kf-row input.kf-k{width:70px;text-align:center}
+@media (max-width:560px){.modal .kf-row{grid-template-columns:auto minmax(0,1fr) 64px}.kf-how{grid-column:2/-1;grid-row:2;max-width:none}.modal .kf-row input.kf-k{width:64px}}
 .pe-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}.pe-row{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding-bottom:8px;border-bottom:1px dashed var(--line)}.pe-row input[type=date]{width:auto}.pe-row button{grid-column:3}.pe-row input[type=text]{grid-column:1/-1;min-width:0;width:100%}
 @media (min-width:640px){.pe-row{grid-template-columns:auto 1fr auto}.pe-row input[type=text]{grid-column:2;grid-row:1}}
 .devpick{position:fixed;z-index:96;display:flex;gap:6px;background:#1d2433;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgb(0 0 0 / .35)}.devpick .btn{border-color:#3b4660;background:#2a3347;color:#fff}.devpick .btn.primary{background:#e0566b;border-color:#e0566b}
@@ -1690,6 +1692,34 @@ function updWTabs(){document.querySelectorAll(".wtab").forEach(b=>{const ks=(b.d
 /* 악보 이름 정리: 「악보 1 · 기본 악보」 같은 이름을 조성 이름(G코드 · A코드)으로. Key가 없는 악보는 조성을 찾아서 */
 const genericVerName=n=>!String(n||"").trim()||/^(악보\s*\d*|기본\s*악보|이름\s*없는\s*악보|새\s*악보\s*\d*|악보\s*\d+\s*\(.*\))$/.test(String(n).trim());
 const keyName=k=>`${String(k).trim().replace(/♯/g,"#").replace(/♭/g,"b")}코드`;
+/* 🎹 악보는 있는데 조성(Key)이 비어 있는 곡: 악보 그림의 코드를 읽어 조성을 짐작하고, 확인한 뒤 한꺼번에 저장해요 */
+const noKeySongs=()=>S.songs.filter(sg=>vers(sg).some(v=>(v.pages||[]).length)&&!songKeyOf(sg));
+const KEY_RE=/^[A-G][#b]?m?$/;
+function keyFillModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣은 기기에서만 할 수 있어요");
+  const rows=noKeySongs().map(sg=>({sg,key:"",how:"",on:true,done:false}));if(!rows.length)return toast("조성이 비어 있는 악보가 없어요");
+  const box=h("div",{class:"cards kf-list"});const st=h("p",{class:"hint"});let stop=false,running=false;
+  const draw=()=>{box.replaceChildren(...rows.map(r=>h("div",{class:"row kf-row"+(r.on?"":" off")},
+    h("input",{type:"checkbox",checked:r.on,"aria-label":`${r.sg.title} 저장`,onchange:e=>{r.on=e.target.checked;cnt();}}),
+    h("span",{class:"kf-t",text:r.sg.title}),h("span",{class:"hint kf-how",text:r.how}),
+    h("input",{type:"text",class:"kf-k",value:r.key,placeholder:"Key","aria-label":`${r.sg.title} 조성`,oninput:e=>{r.key=e.target.value.trim();cnt();}}))));cnt();};
+  const ok=r=>r.on&&KEY_RE.test(r.key);
+  const cnt=()=>{const n=rows.filter(ok).length;saveBtn.textContent=`조성 ${n}곡 저장`;saveBtn.disabled=!n||running;};
+  const find=async()=>{if(running){stop=true;return;}running=true;stop=false;findBtn.textContent="⏸ 멈추기";cnt();let n=0,got=0;
+    const todo=rows.filter(r=>!r.key);
+    for(const r of todo){if(stop||!md.el.isConnected)break;n++;st.textContent=`악보에서 코드 읽는 중… ${n}/${todo.length} · 「${r.sg.title}」`;
+      try{const v=teamVer(r.sg)||vers(r.sg).find(x=>(x.pages||[]).length);const urls=[];for(const pg of (v.pages||[]).slice(0,2)){const u=await getImg(pg.imgId);if(u)urls.push({url:u});}
+        const k=urls.length?await detectKey(urls):null;if(k&&k.key){r.key=k.key;r.how=`악보에서 읽음 (${k.how})`;got++;}else r.how="못 찾았어요 · 직접 넣어 주세요";}catch(e){console.error(e);r.how="읽지 못했어요";}
+      draw();}
+    running=false;findBtn.textContent="🔍 악보에서 조성 찾기";st.textContent=stop?`멈췄어요 · ${got}곡 찾음`:`다 읽었어요 · ${todo.length}곡 중 ${got}곡 찾음. 틀린 건 고치고, 못 찾은 건 직접 넣거나 체크를 풀어 주세요.`;cnt();};
+  const save=async()=>{const list=rows.filter(ok);saveBtn.disabled=true;let n=0;
+    for(const r of list){st.textContent=`저장 중… ${n+1}/${list.length}`;const all=clone(vers(r.sg));const tv=teamVer(r.sg);const x=tv&&all.find(y=>y.vid===tv.vid);
+      if(x&&!x.key){x.key=r.key;if(genericVerName(x.name))x.name=keyName(r.key);}if(await saveVersions(r.sg,all,{key:r.key})){n++;r.done=true;}}
+    md.close();toast(`${n}곡에 조성을 넣었어요`,3500);render();};
+  const findBtn=h("button",{class:"btn",text:"🔍 악보에서 조성 찾기",onclick:find});const saveBtn=h("button",{class:"btn primary",onclick:save});
+  const md=modal(`🎹 조성 비어 있는 곡 채우기 (${rows.length}곡)`,h("div",{class:"panel-body"},
+    h("p",{class:"hint",style:"margin:0 0 6px",text:"악보는 있는데 기본 조성(Key)이 비어 있는 곡이에요. 「악보에서 조성 찾기」를 누르면 악보의 코드를 읽어 조성을 짐작해요 (곡마다 몇 초씩 걸려요). 직접 넣어도 돼요 (예: G · Bb · F#m)."}),
+    h("p",{class:"pdf-warn",text:"⚠️ 자동으로 읽은 조성은 틀릴 수 있어요. 저장하기 전에 한 번 훑어보고, 틀리면 고쳐 주세요."}),st,box),[findBtn,h("span",{class:"spacer"}),h("button",{class:"btn",text:"닫기",onclick:()=>{stop=true;md.close();}}),saveBtn],"devedit");
+  draw();}
 function verRenameModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣은 기기에서만 할 수 있어요");
   const rows=[];for(const sg of S.songs){const vs=vers(sg);if(!Array.isArray(sg.versions)&&!vs.length)continue;vs.forEach((v,i)=>rows.push({sg,vid:v.vid,i,old:v.name||"",key:v.key||"",on:genericVerName(v.name)&&!/코드$/.test(v.name||""),found:false}));}
   const box=h("div",{class:"cards"});const st=h("p",{class:"hint"});
@@ -3246,7 +3276,7 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
       h("span",{class:"spacer"}),fx.length?h("button",{class:"btn sm primary",text:"확인하고 바로잡기",onclick:hymnFixModal}):null,old?h("button",{class:"btn sm",text:"찬송가 → 새찬송가",onclick:newHymnFixModal}):null));}
   m.append(h("div",{class:"sheet"},h("h2",{},"찬양 라이브러리",h("span",{class:"sub",text:`모두 ${S.songs.length}곡 · 교회 전체가 함께 써요`})),
     h("input",{type:"search",id:"song-q",placeholder:"곡 찾기 · 초성 · 찬송가 장 번호 (예: 524) · 없으면 바로 등록",oninput:e=>{q=e.target.value;draw();}}),h("div",{style:"height:8px"}),chips,
-    canDel?h("details",{class:"libtools",open:!!S.songSel},h("summary",{text:"🔧 라이브러리 정리 도구 (중복 · 이름 정리 · 여러 곡 지우기)"}),h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),S.songs.some(x=>TONGIL_TAG.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔢 통일찬송가 번호 붙이기",onclick:tongilFixModal}):null,S.songs.some(x=>OLD_HYMN.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔁 찬송가 → 새찬송가",onclick:newHymnFixModal}):null,(hymnFixRows()||[]).length?h("button",{class:"btn sm ghost",text:`🎼 새찬송가 표시 바로잡기 (${hymnFixRows().length})`,onclick:hymnFixModal}):null,h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),(()=>{const n=S.songs.filter(x=>tidyTitle(x.title)!==x.title).length;return n?h("button",{class:"btn sm ghost",text:`✂ 제목 군더더기 정리 (${n})`,title:"♬ · 12교구 · (최종) 같은 것을 제목에서 빼요",onclick:()=>glueFixModal(true)}):null;})(),h("button",{class:"btn sm ghost",text:"↺ 가사 첫 줄 되살리기",onclick:lyricsRestoreModal}),(()=>{const n=S.songs.filter(x=>(x.lyrics||"").trim()&&stripTitleBlock(x.lyrics,x.title)!==x.lyrics).length;return n?h("button",{class:"btn sm ghost",text:`🧽 가사 맨 앞 제목 장 빼기 (${n})`,onclick:lyricsTitleFixModal}):null;})(),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}}))):null,S.canWrite?h("div",{class:"row",style:"margin-top:8px;gap:8px;flex-wrap:wrap"},h("button",{class:"btn sm",text:"🎼 악보 올리기 (제목 자동 찾기)",title:"악보 그림 · PDF나 가사 PPT를 이 화면에 끌어다 놓아도 돼요",onclick:()=>scoreAutoModal()})):null,h("div",{style:"height:10px"}),box));
+    canDel?h("details",{class:"libtools",open:!!S.songSel},h("summary",{text:"🔧 라이브러리 정리 도구 (중복 · 이름 정리 · 여러 곡 지우기)"}),h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),S.songs.some(x=>TONGIL_TAG.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔢 통일찬송가 번호 붙이기",onclick:tongilFixModal}):null,S.songs.some(x=>OLD_HYMN.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔁 찬송가 → 새찬송가",onclick:newHymnFixModal}):null,(hymnFixRows()||[]).length?h("button",{class:"btn sm ghost",text:`🎼 새찬송가 표시 바로잡기 (${hymnFixRows().length})`,onclick:hymnFixModal}):null,(()=>{const n=noKeySongs().length;return n?h("button",{class:"btn sm ghost",text:`🎹 조성 비어 있는 곡 채우기 (${n})`,title:"악보는 있는데 기본 조성이 없는 곡",onclick:keyFillModal}):null;})(),h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),(()=>{const n=S.songs.filter(x=>tidyTitle(x.title)!==x.title).length;return n?h("button",{class:"btn sm ghost",text:`✂ 제목 군더더기 정리 (${n})`,title:"♬ · 12교구 · (최종) 같은 것을 제목에서 빼요",onclick:()=>glueFixModal(true)}):null;})(),h("button",{class:"btn sm ghost",text:"↺ 가사 첫 줄 되살리기",onclick:lyricsRestoreModal}),(()=>{const n=S.songs.filter(x=>(x.lyrics||"").trim()&&stripTitleBlock(x.lyrics,x.title)!==x.lyrics).length;return n?h("button",{class:"btn sm ghost",text:`🧽 가사 맨 앞 제목 장 빼기 (${n})`,onclick:lyricsTitleFixModal}):null;})(),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}}))):null,S.canWrite?h("div",{class:"row",style:"margin-top:8px;gap:8px;flex-wrap:wrap"},h("button",{class:"btn sm",text:"🎼 악보 올리기 (제목 자동 찾기)",title:"악보 그림 · PDF나 가사 PPT를 이 화면에 끌어다 놓아도 돼요",onclick:()=>scoreAutoModal()})):null,h("div",{style:"height:10px"}),box));
   /* titles that are not in the library yet (21세기 찬송가 645곡 · 곡집 제목) */
   const more=h("div",{class:"cards"});
   const addFromList=async t=>{if(S.songs.some(s=>norm(s.title)===norm(t)))return toast("이미 라이브러리에 있어요");await createSong(t,null);toast(`「${t}」을(를) 라이브러리에 넣었어요`);draw();};
