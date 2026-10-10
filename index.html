@@ -596,6 +596,9 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .pm-flow{display:flex;align-items:center;gap:8px;margin:0 10px;padding:6px 10px;border-radius:10px;background:#1d2a4d;color:#fff;flex-wrap:wrap}.pm-flowlab{font-size:.75rem;color:#9fb1ff;flex:none}.pm-flowtxt{flex:1;min-width:0;font-weight:800;font-size:1.05rem;letter-spacing:.01em;overflow-wrap:anywhere}
 .pm-flow.flash{animation:pmflash 2.4s ease-out}@keyframes pmflash{0%,40%{background:#ffd23f;color:#18213a}100%{background:#1d2a4d;color:#fff}}
 .pm-flowpad{display:flex;flex-wrap:wrap;gap:4px;margin:6px 10px 0;align-items:center}.pm-flowpad .btn.ghost{color:#e6eaf7;border:1px solid #4a5370;background:#2a3554}.pm-flowpad .btn.ghost.danger{color:#ffb4a8}
+.patchbar{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:10px;background:var(--ink);color:var(--sheet);padding:9px 14px;font:inherit;cursor:pointer;text-align:left;overflow:hidden;min-width:0}.pt-lab{font-weight:800;font-size:.8rem;color:#ffd23f;flex:none}.pt-date{font-size:.75rem;opacity:.7;flex:none;font-variant-numeric:tabular-nums}.pt-txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem}.pt-txt.in{animation:ptin .45s ease-out}@keyframes ptin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.pt-more{flex:none;font-size:.78rem;opacity:.75}
+.pt-day{display:flex;flex-direction:column;gap:2px}.pt-day ul{margin:2px 0 8px;padding-left:20px;line-height:1.7}
+@media (max-width:520px){.pt-more,.pt-date{display:none}}
 .demosum{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}.demosum::-webkit-details-marker{display:none}.demosum .spacer{flex:1}
 .demoban.mini{display:flex;align-items:center;gap:8px;padding:6px 12px}
 .tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
@@ -4216,9 +4219,9 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
     up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:`uprow k-${x.k}`+(x.d===today?" today":""),onclick:()=>x.ev?eventModal(x.ev):x.c?viewConti(x.c):setTab("cal")},
       h("span",{class:"when",text:x.d===today?"오늘":fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":x.k==="hol"?"공휴일":evKindName(x.k,x.ev)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):
       h("div",{class:"empty",text:"2주 안에 잡힌 일정이 없어요."}));
-  if(isProject())return m.append(h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),projectListSheet(),myServeSheet(),nbox,projectCalSheet());
+  if(isProject())return m.append(patchSheet(),h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),tickerSheet(),projectListSheet(),myServeSheet(),nbox,projectCalSheet());
   /* 팀원이 앱을 열면 먼저 「이번 주 내가 할 일」: 나의 섬김 → 참여 응답 → 공지 → 일정 → 한마디 · 나눔 */
-  m.append(myServeSheet(),availSheet()||"",nbox,sch,tickerSheet(),boardSheet(),h("figure",{class:"verse homeverse",style:"margin-top:8px"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));}
+  m.append(patchSheet(),myServeSheet(),availSheet()||"",nbox,sch,tickerSheet(),boardSheet(),h("figure",{class:"verse homeverse",style:"margin-top:8px"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));}
 /* home: my serving, one-line board, prayer & sharing */
 const myName=()=>((window.CBWP&&window.CBWP.myName&&window.CBWP.myName())||S.meName||"").trim();
 const POSTK={talk:"한마디",prayer:"기도제목",share:"나눔"};
@@ -4230,6 +4233,24 @@ const agoLabel=t=>{const m=Math.round((Date.now()-(t||0))/6e4);return m<1?"방�
 function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"내 이름 (콘티 참여자에 넣은 이름과 같게)",value:myName(),style:"max-width:260px"});
   return h("div",{class:"row"},inp,h("button",{class:"btn sm primary",text:"이름 저장",onclick:async()=>{const v=inp.value.trim();if(!v)return inp.focus();
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
+/* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
+const PATCH_NOTES=[
+  ["2026-10-10","연습 모드에서 인도자가 흐름(Intro → V1 → C …)을 고치면 모든 팀원 화면에 바로 바뀌어요"],
+  ["2026-10-10","중복 곡 찾기: ⚡ 모두 합치기 · 가사 바로 보기 · 제목 군더더기(♬ · 교구 · (2)) 자동 정리"],
+  ["2026-10-10","악보 고치기: 🎨 색으로 지우기(손글씨 · 형광펜) · 위에 빈 칸 늘리기 · 스타일러스 필압"],
+  ["2026-10-10","악보 편집 창 맨 위에 진행 순서 단추 · 악보 맨 위에 한 줄로 찍기"],
+  ["2026-10-10","라이브러리가 한 줄 목록으로 · 누르면 콘티에 넣기 · 악보 · 가사 단추"],
+  ["2026-10-10","콘티 메뉴가 「콘티 만들기 ①~④ 단계」와 「콘티 목록」으로 정리됐어요"],
+  ["2026-10-10","연습 모드 악보가 화면에 꼭 맞게 · －/＋/맞춤"],
+  ["2026-10-10","자유롭게 편집에 ✍️ 펜(손글씨) 추가"],
+  ["2026-10-09","예배 PPT 틀을 교회 서버에 보관 · 다른 컴퓨터에서 자동으로 받아 와요"],
+  ["2026-10-09","🖌 악보 고치기: 지우개 · 펜 · 글자 · 스포이드 (원본은 그대로 · 언제든 원본으로)"]];
+function patchSheet(){const notes=PATCH_NOTES.slice(0,12);if(!notes.length)return "";let k=0;
+  const txt=h("span",{class:"pt-txt"});const dt=h("span",{class:"pt-date"});const show=()=>{const[d,t]=notes[k%notes.length];txt.textContent=t;dt.textContent=d.slice(5).replace("-","/");txt.classList.remove("in");void txt.offsetWidth;txt.classList.add("in");};show();
+  const bar=h("button",{type:"button",class:"patchbar",title:"새로 바뀐 것 모두 보기",onclick:()=>{const md=modal("🛠 업데이트 소식",h("div",{class:"panel-body"},...[...new Set(PATCH_NOTES.map(x=>x[0]))].map(d=>h("div",{class:"pt-day"},h("b",{text:fmtDate(d)}),h("ul",{},...PATCH_NOTES.filter(x=>x[0]===d).map(x=>h("li",{text:x[1]})))))),[h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})]);}},
+    h("span",{class:"pt-lab",text:"🛠 업데이트"}),dt,txt,h("span",{class:"pt-more",text:"모두 보기 ›"}));
+  if(notes.length>1){const iv=setInterval(()=>{if(!bar.isConnected)return clearInterval(iv);k++;show();},4500);}
+  return bar;}
 function myServeSheet(){const me=normName(myName());const today=todayStr();
   const nextSvc=()=>{const c=S.contis.filter(c=>!c.past&&!c.noService&&c.date&&c.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0];
     if(!c)return h("div",{class:"empty"},"다가오는 콘티가 아직 없어요.",S.canWrite&&isWriter()?h("div",{style:"margin-top:8px"},h("button",{class:"btn primary",text:"콘티 쓰러 가기",onclick:()=>goTab("write")})):null);
