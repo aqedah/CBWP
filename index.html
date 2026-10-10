@@ -1217,7 +1217,7 @@ async function uiTextSave(from,to){const m=new Map(DEV.map);if(to==null||to===fr
 function devToggle(force){DEV.on=force!=null?force:!DEV.on;document.body.classList.toggle("devmode",DEV.on&&DEV.edit);let bar=document.getElementById("devbar");if(bar)bar.remove();
   if(DEV.on){const sw=h("button",{type:"button",class:"btn sm"+(DEV.edit?" primary":""),text:DEV.edit?"✏️ 글자 고치기 켜짐":"✏️ 글자 고치기 꺼짐 (앱 그대로 쓰기)",onclick:()=>{DEV.edit=!DEV.edit;devToggle(true);}});
     bar=h("div",{id:"devbar",class:"devbar"},h("b",{text:"🛠 개발자 모드"}),h("span",{class:"hint",text:DEV.edit?"고칠 글자를 누르세요":"화면을 옮겨 다닐 땐 끄고, 고칠 때 켜요"}),sw,
-      h("button",{type:"button",class:"btn sm",text:`바꾼 글자 ${DEV.map.size}개`,onclick:devListModal}),h("button",{type:"button",class:"btn sm",text:"📚 비슷한 말 묶음",onclick:wordGroupsModal}),h("button",{type:"button",class:"btn sm",text:"🧩 메뉴 켜고 끄기",onclick:featureModal}),h("button",{type:"button",class:"btn sm",text:"🧹 제목 사전 정리",onclick:catalogCleanModal}),h("button",{type:"button",class:"btn sm",text:"💾 저장 공간",onclick:storageModal}),h("button",{type:"button",class:"btn sm ghost",text:"끝내기",onclick:()=>devToggle(false)}));document.body.append(bar);}
+      h("button",{type:"button",class:"btn sm",text:`바꾼 글자 ${DEV.map.size}개`,onclick:devListModal}),h("button",{type:"button",class:"btn sm",text:"📚 비슷한 말 묶음",onclick:wordGroupsModal}),h("button",{type:"button",class:"btn sm",text:"🧩 메뉴 켜고 끄기",onclick:featureModal}),h("button",{type:"button",class:"btn sm",text:"📚 제목 사전",onclick:catalogModal}),h("button",{type:"button",class:"btn sm",text:"🧹 제목 사전 정리",onclick:catalogCleanModal}),h("button",{type:"button",class:"btn sm",text:"💾 저장 공간",onclick:storageModal}),h("button",{type:"button",class:"btn sm ghost",text:"끝내기",onclick:()=>devToggle(false)}));document.body.append(bar);}
   drawAdminRow();}
 /* 글자 고치기: 누른 자리의 글자 한 덩어리를 골라요 */
 document.addEventListener("click",e=>{if(!DEV.on||!DEV.edit)return;const el=e.target;if(!el||!el.closest||el.closest("#devbar,.devedit"))return;
@@ -3255,7 +3255,7 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
     if(q.trim()&&!arr.some(x=>norm(splitTitle(x.title).base)===norm(q.trim())||norm(x.title)===norm(q.trim()))){const rc=regCard(false);if(rc)box.append(rc);}}
   box.after(more);draw();renderSongs.redraw=draw;
   if(S.canWrite)libDropZone(m);
-  m.append(hymnSheet(addFromList),tongilSheet(addFromList),catalogSheet());}
+  m.append(hymnSheet(addFromList),tongilSheet(addFromList));}
 /* 쪽 나누기: ‹ 1 2 3 … N › */
 function pagerEl(total,per,page,go){const n=Math.ceil(total/per);if(n<=1)return h("span");
   const nr=window.innerWidth<520?1:2;const nums=new Set([1,n,...Array.from({length:nr*2+1},(_,i)=>page-nr+i)].filter(x=>x>=1&&x<=n));const list=[...nums].sort((a,b)=>a-b);
@@ -3291,6 +3291,8 @@ function tongilSheet(addFromList){const have=libKeys();const libNums=new Set(S.s
   draw();
   return h("details",{class:"sheet"},h("summary",{class:"sumh"},"통일 찬송가 전체 보기",h("span",{class:"sub",text:"558곡 · 진한 칸은 라이브러리에 있는 곡"})),h("div",{style:"overflow-x:auto;margin:10px 0"},pager),grid);}
 function parseTitles(text){const out=[];for(let line of text.split(/\r?\n/)){line=line.replace(/^\s*\d{1,4}\s*[.)\]번:\-–\t ]\s*/,"").trim();if(line)out.push(line);}return out;}
+/* 제목 사전은 개발자 모드에서만 (뒤에서 추천 · 장 번호 · 제목 맞추기에 쓰여요) */
+function catalogModal(){const el=catalogSheet();el.open=true;const md=modal("📚 제목 사전",h("div",{class:"panel-body"},el),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
 function catalogSheet(){
   const total=S.catalogs.reduce((n,c)=>n+catItems(c).length,0);const extra=S.catalogs.find(c=>c.id==="extra");
   const ta=h("textarea",{id:"cat-text",style:"min-height:130px",placeholder:"한 줄에 한 곡씩 제목을 붙여 넣으세요.\n예)\n주님 다시 오실 때까지\n나의 등 뒤에서\n내 주의 보혈은 (찬송가 254장)"});
