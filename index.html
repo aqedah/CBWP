@@ -553,6 +553,8 @@ body.wide-conti .wrap{max-width:1280px}
 .wb{display:grid;grid-template-columns:minmax(300px,1fr) minmax(420px,1.5fr) minmax(300px,1fr);gap:16px;align-items:start}.wb-col{display:flex;flex-direction:column;gap:16px;min-width:0}
 .jumphl{animation:jumphl 1.2s ease-out 2;border-color:var(--accent)}@keyframes jumphl{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
 .devbar{position:fixed;z-index:70;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:#1d2433;color:#fff;border-radius:14px;padding:8px 12px;box-shadow:0 10px 30px rgb(0 0 0 / .3);max-width:calc(100vw - 16px)}
+.pe-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}.pe-row{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding-bottom:8px;border-bottom:1px dashed var(--line)}.pe-row input[type=date]{width:auto}.pe-row button{grid-column:3}.pe-row input[type=text]{grid-column:1/-1;min-width:0;width:100%}
+@media (min-width:640px){.pe-row{grid-template-columns:auto 1fr auto}.pe-row input[type=text]{grid-column:2;grid-row:1}}
 .devpick{position:fixed;z-index:96;display:flex;gap:6px;background:#1d2433;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgb(0 0 0 / .35)}.devpick .btn{border-color:#3b4660;background:#2a3347;color:#fff}.devpick .btn.primary{background:#e0566b;border-color:#e0566b}
 .devbar .hint{color:#c9d1e3}.devbar .btn{border-color:#3b4660;background:#2a3347;color:#fff}.devbar .btn.primary{background:#e0566b;border-color:#e0566b}
 body.devmode #main *:hover,body.devmode .bnav *:hover,body.devmode .modal:not(.devedit) *:hover{outline:1px dashed #e0566b;outline-offset:1px;cursor:text}
@@ -4266,10 +4268,23 @@ const PATCH_NOTES=[
   ["2026-10-06","말씀 · 묵상 (카톡 예배 정보로 콘티 시작)"],
   ["2026-10-05","Central Bible Worship Planner 첫 공개 (네 찬양팀)"]];
 const NEWS_KEY="cbwp-news-seen";
-function patchSheet(){let seen="";try{seen=localStorage.getItem(NEWS_KEY)||"";}catch(e){}if(PATCH_NOTES[0]&&PATCH_NOTES[0][0]<=seen)return "";const notes=PATCH_NOTES.slice(0,12);if(!notes.length)return "";let k=0;
+/* 관리자가 고친 목록(catalog/patchnotes)이 있으면 그것을, 없으면 위 기본 목록을 써요 · 새 날짜가 위로 */
+function patchNotes(){const d=S.patchDoc;const l=d&&Array.isArray(d.items)?d.items.map(x=>[x.d||"",x.t||""]).filter(x=>x[1].trim()):PATCH_NOTES;return l.slice().sort((a,b)=>b[0].localeCompare(a[0]));}
+function patchEditModal(){const rows=patchNotes().map(x=>({d:x[0],t:x[1]}));const list=h("div",{class:"pe-list"});
+  const draw=()=>list.replaceChildren(...rows.map((r,i)=>h("div",{class:"pe-row"},
+    h("input",{type:"date",value:r.d,"aria-label":"날짜",oninput:e=>{r.d=e.target.value;}}),
+    h("input",{type:"text",value:r.t,placeholder:"바뀐 내용",oninput:e=>{r.t=e.target.value;}}),
+    h("button",{type:"button",class:"btn sm ghost danger",style:"grid-row:1",title:"이 줄 지우기","aria-label":"이 줄 지우기",text:"✕",onclick:()=>{rows.splice(i,1);draw();}}))));draw();
+  const add=h("button",{type:"button",class:"btn sm",text:"＋ 새 줄",onclick:()=>{rows.unshift({d:todayStr(),t:""});draw();list.querySelector(".pe-row input[type=text]")?.focus();}});
+  const save=async items=>{try{await S.db.doc("catalog/patchnotes").set({items,updatedAt:Date.now()});S.patchDoc=items?{items}:null;md.close();toast("업데이트 목록을 저장했어요");render();}catch(e){console.error(e);toast("저장하지 못했어요 · "+((e&&(e.code||e.message))||""),4000);}};
+  const md=modal("🛠 업데이트 목록 고치기",h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 8px",text:"날짜와 내용을 고치고, 필요 없는 줄은 ✕로 지워요. 저장하면 모든 팀 홈 화면 띠에 똑같이 나와요."}),add,list),
+    [h("button",{class:"btn ghost",text:"처음 목록으로",title:"고친 것을 버리고 앱에 들어 있는 기본 목록으로",onclick:async e=>{if(!await confirmInline(e.currentTarget,"정말 처음 목록으로?"))return;try{await S.db.doc("catalog/patchnotes").delete();S.patchDoc=null;md.close();toast("처음 목록으로 돌렸어요");render();}catch(err){toast("돌리지 못했어요");}}}),
+     h("span",{class:"spacer"}),h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),
+     h("button",{class:"btn primary",text:"저장",onclick:()=>save(rows.filter(r=>r.t.trim()).map(r=>({d:r.d||todayStr(),t:r.t.trim()})))})],"devedit");}
+function patchSheet(){const PN=patchNotes();let seen="";try{seen=localStorage.getItem(NEWS_KEY)||"";}catch(e){}if(PN[0]&&PN[0][0]<=seen)return "";const notes=PN.slice(0,12);if(!notes.length)return "";let k=0;
   const txt=h("span",{class:"pt-txt"});const dt=h("span",{class:"pt-date"});const show=()=>{const[d,t]=notes[k%notes.length];txt.textContent=t;dt.textContent=d.slice(5).replace("-","/");txt.classList.remove("in");void txt.offsetWidth;txt.classList.add("in");};show();
-  const bar=h("button",{type:"button",class:"patchbar",title:"새로 바뀐 것 모두 보기",onclick:()=>{const md=modal("🛠 주요 업데이트",h("div",{class:"panel-body"},...[...new Set(PATCH_NOTES.map(x=>x[0]))].map(d=>h("div",{class:"pt-day"},h("b",{text:fmtDate(d)}),h("ul",{},...PATCH_NOTES.filter(x=>x[0]===d).map(x=>h("li",{text:x[1]})))))),[h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})]);}},
-    h("span",{class:"pt-lab",text:"🛠 업데이트"}),dt,txt,h("span",{class:"pt-more",text:"모두 보기 ›"}),h("span",{class:"pt-x",role:"button",tabindex:"0","aria-label":"업데이트 띠 닫기",title:"닫기 (새 소식이 생기면 다시 나와요)",text:"✕",onclick:e=>{e.stopPropagation();try{localStorage.setItem(NEWS_KEY,PATCH_NOTES[0][0]);}catch(err){}bar.remove();}}));
+  const bar=h("button",{type:"button",class:"patchbar",title:"새로 바뀐 것 모두 보기",onclick:()=>{const md=modal("🛠 주요 업데이트",h("div",{class:"panel-body"},...[...new Set(PN.map(x=>x[0]))].map(d=>h("div",{class:"pt-day"},h("b",{text:fmtDate(d)}),h("ul",{},...PN.filter(x=>x[0]===d).map(x=>h("li",{text:x[1]})))))),[S.isOwner&&S.db?h("button",{class:"btn",text:"✏️ 고치기",onclick:()=>{md.close();patchEditModal();}}):null,h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})].filter(Boolean));}},
+    h("span",{class:"pt-lab",text:"🛠 업데이트"}),dt,txt,h("span",{class:"pt-more",text:"모두 보기 ›"}),h("span",{class:"pt-x",role:"button",tabindex:"0","aria-label":"업데이트 띠 닫기",title:"닫기 (새 소식이 생기면 다시 나와요)",text:"✕",onclick:e=>{e.stopPropagation();try{localStorage.setItem(NEWS_KEY,PN[0][0]);}catch(err){}bar.remove();}}));
   if(notes.length>1){const iv=setInterval(()=>{if(!bar.isConnected)return clearInterval(iv);k++;show();},4500);}
   return bar;}
 function myServeSheet(){const me=normName(myName());const today=todayStr();
@@ -6302,7 +6317,7 @@ if(!S.team||!loadDraft())S.cur=blankConti();
 /* stand-alone listeners: shared data (songs, title lists) and one team's data */
 const RR={rerender:()=>render(),onErr:e=>console.warn(e),shared:false,team:null,offs:[]};
 function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
-  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.catalogs=all.filter(x=>x.id!=="uitext"&&x.id!=="wordgroups");RR.rerender();},RR.onErr);
+  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.patchDoc=all.find(x=>x.id==="patchnotes")||null;S.catalogs=all.filter(x=>!["uitext","wordgroups","patchnotes"].includes(x.id));RR.rerender();},RR.onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();},RR.onErr);}
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();document.dispatchEvent(new Event("cbwp-contis"));},RR.onErr));
@@ -6338,7 +6353,7 @@ render();
   let f1=0,f2=0,f3=0,f4=0,f5=0,f6=0;
   db.collection("events").onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f6++)done();else if(["cal","home","me","members","attend","lineup"].includes(S.tab))rerender();},onErr);
   db.collection("teams").onSnapshot(s=>{S.teamCfgs=Object.fromEntries(s.docs.map(d=>[d.id,clone(d.data())]));if(!f5++)done();else if(S.tab!=="write")rerender();},onErr);
-  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.catalogs=all.filter(x=>x.id!=="uitext"&&x.id!=="wordgroups");if(!f4++)done();else rerender();},onErr);
+  db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.patchDoc=all.find(x=>x.id==="patchnotes")||null;S.catalogs=all.filter(x=>!["uitext","wordgroups","patchnotes"].includes(x.id));if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f2++)done();else rerender();},onErr);
   db.collection("contis").onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f3++)done();else rerender();document.dispatchEvent(new Event("cbwp-contis"));},onErr);
