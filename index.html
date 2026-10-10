@@ -6046,6 +6046,17 @@ const idb=(()=>{let dbp=null;const open=()=>dbp||(dbp=new Promise((res,rej)=>{tr
 const fullKey=t=>`full_${S.team}_${t.id}`;const slotLbl=x=>{const[a,b]=String(x).split("-");return a===b||!b?`${a}장`:`${a}~${b}장`;};
 const xUn=s=>String(s).replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&");
 const xEsc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+/* 바꿔 넣은 줄이 글 상자보다 길면(예: 특송 「곡 제목」 - 특송자) 한 줄에 들어가게 글자 크기를 줄여요 */
+const FIT_MARK="<!--cbwpfit-->";
+const textWidthEm=t=>[...String(t)].reduce((n,ch)=>n+(/[가-힣ㄱ-ㅎ一-鿿]/.test(ch)?1:/\s/.test(ch)?.3:/[A-Z0-9]/.test(ch)?.62:/["'“”‘’.,·\-–—()]/.test(ch)?.35:.55),0);
+function fitMarked(xml){if(!xml.includes(FIT_MARK))return xml;
+  return xml.replace(/<p:sp>[\s\S]*?<\/p:sp>/g,sp=>{if(!sp.includes(FIT_MARK))return sp;const cx=+((sp.match(/<a:ext cx="(\d+)"/)||[])[1]||0);
+    const bp=sp.match(/<a:bodyPr([^>]*)/);const ins=k=>{const m=bp&&bp[1].match(new RegExp(` ${k}="(\\d+)"`));return m?+m[1]:91440;};const boxPt=(cx-ins("lIns")-ins("rIns"))/12700;
+    const defSz=+((sp.match(/<a:defRPr[^>]* sz="(\d+)"/)||[])[1]||0);
+    return sp.replace(new RegExp(FIT_MARK+"(<a:p>[\\s\\S]*?<\\/a:p>)","g"),(m,para)=>{if(!cx||boxPt<=0)return para;const t=pText(para);if(t.includes("\n"))return para;
+      const szs=[...para.matchAll(/ sz="(\d+)"/g)].map(x=>+x[1]);const sz=Math.max(0,...szs)||defSz;if(!sz)return para;const w=textWidthEm(t)*sz/100;if(w<=boxPt*.98)return para;
+      const f=Math.max(.5,boxPt*.96/w);return szs.length?para.replace(/ sz="(\d+)"/g,(q,v)=>` sz="${Math.round(+v*f)}"`):para.replace(/<a:rPr\b/g,`<a:rPr sz="${Math.round(sz*f)}"`);});})
+    .split(FIT_MARK).join("");}
 const pText=p=>xUn([...p.matchAll(/<a:t>([^<]*)<\/a:t>|<a:t [^>]*>([^<]*)<\/a:t>|<a:br[ >\/]/g)].map(m=>m[0].startsWith("<a:br")?"\n":(m[1]??m[2]??"")).join(""));
 const PARA_RE=/<a:p>[\s\S]*?<\/a:p>/g;
 /* 한 문단의 글을 바꿔요: 첫 글자 모양(rPr)을 그대로 쓰고, 줄바꿈은 <a:br> */
@@ -6140,7 +6151,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   const d=parseD(c.date);const R=parseRef((c.passage||"").trim());
   const newRef=!R?"":A.ref&&A.ref.ko?`${BOOKS_FULL[R.b]} ${R.ch}${BOOKS_FULL[R.b]==="시편"?"편":"장"}${R.v1?` ${R.v1}${R.v2?(R.ch2!==R.ch?`절-${R.ch2}장 ${R.v2}`:`-${R.v2}`):""}절`:""}`:refLabel(R.b,R.ch,R.v1,R.ch2,R.v2);
   const done=[];
-  const editPara=(xml,fn)=>xml.replace(PARA_RE,p=>{const t=pText(p);if(!t.trim())return p;const n=fn(t);return n!=null&&n!==t?setPara(p,n):p;});
+  const editPara=(xml,fn)=>xml.replace(PARA_RE,p=>{const t=pText(p);if(!t.trim())return p;const n=fn(t);return n!=null&&n!==t?FIT_MARK+setPara(p,n):p;});
   /* 본문 장 아래 장소: 그 장에 나온 절만 (예: 16:14, 16:15-16) */
   const refOf=vs=>{if(!R||!vs||!vs.length)return newRef;const[c1,v1]=vs[0],[c2,v2]=vs[vs.length-1];const bk=BOOKS_FULL[R.b];
     if(A.ref&&A.ref.ko){const u=bk==="시편"?"편":"장";return c1===c2?`${bk} ${c1}${u} ${v1}${v2!==v1?`-${v2}`:""}절`:`${bk} ${c1}${u} ${v1}절-${c2}${u} ${v2}절`;}
@@ -6188,7 +6199,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
         newTags.push(`<p:sldId id="${maxId}" r:id="rId${maxR}"/>`);ids.push(maxId);made++;}
       secMap[o.id]=ids;}
     if(drop.has(i)){if(!startOf.has(i))secMap[o.id]=[];continue;}
-    newTags.push(o.tag);const nx=fix(o.xml,i);if(nx!==o.xml)zip.file(o.path,nx);}
+    newTags.push(o.tag);const nx=fitMarked(fix(o.xml,i));if(nx!==o.xml)zip.file(o.path,nx);}
   /* 빠진 슬라이드와 그 노트 지우기 */
   for(const i of drop){const o=A.order[i];const rp=relsOf(o.path);const rx=await rd(rp);const note=(rx.match(/Target="([^"]*notesSlide\d+\.xml)"/)||[])[1];
     if(note){const np="ppt/"+note.replace(/^(\.\.\/)+/,"");zip.remove(np);zip.remove(relsOf(np));ct=ct.replace(new RegExp(`<Override PartName="/${np.replace(/[.*+?^${}()|[\]\\/]/g,"\\$&")}"[^>]*/>`),"");}
