@@ -5121,7 +5121,7 @@ function lyricsModal(it,onSaved){const song=songOf(it);const per=pptCfg().lines;
   let armedTa=0;const confirmTa=()=>{if(Date.now()-armedTa<4000)return true;armedTa=Date.now();toast("가사 칸에 이미 글이 있어요. 바꾸려면 한 번 더 눌러 주세요",3500);return false;};
   /* 첫 소절이 곧 제목인 곡에서 첫 줄이 빠졌을 때 한 번에 넣기 */
   const tb=splitTitle(it.title).base.replace(/\([^)]*\)/g,"").trim();const firstFix=h("button",{type:"button",class:"btn sm ghost",text:`➕ 첫 줄에 「${tb}」 넣기`,title:"첫 소절이 제목인 곡에서 첫 줄이 빠졌을 때",onclick:()=>{const v=ta.value.replace(/^\s+/,"");ta.value=tb+"\n"+v;upd();firstFix.hidden=true;toast("첫 줄을 넣었어요. 「가사 저장」을 누르세요");}});
-  firstFix.hidden=!tb||!ta.value.trim()||nk(ta.value.trim().split("\n")[0])===nk(tb);
+  firstFix.hidden=true; /* 쓸 일이 거의 없어 숨겨요 (사용자 요청) */
   const stripBtn=h("button",{type:"button",class:"btn sm ghost",text:"➖ 맨 앞 제목 장 빼기",title:"가사 맨 앞에 제목만 있는 장을 빼요",onclick:()=>{ta.value=stripTitleBlock(ta.value,it.title);upd();stripBtn.hidden=true;firstFix.hidden=true;toast("뺐어요. 「가사 저장」을 누르세요");}});
   stripBtn.hidden=stripTitleBlock(ta.value,it.title)===ta.value;if(!stripBtn.hidden)firstFix.hidden=true;
   const paste=h("button",{type:"button",class:"btn sm",text:"📋 붙여넣기",onclick:async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim())return toast("복사한 가사가 없어요");ta.value=cleanLyrics(t);upd();}catch(e){ta.focus();toast("가사 칸을 길게 누르거나 Ctrl+V로 붙여 넣어 주세요");}}});
