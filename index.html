@@ -5933,15 +5933,18 @@ function guessSecTags(bl,title){const n=bl.length;const tags=new Array(n).fill("
 function secTagsOf(it,cfg){const sg=songOf(it);const bl=lyricBlocks(it,cfg);const key=blocksKey(bl);const st=sg&&sg.secTags;
   if(st&&st.key===key&&Array.isArray(st.tags)&&st.tags.length===bl.length)return{bl,tags:st.tags.slice(),saved:true,key};return{bl,tags:guessSecTags(bl,it.title),saved:false,key};}
 /* 곡 흐름 줄 → 순서 [{sec:"V1"|"C"|…|"_"(빈 화면)}] */
-function parseFlowSeq(it){const out=[];const parts=flowLines(it).flatMap(l=>l.split(/\s*(?:→|->|,|\/)\s*/)).map(x=>x.trim()).filter(Boolean);
-  for(const p of parts){const rm=p.match(/[×xX*]\s*(\d)/)||p.match(/(\d)\s*번/);const rep=rm?+rm[1]:1;const q=p.replace(/[×xX*]\s*\d|\d\s*번/g," ").replace(/key\s*up|키\s*업/ig," ").trim();
-    let sec="";if(!q){if(rep>1&&out.length){const last=out[out.length-1];for(let i=1;i<rep;i++)out.push({...last});}continue;}
-    if(/intro|인트로|전주|간주|inter|outro|아웃트로|ending|엔딩|기도|멘트|반주/i.test(q))sec="_";
-    else if(/pre|프리/i.test(q))sec="Pre";
-    else if(/브릿지|bridge|^b$/i.test(q))sec="B";
-    else if(/후렴|chorus|^c$|^\d\s*후$/i.test(q))sec="C";
-    else{const m=q.match(/^v\s*(\d)$/i)||q.match(/(\d)\s*절/)||q.match(/verse\s*(\d)/i);if(m)sec="V"+Math.min(+m[1],5);else if(/^verse$/i.test(q))sec="V1";}
-    if(!sec)continue;for(let i=0;i<rep;i++)out.push({sec});}
+function parseFlowSeq(it){const out=[];
+  /* 한 줄에 여러 구간을 써도 (예: 「1절 2절 후렴 × 2」, 「1~3절」, 「V1 C V2」) 순서대로 다 읽어요 */
+  const TOK=/(\d)\s*[~\-–]\s*(\d)\s*절|(\d)\s*절|\bv\s*(\d)|verse\s*(\d)?|후렴|chorus|\bc\b|(\d)\s*후(?!렴)|브릿지|bridge|\bb\b|pre-?chorus|\bpre\b|프리|intro|인트로|전주|간주|inter(?:lude)?|outro|아웃트로|ending|엔딩|기도|멘트|반주|[×xX*]\s*(\d)|(\d)\s*번/gi;
+  for(const line of flowLines(it)){let m;TOK.lastIndex=0;
+    while((m=TOK.exec(line))){const w=m[0].toLowerCase();
+      if(m[7]||m[8]){const rep=+(m[7]||m[8]);const last=out[out.length-1];if(last)for(let i=1;i<rep;i++)out.push({...last});continue;}
+      if(m[1]&&m[2]){for(let v=+m[1];v<=+m[2];v++)out.push({sec:"V"+Math.min(v,5)});continue;}
+      const vn=m[3]||m[4]||m[5];if(vn){out.push({sec:"V"+Math.min(+vn,5)});continue;}if(/^verse/.test(w)){out.push({sec:"V1"});continue;}
+      if(m[6]||/후렴|chorus|^c$/.test(w)){out.push({sec:"C"});continue;}
+      if(/브릿지|bridge|^b$/.test(w)){out.push({sec:"B"});continue;}
+      if(/pre|프리/.test(w)){out.push({sec:"Pre"});continue;}
+      out.push({sec:"_"});}}
   return out;}
 /* 흐름대로 늘어놓기 → {slides} 또는 {miss:[구간]} 또는 null(흐름 없음) */
 function flowArrange(it,cfg){const seq=parseFlowSeq(it);if(!seq.some(x=>x.sec!=="_"))return null;const {bl,tags}=secTagsOf(it,cfg);if(!bl.length)return null;
@@ -5970,7 +5973,9 @@ function secTagModal(it,after){const sg=songOf(it);if(!sg)return toast("라이�
      h("button",{class:"btn primary",text:"저장",onclick:async()=>{const v={key,tags:tags.slice()};try{if(S.db&&!String(sg.id).startsWith("local-"))await S.db.doc(`songs/${sg.id}`).update({secTags:v});sg.secTags=v;md.close();toast("구간 이름을 저장했어요");after&&after();}catch(e){toast("저장하지 못했어요");}}})],"devedit");}
 /* 콘티 곡마다 흐름 PPT 상태 */
 function flowPptReport(c,cfg){return allItems(c).map(it=>{const seq=parseFlowSeq(it);if(!seq.some(x=>x.sec!=="_"))return{it,st:"none"};if(!lyricsOf(it).trim()&&!(songOf(it)&&songOf(it).ppt))return{it,st:"nolyr"};
-  const r=flowArrange(it,cfg);return r&&r.slides?{it,st:"ok",seq}:{it,st:"miss",miss:(r&&r.miss)||[],seq};});}
+  const r=flowArrange(it,cfg);if(!(r&&r.slides))return{it,st:"miss",miss:(r&&r.miss)||[],seq};
+  /* 가사에는 있는데 흐름에 없는 구간 → PPT에 안 나와요 (알려 줘요) */
+  const {tags}=secTagsOf(it,cfg);const used=new Set(seq.map(x=>x.sec));const unused=[...new Set(tags.filter(t=>t!=="-"&&!used.has(t)))];return{it,st:"ok",seq,unused};});}
 function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=it.title.replace(/\s*\((?:새)?찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
     if(cfg.titleSlide)out.push({kind:"title",lines:[t],song:it});const sl=slidesFor(it,cfg);if(!cfg.titleSlide&&!sl.length)out.push({kind:"title",lines:[it.title],song:it});
     for(const l of sl)out.push({kind:"lyric",lines:l,song:it});}return out;}
@@ -6025,7 +6030,7 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
     const rep=flowPptReport(c,tv).filter(x=>x.st!=="none"&&x.st!=="nolyr");
     const flowBox=rep.length?h("div",{class:"flowppt"},h("label",{class:"row",style:"gap:6px"},h("input",{type:"checkbox",checked:pptFlowOn(),onchange:e=>{S.pptFlow=e.target.checked;draw();}}),h("b",{text:"🎚 곡 흐름이 있는 곡은 흐름대로 넣기"})),
       ...rep.map(x=>h("div",{class:"row hint",style:"gap:6px;flex-wrap:wrap"},h("span",{text:x.st==="ok"?"✅":"⚠️"}),h("b",{text:x.it.title}),
-        h("span",{text:x.st==="ok"?`흐름대로: ${x.seq.map(y=>y.sec==="_"?"□":y.sec).join(" → ")}`:`가사에 「${x.miss.map(m=>SEC_NAME[m]||m).join(" · ")}」 구간이 없어 본래 순서로 넣어요`}),
+        h("span",{text:x.st==="ok"?`흐름대로: ${x.seq.map(y=>y.sec==="_"?"□":y.sec).join(" → ")}${x.unused&&x.unused.length?` · ⚠️ 흐름에 없어 빠지는 구간: ${x.unused.map(m=>SEC_NAME[m]||m).join(" · ")}`:""}`:`가사에 「${x.miss.map(m=>SEC_NAME[m]||m).join(" · ")}」 구간이 없어 본래 순서로 넣어요`}),
         h("button",{class:"btn sm ghost",text:"🎚 구간 이름 고치기",onclick:()=>secTagModal(x.it,()=>draw())})))):null;
     info.replaceChildren(...[h("div",{class:"hint",text:`슬라이드 ${slides.length}장 · ${items.length}곡`}),flowBox,
       miss.length?h("div",{class:"banner warn",style:"margin-top:6px"},h("b",{text:"가사가 없는 곡: "}),...miss.map(it=>h("button",{class:"btn sm",style:"margin:2px",text:`${it.title} · 가사 넣기`,onclick:()=>lyricsModal(it,()=>draw())})),
