@@ -1345,8 +1345,8 @@ const byBtn=t=>()=>[...document.querySelectorAll("#main button,#main a.btn")].fi
 const TOURS={
   leader:{name:"인도자 튜토리얼",then:["practiceConti","✍️ 네, 콘티 짜는 연습 해 볼게요","이제 직접 콘티를 짜 볼까요? 방금 본 순서대로, 하나씩 눌러 보며 연습해요."],steps:[
     {tab:"home",t:"화면 아래 메뉴부터 볼까요?",x:"밝게 보이는 화면 맨 아래가 앱의 큰 메뉴예요. 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개가 있어요. 메뉴마다 먼저 전체를 소개하고, 그 안의 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
-    {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 나의 섬김 · 참여 응답 · 공지 · 앞으로 2주 일정이 모여 있어요. 하나씩 볼게요.",sel:()=>[...document.querySelectorAll("#main .sheet")].filter(x=>!x.parentElement.closest("#main .sheet"))},
-    {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요. 「콘티 · 악보 보기」로 곡 순서와 악보를 보고, 「🎼 연습 모드」로 곡마다 한 화면씩 넘기며 연습해요.",sel:()=>document.querySelector("#main .sheet.myserve")},
+    {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 나의 섬김 · 참여 응답 · 공지 · 앞으로 2주 일정이 모여 있어요. 맨 위 「🛠 업데이트」 띠에는 새로 생긴 기능이 지나가요(누르면 전체). 하나씩 볼게요.",sel:()=>[...document.querySelectorAll("#main .sheet")].filter(x=>!x.parentElement.closest("#main .sheet"))},
+    {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요. 「콘티 · 악보 보기」로 곡 순서와 악보를 보고, 「🎼 연습 모드」로 곡마다 한 화면씩 넘기며 연습해요. 연습 중에 인도자가 연습 모드에서 흐름을 바꾸면, 함께 보고 있는 팀원 모두의 화면에 바로 바뀌어요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"[홈] 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 · 「어려워요」를 눌러 알려요. 인도자 · 리더는 팀원들의 응답을 보고 편성을 짜요.",sel:byH2("참여 응답")},
     {tab:"home",t:"[홈] 앞으로 2주 일정",x:"앞으로 2주 동안의 예배 · 연습 · 모임이 날짜순으로 나와요. 「+ 일정」으로 바로 넣고, 「달력 보기」로 한 달을 한눈에 봐요.",sel:()=>byH2("앞으로 2주 일정")()||byH2("다가오는 일정")()},
     {tab:"bible",t:"[콘티] 한눈에",x:"콘티 메뉴는 큰 칸 두 개예요. 「✍️ 콘티 만들기」 안에는 예배를 준비하는 순서대로 ① 말씀 · 묵상 → ② 콘티 작성 → ③ 악보 편집 → ④ PPT 만들기 단계가 있고, 「📚 콘티 목록」에서는 예전 콘티를 다시 봐요. 단계를 차례로 따라가면 준비가 끝나요.",sel:()=>document.querySelector("#main .ctabs")||document.querySelector("#main .subtabs")},
@@ -1354,11 +1354,11 @@ const TOURS={
     {tab:"write",wt:"info",t:"[콘티] 콘티 작성 · 예배 정보",x:"날짜 · 예배 · 본문 · 설교 제목을 확인해요. 「참여자」에서 자리마다 + 를 눌러 사람을 고르거나, 「불러오기」로 편성표나 저장해 둔 편성(편성 A · B)을 한 번에 채워요.",sel:()=>document.querySelector("#rosterBox")},
     {tab:"write",wt:"songs",t:"[콘티] 콘티 작성 · 찬양",x:"「찬양」 탭에서 여는 찬양 · 예배 찬양 · 특송 · 설교 후 찬양을 채워요. 빈 칸을 누르면 곡 찾기로 가요. 곡마다 키(Key) · 악보 · 메모를 정하고, ⠿를 잡고 끌어 순서를 바꿔요.",sel:()=>document.querySelector("#list-before")},
     {tab:"write",wt:"songs",t:"[콘티] 저장 · 확정 · 공지",x:"다 쓰면 「저장」을 눌러요. 처음 한 번 저장하면 그다음부터는 저절로 저장돼요. 콘티가 정해지면 「🔒 확정하기」로 잠그고, 「송리스트 공지」로 팀 단톡방에 보낼 글을 만들어요. 「+ 연습 일정」도 여기서 넣어요.",sel:()=>document.querySelector("#saveBtn")&&document.querySelector("#saveBtn").closest(".sheet")},
-    {tab:"sheet",t:"[콘티] 악보 편집",x:"곡마다 악보에 구간(Intro · 1절 · 후렴) 표시를 하고, 곡 흐름 · 연주 시간을 적어요. 「🧩 자유롭게 편집」으로 쪽을 자르고 붙일 수 있어요. 마지막에 「콘티 출력」으로 팀원에게 줄 악보 묶음을 만들어요.",sel:()=>document.querySelector("#main .sheet")},
+    {tab:"sheet",t:"[콘티] 악보 편집",x:"곡마다 악보를 눌러 열면 맨 위 「진행 순서」 단추(Intro · V1 · C · × 2 …)로 순서를 넣고, 악보 맨 위에 한 줄로 찍을 수 있어요. 「🖌 악보 고치기」로 지우개 · 펜 · 글자로 악보를 직접 고치고(원본은 남아요), 「🧩 자유롭게 편집」으로 쪽을 자르고 붙여요. 마지막에 「콘티 출력」으로 팀원에게 줄 악보 묶음을 만들어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"pptmake",t:"[콘티] PPT 만들기",x:"콘티의 곡 가사로 예배 가사 PPT를 만들어요. 템플릿을 고르면 우리 교회 PPT 모양 그대로 나와요. 미리 보고 「PPT 받기」를 누르면 끝이에요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"list",t:"[콘티] 콘티 목록",x:"저장해 둔 콘티가 날짜순으로 모여 있어요. 예전 콘티를 열어 악보 · 공지를 다시 보거나, 「불러오기」로 이어서 고칠 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"songs",t:"[라이브러리] 한눈에",x:"라이브러리는 교회 전체가 함께 쓰는 곳이에요. 「찬양 라이브러리」는 곡 자체와 악보를, 「PPT 라이브러리」는 화면에 띄울 가사와 PPT 템플릿을 모아 둬요. 곡 목록은 두 곳이 같아요.",sel:()=>document.querySelector("#main .subtabs")},
-    {tab:"songs",t:"[라이브러리] 찬양 라이브러리",x:"곡을 찾고, 없으면 바로 등록해요. 썸네일을 누르면 코드별 악보를 보고, 가사도 여기서 보고 고쳐요. 한 번 넣어 두면 다음 콘티부터 그대로 불러와요.",sel:()=>document.querySelector("#song-q")},
+    {tab:"songs",t:"[라이브러리] 찬양 라이브러리",x:"곡이 한 줄씩 나와요. 찾고 → 누르면 「＋ 지금 콘티에 넣기 · 🎼 악보 보기 · 📝 가사 · ✏️ 곡 정보 고치기」가 펼쳐져요. 악보 보기에서 「🖌 악보 고치기」로 손글씨를 지우거나 코드를 고칠 수 있어요. 한 번 넣어 두면 다음 콘티부터 그대로 불러와요.",sel:()=>document.querySelector("#song-q")},
     {tab:"ppt",t:"[라이브러리] PPT 라이브러리",x:"예배 PPT를 올려 템플릿으로 만들고, 곡마다 가사 PPT를 넣어 둬요. 가사만 있어도 템플릿에 맞춰 PPT를 만들 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"cal",t:"[우리 팀] 한눈에",x:"우리 팀 메뉴는 콘티와 따로, 팀을 꾸리는 곳이에요. 일정 · 멤버 · 편성 · 출결 · 결산 · 회칙이 있어요. 지금은 「일정」이에요. 연습 · 모임 · 행사를 넣으면 팀원이 홈에서 참여 여부를 알려 줘요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"members",t:"[우리 팀] 멤버 · 편성",x:"「멤버」에서 팀원 이름 · 맡는 자리 · 회원 구분을 관리해요. 「편성」에서는 주일마다 누가 어느 자리를 맡을지 미리 짜 두고, 팀원들이 남긴 「참여 가능 · 어려워요」 응답을 보며 정해요. 여기서 짠 편성은 콘티 작성의 「참여자 → 불러오기」로 그대로 들어가요.",sel:()=>document.querySelector("#main .subtabs")},
@@ -1380,7 +1380,7 @@ const TOURS={
     {t:"⑧ 연주 방법 메모",x:"첫 곡 메모 칸에 연주 방법을 적어 보세요. (예: 후렴 세 번, 브릿지 2번, 후렴 키업) 적어 두면 악보 편집의 곡 흐름에 자동으로 들어가요.",sel:()=>document.querySelector("#list-before input.memo"),done:()=>((S.cur||{}).before||[]).some(i=>(i.memo||"").trim()),ok:"다음엔 저장할 거예요."},
     {t:"⑨ 저장하기",x:"아래 「저장」을 눌러 보세요. 처음 한 번 저장하면 그다음부터는 저절로 저장돼요.",sel:()=>$("#saveBtn"),done:()=>!!S.curId,ok:"저장됐어요. 다음엔 악보 편집으로 넘어갈 거예요."},
     {t:"⑩ 악보 편집으로",x:"아래 「다음: 악보 편집 →」을 눌러 보세요.",sel:byBtn("다음: 악보 편집"),done:()=>S.tab==="sheet",ok:"악보 편집 화면이에요. 다음엔 메모가 어떻게 들어왔는지 볼 거예요."},
-    {need:"sheet",t:"⑪ 메모가 곡 흐름으로",x:"첫 곡의 「흐름 · 인트로 · 시간」을 눌러 열어 보세요. 적어 둔 연주 방법이 흐름으로 들어가 있어요.",sel:()=>document.querySelector(".flowbox"),done:()=>!!document.querySelector(".flowbox[open]"),ok:"「후렴 × 3」 「KEY UP」처럼 바뀌어 있죠? 틀리면 그대로 고치면 돼요. 다음엔 콘티를 확정할 거예요."},
+    {need:"sheet",t:"⑪ 메모가 곡 흐름으로",x:"첫 곡의 「흐름 · 인트로 · 시간」을 눌러 열어 보세요. 적어 둔 연주 방법이 흐름으로 들어가 있어요. 「악보 맨 위에 한 줄로 넣기」를 켜면 악보 첫 쪽 위에 그대로 찍혀요.",sel:()=>document.querySelector(".flowbox"),done:()=>!!document.querySelector(".flowbox[open]"),ok:"「후렴 × 3」 「KEY UP」처럼 바뀌어 있죠? 틀리면 그대로 고치면 돼요. 다음엔 콘티를 확정할 거예요."},
     {t:"⑫ 콘티 확정하기 🔒",x:"아래 「🔒 확정하기」를 누르고 「콘티 확정」을 눌러 보세요. 확정하면 곡 · 순서 · Key · 악보가 잠겨요. 고칠 일이 생기면 작성자가 「확정 풀기」로 다시 열 수 있어요.",sel:byBtn("확정하기"),done:()=>(S.cur||{}).status==="final",ok:"확정됐어요. 이제 아래 「🔒 확정 후 마무리」에서 팀원에게 보낼 준비를 해요."},
     {t:"⑬ 연습 영상 붙이기",x:"「확정 후 마무리」의 첫 곡 칸에 유튜브 주소를 붙여 넣어 보세요. 팀원이 연습할 때 이 영상을 봐요.",sel:()=>document.querySelector("#finishPanel input")||$("#finishPanel"),done:()=>allItems(S.cur||{}).some(i=>(i.yt||"").trim()),ok:"영상이 붙었어요. 다음엔 팀 재생목록을 콘티 순서대로 바꿔 볼 거예요."},
     {base:()=>S.demoPl||0,t:"⑭ 재생목록 업데이트",x:"「🎵 … 재생목록 업데이트」를 눌러 보세요. 팀 유튜브 재생목록이 콘티 순서대로 바뀌어요. (체험판은 흉내만 내요)",sel:byBtn("재생목록 업데이트"),done:st=>(S.demoPl||0)>st.b0,ok:"재생목록이 콘티 순서대로 바뀌었어요. 마지막으로 최종 공지를 만들 거예요."},
@@ -1389,7 +1389,7 @@ const TOURS={
   /* ===== B. 악보 꾸미기 (실습) ===== */
   practiceSheet:{name:"악보 꾸미기",practice:true,then:[["practicePpt","🖥 PPT 만들기 해 볼래요"],["","그냥 둘러볼게요"]],thenMsg:"악보 준비가 끝났어요. PPT도 만들어 볼까요?",steps:[
     {go:"sheet",pre:()=>demoEditable(),t:"악보 꾸미기를 해 봐요",x:"「콘티 › 악보 편집」에서 곡 흐름 · 연주 시간을 정리하고, 이 앱의 자랑인 「자유롭게 편집」으로 출력할 악보를 꾸며 봐요. 「시작 →」을 누르세요."},
-    {need:"sheet",t:"① 곡 흐름 열기",x:"아무 곡이나 「흐름 · 인트로 · 시간」을 눌러 열어 보세요. 곡 순서(1절 · 후렴 × 2 …)를 한 줄씩 적는 곳이에요.",sel:()=>document.querySelector(".flowbox"),done:()=>!!document.querySelector(".flowbox[open]"),ok:"다음엔 연주 시간을 적어 볼 거예요."},
+    {need:"sheet",t:"① 곡 흐름 열기",x:"아무 곡이나 「흐름 · 인트로 · 시간」을 눌러 열어 보세요. 곡 순서(1절 · 후렴 × 2 …)를 한 줄씩 적는 곳이에요. 악보를 눌러 여는 창 맨 위 「진행 순서」 단추(Intro · V1 · C …)로 넣어도 같은 곳에 들어가요.",sel:()=>document.querySelector(".flowbox"),done:()=>!!document.querySelector(".flowbox[open]"),ok:"다음엔 연주 시간을 적어 볼 거예요."},
     {need:"sheet",pre:()=>{const d=document.querySelector(".flowbox");if(d&&!d.open)d.open=true;},t:"② 연주 시간 적기",x:"「연주 시간」에 3:30처럼 적어 보세요. 곡마다 적으면 전체 시간이 저절로 계산돼요.",sel:()=>document.querySelector(".flowbox[open] input[aria-label='연주 시간']")||document.querySelector(".flowbox"),done:()=>allItems(S.cur||{}).some(i=>(i.dur||"").trim()),ok:"다음엔 「자유롭게 편집」을 열 거예요."},
     {need:"sheet",skipTo:"⑧ 콘티 출력",t:"③ 자유롭게 편집 열기",x:"곡 탭 왼쪽 「🧩 자유롭게 편집」을 눌러 보세요. 악보를 종이 위에 마음대로 놓고 표시해서 그대로 출력하는 곳이에요.",sel:()=>document.querySelector(".sh-free"),done:()=>!!lyModal(),ok:"큰 종이(A3)가 열렸어요. 다음엔 악보를 한 번에 깔아 볼 거예요."},
     {base:()=>S.lyAct||0,t:"④ 압축 배치",x:"위쪽 「🗜 압축 배치」를 눌러 보세요. 모든 악보가 제목과 함께 한 장에 깔려요. (이미 놓인 게 있으면 한 번 더 누르세요)",sel:()=>lyBtn("압축 배치"),done:st=>(S.lyAct||0)>st.b0,ok:"한 장에 다 들어갔어요. 다음엔 악보를 옮겨 볼 거예요."},
@@ -1412,7 +1412,7 @@ const TOURS={
     {tab:"home",t:"팀원 화면이에요",x:"팀원 비밀번호로 들어오면 아래 메뉴가 홈 · 일정 · 나, 세 개만 보여요. 매주 필요한 건 여기 다 있어요.",sel:()=>document.querySelector(".bnav")},
     {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"[홈] 콘티 · 악보 보기",x:"「콘티 · 악보 보기」를 누르면 곡 순서 · 키 · 악보 · 연습 영상을 한 화면에서 봐요.",sel:byBtn("콘티 · 악보 보기")},
-    {tab:"home",t:"[홈] 연습 모드",x:"「🎼 연습 모드」는 태블릿 · 휴대폰을 악보대처럼 써요. 곡마다 한 화면, 옆으로 넘기면 다음 곡이에요.",sel:byBtn("연습 모드")},
+    {tab:"home",t:"[홈] 연습 모드",x:"「🎼 연습 모드」는 태블릿 · 휴대폰을 악보대처럼 써요. 곡마다 한 화면, 옆으로 넘기면 다음 곡이에요. 위쪽 「진행」 줄에 곡 순서(Intro → V1 → C …)가 나오고, 인도자가 연습 중에 바꾸면 내 화면에도 바로 바뀌어요.",sel:byBtn("연습 모드")},
     {tab:"home",t:"[홈] 참여 응답",x:"주일 · 연습마다 「참여 가능」 「어려워요」를 눌러 알려요. 리더가 편성할 때 봐요.",sel:byH2("참여 응답")},
     {tab:"cal",t:"[일정]",x:"연습 · 모임 날짜와 장소를 달력으로 봐요. 날짜를 누르면 그날 일정이 나와요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"me",t:"[나]",x:"내 이름 · 사진 · 맡는 자리, 출결을 봐요. 「다른 기기 연결」로 휴대폰 · 태블릿을 함께 써요. 이제 마음껏 둘러보세요!",sel:()=>document.querySelector("#main .sheet")}]}};
