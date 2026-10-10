@@ -5333,7 +5333,9 @@ async function embedFontInPptx(blob,name,wantBold){const src=await fontSource(na
   if(fam!==name){const re=new RegExp(`typeface="${name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}"`,"g");for(const f of Object.keys(zip.files).filter(f=>/^ppt\/(slides|slideLayouts|slideMasters)\/[^/]+\.xml$/.test(f))){const x=await zip.file(f).async("string");if(re.test(x))zip.file(f,x.replace(re,`typeface="${xEsc(fam)}"`));}}
   const out=await zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation",compression:"DEFLATE"});
   return{blob:out,why:"",fam,size:files.reduce((n,[,b])=>n+b.byteLength,0)};}
-async function maybeEmbed(blob,font,bold){if(!S.pptEmbed||!font)return blob;try{const r=await embedFontInPptx(blob,font,bold);if(r.why)toast(r.why,4500);return r.blob;}catch(e){console.error(e);toast("글꼴을 넣지 못해 이름만 넣었어요: "+(e.message||e),4500);return blob;}}
+async function maybeEmbed(blob,font,bold){if(!S.pptEmbed||!font)return blob;
+  /* 경기천년체처럼 방송실 컴퓨터에 깔린 글꼴은 파일을 넣지 않아요 (알림도 없이) */
+  if(LYRIC_FONTS.includes(font))return blob;try{const r=await embedFontInPptx(blob,font,bold);if(r.why)toast(r.why,4500);return r.blob;}catch(e){console.error(e);toast("글꼴을 넣지 못해 이름만 넣었어요: "+(e.message||e),4500);return blob;}}
 /* 🔍 웹폰트 찾기 · 📁 글꼴 파일 올리기 */
 async function fontPickModal(onPick){const q=h("input",{type:"search",placeholder:"글꼴 찾기 (예: 고딕, 나눔, 도현)",style:"width:100%"});const box=h("div",{class:"fp-list"});const st=h("p",{class:"hint"});
   let ups=await fontUploadList();const sample="주님의 은혜 감사해 · 1234";
@@ -6012,7 +6014,8 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
   const custom=!!lyFont&&!LYRIC_FONTS.includes(lyFont);
   const embedInfo=h("span",{class:"hint"});
   const embedCb=h("input",{type:"checkbox",checked:S.pptEmbed,onchange:e=>{S.pptEmbed=e.target.checked;syncEmbed();}});
-  const syncEmbed=async()=>{const f=lyFont;embedCb.disabled=!f;if(!f){embedInfo.textContent="";return;}
+  const syncEmbed=async()=>{const f=lyFont;embedCb.disabled=!f||LYRIC_FONTS.includes(f);if(!f){embedInfo.textContent="";return;}
+    if(LYRIC_FONTS.includes(f)){embedCb.checked=false;S.pptEmbed=false;embedInfo.textContent="경기천년체는 방송실 컴퓨터에 깔려 있어 글꼴 파일을 넣지 않아요";return;}
     const g=gfOf(f),up=(await fontUploadList()).includes(f);if(f!==lyFont)return;
     embedInfo.textContent=!S.pptEmbed?"":g?`구글 무료 글꼴 · 받을 때 글꼴 파일(${g.name})을 넣어요 (PPT가 1~3MB 커져요)`:up?"이 기기에 올려 둔 글꼴 파일을 넣어요":"⚠️ 이 글꼴은 파일이 없어 이름만 들어가요. 「🔍 글꼴 찾기」에서 고르거나 파일을 올려 주세요";};
   const setFont=v=>{lyFont=String(v||"").trim();S.pptLyricFont=lyFont;if(lyFont){fontPreviewLoad(lyFont);if(gfOf(lyFont)&&!S.pptEmbed){S.pptEmbed=true;embedCb.checked=true;}const f0=lyFont;fontUploadList().then(l=>{if(f0===lyFont&&l.includes(f0)&&!S.pptEmbed){S.pptEmbed=true;embedCb.checked=true;syncEmbed();syncMem();}});}syncEmbed();draw();};
