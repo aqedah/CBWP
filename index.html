@@ -5462,7 +5462,7 @@ async function exportLyricsPpt(c,tplOverride,skipAsk,opts={}){S.lastPptExport=Da
         const slides=slidesFor(it,cfg);
         if(!cfg.titleSlide&&!slides.length)txt(s,it.title,{y:H*.35,h:H*.3,fontSize:cfg.size,valign:"middle"});
         slides.forEach((lines,i)=>{const sl=(i===0&&!cfg.titleSlide)?s:pp.addSlide();if(sl!==s){sl.background=back;n++;}
-          const bottom=cfg.valign==="bottom";const bx=cfg.box;txt(sl,lines.join("\n"),bx?{x:bx.x*W,y:bx.y*H,w:bx.w*W,h:bx.h*H,fontSize:cfg.size,valign:VA[cfg.anchor]||(bottom?"bottom":"middle"),lineSpacingMultiple:cfg.lnSpc||1.15}:{y:bottom?H*.62:H*.12,h:bottom?H*.32:H*.76,fontSize:cfg.size,valign:bottom?"bottom":"middle",lineSpacingMultiple:cfg.lnSpc||1.15});});
+          const bottom=cfg.valign==="bottom";const bx=cfg.box;txt(sl,lines.join("\n"),bx?{x:bx.x*W,y:bx.y*H,w:bx.w*W,h:bx.h*H,fontSize:cfg.size,valign:lines.length===1?"middle":(VA[cfg.anchor]||(bottom?"bottom":"middle")),lineSpacingMultiple:cfg.lnSpc||1.15}:{y:bottom?H*.62:H*.12,h:bottom?H*.32:H*.76,fontSize:cfg.size,valign:lines.length===1?"middle":(bottom?"bottom":"middle"),lineSpacingMultiple:cfg.lnSpc||1.15});});
         st.textContent=`슬라이드 ${n}장 만드는 중…`;}
       let blob=await pp.write({outputType:"blob"});if(cfg.titleSlide&&cfg.titleGrad)blob=await gradTitles(blob,cfg.titleGrad,GMARK);
       if(S.pptLyricFont&&cfg.font===S.pptLyricFont){st.textContent="글꼴 파일을 넣는 중…";blob=await maybeEmbed(blob,cfg.font,!!(cfg.bold||cfg.titleBold));}const fname=`${teamName(c.team||S.team)}_가사_${c.date||"날짜미정"}.pptx`;md.close();
@@ -5762,7 +5762,7 @@ function tplPreview(t,lines,kind){ensureWebFont(t.font);ensureWebFont(t.titleFon
   const isT=kind==="title";const b=(isT?(t.titleBox||{x:.04,y:.35,w:.92,h:.3}):null)||t.box||(t.valign==="bottom"?{x:.04,y:.62,w:.92,h:.32}:{x:.04,y:.12,w:.92,h:.76});
   const tx=h("div",{class:"tpv-t",text:isT?lines.join(" "):lines.slice(0,kind==="lyric"?99:(t.lines||2)).join("\n")});
   Object.assign(tx.style,{left:b.x*100+"%",top:b.y*100+"%",width:b.w*100+"%",height:b.h*100+"%",color:t.color,fontFamily:`"${t.font}",sans-serif`,fontWeight:t.bold||boldName(t.font)?"700":"400",
-    fontSize:`${((isT?(t.titleSize||Math.round(t.size*1.15)):t.size)/(t.slideH?t.slideH*72:405)*100).toFixed(2)}cqh`,color:isT?(t.titleColor||t.color):t.color,textAlign:t.align||"center",justifyContent:{t:"flex-start",b:"flex-end"}[isT?(t.titleAnchor||"ctr"):t.anchor]||(t.valign==="bottom"?"flex-end":"center"),
+    fontSize:`${((isT?(t.titleSize||Math.round(t.size*1.15)):t.size)/(t.slideH?t.slideH*72:405)*100).toFixed(2)}cqh`,color:isT?(t.titleColor||t.color):t.color,textAlign:t.align||"center",justifyContent:!isT&&(lines||[]).length===1?"center":({t:"flex-start",b:"flex-end"}[isT?(t.titleAnchor||"ctr"):t.anchor]||(t.valign==="bottom"?"flex-end":"center")),
     lineHeight:String(1.15*(t.lnSpc||1)),textShadow:t.shadow?"1px 2px 4px rgba(0,0,0,.6)":"none"});
   if(isT&&t.titleGrad){Object.assign(tx.style,{backgroundImage:gradCss(t.titleGrad),webkitBackgroundClip:"text",backgroundClip:"text",color:"transparent",webkitTextFillColor:"transparent",textShadow:"none"});tx.style.setProperty("-webkit-background-clip","text");}
   if(isT){Object.assign(tx.style,{fontFamily:`"${t.titleFont||t.font}",sans-serif`,fontWeight:(t.titleBold??t.bold)||boldName(t.titleFont||t.font)?"700":"400",textAlign:t.titleAlign||t.align||"center"});if(t.titleShadow===false)tx.style.textShadow="none";
@@ -6079,6 +6079,8 @@ function setShapeLines(sp,lines){const body=(sp.match(/<p:txBody>[\s\S]*<\/p:txB
   const ps=[...body.matchAll(PARA_RE)].map(m=>m[0]).filter(p=>pText(p).trim());const proto=ps[0]||(body.match(PARA_RE)||["<a:p></a:p>"])[0];
   const out=ps.length>1?lines.map(l=>setPara(proto,l)).join(""):setPara(proto,lines.join("\n"));
   const nb=body.replace(/(<a:lstStyle\/>|<a:lstStyle>[\s\S]*?<\/a:lstStyle>)[\s\S]*<\/p:txBody>$/,(m,a)=>`${a}${out}</p:txBody>`);return sp.replace(body,()=>nb===body?body.replace(/<a:p>[\s\S]*<\/a:p>/,()=>out):nb);}
+/* 가사가 한 줄뿐인 장은 글 상자 세로 가운데로 (두 줄은 틀 그대로) */
+function oneLineCenter(sp,lines){if((lines||[]).length!==1)return sp;return sp.replace(/<a:bodyPr\b([^>]*?)(\/?)>/,(m,a,sl)=>`<a:bodyPr${a.replace(/\sanchor="[^"]*"/,"")} anchor="ctr"${sl}>`);}
 /* 글 상자 안 글자의 글꼴을 바꿔요 (가사 글꼴 고르기) */
 function fontizeSp(sp,font){if(!font)return sp;const f=xEsc(font);if(gfBold(font))sp=sp.replace(/<a:(rPr|endParaRPr)\b([^>]*?)(\/?)>/g,(m,t,a,sl)=>`<a:${t}${a.replace(/\sb="[01]"/,"")} b="1"${sl}>`);const tag=`<a:latin typeface="${f}"/><a:ea typeface="${f}"/>`;
   const fix=inner=>{inner=inner.replace(/<a:(latin|ea|cs)\b[^>]*\/>/g,"");const m=inner.match(/<a:(sym|hlinkClick|hlinkMouseOver|rtl|extLst)\b/);return m?inner.slice(0,m.index)+tag+inner.slice(m.index):inner+tag;};
@@ -6183,7 +6185,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
     const tB=s.t!=null?A.order[s.t]:null,lB=A.order[s.l];
     for(const it of songs){const ttl=it.title.replace(/\s*\((?:새)?찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
       const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,fontizeSp(setShapeLines(tb.sps[0].sp,[ttl]),S.pptLyricFont),tB?1:.8)});
-      for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>fontizeSp(setShapeLines(lB.sps[0].sp,ls),S.pptLyricFont))});}
+      for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>oneLineCenter(fontizeSp(setShapeLines(lB.sps[0].sp,ls),S.pptLyricFont),ls))});}
     regions.push({idx:s.idx,gen,what:`찬양 ${si+1}`,n:songs.length});});
   /* 특송이 없으면 특송 안내 장을 빼요 */
   if(A.special&&!(c.special||[]).length&&!(c.specialBy||"").trim()&&!regions.some(r=>r.idx.includes(A.special.i)))regions.push({idx:[A.special.i],gen:[],what:"특송 없음"});
