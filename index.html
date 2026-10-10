@@ -5782,9 +5782,11 @@ function parseFlowSeq(it){const out=[];const parts=flowLines(it).flatMap(l=>l.sp
 /* 흐름대로 늘어놓기 → {slides} 또는 {miss:[구간]} 또는 null(흐름 없음) */
 function flowArrange(it,cfg){const seq=parseFlowSeq(it);if(!seq.some(x=>x.sec!=="_"))return null;const {bl,tags}=secTagsOf(it,cfg);if(!bl.length)return null;
   const miss=[...new Set(seq.filter(x=>x.sec!=="_"&&!tags.includes(x.sec)).map(x=>x.sec))];if(miss.length)return{miss};
-  const slides=[];let lastBlank=false;for(const x of seq){if(x.sec==="_"){if(!lastBlank&&slides.length)slides.push([]);lastBlank=true;continue;}lastBlank=false;
+  const slides=[];let lastBlank=false;for(let qi=0;qi<seq.length;qi++){const x=seq[qi];if(x.sec==="_"){if(!lastBlank&&slides.length)slides.push([]);lastBlank=true;continue;}lastBlank=false;
     /* 같은 구간이 가사에 여러 번 있으면(되풀이된 후렴 등) 처음 나온 한 묶음만 써요 */
-    const i0=tags.indexOf(x.sec);for(let i=i0;i<bl.length&&tags[i]===x.sec;i++)slides.push(...bl[i].slides.map(l=>l.slice()));}
+    const i0=tags.indexOf(x.sec);let i=i0;for(;i<bl.length&&tags[i]===x.sec;i++)slides.push(...bl[i].slides.map(l=>l.slice()));
+    /* 절마다 끝에 붙는 되풀이 줄(「주의 영원한 팔 의지해」처럼): 흐름에서 바로 다음이 후렴이 아니면, 그 절 바로 뒤의 후렴 묶음을 절에 붙여 둬요 */
+    if(/^V/.test(x.sec)&&!(seq[qi+1]&&seq[qi+1].sec==="C")){for(;i<bl.length&&tags[i]==="C";i++)slides.push(...bl[i].slides.map(l=>l.slice()));}}
   while(slides.length&&!slides[slides.length-1].length)slides.pop();return{slides};}
 const pptFlowOn=()=>S.pptFlow!==false;
 function slidesFor(it,cfg){let out=null;if(pptFlowOn()){try{const r=flowArrange(it,cfg);if(r&&r.slides&&r.slides.length)out=r.slides;}catch(e){console.error(e);}}
