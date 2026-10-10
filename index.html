@@ -95,8 +95,14 @@ body.has-bnav .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
 .subtabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:4px}
 .subtabs button{flex:1 0 auto;border:0;background:none;padding:8px 14px;border-radius:9px;font:inherit;font-weight:700;font-size:.9rem;color:var(--ink2);cursor:pointer;white-space:nowrap}
 .subtabs button[aria-selected="true"]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 4px rgb(0 0 0 / .1)}
-.ctabs{display:flex;flex-direction:column;gap:6px}.csteps{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;padding:0 2px}.csteps button{flex:1 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}.csteps button i{font-style:normal;color:var(--team,var(--accent))}.csteps button[aria-selected="true"]{background:var(--team,var(--accent));border-color:var(--team,var(--accent));color:#fff}.csteps button[aria-selected="true"] i{color:#fff}.cs-arr{color:var(--muted);flex:none}
-@media (max-width:520px){.csteps{gap:3px}.cs-arr{display:none}.csteps button{flex:1 1 0;min-width:0;padding:5px 3px;font-size:.74rem;gap:2px;overflow:hidden;text-overflow:ellipsis}}
+.ctabs{display:flex;flex-direction:column;gap:6px}
+/* ①~④ 단계: 아래 「예배 정보 · 찬양」처럼 서류철 탭 모양 (고른 탭은 아래 칸과 이어져요) */
+.csteps{display:flex;align-items:flex-end;gap:4px;overflow-x:auto;scrollbar-width:none;padding:0;margin:4px 0 -17px;position:relative;z-index:1}
+.csteps button{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);border-bottom:none;background:var(--soft);color:var(--muted);border-radius:12px 12px 0 0;padding:0 20px;height:44px;box-sizing:border-box;line-height:1;font:inherit;font-size:.88rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.csteps button:hover{color:var(--ink)}.csteps button i{font-style:normal}
+.csteps button[aria-selected="true"]{height:46px;margin-bottom:-1px;background:var(--sheet);color:var(--team,var(--accent));box-shadow:inset 0 3px 0 var(--team,var(--accent))}
+.cs-arr{display:none}.intabs.joined{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:14px 14px 0;margin-top:0}
+@media (max-width:520px){.csteps{gap:3px}.csteps button{flex:1 1 0;min-width:0;padding:0 3px;font-size:.74rem;gap:2px;overflow:hidden;text-overflow:ellipsis;height:38px}.csteps button[aria-selected="true"]{height:40px}}
 .chipbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .chipbar .fchip{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--sheet);color:var(--ink2);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
 .chipbar .fchip[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
@@ -5711,7 +5717,7 @@ function pptDbSheet(){if(!S.pptF||S.pptF.f)S.pptF={all:true,p:true,l:true,q:""};
   return h("div",{class:"sheet"},h("h2",{},"곡별 PPT",h("span",{class:"sub",text:"곡마다 가사 슬라이드를 모아 두는 곳"})),q,h("div",{style:"height:8px"}),chips,h("p",{class:"hint",style:"margin:8px 0 0",text:"곡 목록은 찬양 라이브러리와 같아요. 거기서 새 곡을 등록하면 여기에도 바로 나타나요. 곡 지우기 · 중복 합치기는 찬양 라이브러리에서 해요."}),h("div",{style:"height:10px"}),box);}
 /* 콘티 → PPT 만들기 */
 function renderPptMake(m){const T=S.pmTab||"conti";
-  m.append(h("div",{class:"intabs",role:"tablist"},[["conti","콘티로 PPT 만들기"],["free","콘티 없이 PPT 만들기"]].map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(T===k),class:T===k?"on":"",text:l,onclick:()=>{S.pmTab=k;render();}}))));
+  m.append(h("div",{class:"intabs joined",role:"tablist"},[["conti","콘티로 PPT 만들기"],["free","콘티 없이 PPT 만들기"]].map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(T===k),class:T===k?"on":"",text:l,onclick:()=>{S.pmTab=k;render();}}))));
   if(T==="free"){m.append(adhocPptSheet());return;}
   const list=pptTpls();const today=todayStr();
   const cur=S.cur&&allItems(S.cur).length?S.cur:null;
