@@ -596,7 +596,7 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .pm-flow{display:flex;align-items:center;gap:8px;margin:0 10px;padding:6px 10px;border-radius:10px;background:#1d2a4d;color:#fff;flex-wrap:wrap}.pm-flowlab{font-size:.75rem;color:#9fb1ff;flex:none}.pm-flowtxt{flex:1;min-width:0;font-weight:800;font-size:1.05rem;letter-spacing:.01em;overflow-wrap:anywhere}
 .pm-flow.flash{animation:pmflash 2.4s ease-out}@keyframes pmflash{0%,40%{background:#ffd23f;color:#18213a}100%{background:#1d2a4d;color:#fff}}
 .pm-flowpad{display:flex;flex-wrap:wrap;gap:4px;margin:6px 10px 0;align-items:center}.pm-flowpad .btn.ghost{color:#e6eaf7;border:1px solid #4a5370;background:#2a3554}.pm-flowpad .btn.ghost.danger{color:#ffb4a8}
-.patchbar{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:10px;background:var(--ink);color:var(--sheet);padding:9px 14px;font:inherit;cursor:pointer;text-align:left;overflow:hidden;min-width:0}.pt-lab{font-weight:800;font-size:.8rem;color:#ffd23f;flex:none}.pt-date{font-size:.75rem;opacity:.7;flex:none;font-variant-numeric:tabular-nums}.pt-txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem}.pt-txt.in{animation:ptin .45s ease-out}@keyframes ptin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.pt-more{flex:none;font-size:.78rem;opacity:.75}
+.patchbar{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:10px;background:var(--ink);color:var(--sheet);padding:9px 14px;font:inherit;cursor:pointer;text-align:left;overflow:hidden;min-width:0}.pt-lab{font-weight:800;font-size:.8rem;color:#ffd23f;flex:none}.pt-date{font-size:.75rem;opacity:.7;flex:none;font-variant-numeric:tabular-nums}.pt-txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem}.pt-txt.in{animation:ptin .45s ease-out}@keyframes ptin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.pt-more{flex:none;font-size:.78rem;opacity:.75}.pt-x{flex:none;font-size:.85rem;opacity:.7;padding:2px 6px;margin-right:-6px;border-radius:6px}.pt-x:hover{opacity:1;background:rgb(255 255 255 / .12)}
 .pt-day{display:flex;flex-direction:column;gap:2px}.pt-day ul{margin:2px 0 8px;padding-left:20px;line-height:1.7}
 @media (max-width:520px){.pt-more,.pt-date{display:none}}
 .demosum{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}.demosum::-webkit-details-marker{display:none}.demosum .spacer{flex:1}
@@ -1194,7 +1194,7 @@ function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{t
         h("div",{class:"rolecard"},h("b",{text:"🎤 찬양 인도자 · 리더"}),h("p",{class:"hint",text:"콘티를 만들고 악보 · PPT를 준비하는 과정을 알아봐요."}),
           h("div",{class:"row",style:"gap:8px;align-items:stretch"},h("a",{class:"btn",style:big,href:"?demo=1&tour=leader",text:"빠르게 둘러보기"}),h("a",{class:"btn primary",style:big,href:"?demo=1&tour=practiceConti",text:"첫 콘티 직접 만들기"}))),
         h("div",{class:"rolecard"},h("b",{text:"🎸 싱어 · 악기팀"}),h("p",{class:"hint",text:"이번 주 섬김, 악보, 연습 일정, 참여 응답을 알아봐요."}),
-          h("div",{class:"row",style:"gap:8px;align-items:stretch"},h("a",{class:"btn primary",style:big,href:"?demo=1&tour=member",text:"내 섬김 알아보기"})))),
+          h("div",{class:"row",style:"gap:8px;align-items:stretch"},h("a",{class:"btn primary",style:big,href:"?demo=1&tour=member",text:"둘러보기"})))),
       h("p",{style:"text-align:center;margin:10px 0 0"},h("a",{class:"hint",href:"?demo=1",text:"그냥 자유롭게 둘러보기 →"}))));}}
 /* =========================================================
    개발자 모드 (관리자): 화면의 글자(탭 이름 · 단추 · 제목 · 안내)를 눌러 바로 고쳐요
@@ -1345,7 +1345,7 @@ const byBtn=t=>()=>[...document.querySelectorAll("#main button,#main a.btn")].fi
 const TOURS={
   leader:{name:"인도자 튜토리얼",then:["practiceConti","✍️ 네, 콘티 짜는 연습 해 볼게요","이제 직접 콘티를 짜 볼까요? 방금 본 순서대로, 하나씩 눌러 보며 연습해요."],steps:[
     {tab:"home",t:"화면 아래 메뉴부터 볼까요?",x:"밝게 보이는 화면 맨 아래가 앱의 큰 메뉴예요. 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개가 있어요. 메뉴마다 먼저 전체를 소개하고, 그 안의 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
-    {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 나의 섬김 · 참여 응답 · 공지 · 앞으로 2주 일정이 모여 있어요. 맨 위 「🛠 업데이트」 띠에는 새로 생긴 기능이 지나가요(누르면 전체). 하나씩 볼게요.",sel:()=>[...document.querySelectorAll("#main .sheet")].filter(x=>!x.parentElement.closest("#main .sheet"))},
+    {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 나의 섬김 · 참여 응답 · 공지 · 앞으로 2주 일정이 모여 있어요. 하나씩 볼게요.",sel:()=>[...document.querySelectorAll("#main .sheet")].filter(x=>!x.parentElement.closest("#main .sheet"))},
     {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요. 「콘티 · 악보 보기」로 곡 순서와 악보를 보고, 「🎼 연습 모드」로 곡마다 한 화면씩 넘기며 연습해요. 연습 중에 인도자가 연습 모드에서 흐름을 바꾸면, 함께 보고 있는 팀원 모두의 화면에 바로 바뀌어요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"[홈] 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 · 「어려워요」를 눌러 알려요. 인도자 · 리더는 팀원들의 응답을 보고 편성을 짜요.",sel:byH2("참여 응답")},
     {tab:"home",t:"[홈] 앞으로 2주 일정",x:"앞으로 2주 동안의 예배 · 연습 · 모임이 날짜순으로 나와요. 「+ 일정」으로 바로 넣고, 「달력 보기」로 한 달을 한눈에 봐요.",sel:()=>byH2("앞으로 2주 일정")()||byH2("다가오는 일정")()},
@@ -1501,7 +1501,7 @@ function render(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(TOUR?h
       h("div",{class:"hint",style:"margin-top:6px"},"마음껏 눌러 보세요. 새로고침하면 처음으로 돌아가요."),
       h("div",{class:"row",style:"display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;width:100%"},h("b",{class:"hint",style:"min-width:4.5em",text:"🎤 인도자"}),h("button",{type:"button",class:"btn sm",text:"빠르게 둘러보기",onclick:()=>tourStart("leader")}),h("button",{type:"button",class:"btn sm",text:"첫 콘티 만들기",onclick:()=>tourStart("practiceConti")}),
         h("button",{type:"button",class:"btn sm",text:"악보 꾸미기",onclick:()=>tourStart("practiceSheet")}),h("button",{type:"button",class:"btn sm",text:"PPT 만들기",onclick:()=>tourStart("practicePpt")})),
-      h("div",{class:"row",style:"display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;width:100%"},h("b",{class:"hint",style:"min-width:4.5em",text:"🎸 팀원"}),h("button",{type:"button",class:"btn sm",text:"내 섬김 알아보기",onclick:()=>tourStart("member")}),h("span",{class:"spacer"}),
+      h("div",{class:"row",style:"display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;width:100%"},h("b",{class:"hint",style:"min-width:4.5em",text:"🎸 팀원"}),h("button",{type:"button",class:"btn sm",text:"둘러보기",onclick:()=>tourStart("member")}),h("span",{class:"spacer"}),
         S.memberOnly?h("button",{type:"button",class:"btn sm ghost",text:"인도자 화면으로",onclick:()=>{S.demoMember=false;setAccess();window.DEMO_NAME="김하늘";render();}}):null)));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
   if((S.tab==="write"||S.tab==="sheet")&&S.team&&!S.curId&&!isWriter())S.tab="list";
@@ -4251,10 +4251,11 @@ const PATCH_NOTES=[
   ["2026-10-06","홈 · 일정 · 멤버 · 편성 · 출결"],
   ["2026-10-06","말씀 · 묵상 (카톡 예배 정보로 콘티 시작)"],
   ["2026-10-05","Central Bible Worship Planner 첫 공개 (네 찬양팀)"]];
-function patchSheet(){const notes=PATCH_NOTES.slice(0,12);if(!notes.length)return "";let k=0;
+const NEWS_KEY="cbwp-news-seen";
+function patchSheet(){let seen="";try{seen=localStorage.getItem(NEWS_KEY)||"";}catch(e){}if(PATCH_NOTES[0]&&PATCH_NOTES[0][0]<=seen)return "";const notes=PATCH_NOTES.slice(0,12);if(!notes.length)return "";let k=0;
   const txt=h("span",{class:"pt-txt"});const dt=h("span",{class:"pt-date"});const show=()=>{const[d,t]=notes[k%notes.length];txt.textContent=t;dt.textContent=d.slice(5).replace("-","/");txt.classList.remove("in");void txt.offsetWidth;txt.classList.add("in");};show();
   const bar=h("button",{type:"button",class:"patchbar",title:"새로 바뀐 것 모두 보기",onclick:()=>{const md=modal("🛠 주요 업데이트",h("div",{class:"panel-body"},...[...new Set(PATCH_NOTES.map(x=>x[0]))].map(d=>h("div",{class:"pt-day"},h("b",{text:fmtDate(d)}),h("ul",{},...PATCH_NOTES.filter(x=>x[0]===d).map(x=>h("li",{text:x[1]})))))),[h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})]);}},
-    h("span",{class:"pt-lab",text:"🛠 업데이트"}),dt,txt,h("span",{class:"pt-more",text:"모두 보기 ›"}));
+    h("span",{class:"pt-lab",text:"🛠 업데이트"}),dt,txt,h("span",{class:"pt-more",text:"모두 보기 ›"}),h("span",{class:"pt-x",role:"button",tabindex:"0","aria-label":"업데이트 띠 닫기",title:"닫기 (새 소식이 생기면 다시 나와요)",text:"✕",onclick:e=>{e.stopPropagation();try{localStorage.setItem(NEWS_KEY,PATCH_NOTES[0][0]);}catch(err){}bar.remove();}}));
   if(notes.length>1){const iv=setInterval(()=>{if(!bar.isConnected)return clearInterval(iv);k++;show();},4500);}
   return bar;}
 function myServeSheet(){const me=normName(myName());const today=todayStr();
