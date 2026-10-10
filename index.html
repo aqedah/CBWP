@@ -5818,6 +5818,20 @@ async function scoreTouchup(song,vid,pi,after){const v=vers(song).find(x=>x.vid=
   toast(r.edits.length?`악보를 고쳤어요${res.n?` · 다가오는 콘티 ${res.n}개에도 넣었어요`:""}`:"원본 그대로예요",3500);after&&after();}
 /* 라이브러리 곡에서 이 그림(또는 그 원본)을 쓰는 쪽 찾기 */
 function libPageOf(songId,pg){const song=S.songs.find(x=>x.id===songId);if(!song)return null;for(const v of vers(song))for(let i=0;i<(v.pages||[]).length;i++){const q=v.pages[i];if(q.imgId===pg.imgId||(pg.orig&&(q.orig===pg.orig||q.imgId===pg.orig)))return{song,vid:v.vid,pi:i};}return null;}
+/* 🎨 색으로 지우기: 네모 안에서 고른 색(과 그 색이 종이와 섞인 가장자리)만 종이색으로 · 검은 악보는 그대로 */
+const hexRgb=c=>{const m=String(c).replace("#","");return[0,2,4].map(i=>parseInt(m.slice(i,i+2),16)||0);};
+function colorErase(ctx,o){const x0=Math.max(0,o.x|0),y0=Math.max(0,o.y|0),w=Math.min(ctx.canvas.width-x0,o.w|0),hh=Math.min(ctx.canvas.height-y0,o.h|0);if(w<1||hh<1)return;
+  const im=ctx.getImageData(x0,y0,w,hh),d=im.data;const T=hexRgb(o.c),P=hexRgb(o.p||"#ffffff");const dir=[T[0]-P[0],T[1]-P[1],T[2]-P[2]];const L2=dir[0]**2+dir[1]**2+dir[2]**2||1;const tol=o.tol||70,tol2=tol*tol,perp2=(tol*.6)**2;let n=0;const M=new Uint8Array(w*hh);
+  for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2];const dr=r-T[0],dg=g-T[1],db=b-T[2];let hit=dr*dr+dg*dg+db*db<tol2;
+    if(!hit){const v0=r-P[0],v1=g-P[1],v2=b-P[2];const t=(v0*dir[0]+v1*dir[1]+v2*dir[2])/L2;if(t>.12&&t<1.25){const q0=v0-t*dir[0],q1=v1-t*dir[1],q2=v2-t*dir[2];hit=q0*q0+q1*q1+q2*q2<perp2;}}
+    if(hit){d[i]=P[0];d[i+1]=P[1];d[i+2]=P[2];n++;M[i>>2]=1;}}
+  /* 가장자리 다듬기: 지운 점 바로 옆에 남은 흐린 테두리를 두 번 더 지워요 */
+  const loose2=(tol*1.8)**2,lp2=tol*tol;for(let it=0;it<2;it++){const add=[];for(let yy=0;yy<hh;yy++)for(let xx=0;xx<w;xx++){const k=yy*w+xx;if(M[k])continue;
+      if(!((xx>0&&M[k-1])||(xx<w-1&&M[k+1])||(yy>0&&M[k-w])||(yy<hh-1&&M[k+w])))continue;const i=k*4,r=d[i],g=d[i+1],b=d[i+2];const dr=r-T[0],dg=g-T[1],db=b-T[2];let hit=dr*dr+dg*dg+db*db<loose2;
+      if(!hit){const v0=r-P[0],v1=g-P[1],v2=b-P[2];const t=(v0*dir[0]+v1*dir[1]+v2*dir[2])/L2;if(t>.05&&t<1.3){const q0=v0-t*dir[0],q1=v1-t*dir[1],q2=v2-t*dir[2];hit=q0*q0+q1*q1+q2*q2<lp2;}}
+      if(hit)add.push(k);}
+    for(const k of add){M[k]=1;const i=k*4;d[i]=P[0];d[i+1]=P[1];d[i+2]=P[2];n++;}if(!add.length)break;}
+  ctx.putImageData(im,x0,y0);o.n=n;}
 function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=false;const fin=v=>{if(!settled){settled=true;resolve(v);}};
   const origId=pg.orig||pg.imgId;const u=await getImg(origId);if(!u){toast("악보 그림을 불러오지 못했어요");return fin(null);}const base=await loadImg(u);
   const W=base.naturalWidth,H=base.naturalHeight;let ops=clone(pg.edits||[]);let padTop=(ops.find(o=>o.t==="pad")||{}).top||0;ops=ops.filter(o=>o.t!=="pad");const redo=[];let tool="erase",color="#000000",pen=Math.max(3,Math.round(W/300)),fs=Math.round(W/38),showOrig=false;
@@ -5828,13 +5842,14 @@ function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=
         if(o.p.length===1){ctx.lineWidth=pw(o.p[0]);ctx.beginPath();ctx.moveTo(o.p[0][0],o.p[0][1]);ctx.lineTo(o.p[0][0]+.1,o.p[0][1]);ctx.stroke();}
         else if(o.p[0][2]==null){ctx.lineWidth=o.w;ctx.beginPath();o.p.forEach(([a,b],i)=>i?ctx.lineTo(a,b):ctx.moveTo(a,b));ctx.stroke();}
         else for(let i=1;i<o.p.length;i++){const a=o.p[i-1],b=o.p[i];ctx.lineWidth=(pw(a)+pw(b))/2;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}}
+      else if(o.t==="cerase")colorErase(ctx,o);
       else if(o.t==="text"){ctx.fillStyle=o.c;ctx.font=`${o.b?"800":"600"} ${o.s}px "Pretendard","Noto Sans KR",sans-serif`;ctx.textBaseline="top";String(o.v).split("\n").forEach((ln,i)=>ctx.fillText(ln,o.x,o.y+i*o.s*1.15));}}};
   const redraw=()=>{paint(x,showOrig?[]:ops);cnt.textContent=(ops.length?`고친 곳 ${ops.length}군데`:"아직 고친 곳 없음")+(padTop?" · 위에 빈 칸 있음":"");if(typeof unpadB!=="undefined")unpadB.hidden=!padTop;undoB.disabled=!ops.length;redoB.disabled=!redo.length;};
   const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*CH/r.height];};
   /* 지우개 색: 네모 둘레의 종이색(밝은 쪽) 자동으로 */
   const paperAround=(rx,ry,rw,rh)=>{const tmp=document.createElement("canvas");tmp.width=W;tmp.height=CH;const t=tmp.getContext("2d");paint(t,ops);const px=[];const add=(a,b)=>{a=Math.max(0,Math.min(W-1,Math.round(a)));b=Math.max(0,Math.min(CH-1,Math.round(b)));const d=t.getImageData(a,b,1,1).data;px.push([d[0],d[1],d[2]]);};
     const st=Math.max(2,Math.round((rw+rh)/80));for(let a=rx-3;a<=rx+rw+3;a+=st){add(a,ry-3);add(a,ry+rh+3);}for(let b=ry;b<=ry+rh;b+=st){add(rx-3,b);add(rx+rw+3,b);}
-    px.sort((p,q)=>(q[0]+q[1]+q[2])-(p[0]+p[1]+p[2]));const top=px.slice(0,Math.max(1,Math.round(px.length*.5)));const m=[0,1,2].map(i=>Math.round(top.reduce((s,p)=>s+p[i],0)/top.length));
+    px.sort((p,q)=>(q[0]+q[1]+q[2])-(p[0]+p[1]+p[2]));const top=px.slice(0,Math.max(1,Math.round(px.length*.25)));const m=[0,1,2].map(i=>Math.round(top.reduce((s,p)=>s+p[i],0)/top.length));
     return "#"+m.map(v=>v.toString(16).padStart(2,"0")).join("");};
   const pick=(a,b)=>{const d=x.getImageData(Math.round(a),Math.round(b),1,1).data;return "#"+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,"0")).join("");};
   let drag=null,lastUp=0;const ghost=h("div",{class:"tu-ghost",hidden:true});const wrap=h("div",{class:"tu-wrap"},cv,ghost);
@@ -5846,20 +5861,22 @@ function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=
     if(tool==="text"){textAt(a,b,e);return;}
     try{cv.setPointerCapture(e.pointerId);}catch(err){}
     if(tool==="erase"){drag={t:"rect",a,b,e0:e};}
+    else if(tool==="cerase"){const [r0,g0,b0]=hexRgb(color);if(Math.max(r0,g0,b0)-Math.min(r0,g0,b0)<40&&(r0+g0+b0)/3<170){toast("검은색 · 회색은 인쇄된 악보도 같이 지워져요. 💧 스포이드로 손글씨 색을 먼저 집거나, 🩹 지우개(덮기)를 쓰세요",4500);return;}drag={t:"rect",a,b,e0:e,c:true};}
     else if(tool==="pen"){const pr=prOf(e);const o={t:"pen",c:color,w:pen,p:[pr!=null?[Math.round(a),Math.round(b),pr]:[Math.round(a),Math.round(b)]]};ops.push(o);redo.length=0;drag={t:"pen",o,id:e.pointerId};redraw();}});
   cv.addEventListener("pointermove",e=>{if(!drag)return;if(drag.id!=null&&e.pointerId!==drag.id)return;const [a,b]=pt(e);
     if(drag.t==="pen"){const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];for(const ce of (evs.length?evs:[e])){const [ca,cb]=pt(ce);const pr=prOf(ce);drag.o.p.push(pr!=null?[Math.round(ca),Math.round(cb),pr]:[Math.round(ca),Math.round(cb)]);}redraw();}
     else{const r=cv.getBoundingClientRect(),wr=wrap.getBoundingClientRect();const sx=r.width/W;ghost.hidden=false;Object.assign(ghost.style,{left:`${r.left-wr.left+Math.min(a,drag.a)*sx}px`,top:`${r.top-wr.top+Math.min(b,drag.b)*sx}px`,width:`${Math.abs(a-drag.a)*sx}px`,height:`${Math.abs(b-drag.b)*sx}px`});}});
   const up=e=>{lastUp=Date.now();if(!drag)return;if(drag.id!=null&&e.pointerId!==drag.id)return;const d=drag;drag=null;ghost.hidden=true;if(d.t==="rect"){const [a,b]=pt(e);const rx=Math.round(Math.min(a,d.a)),ry=Math.round(Math.min(b,d.b)),rw=Math.round(Math.abs(a-d.a)),rh=Math.round(Math.abs(b-d.b));
-      if(rw<3||rh<3)return;ops.push({t:"rect",x:rx,y:ry,w:rw,h:rh,c:eraseAuto?paperAround(rx,ry,rw,rh):color});redo.length=0;redraw();}};
+      if(rw<3||rh<3)return;if(d.c){ops.push({t:"cerase",x:rx,y:ry,w:rw,h:rh,c:color,tol,p:paperAround(rx,ry,rw,rh)});redo.length=0;redraw();const n=ops[ops.length-1].n;toast(n?`${n.toLocaleString()}개 점을 지웠어요. 덜 지워졌으면 「비슷한 색 범위」를 넓혀 다시 끌어 보세요`:"그 색이 거의 없어요. 💧 스포이드로 손글씨 색을 다시 집어 보세요",3500);return;}
+      ops.push({t:"rect",x:rx,y:ry,w:rw,h:rh,c:eraseAuto?paperAround(rx,ry,rw,rh):color});redo.length=0;redraw();}};
   cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
   const textAt=(a,b,e)=>{const r=cv.getBoundingClientRect(),wr=wrap.getBoundingClientRect();const sx=r.width/W;
     const inp=h("textarea",{class:"tu-text",rows:1,placeholder:"글자 쓰고 Enter",style:`left:${r.left-wr.left+a*sx}px;top:${r.top-wr.top+b*sx}px;font-size:${Math.max(12,fs*sx)}px;color:${color};width:${Math.round(Math.max(120,fs*sx*5))}px;max-width:calc(100% - ${Math.round(r.left-wr.left+a*sx)}px)`});
     let gone=false;const done=ok=>{if(gone)return;gone=true;const v=inp.value.trim();inp.remove();if(ok&&v){ops.push({t:"text",x:Math.round(a),y:Math.round(b),s:fs,c:color,b:bold,v});redo.length=0;redraw();}};
     inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();done(true);}else if(ev.key==="Escape"){ev.stopPropagation();done(false);}});inp.addEventListener("blur",()=>done(true));wrap.append(inp);setTimeout(()=>inp.focus(),0);};
-  let eraseAuto=true,prevTool="erase",bold=true;
+  let eraseAuto=true,prevTool="erase",bold=true,tol=70;
   const tb=(k,label,title)=>h("button",{type:"button",class:"btn sm","data-t":k,text:label,title,onclick:()=>{if(k==="pick")prevTool=tool==="pick"?prevTool:tool;tool=k;syncTools();}});
-  const tools=h("div",{class:"row tu-tools"},tb("erase","🩹 지우개(덮기)","지울 곳을 네모로 끌어요. 둘레 종이색으로 덮어요"),tb("pen","🖊 펜","끌어서 그려요"),tb("text","🔤 글자","쓸 자리를 눌러요"),tb("pick","💧 스포이드","악보에서 색을 집어요"));
+  const tools=h("div",{class:"row tu-tools"},tb("erase","🩹 지우개(덮기)","지울 곳을 네모로 끌어요. 둘레 종이색으로 덮어요"),tb("cerase","🎨 색으로 지우기","스포이드로 손글씨 색을 집고, 범위를 네모로 끌면 그 색만 지워요 (검은 악보는 남아요)"),tb("pen","🖊 펜","끌어서 그려요"),tb("text","🔤 글자","쓸 자리를 눌러요"),tb("pick","💧 스포이드","악보에서 색을 집어요"));
   const sw=h("input",{type:"color",value:color,title:"색 고르기","aria-label":"색",style:"width:42px;height:32px;padding:0;border:none;background:none",oninput:e=>{color=e.target.value;}});
   const presets=h("div",{class:"row",style:"gap:4px"},...["#000000","#ffffff","#d64545","#2f62d6"].map(c=>h("button",{type:"button",class:"tu-sw",style:`background:${c}`,title:c,onclick:()=>{color=c;sw.value=c;}})));
   const autoCk=h("label",{class:"row hint",style:"gap:4px"},h("input",{type:"checkbox",checked:true,onchange:e=>{eraseAuto=e.target.checked;}}),"지우개는 종이색 자동");
@@ -5873,11 +5890,13 @@ function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=
   const shiftOps=d=>{for(const o of ops){if(o.t==="pen")o.p.forEach(q=>{q[1]+=d;});else o.y+=d;}};
   const padB=h("button",{type:"button",class:"btn sm",text:"⬆ 위에 빈 칸 늘리기",title:"악보 위쪽에 진행 순서 · 메모를 쓸 빈 칸을 더해요",onclick:()=>{const d=Math.round(H*.08);padTop+=d;CH=H+padTop;shiftOps(d);cv.height=CH;redraw();}});
   const unpadB=h("button",{type:"button",class:"btn sm ghost",text:"빈 칸 빼기",onclick:()=>{shiftOps(-padTop);padTop=0;CH=H;cv.height=CH;redraw();}});
+  const tolIn=h("input",{type:"range",min:30,max:150,value:tol,title:"비슷한 색 범위",oninput:e=>{tol=+e.target.value;}});
+  const ceRow=h("div",{class:"row tu-tools tu-ce",hidden:true},h("span",{class:"hint",text:"① 💧 스포이드로 손글씨 색 집기 → ② 지울 범위를 네모로 끌기 · 인쇄된 코드가 같은 색이면 손글씨 부분만 잡으세요"}),h("span",{class:"hint",text:"비슷한 색 범위"}),tolIn);
   const cnt=h("span",{class:"hint"});
-  const syncTools=()=>{tools.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("primary",b.dataset.t===tool));cv.style.cursor=tool==="text"?"text":tool==="pick"?"copy":"crosshair";};
+  const syncTools=()=>{tools.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("primary",b.dataset.t===tool));ceRow.hidden=!(tool==="cerase"||(tool==="pick"&&prevTool==="cerase"));cv.style.cursor=tool==="text"?"text":tool==="pick"?"copy":"crosshair";};
   const md=modal(`🖌 악보 고치기 · ${title}`,h("div",{class:"panel-body"},
     h("p",{class:"hint",style:"margin:0 0 6px",text:"원본 그림은 그대로 남고, 고친 그림이 이 곡의 기본 악보가 돼요. 언제든 「↺ 원본으로」 돌아갈 수 있어요."}),
-    tools,h("div",{class:"row tu-tools"},h("span",{class:"hint",text:"색"}),sw,presets,autoCk,h("span",{class:"hint",text:"펜 굵기"}),penIn,h("span",{class:"hint",text:"글자 크기"}),sizeIn,boldCk,h("span",{class:"spacer"}),undoB,redoB,origB),h("div",{class:"row",style:"gap:6px;align-items:center"},padB,unpadB,cnt),wrap),
+    tools,h("div",{class:"row tu-tools"},h("span",{class:"hint",text:"색"}),sw,presets,autoCk,h("span",{class:"hint",text:"펜 굵기"}),penIn,h("span",{class:"hint",text:"글자 크기"}),sizeIn,boldCk,h("span",{class:"spacer"}),undoB,redoB,origB),ceRow,h("div",{class:"row",style:"gap:6px;align-items:center"},padB,unpadB,cnt),wrap),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:async e=>{const btn=e.currentTarget;btn.disabled=true;
       try{let nid=null;const all=(padTop?[{t:"pad",top:padTop}]:[]).concat(clone(ops));if(all.length){showOrig=false;paint(x,ops);nid=await storeImage({url:cv.toDataURL("image/jpeg",.9),w:W,h:CH});}
         fin({imgId:nid||origId,orig:origId,edits:all,w:W,h:all.length?CH:H,ow:W0===W&&!pg.ow?W:W0,oh:pg.oh||H});md.close(true);}
