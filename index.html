@@ -1814,12 +1814,12 @@ const lyricText=sg=>(sg.lyrics||"").trim()||((sg.ppt&&sg.ppt.slides)||[]).map(St
 function ownTitleFirst(sg){const raw=splitTitle(sg.title).base||sg.title;const parts=[raw.replace(/\([^)]*\)/g,""),...[...raw.matchAll(/\(([^)]*)\)/g)].map(m=>m[1])].map(nk).filter(x=>x.length>=4);
   const head=nk(lyricText(sg).split("\n").map(x=>x.trim()).filter(Boolean).slice(0,4).join(""));return parts.some(x=>head.includes(x.slice(0,6)));}
 /* 두 곡 가사 나란히 보기: 겹치는 줄은 칠해서 */
-function lyricsCompareModal(a,b,after){const la=lyricText(a),lb=lyricText(b);const na=nk(la),nb=nk(lb);
+function lyricsCompareModal(a,b,after,ops){const la=lyricText(a),lb=lyricText(b);const na=nk(la),nb=nk(lb);
   const col=(sg,txt,other)=>h("div",{class:"lc-col"},h("b",{class:"lc-title",text:sg.title}),h("div",{class:"row",style:"gap:6px"},
-      h("button",{class:"btn sm ghost",text:"📝 고치기",onclick:()=>lyricsModal({songId:sg.id,title:sg.title},()=>{md.close();lyricsCompareModal(a,b,after);after&&after();})}),
+      h("button",{class:"btn sm ghost",text:"📝 고치기",onclick:()=>lyricsModal({songId:sg.id,title:sg.title},()=>{md.close();lyricsCompareModal(a,b,after,ops);after&&after();})}),
       S.db&&S.canWrite?h("button",{class:"btn sm primary",text:"✅ 이 곡으로 합치기",title:"이 곡을 남기고, 다른 쪽의 악보 · 가사(비어 있을 때) · 유튜브를 이 곡으로 모은 뒤 다른 쪽은 지워요. 다른 쪽을 쓴 콘티도 이 곡으로 이어져요",onclick:async e=>{const other=sg===a?b:a;
-        if(!confirmInline(e.currentTarget,`「${splitTitle(other.title).base}」을(를) 합칠까요? 한 번 더`))return;e.currentTarget.disabled=true;await mergeSongs(sg,[other],sg.title,true);md.close();toast(`「${sg.title}」 하나로 합쳤어요`);after&&after(other,`「${sg.title}」 하나로 합쳤어요`);renderSongs.redraw&&renderSongs.redraw();}}):null,
-      S.db&&S.canWrite?h("button",{class:"btn sm ghost danger",text:"🗑 지우기",title:"이 곡을 라이브러리에서 지워요 (이미 쓴 콘티에는 제목이 남아요)",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? 한 번 더"))return;
+        if(!confirmInline(e.currentTarget,`「${splitTitle(other.title).base}」을(를) 합칠까요? 한 번 더`))return;e.currentTarget.disabled=true;if(ops&&ops.merge){md.close();await ops.merge(sg,other);return;}await mergeSongs(sg,[other],sg.title,true);md.close();toast(`「${sg.title}」 하나로 합쳤어요`);after&&after(other,`「${sg.title}」 하나로 합쳤어요`);renderSongs.redraw&&renderSongs.redraw();}}):null,
+      S.db&&S.canWrite?h("button",{class:"btn sm ghost danger",text:"🗑 지우기",title:"이 곡을 라이브러리에서 지워요 (이미 쓴 콘티에는 제목이 남아요)",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? 한 번 더"))return;if(ops&&ops.del){md.close();await ops.del(sg);return;}
         try{await S.db.doc(`songs/${sg.id}`).delete();const i=S.songs.indexOf(sg);if(i>=0)S.songs.splice(i,1);md.close();toast(`「${sg.title}」을(를) 지웠어요`);after&&after(sg);renderSongs.redraw&&renderSongs.redraw();}catch(err){toast("지우지 못했어요");}}}):null),
     h("div",{class:"lc-text"},...(txt?txt.split("\n"):["(가사 없음)"]).map(l=>{const k=nk(l);return h("div",{class:k.length>=4&&other.includes(k)?"lc-same":"",text:l||" "});})));
   const md=modal("📝 두 곡 가사 비교",h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 6px",text:"칠해진 줄은 두 곡에 똑같이 있는 줄이에요. 남길 쪽에서 「✅ 이 곡으로 합치기」를 누르거나, 필요 없는 쪽을 「🗑 지우기」로 지워요."}),h("div",{class:"lc-wrap"},col(a,la,nb),col(b,lb,na))),[h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})],"devedit");}
@@ -1842,35 +1842,51 @@ async function fragCandidates(onProg){const songs=S.songs.filter(sg=>!sg.notFrag
       const medley=best.strong&&ownTitleFirst(c)&&(cl.length>=6||(!splitTitle(best.p.title).hymn&&!ownTitleFirst(best.p)));
       out.push({c,p:best.p,why:best.why,strong:best.strong&&!medley,medley,line:line.trim(),use:usage[c.id]||0,sc:false});}}
   onProg&&onProg(songs.length,songs.length);return out.sort((a,b)=>(b.strong-a.strong)||(b.medley-a.medley)||a.use-b.use||a.c.title.localeCompare(b.c.title,"ko"));}
+/* 되돌리기용: 곡 문서와 그 곡을 쓴 우리 팀 콘티를 그대로 찍어 둬요 */
+function songSnap(ids){ids=[...new Set(ids)];return{songs:ids.map(id=>{const sg=S.songs.find(x=>x.id===id);const d=sg?clone(sg):null;if(d)delete d.id;return{id,data:d};}),
+  contis:S.contis.filter(c=>c.id&&allItems(c).some(it=>ids.includes(it.songId))).map(c=>({id:c.id,secs:Object.fromEntries(SECTIONS.map(([k])=>[k,clone(c[k]||[])]))}))};}
+async function songRestore(snap){for(const x of snap.songs)if(x.data){await S.db.doc(`songs/${x.id}`).set(clone(x.data));const cur=S.songs.find(y=>y.id===x.id);if(cur)Object.assign(cur,clone(x.data));else S.songs.push({id:x.id,...clone(x.data)});}
+  for(const c of snap.contis){try{await S.db.doc(`contis/${c.id}`).update({...clone(c.secs),updatedAt:Date.now()});const cc=S.contis.find(y=>y.id===c.id);if(cc)Object.assign(cc,clone(c.secs));}catch(e){console.error(e);}}}
 function fragModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣은 기기에서만 할 수 있어요");
-  const box=h("div",{class:"cards"});const st=h("p",{class:"hint",text:"찾는 중…"});let rows=[];
+  const box=h("div",{class:"cards"});const st=h("p",{class:"hint",text:"찾는 중…"});let rows=[];const undos=[];
+  const songOfId=id=>S.songs.find(x=>x.id===id);
+  /* 한 번의 동작: 미리 찍어 두고 → 실행 → 표시. 되돌리면 찍어 둔 그대로 */
+  const act=async(ids,msg,fn,match)=>{const snap=songSnap(ids);try{await fn();}catch(e){console.error(e);return toast("하지 못했어요");}
+    const hit=rows.filter(x=>!x.done&&match(x));const u={msg,snap,rows:hit};undos.push(u);for(const x of hit){x.done=msg;x.undo=u;}draw();renderSongs.redraw&&renderSongs.redraw();
+    toast(msg+" · 되돌리려면 「↶ 되돌리기」",3500);};
+  const undo=async u=>{if(!u||u.gone)return;u.gone=true;st.textContent="되돌리는 중…";try{await songRestore(u.snap);}catch(e){console.error(e);u.gone=false;return toast("되돌리지 못했어요");}
+    for(const x of u.rows){x.done="";x.undo=null;const c=songOfId(x.c.id),p2=songOfId(x.p.id);if(c)x.c=c;if(p2)x.p=p2;}undos.splice(undos.indexOf(u),1);st.textContent=`「${u.msg}」을(를) 되돌렸어요`;draw();renderSongs.redraw&&renderSongs.redraw();};
+  const undoTop=h("button",{class:"btn sm",text:"↶ 방금 한 것 되돌리기",hidden:true,onclick:()=>undo(undos[undos.length-1])});
+  const doMerge=(r,keep,other)=>act([keep.id,other.id],`「${keep.title}」 하나로 합쳤어요`,()=>mergeSongs(keep,[other],keep.title,true),x=>x.c.id===other.id||x.p.id===other.id||x.c.id===keep.id&&x.p.id===other.id);
+  const doDel=(sg)=>act([sg.id],`「${sg.title}」을(를) 지웠어요`,async()=>{await S.db.doc(`songs/${sg.id}`).delete();const i=S.songs.indexOf(sg);if(i>=0)S.songs.splice(i,1);},x=>x.c.id===sg.id||x.p.id===sg.id);
+  const doKeep=(r,msg)=>act([r.c.id],msg,async()=>{await S.db.doc(`songs/${r.c.id}`).update({notFrag:true});r.c.notFrag=true;},x=>x===r);
   const bulk=h("button",{class:"btn primary",text:"⚡ 모두 합치기",hidden:true,onclick:async()=>{const todo=rows.filter(r=>!r.done&&r.on&&!r.medley);if(!todo.length)return;if(!confirmInline(bulk,`${todo.length}곡 모두 합칠까요? · 한 번 더`))return;bulk.disabled=true;let n=0;
-    for(const r of todo){st.textContent=`합치는 중… ${n+1}/${todo.length}`;try{await mergeSongs(r.p,[r.c],r.p.title,true);r.done="합쳤어요";n++;}catch(e){console.error(e);}}
-    bulk.disabled=false;st.textContent=`${n}곡을 큰 곡에 합쳤어요`;draw();renderSongs.redraw&&renderSongs.redraw();}});
-  const draw=()=>{const left=rows.filter(r=>!r.done);bulk.hidden=!left.length;bulk.textContent=`⚡ 체크한 ${left.filter(r=>r.on&&!r.medley).length}곡 모두 합치기`;
+    for(const r of todo){if(r.done)continue;st.textContent=`합치는 중… ${n+1}/${todo.length}`;await doMerge(r,r.p,r.c);n++;}
+    bulk.disabled=false;st.textContent=`${n}곡을 큰 곡에 합쳤어요 · 줄마다 「↶ 되돌리기」로 되돌릴 수 있어요`;draw();}});
+  const draw=()=>{const left=rows.filter(r=>!r.done);bulk.hidden=!left.length;bulk.textContent=`⚡ 체크한 ${left.filter(r=>r.on&&!r.medley).length}곡 모두 합치기`;undoTop.hidden=!undos.length;
     box.replaceChildren(...rows.map(r=>{const c=r.c;const ly=lyricText(c).split("\n").map(x=>x.trim()).filter(Boolean);
-      if(r.done)return h("div",{class:"card fr-done"},h("b",{text:c.title}),h("span",{class:"hint",text:` → ${r.done}`}));
-      const cmp=h("button",{class:"btn sm ghost",text:"📝 가사 비교",title:"두 곡 가사를 나란히 보고, 겹치는 줄을 칠해서 보여 줘요",onclick:()=>lyricsCompareModal(c,r.p,(del,msg)=>{if(!del)return;for(const x of rows)if(!x.done&&(x.c===del||x.p===del))x.done=msg||`「${del.title}」을(를) 지웠어요`;draw();})});
+      if(r.done)return h("div",{class:"card fr-done row",style:"gap:8px;flex-wrap:nowrap;align-items:center"},h("div",{style:"flex:1;min-width:0"},h("b",{text:c.title}),h("div",{class:"hint",text:`→ ${r.done}`})),
+        r.undo&&!r.undo.gone?h("button",{class:"btn sm",text:"↶ 되돌리기",title:"이 동작을 하기 전으로 되돌려요 (곡 · 악보 · 가사 · 콘티 연결)",onclick:e=>{e.currentTarget.disabled=true;undo(r.undo);}}):null);
+      const cmp=h("button",{class:"btn sm ghost",text:"📝 가사 비교",title:"두 곡 가사를 나란히 보고, 겹치는 줄을 칠해서 보여 줘요",onclick:()=>lyricsCompareModal(c,r.p,null,{merge:(keep,other)=>doMerge(r,keep,other),del:sg=>doDel(sg)})});
       if(r.medley)return h("div",{class:"card fr-card fr-med"},h("span",{class:"fr-tag",text:"큰 쪽이 여러 곡을 이어 붙인 PPT 같아요"}),
         h("div",{},h("b",{text:c.title}),h("div",{class:"hint",text:`이 곡은 제목과 첫 소절이 맞는 한 곡이에요 · 가사: ${ly.slice(0,2).join(" / ")}${ly.length>2?" …":""}`}),
           h("div",{class:"fr-parent"},"📦 ",h("b",{text:`「${r.p.title}」`}),` 가사 안에 이 곡이 통째로 들어 있어요 (${r.why.replace(/^가사 /,"")})`)),
         h("div",{class:"row",style:"gap:6px;justify-content:flex-end;flex-wrap:wrap"},cmp,
-          h("button",{class:"btn sm ghost",text:"둘 다 그대로 두기",onclick:async()=>{try{await S.db.doc(`songs/${c.id}`).update({notFrag:true});c.notFrag=true;}catch(e){}r.done="그대로 두기로 했어요";draw();}}),
-          h("button",{class:"btn sm danger",text:`🗑 「${splitTitle(r.p.title).base}」 지우기`,title:"여러 곡을 이어 붙인 큰 쪽을 지워요 (이 곡은 그대로)",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? 한 번 더"))return;
-            try{await S.db.doc(`songs/${r.p.id}`).delete();for(const x of rows)if(x.p===r.p&&!x.done)x.done=`「${r.p.title}」을(를) 지웠어요`;draw();renderSongs.redraw&&renderSongs.redraw();}catch(err){toast("지우지 못했어요");}}})));
+          h("button",{class:"btn sm ghost",text:"둘 다 그대로 두기",onclick:()=>doKeep(r,"그대로 두기로 했어요")}),
+          h("button",{class:"btn sm danger",text:`🗑 「${splitTitle(r.p.title).base}」 지우기`,title:"여러 곡을 이어 붙인 큰 쪽을 지워요 (이 곡은 그대로)",onclick:e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? 한 번 더"))return;doDel(r.p);}})));
       return h("div",{class:"card fr-card"+(r.strong?"":" fr-weak")},r.strong?null:h("span",{class:"fr-tag",text:"확인 필요 · 가사가 없어 제목으로만 짐작"}),
         h("div",{class:"row",style:"gap:8px;flex-wrap:nowrap;align-items:flex-start"},h("input",{type:"checkbox",checked:r.on,"aria-label":"모두 합치기에 넣기",onchange:e=>{r.on=e.target.checked;draw();}}),
           h("div",{style:"flex:1;min-width:0"},h("b",{text:c.title}),
             h("div",{class:"hint",text:[r.use?`콘티 ${r.use}번 씀`:"콘티에 쓴 적 없음",r.sc?"악보 있음":"악보 없음",ly.length?`가사: ${ly.slice(0,2).join(" / ")}${ly.length>2?" …":""}`:"가사 없음"].join(" · ")}),
             h("div",{class:"fr-parent"},"🔎 ",h("b",{text:`「${r.p.title}」`}),` ${r.why}`,r.line?h("div",{class:"hint",text:`“${r.line.slice(0,60)}”`}):null))),
         h("div",{class:"row",style:"gap:6px;justify-content:flex-end;flex-wrap:wrap"},cmp,
-          h("button",{class:"btn sm ghost",text:"따로 둘게요",title:"자투리가 아니에요 (다음부터 안 보여요)",onclick:async()=>{try{await S.db.doc(`songs/${c.id}`).update({notFrag:true});c.notFrag=true;}catch(e){}r.done="따로 두기로 했어요";draw();}}),
-          h("button",{class:"btn sm ghost danger",text:"🗑 지우기",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요?"))return;try{await S.db.doc(`songs/${c.id}`).delete();r.done="지웠어요";draw();renderSongs.redraw&&renderSongs.redraw();}catch(err){toast("지우지 못했어요");}}}),
-          h("button",{class:"btn sm primary",text:`「${splitTitle(r.p.title).base}」에 합치기`,title:"이 곡의 악보 · 가사 · 유튜브를 큰 곡으로 모으고, 이 곡을 쓴 콘티도 큰 곡으로 이어요",onclick:async e=>{e.currentTarget.disabled=true;await mergeSongs(r.p,[r.c],r.p.title,true);r.done=`「${r.p.title}」에 합쳤어요`;draw();renderSongs.redraw&&renderSongs.redraw();}})));}));};
+          h("button",{class:"btn sm ghost",text:"따로 둘게요",title:"자투리가 아니에요 (다음부터 안 보여요)",onclick:()=>doKeep(r,"따로 두기로 했어요")}),
+          h("button",{class:"btn sm ghost danger",text:"🗑 지우기",onclick:e=>{if(!confirmInline(e.currentTarget,"정말 지울까요?"))return;doDel(c);}}),
+          h("button",{class:"btn sm primary",text:`「${splitTitle(r.p.title).base}」에 합치기`,title:"이 곡의 악보 · 가사 · 유튜브를 큰 곡으로 모으고, 이 곡을 쓴 콘티도 큰 곡으로 이어요",onclick:e=>{e.currentTarget.disabled=true;doMerge(r,r.p,r.c);}})));}));};
   const md=modal("🧩 자투리 곡 찾기",h("div",{class:"panel-body"},
     h("p",{class:"hint",style:"margin:0",text:"다른 곡 가사의 한 부분(후렴 · 한 소절)이 따로 곡으로 등록된 것을 찾아요. 찬송가(장 번호 있는 곡)와 악보가 있는 곡은 빼고, 가사가 큰 곡 가사 속에 통째로 들어 있는 곡만 「확실」로 미리 체크해요. 가사가 없는 곡은 제목이 긴 구절일 때만 「확인 필요」로 보여 줘요."}),
-    h("p",{class:"pdf-warn",text:"⚠️ 비슷한 구절이 우연히 겹친 다른 곡일 수도 있어요. 하나씩 보고, 다른 곡이면 「따로 둘게요」를 눌러 주세요."}),
-    h("div",{class:"row",style:"gap:8px"},st,h("span",{class:"spacer"}),bulk),box),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})],"devedit");
+    h("p",{class:"pdf-warn",text:"⚠️ 비슷한 구절이 우연히 겹친 다른 곡일 수도 있어요. 하나씩 보고, 다른 곡이면 「따로 둘게요」를 눌러 주세요. 잘못 눌렀으면 「↶ 되돌리기」로 되돌릴 수 있어요 (이 창을 닫기 전까지)."}),
+    h("div",{class:"row",style:"gap:8px"},st,h("span",{class:"spacer"}),undoTop,bulk),box),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})],"devedit");
   fragCandidates((i,n)=>{st.textContent=`가사를 비교하는 중… ${i}/${n}곡`;}).then(list=>{rows=list.map(x=>({...x,on:x.strong&&!x.use,done:""}));const ns=rows.filter(r=>r.strong).length,nm=rows.filter(r=>r.medley).length;
     st.textContent=rows.length?`자투리 ${ns}개 (미리 체크) · 여러 곡 이어 붙인 PPT ${nm}개 · 확인 필요 ${rows.length-ns-nm}개`:"자투리로 보이는 곡이 없어요 👍";draw();});}
 async function mergeSongs(keep,others,title,quiet){if(!keep)return;const upd={};const vs=clone(vers(keep));const used=new Set(vs.map(v=>v.vid));
