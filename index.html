@@ -6232,8 +6232,10 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
 /* 기기에 틀 파일이 없을 때 고르게 해요 */
 function pickFullFile(t,cb){const fin=h("input",{type:"file",accept:".pptx",onchange:async e=>{const f=e.target.files[0];if(!f)return;md.close();let fb=f;const pg=tplProg("예배 틀 넣는 중");
   try{fb=await slimPptx(f,(a,b)=>pg.set(a,b));}catch(err){fb=f;}try{await idb.put(fullKey(t),fb);}catch(err){}
-  if(!DEMO&&S.db&&S.canWrite){try{await tplUpload(t,fb,(a,b)=>pg.set(a,b));}catch(err){console.error(err);}}pg.close();cb(fb);}});
-  const md=modal("예배 틀 파일 고르기",h("div",{class:"panel-body"},h("p",{text:`「${tplShort(t)}」 틀 파일이 서버와 이 기기에 없어요. 처음 올린 PPT 파일(${t.full&&t.full.fileName||".pptx"})을 골라 주세요. 한 번 고르면 서버에도 올라가서 다른 기기에서도 쓸 수 있어요.`}),
+  if(!DEMO&&S.db&&S.canWrite){try{await tplUpload(t,fb,(a,b)=>pg.set(a,b));}catch(err){console.error(err);toast("틀 파일을 서버에 올리지 못했어요 (이 기기에서만 써요): "+((err&&(err.code||err.message))||""),5000);}}pg.close();cb(fb);}});
+  const md=modal("예배 틀 파일 고르기",h("div",{class:"panel-body"},h("p",{text:S.tplWhy==="perm"?`「${tplShort(t)}」 틀 파일을 서버에서 읽을 권한이 없어요. 관리자가 Firestore 규칙(tplFiles · tplChunks)을 넣어야 해요. 그 전까지는 처음 올린 PPT 파일(${t.full&&t.full.fileName||".pptx"})을 골라 주면 이 기기에서 쓸 수 있어요.`
+      :S.tplWhy==="net"?`서버에 연결하지 못해 「${tplShort(t)}」 틀 파일을 받지 못했어요. 인터넷을 확인하고 다시 해 보거나, 처음 올린 PPT 파일(${t.full&&t.full.fileName||".pptx"})을 골라 주세요.`
+      :`「${tplShort(t)}」 틀 파일이 서버와 이 기기에 없어요. 처음 올린 PPT 파일(${t.full&&t.full.fileName||".pptx"})을 골라 주세요. 한 번 고르면 서버에도 올라가서 다른 기기에서도 쓸 수 있어요.`}),
     h("span",{class:"btn primary filebtn"},"📂 틀 파일 고르기",fin)),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()})]);}
 /* ===== 예배 틀 파일: 서버(Firestore)에 잘게 나눠 보관 · 기기마다 한 번 받아서 보관 ===== */
 const TPL_CHUNK=700000;
@@ -6250,7 +6252,7 @@ async function tplUpload(t,blob,pg){if(!S.db)return false;const key=fullKey(t);l
 async function tplRemoveServer(t){if(!S.db)return;const key=fullKey(t);try{const m=await S.db.doc(`tplFiles/${key}`).get();if(!m.exists)return;const n=m.data().n||0;
   for(let i=0;i<n;i++){try{await S.db.doc(`tplChunks/${key}.${i}`).delete();}catch(e){}}await S.db.doc(`tplFiles/${key}`).delete();}catch(e){console.warn(e);}}
 async function fullBlobOf(t){const key=fullKey(t);let b=null,at=0;try{b=await idb.get(key);at=(await idb.get(key+"_at"))||0;}catch(e){}
-  let meta=null;if(S.db&&!DEMO){try{const m=await S.db.doc(`tplFiles/${key}`).get();if(m.exists)meta=m.data();}catch(e){}}
+  let meta=null;S.tplWhy="";if(S.db&&!DEMO){try{const m=await S.db.doc(`tplFiles/${key}`).get();if(m.exists)meta=m.data();else S.tplWhy="none";}catch(e){console.error(e);S.tplWhy=/permission/i.test(String(e&&(e.code||e.message)))?"perm":"net";}}
   if(meta&&(!b||at<meta.at)){const pg=tplProg("예배 틀 받는 중");try{const parts=new Array(meta.n);let done=0;const idx=[...Array(meta.n).keys()];
       const worker=async()=>{while(idx.length){const i=idx.shift();const d=await S.db.doc(`tplChunks/${key}.${i}`).get();if(!d.exists)throw new Error("chunk "+i);parts[i]=binOf(d.data().d);done++;pg.set(`틀 파일을 받는 중… ${Math.round(done/meta.n*100)}% (${(meta.size/1e6).toFixed(0)}MB · 이 기기에서는 처음 한 번만)`,done/meta.n);}};
       await Promise.all([worker(),worker(),worker(),worker()]);b=new Blob(parts,{type:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
