@@ -593,6 +593,9 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .stage .mk.flowtop{left:2%;top:.6%;max-width:96%;background:rgb(255 255 255 / .88);color:#1d3fb3;font-weight:800;font-size:2.6cqw;line-height:1.25;padding:.15em .4em;border-radius:.3em;pointer-events:none;font-family:var(--font-body)}
 .vs-ops{display:flex;gap:2px;justify-content:flex-end}
 .dup-ly{display:flex;align-items:center;gap:6px;margin-top:4px;min-width:0}.dup-lytext{flex:1;min-width:0;text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:5px 8px;font:inherit;font-size:.82rem;color:var(--ink2);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dup-lytext:hover{border-color:var(--team,var(--accent))}.dup-lylab{font-weight:700;color:var(--team,var(--accent));margin-right:6px}
+.pm-flow{display:flex;align-items:center;gap:8px;margin:0 10px;padding:6px 10px;border-radius:10px;background:#1d2a4d;color:#fff;flex-wrap:wrap}.pm-flowlab{font-size:.75rem;color:#9fb1ff;flex:none}.pm-flowtxt{flex:1;min-width:0;font-weight:800;font-size:1.05rem;letter-spacing:.01em;overflow-wrap:anywhere}
+.pm-flow.flash{animation:pmflash 2.4s ease-out}@keyframes pmflash{0%,40%{background:#ffd23f;color:#18213a}100%{background:#1d2a4d;color:#fff}}
+.pm-flowpad{display:flex;flex-wrap:wrap;gap:4px;margin:6px 10px 0;align-items:center}.pm-flowpad .btn.ghost{color:#e6eaf7;border:1px solid #4a5370;background:#2a3554}.pm-flowpad .btn.ghost.danger{color:#ffb4a8}
 .demosum{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}.demosum::-webkit-details-marker{display:none}.demosum .spacer{flex:1}
 .demoban.mini{display:flex;align-items:center;gap:8px;padding:6px 12px}
 .tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
@@ -3126,7 +3129,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
   const search=h("input",{type:"search",id:"list-q",placeholder:"날짜 · 제목 · 곡 · 인도자로 찾기 (초성 가능)",value:q,oninput:e=>{q=S.listQ=e.target.value;draw();}});
   const showBlank=h("input",{type:"checkbox",id:"list-blank",checked:S.listBlank!==false,onchange:e=>{S.listBlank=e.target.checked;draw();}});
   const nPast=team.filter(c=>c.past).length;
-  const listSheet=m.appendChild(h("div",{class:"sheet"},h("h2",{},"지난 콘티",h("span",{class:"sub",text:`모두 ${team.length}개 (지난 콘티 ${nPast}개 포함) · 결산에 함께 들어가요`})),
+  const listSheet=m.appendChild(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`모두 ${team.length}개 (예전 기록 ${nPast}개 포함) · 결산에 함께 들어가요`})),
     h("div",{class:"row",style:"flex-wrap:nowrap"},search,can&&isWriter()?h("button",{class:"btn",text:"📄 PDF 한꺼번에",title:"여러 날의 콘티 악보 PDF를 한꺼번에 올리면 날짜·곡·악보를 채워요",onclick:()=>pdfPastModal()}):null,can&&isWriter()?h("button",{class:"btn primary",text:"+ 새 콘티",onclick:()=>{newConti();}}):null),
     h("label",{class:"row hint",htmlFor:"list-blank",style:"margin-top:8px;gap:6px"},showBlank,"기록 없는 주일도 보기 (예배가 없었다면 비고에 사유를 남겨 주세요)"),h("div",{style:"height:10px"}),box));
   const noteRow=(c,date,mine)=>{const inp=h("input",{type:"text",id:`note-${c?c.id:date}`,placeholder:"비고 (예: 세대통합예배로 오후예배 없음)",value:c?.note||"",disabled:!mine,style:"flex:1;min-width:180px"});
@@ -5823,14 +5826,34 @@ function practiceSheet(){const today=todayStr();const list=S.contis.filter(c=>!c
       h("div",{class:"hint",text:`${allItems(c).length}곡`}),on?null:h("div",{class:"hint",style:"color:var(--warn)",text:"이번 편성에는 이름이 없어요. 연습용으로 볼 수 있어요."})),
       h("button",{class:"btn primary",text:"연습 모드",onclick:()=>practiceMode(c)}));})):h("div",{class:"empty",text:"곡이 들어간 다가오는 콘티가 아직 없어요."}));}
 /* 연습 모드: 태블릿을 악보대처럼 · 곡마다 한 화면 · 이전/다음 곡 · 화면 꺼짐 방지 */
-async function practiceMode(c){const songs=[];for(const[k,l]of SECTIONS)for(const it of c[k]||[])songs.push({it,sec:l});if(!songs.length)return toast("콘티에 곡이 없어요");
+async function practiceMode(c){const songs=[];let C=c;const cid=c.id||(c===S.cur?S.curId:null)||null;
+  const rebuild=()=>{songs.length=0;for(const[k,l]of SECTIONS)(C[k]||[]).forEach((it,ii)=>songs.push({it,sec:l,k,ii}));};rebuild();if(!songs.length)return toast("콘티에 곡이 없어요");
+  /* 실시간: 다른 기기에서 흐름이 바뀌면 같은 곡 · 같은 자리에서 진행 순서만 새로 그려요 */
+  let flowEd=false,flash=0,lastLocal=0;const canFlow=()=>!!cid&&S.canWrite&&!S.memberOnly&&(isWriter()||canLead()||!window.CBWP||S.isOwner);
+  const sig=()=>songs.map(x=>x.it.uid+"|"+(x.it.flow||"")+"|"+(x.it.flowTop?1:0)).join("¦");
+  const onLive=()=>{if(!cid||!ov.isConnected)return;const f=(S.allContis||[]).find(x=>x.id===cid);if(!f)return;const curU=songs[i]&&songs[i].it.uid;const b0=sig();const old=songs.map(x=>({u:x.it.uid,f:x.it.flow||""}));
+    C=f;rebuild();if(!songs.length)return;const ni=songs.findIndex(x=>x.it.uid===curU);i=ni>=0?ni:Math.min(i,songs.length-1);if(sig()===b0)return;
+    const ch=songs.find(x=>{const o=old.find(y=>y.u===x.it.uid);return o&&o.f!==(x.it.flow||"");});
+    if(ch&&(ch.it.flowAt||0)>lastLocal+50){toast(`🔄 ${ch.it.flowBy?ch.it.flowBy+"님이 ":""}「${ch.it.title}」 흐름을 바꿨어요`,3500);if(ch===songs[i])flash=Date.now();}
+    const sc=ov.querySelector(".pm-body");const st=sc?sc.scrollTop:0;draw(true);const sc2=ov.querySelector(".pm-body");if(sc2)sc2.scrollTop=st;};
+  document.addEventListener("cbwp-contis",onLive);
+  const setFlow=async a=>{const s0=songs[i];if(!s0)return;const it=s0.it;it.flow=a.join("\n");it.flowTop=a.length>0;it.flowBy=myName()||"";it.flowAt=Date.now();lastLocal=it.flowAt;syncFlowTop(it);draw(true);
+    if(S.curId===cid&&S.cur){const ci=(S.cur[s0.k]||[]).find(x=>x.uid===it.uid);if(ci&&ci!==it){ci.flow=it.flow;ci.flowTop=it.flowTop;ci.flowBy=it.flowBy;ci.flowAt=it.flowAt;syncFlowTop(ci);saveDraft();}}
+    if(!cid||!S.db)return;try{await S.db.doc(`contis/${cid}`).update({[s0.k]:clone(C[s0.k]),updatedAt:Date.now()});if(C.shareId)publishShare(C);}catch(e){console.error(e);toast("흐름을 저장하지 못했어요. 인터넷 연결을 확인해 주세요");}};
   let i=0,show="score",z=1,lock=null;const ov=h("div",{class:"pmode",role:"dialog","aria-label":"연습 모드"});document.body.append(ov);document.body.style.overflow="hidden";
   const wake=async()=>{try{if(navigator.wakeLock)lock=await navigator.wakeLock.request("screen");}catch(e){}};wake();const vis=()=>{if(document.visibilityState==="visible")wake();};document.addEventListener("visibilitychange",vis);
-  const close=()=>{ov.remove();window.removeEventListener("resize",fitPages);document.body.style.overflow="";document.removeEventListener("keydown",key);document.removeEventListener("visibilitychange",vis);try{lock&&lock.release();}catch(e){}};
+  const close=()=>{ov.remove();document.removeEventListener("cbwp-contis",onLive);window.removeEventListener("resize",fitPages);document.body.style.overflow="";document.removeEventListener("keydown",key);document.removeEventListener("visibilitychange",vis);try{lock&&lock.release();}catch(e){}};
   const go=n=>{const j=Math.max(0,Math.min(songs.length-1,i+n));if(j!==i){i=j;draw();}};
   const key=e=>{if(e.key==="ArrowRight"||e.key==="PageDown")go(1);else if(e.key==="ArrowLeft"||e.key==="PageUp")go(-1);else if(e.key==="Escape")close();};document.addEventListener("keydown",key);
   let tx=null;ov.addEventListener("touchstart",e=>{if(e.touches.length===1)tx=e.touches[0].clientX;},{passive:true});ov.addEventListener("touchend",e=>{if(tx==null||z>1)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>80)go(dx<0?1:-1);},{passive:true});
-  function draw(){const{it,sec}=songs[i];const y=ytId(it.yt);const ly=lyricsOf(it).trim();const pages=it.pages||[];
+  function draw(keep){const{it,sec}=songs[i];const y=ytId(it.yt);const ly=lyricsOf(it).trim();const pages=it.pages||[];
+    const fl=flowOneLine(it);const toks=flowLines(it);
+    const flowBar=fl||canFlow()?h("div",{class:"pm-flow"+(Date.now()-flash<2500?" flash":"")},h("b",{class:"pm-flowlab",text:"진행"}),h("span",{class:"pm-flowtxt",text:fl||"아직 진행 순서가 없어요"}),
+      canFlow()?h("button",{type:"button",class:"btn sm"+(flowEd?" primary":""),text:flowEd?"✓ 다 고쳤어요":"✏️ 흐름 고치기",title:"고치면 바로 모든 팀원 화면에 바뀌어요",onclick:()=>{flowEd=!flowEd;draw(true);}}):null):null;
+    const flowPad=flowEd&&canFlow()?h("div",{class:"pm-flowpad"},...FLOW_TOKS.map(t=>h("button",{type:"button",class:"btn sm",text:t,onclick:()=>setFlow([...toks,t])})),
+      ...FLOW_MODS.map(t=>h("button",{type:"button",class:"btn sm ghost",text:t,onclick:()=>{if(!toks.length)return;const a=toks.slice();a[a.length-1]=a[a.length-1].replace(/\s*(× \d|KEY UP)$/,"")+" "+t;setFlow(a);}})),
+      h("button",{type:"button",class:"btn sm",text:"⌫",title:"마지막 하나 지우기",disabled:!toks.length,onclick:()=>setFlow(toks.slice(0,-1))}),h("button",{type:"button",class:"btn sm ghost danger",text:"비우기",disabled:!toks.length,onclick:()=>setFlow([])}),
+      h("span",{class:"hint",style:"color:#cfd6e6",text:cid?"누르는 대로 모든 팀원 화면에 바로 바뀌어요":"저장 전 콘티라 이 기기에만 바뀌어요"})):null;
     const body=h("div",{class:"pm-body"});
     if(show==="score"){if(!pages.length)body.append(h("div",{class:"pm-empty",text:"이 곡은 악보가 없어요. 「가사」를 눌러 보세요."}));
       for(const p of pages){const cv=h("canvas",{class:"pm-page"});cv.style.aspectRatio=`${(p.w||1)/(p.h||1.414)}`;body.append(cv);
@@ -5840,12 +5863,12 @@ async function practiceMode(c){const songs=[];for(const[k,l]of SECTIONS)for(cons
       h("div",{class:"pm-top"},h("button",{class:"btn sm",text:"✕ 닫기",onclick:close}),h("div",{class:"pm-title"},h("b",{text:`${i+1} / ${songs.length} · ${it.title}`}),it.key?h("span",{class:"pm-key",text:it.key}):null,h("span",{class:"hint",text:sec})),
         h("div",{class:"pm-nav"},h("button",{class:"btn",text:"← 이전 곡",disabled:i===0,onclick:()=>go(-1)}),h("button",{class:"btn primary",text:"다음 곡 →",disabled:i===songs.length-1,onclick:()=>go(1)}))),
       !onRoster(c)&&myName()?h("div",{class:"pm-memo",style:"color:#ffb4a8",text:"이번 예배 편성에는 이름이 없어요. 연습용으로 보고 있어요."}):null,
-      it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,body,
+      it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,flowBar,flowPad,body,
       h("div",{class:"pm-foot"},h("button",{class:"btn sm"+(show==="score"?" primary":""),text:"악보",onclick:()=>{show="score";draw();}}),h("button",{class:"btn sm"+(show==="ly"?" primary":""),text:"가사",onclick:()=>{show="ly";draw();}}),
         show==="score"?h("button",{class:"btn sm",text:"－",title:"작게",onclick:()=>{z=Math.max(.4,Math.round((z-.2)*100)/100);fitPages();}}):null,show==="score"?h("button",{class:"btn sm",text:"＋",title:"크게",onclick:()=>{z=Math.min(4,Math.round((z+.25)*100)/100);fitPages();}}):null,show==="score"&&z!==1?h("button",{class:"btn sm",text:"맞춤",title:"한 쪽이 화면에 다 들어오게",onclick:()=>{z=1;draw();}}):null,
         y?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch?v=${y}`,target:"_blank",rel:"noopener",text:"▶ 레퍼런스"}):null,
         h("span",{class:"spacer"}),h("div",{class:"pm-dots"},songs.map((x,j)=>h("button",{type:"button",class:"pm-dot"+(j===i?" on":""),title:x.it.title,"aria-label":`${j+1}번 곡`,onclick:()=>{i=j;draw();}}))))].filter(Boolean));
-    ov.scrollTop=0;requestAnimationFrame(fitPages);}
+    if(!keep)ov.scrollTop=0;requestAnimationFrame(fitPages);}
   /* 처음엔 한 쪽이 화면에 다 들어오게 (z=1), －/＋로 그 크기의 몇 배로 */
   function fitPages(){const body=ov.querySelector(".pm-body");if(!body)return;const H=Math.max(200,body.clientHeight-20),W=Math.max(200,body.clientWidth-20);
     body.querySelectorAll(".pm-page").forEach(cv=>{const ar=parseFloat(cv.style.aspectRatio)||.707;const fitH=Math.min(H,W/ar);cv.style.height=`${Math.round(fitH*z)}px`;cv.style.width=`${Math.round(fitH*z*ar)}px`;});
@@ -6240,7 +6263,7 @@ function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
   db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.catalogs=all.filter(x=>x.id!=="uitext"&&x.id!=="wordgroups");RR.rerender();},RR.onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();},RR.onErr);}
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
-  RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
+  RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();document.dispatchEvent(new Event("cbwp-contis"));},RR.onErr));
   RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
   RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(["cal","home","me","members","attend","lineup"].includes(S.tab))RR.rerender();},RR.onErr));
   RR.offs.push(db.doc(`teams/${team}`).onSnapshot(d=>{S.teamCfgs=d.exists?{[team]:clone(d.data())}:{};if(S.tab!=="write")RR.rerender();},RR.onErr));}
@@ -6276,7 +6299,7 @@ render();
   db.collection("catalog").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...clone(d.data())}));setUiText(all.find(x=>x.id==="uitext"));setWordGroups(all.find(x=>x.id==="wordgroups"));S.catalogs=all.filter(x=>x.id!=="uitext"&&x.id!=="wordgroups");if(!f4++)done();else rerender();},onErr);
   db.collection("members").onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f1++)done();else rerender();},onErr);
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));if(!f2++)done();else rerender();},onErr);
-  db.collection("contis").onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f3++)done();else rerender();},onErr);
+  db.collection("contis").onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(!f3++)done();else rerender();document.dispatchEvent(new Event("cbwp-contis"));},onErr);
 })().catch(e=>{console.error(e);S.dbFailed=true;S.ready=true;render();});
 setTimeout(()=>{try{const t=sessionStorage.getItem("cbwp-toast");if(t){sessionStorage.removeItem("cbwp-toast");toast(t);}}catch(e){}},1500);
 </script>
