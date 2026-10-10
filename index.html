@@ -240,7 +240,7 @@ html{scrollbar-gutter:stable}
 .vs-prev .vw-page{max-width:100%}
 .vs-item{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--sheet);cursor:pointer;font:inherit;color:var(--ink)}
 .vs-item.on,.vsplit .vcard.on{border-color:var(--team,var(--accent));box-shadow:0 0 0 2px color-mix(in srgb,var(--team,var(--accent)) 35%,transparent)}
-@media (max-width:760px){.vsplit{grid-template-columns:1fr}.vs-list{position:static;max-height:none}.vs-prev{order:-1;max-height:55vh;overflow:auto}}
+@media (max-width:760px){.vsplit{grid-template-columns:1fr}.vs-list{position:static;max-height:none}.vs-prev{order:0;max-height:none;overflow:visible}.vsplit{display:flex!important;flex-direction:column}.vsplit>*{flex-shrink:0}.vsplit .vs-list{overflow:visible}}
 .fchk{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.88rem;cursor:pointer;color:var(--ink)}.fchk input{width:18px;height:18px;margin:0}.fchk.dim{opacity:.45}
 .demoban{display:flex;align-items:center;flex-wrap:wrap;gap:4px;border-color:var(--accent);background:var(--accent-soft)}
 .glpop{position:fixed;z-index:60;background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgb(0 0 0 / .18);padding:10px 12px}
@@ -2519,7 +2519,7 @@ function openScorePicker(it,song,key){const editable=curEditable();let vs=vers(s
   const up=h("input",{type:"file",id:`pk-up-${it.uid}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,
     onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;await pickerUp(files);}});
   const pickerUp=async files=>{const vid=await uploadScoreForItem(it,song,key,files,st);if(vid===null)return;md.close();if(vid)setTimeout(()=>openScorePicker(it,song,key),50);};
-  const body=h("div",{class:"panel-body vsplit"},h("div",{class:"vs-list"},h("p",{class:"hint",style:"margin:0",text:"왼쪽에서 고르면 오른쪽에 크게 보이고, 고른 악보가 콘티에 들어가요."}),list,
+  const body=h("div",{class:"panel-body vsplit"},h("div",{class:"vs-list"},h("p",{class:"hint",style:"margin:0",text:innerWidth>760?"왼쪽에서 고르면 오른쪽에 크게 보이고, 고른 악보가 콘티에 들어가요.":"고르면 아래에 크게 보이고, 고른 악보가 콘티에 들어가요."}),list,
     editable?h("div",{class:"row",style:"margin-top:4px"},h("span",{class:"btn sm filebtn"},"+ 새 악보 올리기 (다른 조성 · 편곡)",up),st):null),prev);
   if(editable)fileDropOn(body,pickerUp,"여기에 놓으면 새 악보로 올려요");
   const md=modal(`악보 선택 · ${it.title}`,body,[h("button",{class:"btn primary",text:"완료",onclick:()=>md.close()})],"viewer");draw();}
