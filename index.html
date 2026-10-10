@@ -3145,7 +3145,7 @@ function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,1
   const off=new Set();const list=h("div",{class:"cards"});const st=h("p",{class:"hint"});
   const tplOf=c=>{const pr=(teamCfg().pptPref||{})[wtypeOf(c)||"_"];const all=pptTpls();let t=(pr&&all.find(x=>x.id===pr.tpl))||tplFor(c);
     if(t&&t.kind==="full")t=all.find(x=>x.kind!=="full"&&(x.wtypes||[]).includes(wtypeOf(c)))||all.find(x=>x.kind!=="full")||{...PPT_DEF,id:"",name:"기본 (검은 화면)"};
-    const font=pr&&pr.font;return font?{...t,titleFont:t.titleFont||t.font,font}:t;};
+    const font=pr&&pr.font;return font?{...t,titleFont:font,font}:t;};
   const inR=()=>S.contis.filter(c=>c.date&&!c.noService&&c.date>=from&&c.date<=to&&allItems(c).length).sort((a,b)=>a.date.localeCompare(b.date)||wtypeOf(a).localeCompare(wtypeOf(b)));
   function draw(){const arr=inR();list.replaceChildren(...arr.map(c=>{const id=c.id||c.date+wtypeOf(c);const t=tplOf(c);const miss=allItems(c).filter(it=>!lyricsOf(it).trim()).length;
       return h("label",{class:"row",style:"gap:8px;flex-wrap:nowrap;padding:6px 8px;border:1px solid var(--line);border-radius:8px"},h("input",{type:"checkbox",checked:!off.has(id),onchange:e=>{e.target.checked?off.delete(id):off.add(id);cnt();}}),
@@ -5621,7 +5621,9 @@ function lyricsDbModal(initFiles){if(!S.canWrite||!S.db)return toast("팀 비밀
 const WEBFONTS=[[/경기천년제목|gyeonggi\s*title/i,"https://cdn.jsdelivr.net/npm/@noonnu/gyeonggi-title-m@0.1.0/fonts/gyeonggititlem-normal.woff"],
   [/경기천년바탕|gyeonggi\s*batang/i,"https://cdn.jsdelivr.net/npm/@noonnu/gyeonggi-batang@0.1.0/fonts/gyeonggibatang-normal.woff"]];
 const webFontDone=new Set();
-function ensureWebFont(name){name=String(name||"").replace(/"/g,"").trim();if(!name||webFontDone.has(name))return;webFontDone.add(name);const m=WEBFONTS.find(([re])=>re.test(name));if(!m)return;
+function ensureWebFont(name){name=String(name||"").replace(/"/g,"").trim();if(!name||webFontDone.has(name))return;webFontDone.add(name);const m=WEBFONTS.find(([re])=>re.test(name));
+  /* 목록에 없는 이름은 구글 웹폰트에서 같은 이름을 찾아 미리보기에 써요 (없으면 그냥 넘어가요) */
+  if(!m){if(/^[A-Za-z0-9 ]+$/.test(name)){const l=document.createElement("link");l.rel="stylesheet";l.href=`https://fonts.googleapis.com/css2?family=${encodeURIComponent(name).replace(/%20/g,"+")}:wght@400;700&display=swap`;document.head.append(l);}return;}
   const st=document.createElement("style");st.textContent=`@font-face{font-family:"${name}";src:local("${name}"),url("${m[1]}") format("woff");font-display:swap}`;document.head.append(st);}
 const boldName=n=>/bold|볼드|\sB$|[^A-Z]B$/i.test(String(n||"").trim());
 function tplPreview(t,lines,kind){ensureWebFont(t.font);ensureWebFont(t.titleFont);const ar=t.slideW&&t.slideH?t.slideW/t.slideH:(t.ratio==="4:3"?4/3:16/9);
@@ -5854,9 +5856,13 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
   let base=tpl;const deco=h("select",{style:"width:auto",onchange:()=>{tpl=withDeco(base,deco.value);draw();}});
   /* 가사 글꼴: 템플릿 그대로 / 경기천년 … (예배마다 「이 설정 기억하기」에 같이 남아요) */
   let lyFont=(pref()&&pref().font)||"";S.pptLyricFont=lyFont;
-  const withFont=t=>lyFont&&t?{...t,titleFont:t.titleFont||t.font,font:lyFont}:t;
-  const fontSel=h("select",{style:"width:auto","aria-label":"가사 글꼴",onchange:e=>{lyFont=e.target.value;S.pptLyricFont=lyFont;if(lyFont)ensureWebFont(lyFont);draw();}},
-    [h("option",{value:"",text:"템플릿 글꼴 그대로",selected:!lyFont}),...LYRIC_FONTS.map(f=>h("option",{value:f,text:f,selected:lyFont===f}))]);
+  const withFont=t=>lyFont&&t?{...t,titleFont:lyFont,font:lyFont}:t;
+  const custom=!!lyFont&&!LYRIC_FONTS.includes(lyFont);
+  const setFont=v=>{lyFont=String(v||"").trim();S.pptLyricFont=lyFont;if(lyFont)ensureWebFont(lyFont);draw();};
+  const fontIn=h("input",{type:"text",list:"pp-fonts-dl",placeholder:"글꼴 이름 (예: 나눔명조)",value:custom?lyFont:"",hidden:!custom,style:"width:200px","aria-label":"글꼴 직접 입력",onchange:e=>setFont(e.target.value)});
+  const fontSel=h("select",{style:"width:auto","aria-label":"가사 글꼴",onchange:e=>{const v=e.target.value;fontIn.hidden=v!=="__custom";if(v==="__custom"){fontIn.focus();if(fontIn.value.trim())setFont(fontIn.value);return;}setFont(v);}},
+    [h("option",{value:"",text:"템플릿 글꼴 그대로",selected:!lyFont}),...LYRIC_FONTS.map(f=>h("option",{value:f,text:f,selected:lyFont===f})),h("option",{value:"__custom",text:"✏️ 직접 입력…",selected:custom})]);
+  const fontDl=h("datalist",{id:"pp-fonts-dl"},PPT_FONTS.map(f=>h("option",{value:f})));
   const syncDeco=()=>{const has=!!(base.titleDeco||[]).length;deco.replaceChildren(...[["keep",base.titleDecoKind==="note"?"♪ 음표 + 아래 검은 띠":has?"템플릿 그대로 (꾸밈 있음)":"템플릿 그대로 (글자만)"],...(base.titleDecoKind==="note"?[]:[["note","♪ 음표 + 아래 검은 띠"]]),["none","꾸밈 없음"]].map(([v,t])=>h("option",{value:v,text:t})));};
   const can=S.canWrite&&!!S.db;const saveBtn=h("button",{class:"btn sm",text:"이 꾸밈을 템플릿에 저장",onclick:async()=>{if(!base.id)return toast("기본 화면은 저장할 수 없어요. PPT 라이브러리에서 템플릿을 만들어 주세요.");
     const nt=withDeco(base,deco.value);const l2=pptTpls().map(t=>t.id===base.id?nt:t);if(await saveTpls(l2)){base=nt;tpl=nt;syncDeco();toast("템플릿에 저장했어요. 다음부터 저절로 들어가요.");draw();}}});
@@ -5890,7 +5896,7 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
         h("div",{class:"hint",text:"가사가 없으면 제목 장만 들어가요."})):null].filter(Boolean));
     grid.replaceChildren(...slides.map((sl,i)=>h("div",{class:"pptcell"+(sl.kind==="title"?" t":"")},tplPreview(tv,sl.lines,sl.kind),h("span",{class:"hint",text:`${i+1}${sl.kind==="title"?" · 제목":""}`}))));}
   draw();
-  const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel,can&&!DEMO?h("label",{class:"btn sm filebtn",title:"예배 PPT를 올려 새 템플릿을 만들어요. PPT 라이브러리에도 함께 들어가요"},"+ 템플릿 추가",h("input",{type:"file",accept:".pptx",onchange:e=>{const f=e.target.files[0];e.target.value="";if(!f)return;md.close();S.afterTplSave=id=>previewLyricsPpt(c,id);addTplFromFile(f);}})):null,decoLbl,deco,saveBtn,memBtn,memHint),h("div",{class:"row",style:"margin-top:6px"},h("span",{class:"hint",text:"가사 글꼴"}),fontSel,h("span",{class:"hint",text:"· 발표하는 컴퓨터에 그 글꼴이 깔려 있어야 해요"})),fullBox,info,grid),
+  const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel,can&&!DEMO?h("label",{class:"btn sm filebtn",title:"예배 PPT를 올려 새 템플릿을 만들어요. PPT 라이브러리에도 함께 들어가요"},"+ 템플릿 추가",h("input",{type:"file",accept:".pptx",onchange:e=>{const f=e.target.files[0];e.target.value="";if(!f)return;md.close();S.afterTplSave=id=>previewLyricsPpt(c,id);addTplFromFile(f);}})):null,decoLbl,deco,saveBtn,memBtn,memHint),h("div",{class:"row",style:"margin-top:6px"},h("span",{class:"hint",text:"글꼴 (제목 · 가사)"}),fontSel,fontIn,fontDl,h("span",{class:"hint",text:"· 발표하는 컴퓨터에 그 글꼴이 깔려 있어야 해요"})),fullBox,info,grid),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();S.pptLyricFont=lyFont;if(base.kind==="full")return exportFullPpt(curC(),base,fmap);exportLyricsPpt(c,lyFont?withFont(tpl):(tpl&&(tpl.id||deco.value!=="keep")?tpl:null),true);}})],"editor");}
 /* =========================================================
    예배 전체 틀  (예배 순서가 다 들어 있는 PPT를 그대로 두고, 날짜·본문·설교·찬양만 바꿔 넣어요)
@@ -6016,7 +6022,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   A.slots.forEach((s,si)=>{const keys=slotMap&&slotMap[si]!==undefined?slotMap[si]:fullSlotMap(A.slots.map(x=>x.idx[0]),A.sermon?A.sermon.i:-1,c,A.slots.map(x=>x.idx.length),A.special?A.special.i:-1)[si];if(keys===null)return;const songs=keys.flatMap(items);const gen=[];
     const tB=s.t!=null?A.order[s.t]:null,lB=A.order[s.l];
     for(const it of songs){const ttl=it.title.replace(/\s*\((?:새)?찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
-      const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,setShapeLines(tb.sps[0].sp,[ttl]),tB?1:.8)});
+      const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,fontizeSp(setShapeLines(tb.sps[0].sp,[ttl]),S.pptLyricFont),tB?1:.8)});
       for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>fontizeSp(setShapeLines(lB.sps[0].sp,ls),S.pptLyricFont))});}
     regions.push({idx:s.idx,gen,what:`찬양 ${si+1}`,n:songs.length});});
   /* 특송이 없으면 특송 안내 장을 빼요 */
