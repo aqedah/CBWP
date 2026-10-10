@@ -576,6 +576,10 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .tourspot{position:fixed;left:0;top:0;z-index:58;pointer-events:none}
 .tourdim{position:fixed;inset:0;z-index:58;background:rgb(10 14 25 / .58);pointer-events:none}
 .rolepick{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.rolecard{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--sheet)}.rolecard p{margin:0 0 4px}
+.vs-touch{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:4px 0 12px}
+.tu-modal .panel{width:min(1100px,98vw);max-width:98vw}.tu-tools{gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}.tu-wrap{position:relative;max-height:70vh;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#ddd;touch-action:none}.tu-cv{display:block;width:100%;height:auto;touch-action:none}
+.tu-ghost{position:absolute;border:2px dashed #2f62d6;background:rgb(47 98 214 / .12);pointer-events:none}.tu-text{position:absolute;min-width:80px;min-height:0;height:auto;background:rgb(255 255 255 / .85);border:1px dashed #2f62d6;padding:0 2px;font-weight:700;line-height:1.15;resize:none;z-index:2}
+.tu-sw{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}
 .demosum{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}.demosum::-webkit-details-marker{display:none}.demosum .spacer{flex:1}
 .demoban.mini{display:flex;align-items:center;gap:8px;padding:6px 12px}
 .tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
@@ -2784,6 +2788,13 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault}){
     const fileIn=h("input",{type:"file",id:"se-file",accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:e=>addFiles([...e.target.files])});
     tools.append(h("div",{class:"toolrow"},
       seg([["label","구간 표시"],["hl","형광펜"]],E.tool,v=>E.tool=v),
+      h("button",{class:"btn sm",text:"🖌 악보 고치기",title:"지우개로 덮고 · 펜과 글자로 이 쪽 그림을 고쳐요 (원본은 그대로 남아요)",disabled:!E.pages[E.cur],onclick:async()=>{const pg=E.pages[E.cur];if(!pg)return;
+        const r=await touchupEditor(title,pg);if(!r)return;push();if(r.edits.length){pg.imgId=r.imgId;pg.orig=r.orig;pg.edits=r.edits;}else{pg.imgId=r.orig;delete pg.orig;delete pg.edits;}drawAll();
+        const lp=songId&&!String(songId).startsWith("local-")?libPageOf(songId,{imgId:r.orig,orig:r.orig}):null;
+        if(lp&&S.canWrite){const res=await touchupSave(lp.song,lp.vid,lp.pi,r.imgId,r.orig,r.edits);if(res)toast(`라이브러리 곡 악보에도 저장했어요${res.n?` · 다가오는 콘티 ${res.n}개에도`:""}`,3500);}
+        else toast("이 쪽을 고쳤어요. 「완료」를 눌러 저장하세요",3000);}}),
+      E.pages[E.cur]&&E.pages[E.cur].orig?h("button",{class:"btn sm ghost",text:"↺ 원본으로",onclick:()=>{const pg=E.pages[E.cur];askConfirm("원본 악보로 되돌리기",[h("p",{text:"수정된 이력이 있는 악보예요."}),h("p",{class:"hint",text:"지우개 · 펜 · 글자로 고친 것을 모두 빼고 처음 올린 원본 그림으로 돌아가요."})],"원본으로 되돌리기",async()=>{
+        const orig=pg.orig,lp=songId?libPageOf(songId,pg):null;push();pg.imgId=orig;delete pg.orig;delete pg.edits;drawAll();if(lp&&S.canWrite)await touchupSave(lp.song,lp.vid,lp.pi,null,orig,[]);toast("원본 악보로 되돌렸어요");});}}):null,
       h("span",{class:"spacer"}),
       h("button",{class:"btn sm",text:"되돌리기",disabled:!E.undo.length,onclick:()=>{E.pages=E.undo.pop();E.cur=Math.min(E.cur,Math.max(0,E.pages.length-1));drawAll();}}),
       h("button",{class:"btn sm ghost danger",text:"표시 모두 지우기",title:"모든 쪽의 구간 표시 · 형광펜을 한꺼번에 지워요 (되돌리기로 살릴 수 있어요)",disabled:!E.pages.some(p=>(p.marks||[]).length),onclick:()=>{push();E.pages.forEach(p=>p.marks=[]);drawAll();toast("표시를 모두 지웠어요");}}),
@@ -5695,6 +5706,80 @@ function pagesInto(el,pages,title){el.replaceChildren();if(!pages||!pages.length
     getImg(p.imgId).then(async u=>{if(!u){cv.replaceWith(h("div",{class:"vw-noscore",text:"악보를 불러오지 못했어요."}));return;}const im=await loadImg(u);cv.width=im.naturalWidth;cv.height=im.naturalHeight;cv.style.aspectRatio="auto";
       const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0);drawMarks(x,p,0,0,cv.width,cv.height);}).catch(()=>{});});}
 /* 라이브러리 「악보 보기」: 왼쪽에 이 곡의 모든 악보, 오른쪽에 크게 */
+/* ===== 악보 고치기 (덧칠): 원본 그림은 그대로 두고, 고친 그림을 새로 만들어 곡의 기본 악보로 써요 ===== */
+/* page: {imgId(보이는 그림), orig(원본 그림), edits:[고친 내용]} · ↺ 원본으로 = imgId를 orig로 되돌림 */
+async function touchupSave(song,vid,pi,newImgId,orig,edits){const all=clone(vers(song));const v=all.find(x=>x.vid===vid);if(!v||!v.pages[pi])return false;const old=v.pages[pi].imgId;
+  const pg=v.pages[pi];if(edits&&edits.length){pg.imgId=newImgId;pg.orig=orig;pg.edits=edits;}else{pg.imgId=orig;delete pg.orig;delete pg.edits;}
+  if(!await saveVersions(song,all))return false;
+  /* 아직 확정 전인 다가오는 콘티에도 같은 악보면 바꿔 줘요 */
+  const today=todayStr();let n=0;for(const c of (S.allContis||S.contis||[])){if(isLocked(c)||c.past||(c.date||"")<today)continue;const up={};
+    for(const[k]of SECTIONS){const arr=clone(c[k]||[]);let ch=false;for(const it of arr)if(it.songId===song.id)for(const p of it.pages||[])if(p.imgId===old||p.imgId===orig){p.imgId=pg.imgId;if(pg.orig){p.orig=pg.orig;p.edits=pg.edits;}else{delete p.orig;delete p.edits;}ch=true;}if(ch)up[k]=arr;}
+    if(Object.keys(up).length){try{await S.db.doc(`contis/${c.id}`).update({...up,updatedAt:Date.now()});Object.assign(c,up);n++;}catch(e){}}}
+  if(S.cur)for(const[k]of SECTIONS)for(const it of S.cur[k]||[])if(it.songId===song.id)for(const p of it.pages||[])if(p.imgId===old||p.imgId===orig){p.imgId=pg.imgId;if(pg.orig){p.orig=pg.orig;p.edits=pg.edits;}else{delete p.orig;delete p.edits;}}
+  return {n};}
+function touchupReset(song,vid,pi,after){const v=vers(song).find(x=>x.vid===vid);const pg=v&&v.pages[pi];if(!pg||!pg.orig)return;
+  askConfirm("원본 악보로 되돌리기",[h("p",{text:"수정된 이력이 있는 악보예요."}),h("p",{class:"hint",text:`지우개 · 펜 · 글자로 고친 ${(pg.edits||[]).length}군데를 모두 빼고 처음 올린 원본 그림으로 돌아가요. 확정 전 다가오는 콘티에도 원본이 들어가요. 확정된 콘티와 지난 콘티는 그대로예요.`})],"원본으로 되돌리기",async()=>{
+    const r=await touchupSave(song,vid,pi,null,pg.orig,[]);if(r){toast("원본 악보로 되돌렸어요");after&&after();}});}
+async function scoreTouchup(song,vid,pi,after){const v=vers(song).find(x=>x.vid===vid);const pg=v&&v.pages[pi];if(!pg)return;
+  const r=await touchupEditor(song.title,pg);if(!r)return;const res=await touchupSave(song,vid,pi,r.imgId,r.orig,r.edits);if(!res)return;
+  toast(r.edits.length?`악보를 고쳤어요${res.n?` · 다가오는 콘티 ${res.n}개에도 넣었어요`:""}`:"원본 그대로예요",3500);after&&after();}
+/* 라이브러리 곡에서 이 그림(또는 그 원본)을 쓰는 쪽 찾기 */
+function libPageOf(songId,pg){const song=S.songs.find(x=>x.id===songId);if(!song)return null;for(const v of vers(song))for(let i=0;i<(v.pages||[]).length;i++){const q=v.pages[i];if(q.imgId===pg.imgId||(pg.orig&&(q.orig===pg.orig||q.imgId===pg.orig)))return{song,vid:v.vid,pi:i};}return null;}
+function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=false;const fin=v=>{if(!settled){settled=true;resolve(v);}};
+  const origId=pg.orig||pg.imgId;const u=await getImg(origId);if(!u){toast("악보 그림을 불러오지 못했어요");return fin(null);}const base=await loadImg(u);
+  const W=base.naturalWidth,H=base.naturalHeight;let ops=clone(pg.edits||[]);const redo=[];let tool="erase",color="#000000",pen=Math.max(3,Math.round(W/300)),fs=Math.round(W/38),showOrig=false;
+  const cv=h("canvas",{class:"tu-cv"});cv.width=W;cv.height=H;const x=cv.getContext("2d");
+  const paint=(ctx,list)=>{ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.drawImage(base,0,0);for(const o of list){
+      if(o.t==="rect"){ctx.fillStyle=o.c;ctx.fillRect(o.x,o.y,o.w,o.h);}
+      else if(o.t==="pen"){ctx.strokeStyle=o.c;ctx.lineWidth=o.w;ctx.lineCap=ctx.lineJoin="round";ctx.beginPath();o.p.forEach(([a,b],i)=>i?ctx.lineTo(a,b):ctx.moveTo(a,b));if(o.p.length===1)ctx.lineTo(o.p[0][0]+.1,o.p[0][1]);ctx.stroke();}
+      else if(o.t==="text"){ctx.fillStyle=o.c;ctx.font=`${o.b?"800":"600"} ${o.s}px "Pretendard","Noto Sans KR",sans-serif`;ctx.textBaseline="top";String(o.v).split("\n").forEach((ln,i)=>ctx.fillText(ln,o.x,o.y+i*o.s*1.15));}}};
+  const redraw=()=>{paint(x,showOrig?[]:ops);cnt.textContent=ops.length?`고친 곳 ${ops.length}군데`:"아직 고친 곳 없음";undoB.disabled=!ops.length;redoB.disabled=!redo.length;};
+  const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height];};
+  /* 지우개 색: 네모 둘레의 종이색(밝은 쪽) 자동으로 */
+  const paperAround=(rx,ry,rw,rh)=>{const tmp=document.createElement("canvas");tmp.width=W;tmp.height=H;const t=tmp.getContext("2d");paint(t,ops);const px=[];const add=(a,b)=>{a=Math.max(0,Math.min(W-1,Math.round(a)));b=Math.max(0,Math.min(H-1,Math.round(b)));const d=t.getImageData(a,b,1,1).data;px.push([d[0],d[1],d[2]]);};
+    const st=Math.max(2,Math.round((rw+rh)/80));for(let a=rx-3;a<=rx+rw+3;a+=st){add(a,ry-3);add(a,ry+rh+3);}for(let b=ry;b<=ry+rh;b+=st){add(rx-3,b);add(rx+rw+3,b);}
+    px.sort((p,q)=>(q[0]+q[1]+q[2])-(p[0]+p[1]+p[2]));const top=px.slice(0,Math.max(1,Math.round(px.length*.5)));const m=[0,1,2].map(i=>Math.round(top.reduce((s,p)=>s+p[i],0)/top.length));
+    return "#"+m.map(v=>v.toString(16).padStart(2,"0")).join("");};
+  const pick=(a,b)=>{const d=x.getImageData(Math.round(a),Math.round(b),1,1).data;return "#"+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,"0")).join("");};
+  let drag=null,lastUp=0;const ghost=h("div",{class:"tu-ghost",hidden:true});const wrap=h("div",{class:"tu-wrap"},cv,ghost);
+  cv.addEventListener("pointerdown",e=>{if(showOrig)return;e.preventDefault();const [a,b]=pt(e);
+    if(tool==="pick"){color=pick(a,b);sw.value=color;tool=prevTool;syncTools();toast(`색을 집었어요 (${color})`);return;}
+    if(tool==="text"){textAt(a,b,e);return;}
+    cv.setPointerCapture(e.pointerId);
+    if(tool==="erase"){drag={t:"rect",a,b,e0:e};}
+    else if(tool==="pen"){const o={t:"pen",c:color,w:pen,p:[[a,b]]};ops.push(o);redo.length=0;drag={t:"pen",o};redraw();}});
+  cv.addEventListener("pointermove",e=>{if(!drag)return;const [a,b]=pt(e);
+    if(drag.t==="pen"){drag.o.p.push([Math.round(a),Math.round(b)]);redraw();}
+    else{const r=cv.getBoundingClientRect(),wr=wrap.getBoundingClientRect();const sx=r.width/W;ghost.hidden=false;Object.assign(ghost.style,{left:`${r.left-wr.left+Math.min(a,drag.a)*sx}px`,top:`${r.top-wr.top+Math.min(b,drag.b)*sx}px`,width:`${Math.abs(a-drag.a)*sx}px`,height:`${Math.abs(b-drag.b)*sx}px`});}});
+  const up=e=>{lastUp=Date.now();if(!drag)return;const d=drag;drag=null;ghost.hidden=true;if(d.t==="rect"){const [a,b]=pt(e);const rx=Math.round(Math.min(a,d.a)),ry=Math.round(Math.min(b,d.b)),rw=Math.round(Math.abs(a-d.a)),rh=Math.round(Math.abs(b-d.b));
+      if(rw<3||rh<3)return;ops.push({t:"rect",x:rx,y:ry,w:rw,h:rh,c:eraseAuto?paperAround(rx,ry,rw,rh):color});redo.length=0;redraw();}};
+  cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+  const textAt=(a,b,e)=>{const r=cv.getBoundingClientRect(),wr=wrap.getBoundingClientRect();const sx=r.width/W;
+    const inp=h("textarea",{class:"tu-text",rows:1,placeholder:"글자 쓰고 Enter",style:`left:${r.left-wr.left+a*sx}px;top:${r.top-wr.top+b*sx}px;font-size:${Math.max(12,fs*sx)}px;color:${color};width:${Math.round(Math.max(120,fs*sx*5))}px;max-width:calc(100% - ${Math.round(r.left-wr.left+a*sx)}px)`});
+    let gone=false;const done=ok=>{if(gone)return;gone=true;const v=inp.value.trim();inp.remove();if(ok&&v){ops.push({t:"text",x:Math.round(a),y:Math.round(b),s:fs,c:color,b:bold,v});redo.length=0;redraw();}};
+    inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();done(true);}else if(ev.key==="Escape"){ev.stopPropagation();done(false);}});inp.addEventListener("blur",()=>done(true));wrap.append(inp);setTimeout(()=>inp.focus(),0);};
+  let eraseAuto=true,prevTool="erase",bold=true;
+  const tb=(k,label,title)=>h("button",{type:"button",class:"btn sm","data-t":k,text:label,title,onclick:()=>{if(k==="pick")prevTool=tool==="pick"?prevTool:tool;tool=k;syncTools();}});
+  const tools=h("div",{class:"row tu-tools"},tb("erase","🩹 지우개(덮기)","지울 곳을 네모로 끌어요. 둘레 종이색으로 덮어요"),tb("pen","🖊 펜","끌어서 그려요"),tb("text","🔤 글자","쓸 자리를 눌러요"),tb("pick","💧 스포이드","악보에서 색을 집어요"));
+  const sw=h("input",{type:"color",value:color,title:"색 고르기","aria-label":"색",style:"width:42px;height:32px;padding:0;border:none;background:none",oninput:e=>{color=e.target.value;}});
+  const presets=h("div",{class:"row",style:"gap:4px"},...["#000000","#ffffff","#d64545","#2f62d6"].map(c=>h("button",{type:"button",class:"tu-sw",style:`background:${c}`,title:c,onclick:()=>{color=c;sw.value=c;}})));
+  const autoCk=h("label",{class:"row hint",style:"gap:4px"},h("input",{type:"checkbox",checked:true,onchange:e=>{eraseAuto=e.target.checked;}}),"지우개는 종이색 자동");
+  const sizeIn=h("input",{type:"range",min:Math.round(W/120),max:Math.round(W/12),value:fs,title:"글자 크기",oninput:e=>{fs=+e.target.value;pen=Math.max(2,Math.round(fs/8));}});
+  const boldCk=h("label",{class:"row hint",style:"gap:4px"},h("input",{type:"checkbox",checked:true,onchange:e=>{bold=e.target.checked;}}),"굵게");
+  const undoB=h("button",{type:"button",class:"btn sm",text:"↶",title:"되돌리기",onclick:()=>{if(ops.length){redo.push(ops.pop());redraw();}}});
+  const redoB=h("button",{type:"button",class:"btn sm",text:"↷",title:"다시 하기",onclick:()=>{if(redo.length){ops.push(redo.pop());redraw();}}});
+  const origB=h("button",{type:"button",class:"btn sm ghost",text:"👁 원본 보기",title:"누르고 있는 동안 원본을 보여 줘요"});
+  ["pointerdown"].forEach(ev=>origB.addEventListener(ev,()=>{showOrig=true;redraw();}));["pointerup","pointerleave","pointercancel"].forEach(ev=>origB.addEventListener(ev,()=>{if(showOrig){showOrig=false;redraw();}}));
+  const cnt=h("span",{class:"hint"});
+  const syncTools=()=>{tools.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("primary",b.dataset.t===tool));cv.style.cursor=tool==="text"?"text":tool==="pick"?"copy":"crosshair";};
+  const md=modal(`🖌 악보 고치기 · ${title}`,h("div",{class:"panel-body"},
+    h("p",{class:"hint",style:"margin:0 0 6px",text:"원본 그림은 그대로 남고, 고친 그림이 이 곡의 기본 악보가 돼요. 언제든 「↺ 원본으로」 돌아갈 수 있어요."}),
+    tools,h("div",{class:"row tu-tools"},h("span",{class:"hint",text:"색"}),sw,presets,autoCk,h("span",{class:"hint",text:"크기"}),sizeIn,boldCk,h("span",{class:"spacer"}),undoB,redoB,origB),cnt,wrap),
+    [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:async e=>{const btn=e.currentTarget;btn.disabled=true;
+      try{let nid=null;if(ops.length){showOrig=false;paint(x,ops);nid=await storeImage({url:cv.toDataURL("image/jpeg",.9),w:W,h:H});}
+        fin({imgId:nid||origId,orig:origId,edits:clone(ops)});md.close(true);}
+      catch(err){console.error(err);toast("저장하지 못했어요");btn.disabled=false;}}})],"tu-modal",{beforeClose:()=>{if(Date.now()-lastUp<400)return false;fin(null);return true;}});
+  syncTools();redraw();});}
 function versionsViewer(song,startVid){const vs=vers(song).filter(v=>(v.pages||[]).length);if(!vs.length)return toast("이 곡에는 악보가 없어요");
   let cur=vs.find(v=>v.vid===startVid)||vs[0];const list=h("div",{class:"vs-list"}),prev=h("div",{class:"vs-prev"});let editing=null;const canEd=S.canWrite&&!String(song.id).startsWith("local-");
   const draw=()=>{list.replaceChildren(...vs.map(v=>{const th=h("span",{class:"vthumb"});getImg(v.pages[0].imgId).then(u=>{if(u)th.style.backgroundImage=`url("${u}")`;});
@@ -5711,6 +5796,12 @@ function versionsViewer(song,startVid){const vs=vers(song).filter(v=>(v.pages||[
       setTimeout(()=>nIn.focus(),0);
       return h("div",{class:"vs-wrap"},item,h("div",{class:"vs-edit"},nIn,h("span",{class:"hint",text:"Key"}),kIn,h("button",{class:"btn sm primary",text:"저장",onclick:sv}),h("button",{class:"btn sm ghost",text:"취소",onclick:()=>{editing=null;draw();}})));}));
     pagesInto(prev,verPagesAll(cur),song.title);
+    /* 쪽마다: 🖌 악보 고치기 (덧칠) · 수정된 악보면 ↺ 원본으로 */
+    if(canEd){const me=cur;[...prev.querySelectorAll(".vw-page")].forEach((cv,i)=>{const pg=me.pages[i];if(!pg)return;
+      const after=()=>{vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));cur=vs.find(y=>y.vid===me.vid)||vs[0];draw();renderSongs.redraw&&renderSongs.redraw();};
+      cv.insertAdjacentElement("afterend",h("div",{class:"vs-touch"},pg.orig?h("span",{class:"sbadge mkppt",text:"✏️ 수정된 악보"}):null,
+        h("button",{type:"button",class:"btn sm",text:pg.orig?"🖌 이어서 고치기":"🖌 악보 고치기",title:"지우개로 덮고 · 펜과 글자로 고쳐요 (원본은 그대로 남아요)",onclick:()=>scoreTouchup(song,me.vid,i,after)}),
+        pg.orig?h("button",{type:"button",class:"btn sm ghost",text:"↺ 원본으로",onclick:()=>touchupReset(song,me.vid,i,after)}):null));});}
     if(cur.pages.length>1){const me=cur;
       const save=async fn=>{const all=clone(vers(song));const x=all.find(y=>y.vid===me.vid);if(!x)return;fn(x);if(!await saveVersions(song,all))return;
         vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));cur=vs.find(y=>y.vid===me.vid)||vs[0];draw();renderSongs.redraw&&renderSongs.redraw();};
