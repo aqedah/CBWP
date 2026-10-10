@@ -1693,10 +1693,11 @@ function updWTabs(){document.querySelectorAll(".wtab").forEach(b=>{const ks=(b.d
 const genericVerName=n=>!String(n||"").trim()||/^(악보\s*\d*|기본\s*악보|이름\s*없는\s*악보|새\s*악보\s*\d*|악보\s*\d+\s*\(.*\))$/.test(String(n).trim());
 const keyName=k=>`${String(k).trim().replace(/♯/g,"#").replace(/♭/g,"b")}코드`;
 /* 🎹 악보는 있는데 조성(Key)이 비어 있는 곡: 악보 그림의 코드를 읽어 조성을 짐작하고, 확인한 뒤 한꺼번에 저장해요 */
-const noKeySongs=()=>S.songs.filter(sg=>vers(sg).some(v=>(v.pages||[]).length)&&!songKeyOf(sg));
+/* 목록의 조성 표시는 곡의 기본 조성(song.key)만 봐요 → 그게 비어 있으면 대상 (악보 쪽에만 조성이 적힌 곡 포함) */
+const noKeySongs=()=>S.songs.filter(sg=>vers(sg).some(v=>(v.pages||[]).length)&&!String(sg.key||"").trim());
 const KEY_RE=/^[A-G][#b]?m?$/;
 function keyFillModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣은 기기에서만 할 수 있어요");
-  const rows=noKeySongs().map(sg=>({sg,key:"",how:"",on:true,done:false}));if(!rows.length)return toast("조성이 비어 있는 악보가 없어요");
+  const rows=noKeySongs().map(sg=>{const vk=songKeyOf(sg);return{sg,key:vk,how:vk?"악보에 적힌 조성":"",on:true,done:false};});if(!rows.length)return toast("조성이 비어 있는 악보가 없어요");
   const box=h("div",{class:"cards kf-list"});const st=h("p",{class:"hint"});let stop=false,running=false;
   const draw=()=>{box.replaceChildren(...rows.map(r=>h("div",{class:"row kf-row"+(r.on?"":" off")},
     h("input",{type:"checkbox",checked:r.on,"aria-label":`${r.sg.title} 저장`,onchange:e=>{r.on=e.target.checked;cnt();}}),
