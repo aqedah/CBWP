@@ -3153,25 +3153,33 @@ function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,1
   const quick=h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},[["이번 주",()=>setR(weekStart(today),addDays(weekStart(today),6))],["다음 주",()=>setR(addDays(weekStart(today),7),addDays(weekStart(today),13))],["이번 달",()=>setR(...ym(td.getFullYear(),td.getMonth()))],["다음 달",()=>setR(...ym(td.getFullYear(),td.getMonth()+1))]]
     .map(([t,f])=>h("button",{type:"button",class:"btn sm ghost",text:t,onclick:f})));
   const off=new Set();const list=h("div",{class:"cards"});const st=h("p",{class:"hint"});
-  const tplOf=c=>{const pr=(teamCfg().pptPref||{})[wtypeOf(c)||"_"];const all=pptTpls();let t=(pr&&all.find(x=>x.id===pr.tpl))||tplFor(c);
-    if(t&&t.kind==="full")t=all.find(x=>x.kind!=="full"&&(x.wtypes||[]).includes(wtypeOf(c)))||all.find(x=>x.kind!=="full")||{...PPT_DEF,id:"",name:"기본 (검은 화면)"};
+  /* 예배마다 기억한 틀 (예배 전체 틀이면 그 틀 그대로 · 이 기기에 틀 파일이 없으면 가사 틀로) */
+  const prOf=c=>(teamCfg().pptPref||{})[wtypeOf(c)||"_"]||null;
+  const rawTpl=c=>{const pr=prOf(c);return (pr&&pptTpls().find(x=>x.id===pr.tpl))||tplFor(c);};
+  const plainTpl=c=>{const all=pptTpls();return all.find(x=>x.kind!=="full"&&(x.wtypes||[]).includes(wtypeOf(c)))||all.find(x=>x.kind!=="full")||{...PPT_DEF,id:"",name:"기본 (검은 화면)"};};
+  const tplOf=c=>{const pr=prOf(c);let t=rawTpl(c);if(t&&t.kind==="full")t=plainTpl(c);
     const font=pr&&pr.font;return font?{...t,titleFont:font,font,...(gfBold(font)?{bold:true,titleBold:true}:{})}:t;};
   const inR=()=>S.contis.filter(c=>c.date&&!c.noService&&c.date>=from&&c.date<=to&&allItems(c).length).sort((a,b)=>a.date.localeCompare(b.date)||wtypeOf(a).localeCompare(wtypeOf(b)));
   /* 가사 없는 곡: 이름을 보여 주고 바로 가사를 넣어요 (라이브러리 곡이면 곡에, 아니면 그 콘티에 저장) */
   const fixLyrics=(c,it)=>lyricsModal(it,async()=>{if(!songOf(it)&&c.id&&S.db&&canEditConti(c,c.id)){try{const up={};for(const[k]of SECTIONS)if((c[k]||[]).includes(it))up[k]=clone(c[k]);await S.db.doc(`contis/${c.id}`).update({...up,updatedAt:Date.now()});}catch(e){console.error(e);toast("콘티에 저장하지 못했어요");}}draw();});
   function draw(){const arr=inR();list.replaceChildren(...arr.map(c=>{const id=c.id||c.date+wtypeOf(c);const t=tplOf(c);const miss=allItems(c).filter(it=>!lyricsOf(it).trim());
       return h("div",{class:"row",style:"gap:8px;flex-wrap:nowrap;align-items:flex-start;padding:6px 8px;border:1px solid var(--line);border-radius:8px"},h("input",{type:"checkbox","aria-label":`${fmtDate(c.date)} 넣기`,checked:!off.has(id),style:"margin-top:4px",onchange:e=>{e.target.checked?off.delete(id):off.add(id);cnt();}}),
-        h("div",{style:"flex:1;min-width:0"},h("b",{text:`${fmtDate(c.date)} · ${wtypeOf(c)}`}),h("div",{class:"hint",text:`곡 ${allItems(c).length}개 · 템플릿 「${tplShort(t)}」${t.font?` · ${t.font}`:""}${miss.length?` · ⚠️ 가사 없는 곡 ${miss.length}개 (지금은 제목 장만)`:""}`}),
+        h("div",{style:"flex:1;min-width:0"},h("b",{text:`${fmtDate(c.date)} · ${wtypeOf(c)}`}),h("div",{class:"hint",text:`곡 ${allItems(c).length}개 · ${rawTpl(c).kind==="full"?`예배 전체 틀 「${tplShort(rawTpl(c))}」`:`템플릿 「${tplShort(t)}」`}${(prOf(c)&&prOf(c).font)||t.font?` · ${(prOf(c)&&prOf(c).font)||t.font}`:""}${miss.length?` · ⚠️ 가사 없는 곡 ${miss.length}개 (지금은 제목 장만)`:""}`}),
           miss.length?h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;margin-top:4px"},...miss.map(it=>h("button",{type:"button",class:"btn sm warnbtn",title:"눌러서 가사 넣기",text:`📝 ${it.title} · 가사 넣기`,onclick:()=>fixLyrics(c,it)}))):null));}));cnt();}
   const pick=()=>inR().filter(c=>!off.has(c.id||c.date+wtypeOf(c)));
   function cnt(){const n=pick().length;st.textContent=from>to?"시작 날짜가 끝 날짜보다 뒤예요":inR().length?`고른 콘티 ${n}개`:"이 기간에는 곡이 든 콘티가 없어요";go.disabled=!n||from>to;go.textContent=n>1?`⬇ PPT ${n}개 한꺼번에 저장 (.zip)`:"⬇ PPT 저장";}
-  const go=h("button",{class:"btn primary",onclick:async()=>{const arr=pick();if(!arr.length)return;go.disabled=true;const files=[];let i=0;
+  const go=h("button",{class:"btn primary",onclick:async()=>{const arr=pick();if(!arr.length)return;go.disabled=true;const files=[];const noFull=[];let i=0;
     try{for(const c of arr){i++;st.textContent=`만드는 중… ${i}/${arr.length} · ${fmtDate(c.date)} ${wtypeOf(c)}`;
-        {const pr=(teamCfg().pptPref||{})[wtypeOf(c)||"_"]||{};S.pptLyricFont=pr.font||"";S.pptEmbed=!!pr.embed;}
+        const pr=prOf(c)||{};S.pptLyricFont=pr.font||"";S.pptEmbed=!!pr.embed;
+        const ft=rawTpl(c);if(ft&&ft.kind==="full"){const fb=await fullBlobOf(ft).catch(()=>null);
+          if(fb){const slots=Array.isArray(pr.slots)?pr.slots.map(v=>v==null?null:String(v).split(",").filter(Boolean)):null;const r=await buildFullPpt(fb,c,ft,slots,()=>{});let blob=r.blob;if(S.pptLyricFont)blob=await maybeEmbed(blob,S.pptLyricFont,true);
+            let nm=`${teamName(c.team||S.team)}_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"")}_${c.date||"날짜미정"}.pptx`;if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);continue;}
+          noFull.push(`${fmtDate(c.date)} ${wtypeOf(c)}`);}
         await exportLyricsPpt(c,tplOf(c),true,{collect:(blob,fname)=>{let nm=fname.replace(/\.pptx$/,`_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"")}.pptx`);if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);}});}
       if(files.length===1){if(await saveBlob(files[0][0],files[0][1]))toast("PPT를 저장했어요");}
       else{st.textContent="압축 파일로 묶는 중…";await loadScript(JSZIP_URL);const z=new window.JSZip();for(const[b,nm]of files)z.file(nm,b);const zb=await z.generateAsync({type:"blob"});
-        if(await saveBlob(zb,`${teamName(S.team)}_가사PPT_${from}~${to}.zip`))toast(`가사 PPT ${files.length}개를 한 파일(.zip)로 저장했어요`,3500);}
+        if(await saveBlob(zb,`${teamName(S.team)}_가사PPT_${from}~${to}.zip`))toast(`PPT ${files.length}개를 한 파일(.zip)로 저장했어요`,3500);}
+      if(noFull.length)toast(`이 기기에 예배 전체 틀 파일이 없어 가사 틀로 만든 것: ${noFull.join(", ")} (미리보기에서 틀 파일을 한 번 골라 주세요)`,6000);
       md.close();}catch(e){console.error(e);toast("PPT를 만들지 못했어요. 인터넷 연결을 확인해 주세요.");go.disabled=false;cnt();}}});
   const md=modal("🎞 PPT 일괄 저장",h("div",{class:"panel-body"},
     h("p",{class:"hint",style:"margin:0 0 6px",text:"기간 안 콘티마다 가사 PPT를 만들어 한 압축 파일(.zip)로 저장해요. 예배마다 「📌 이 설정 기억하기」로 정해 둔 템플릿 · 가사 글꼴을 쓰고, 곡 흐름이 있으면 흐름대로 넣어요."}),
