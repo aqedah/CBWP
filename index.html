@@ -4235,19 +4235,23 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
-  ["2026-10-10","연습 모드에서 인도자가 흐름(Intro → V1 → C …)을 고치면 모든 팀원 화면에 바로 바뀌어요"],
-  ["2026-10-10","중복 곡 찾기: ⚡ 모두 합치기 · 가사 바로 보기 · 제목 군더더기(♬ · 교구 · (2)) 자동 정리"],
-  ["2026-10-10","악보 고치기: 🎨 색으로 지우기(손글씨 · 형광펜) · 위에 빈 칸 늘리기 · 스타일러스 필압"],
-  ["2026-10-10","악보 편집 창 맨 위에 진행 순서 단추 · 악보 맨 위에 한 줄로 찍기"],
-  ["2026-10-10","라이브러리가 한 줄 목록으로 · 누르면 콘티에 넣기 · 악보 · 가사 단추"],
-  ["2026-10-10","콘티 메뉴가 「콘티 만들기 ①~④ 단계」와 「콘티 목록」으로 정리됐어요"],
-  ["2026-10-10","연습 모드 악보가 화면에 꼭 맞게 · －/＋/맞춤"],
-  ["2026-10-10","자유롭게 편집에 ✍️ 펜(손글씨) 추가"],
-  ["2026-10-09","예배 PPT 틀을 교회 서버에 보관 · 다른 컴퓨터에서 자동으로 받아 와요"],
-  ["2026-10-09","🖌 악보 고치기: 지우개 · 펜 · 글자 · 스포이드 (원본은 그대로 · 언제든 원본으로)"]];
+  ["2026-10-10","연습 모드: 인도자가 흐름을 바꾸면 모든 팀원 화면에 실시간으로"],
+  ["2026-10-10","🖌 악보 고치기: 지우개 · 펜 · 글자 · 색으로 지우기 (원본은 그대로)"],
+  ["2026-10-10","라이브러리 한 줄 목록 · 콘티 메뉴 「만들기 / 목록」으로 정리"],
+  ["2026-10-10","악보 맨 위 진행 순서 · 스타일러스 손글씨"],
+  ["2026-10-09","예배 PPT 틀을 교회 서버에 보관"],
+  ["2026-10-09","체험판 · 인도자/팀원 튜토리얼"],
+  ["2026-10-09","게스트도 링크로 콘티 · 악보 보기"],
+  ["2026-10-08","악보 편집: 곡 흐름 · 인트로 · 연주 시간 · 자유롭게 편집"],
+  ["2026-10-08","유튜브 팀 재생목록 담기 · 중복 곡 합치기"],
+  ["2026-10-07","가사 PPT 만들기 · 예배 전체 PPT"],
+  ["2026-10-07","좋은만남의축제 · 연습 모드"],
+  ["2026-10-06","홈 · 일정 · 멤버 · 편성 · 출결"],
+  ["2026-10-06","말씀 · 묵상 (카톡 예배 정보로 콘티 시작)"],
+  ["2026-10-05","Central Bible Worship Planner 첫 공개 (네 찬양팀)"]];
 function patchSheet(){const notes=PATCH_NOTES.slice(0,12);if(!notes.length)return "";let k=0;
   const txt=h("span",{class:"pt-txt"});const dt=h("span",{class:"pt-date"});const show=()=>{const[d,t]=notes[k%notes.length];txt.textContent=t;dt.textContent=d.slice(5).replace("-","/");txt.classList.remove("in");void txt.offsetWidth;txt.classList.add("in");};show();
-  const bar=h("button",{type:"button",class:"patchbar",title:"새로 바뀐 것 모두 보기",onclick:()=>{const md=modal("🛠 업데이트 소식",h("div",{class:"panel-body"},...[...new Set(PATCH_NOTES.map(x=>x[0]))].map(d=>h("div",{class:"pt-day"},h("b",{text:fmtDate(d)}),h("ul",{},...PATCH_NOTES.filter(x=>x[0]===d).map(x=>h("li",{text:x[1]})))))),[h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})]);}},
+  const bar=h("button",{type:"button",class:"patchbar",title:"새로 바뀐 것 모두 보기",onclick:()=>{const md=modal("🛠 주요 업데이트",h("div",{class:"panel-body"},...[...new Set(PATCH_NOTES.map(x=>x[0]))].map(d=>h("div",{class:"pt-day"},h("b",{text:fmtDate(d)}),h("ul",{},...PATCH_NOTES.filter(x=>x[0]===d).map(x=>h("li",{text:x[1]})))))),[h("button",{class:"btn primary",text:"닫기",onclick:()=>md.close()})]);}},
     h("span",{class:"pt-lab",text:"🛠 업데이트"}),dt,txt,h("span",{class:"pt-more",text:"모두 보기 ›"}));
   if(notes.length>1){const iv=setInterval(()=>{if(!bar.isConnected)return clearInterval(iv);k++;show();},4500);}
   return bar;}
