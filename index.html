@@ -1356,7 +1356,10 @@ function adminLogout(){if(!window.CBWP||!window.CBWP.logoutAdmin)return;
 /* admin: load an export file (contis, songs, scores, members …) into the shared store */
 function importModal(){const st=h("p",{class:"hint"});
   const fin=h("input",{type:"file",id:"imp-file",accept:".json,application/json",onchange:async e=>{const f=e.target.files[0];if(!f)return;
-    let data;try{data=JSON.parse(await f.text());}catch(err){st.textContent="파일을 읽지 못했어요";return;}
+    let data;try{data=JSON.parse(await f.text());}catch(err){st.textContent="파일을 읽지 못했어요";return;}e.target.value="";
+    /* 가사 파일(📤 가사 내보내기 · 띄어쓰기/오타 교정 파일)을 여기에 올렸으면 「📥 고친 가사 가져오기」로 넘겨요 */
+    if(data&&!data.collections&&(data.app==="cbwp-lyrics"||Array.isArray(data.songs)||Array.isArray(data))){md.close();toast("가사 파일이라 「📥 고친 가사 가져오기」로 열었어요");lyricsImportModal(data);return;}
+    if(!data||!data.collections){st.textContent="이 파일은 앱 자료 파일이 아니에요";return;}
     const rows=[];const skipped=[];const noConti=[];let filled=0;for(const[col,docs]of Object.entries(data.collections||{}))for(const[id,v]of Object.entries(docs)){
       if(col==="rosterPatch"){const[tm,dt]=id.split(":");const cs=S.allContis.filter(c=>teamOf(c)===tm&&c.date===dt&&!c.noService);if(!cs.length){noConti.push(dt);continue;}
         const mem=S.allMembers.filter(mb=>teamOf(mb)===tm);const res=n=>{const k=normName(n.replace(/(목사|전도사|강도사)$/,""));let mb=mem.find(x=>normName(x.name)===k)||null;if(!mb){const c2=mem.filter(x=>normName(x.name).slice(1)===k);if(c2.length===1)mb=c2[0];}return mb?{id:mb.id,name:mb.name,tier:mb.tier}:{id:null,name:n,tier:"게스트"};};
@@ -1822,7 +1825,7 @@ async function lyricsExport(){const songs=S.songs.filter(sg=>(sg.lyrics||"").tri
   if(!songs.length)return toast("가사가 있는 곡이 없어요");
   const data={app:"cbwp-lyrics",ver:1,at:new Date().toISOString(),count:songs.length,songs};
   const blob=new Blob([JSON.stringify(data,null,1)],{type:"application/json"});if(await saveBlob(blob,`가사_${todayStr()}_${songs.length}곡.json`))toast(`가사 ${songs.length}곡을 파일로 저장했어요. 이 파일은 되돌릴 때 쓸 수 있게 보관해 두세요`,5000);}
-function lyricsImportModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣은 기기에서만 할 수 있어요");
+function lyricsImportModal(pre){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣은 기기에서만 할 수 있어요");
   let rows=[];const list=h("div",{class:"cards"});const st=h("p",{class:"hint"});
   const onlySpace=(a,b)=>String(a).replace(/\s/g,"")===String(b).replace(/\s/g,"");
   const diffView=(a,b)=>{const A=a.split("\n"),B=b.split("\n");const out=[];const n=Math.max(A.length,B.length);
@@ -1841,18 +1844,21 @@ function lyricsImportModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번�
     st.textContent=`${n}곡 저장했어요${fail?` · 실패 ${fail}곡`:""}`;toast(`가사 ${n}곡을 저장했어요`);saveBtn.disabled=false;rows=rows.filter(r=>!r.done).concat(rows.filter(r=>r.done));draw();renderSongs.redraw&&renderSongs.redraw();}});
   const cnt=()=>{const k=rows.filter(r=>r.on&&!r.done).length;saveBtn.textContent=`체크한 ${k}곡 저장`;saveBtn.disabled=!k;};
   const all=on=>{for(const r of rows)if(!r.done)r.on=on;draw();};
-  const fin=h("input",{type:"file",accept:".json,application/json",hidden:true,onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
-    try{const d=JSON.parse(await f.text());const arr=Array.isArray(d)?d:d.songs;if(!Array.isArray(arr))throw new Error("가사 파일이 아니에요");
+  /* 가사 파일 읽기: 파일 고르기로 올려도, 「자료 가져오기」에서 넘겨받아도 같은 길로 */
+  const load=d=>{
+    try{const arr=Array.isArray(d)?d:d.songs;if(!Array.isArray(arr))throw new Error("가사 파일이 아니에요");
       rows=[];let same=0,miss=0;for(const x of arr){const sg=S.songs.find(s=>s.id===x.id)||(x.title?S.songs.find(s=>norm(s.title)===norm(x.title)):null);if(!sg){miss++;continue;}
         const lyr=String(x.lyrics||"").replace(/\r/g,"").trim(),old=(sg.lyrics||"").trim();if(!lyr||lyr===old){same++;continue;}rows.push({sg,old,lyr,space:onlySpace(old,lyr),on:onlySpace(old,lyr)});}
       rows.sort((a,b)=>(a.space-b.space)||a.sg.title.localeCompare(b.sg.title,"ko"));
       st.textContent=`바뀐 곡 ${rows.length}개 (띄어쓰기만 ${rows.filter(r=>r.space).length} · 글자도 바뀜 ${rows.filter(r=>!r.space).length}) · 그대로 ${same}곡${miss?` · 라이브러리에 없는 곡 ${miss}개`:""}`;draw();}
-    catch(err){st.textContent="파일을 읽지 못했어요: "+(err.message||err);}}});
+    catch(err){st.textContent="파일을 읽지 못했어요: "+(err.message||err);}};
+  const fin=h("input",{type:"file",accept:".json,application/json",hidden:true,onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+    let d;try{d=JSON.parse(await f.text());}catch(err){st.textContent="파일을 읽지 못했어요: JSON 파일이 아니에요";return;}load(d);}});
   const md=modal("📥 고친 가사 가져오기",h("div",{class:"panel-body"},
     h("p",{class:"hint",style:"margin:0 0 6px",text:"「📤 가사 내보내기」로 받은 파일을 고친 뒤 올려 주세요. 곡마다 바뀐 줄(위: 지금 · 아래: 고친 것)을 보여 주고, 체크한 곡만 저장해요. 띄어쓰기만 바뀐 곡은 미리 체크해 두고, 글자까지 바뀐 곡은 직접 보고 체크하게 해 뒀어요."}),
     h("p",{class:"pdf-warn",text:"⚠️ 되돌리려면 처음 내보낸 파일을 다시 이 창으로 올려 저장하면 돼요. 내보낸 파일은 꼭 보관해 두세요."}),
     h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},h("label",{class:"btn primary filebtn"},"📂 고친 가사 파일 고르기",fin),h("button",{class:"btn sm",text:"모두 체크",onclick:()=>all(true)}),h("button",{class:"btn sm",text:"모두 풀기",onclick:()=>all(false)})),st,list),
-    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),saveBtn],"devedit");cnt();}
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),saveBtn],"devedit");cnt();if(pre)load(pre);}
 /* ===== 🧩 자투리 곡 찾기: 다른 곡 가사의 한 구절(후렴 · 한 소절)이 따로 곡으로 등록된 것 =====
    방송실 PPT를 그대로 받아 와서 「만나 보자 만나 보자…」처럼 큰 곡의 일부가 따로 곡이 된 경우를 찾아, 큰 곡에 합치거나 지워요 */
 const lyricText=sg=>(sg.lyrics||"").trim()||((sg.ppt&&sg.ppt.slides)||[]).map(String).join("\n");
