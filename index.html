@@ -556,7 +556,7 @@ body.wide-conti .wrap{max-width:1280px}
 .pdfpg.skip{opacity:.55;border-style:dashed}.pdfpg.skip img{filter:grayscale(1)}.pdf-warn{margin:6px 0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--warn,#c77a00) 12%,transparent);color:var(--ink,inherit);font-size:.9rem;line-height:1.5}
 .kf-list{display:flex;flex-direction:column;gap:4px}.modal .kf-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto 70px;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:8px}.kf-row.off{opacity:.5}.kf-row input[type=checkbox]{width:auto}.kf-t{font-weight:600;overflow-wrap:anywhere}.kf-how{font-size:.75rem;max-width:180px}.modal .kf-row input.kf-k{width:70px;text-align:center}
 @media (max-width:560px){.modal .kf-row{grid-template-columns:auto minmax(0,1fr) 64px}.kf-how{grid-column:2/-1;grid-row:2;max-width:none}.modal .kf-row input.kf-k{width:64px}}
-.fr-card{display:flex;flex-direction:column;gap:6px}.fr-parent{margin-top:4px;padding:6px 8px;border-radius:8px;background:var(--soft,#eef);font-size:.9rem}.fr-done{opacity:.6}
+.fr-card{display:flex;flex-direction:column;gap:6px}.fr-parent{margin-top:4px;padding:6px 8px;border-radius:8px;background:var(--soft,#eef);font-size:.9rem}.fr-done{opacity:.6}.fr-weak{border-style:dashed}.fr-tag{align-self:flex-start;font-size:.72rem;color:var(--warn);border:1px solid currentColor;border-radius:99px;padding:1px 8px}
 .pe-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}.pe-row{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding-bottom:8px;border-bottom:1px dashed var(--line)}.pe-row input[type=date]{width:auto}.pe-row button{grid-column:3}.pe-row input[type=text]{grid-column:1/-1;min-width:0;width:100%}
 @media (min-width:640px){.pe-row{grid-template-columns:auto 1fr auto}.pe-row input[type=text]{grid-column:2;grid-row:1}}
 .devpick{position:fixed;z-index:96;display:flex;gap:6px;background:#1d2433;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgb(0 0 0 / .35)}.devpick .btn{border-color:#3b4660;background:#2a3347;color:#fff}.devpick .btn.primary{background:#e0566b;border-color:#e0566b}
@@ -1811,16 +1811,20 @@ function dupModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣�
 const lyricText=sg=>(sg.lyrics||"").trim()||((sg.ppt&&sg.ppt.slides)||[]).map(String).join("\n");
 async function fragCandidates(onProg){const songs=S.songs.filter(sg=>!sg.notFrag);const usage={};for(const c of S.allContis||S.contis)for(const it of allItems(c))if(it.songId)usage[it.songId]=(usage[it.songId]||0)+1;
   const L=new Map(S.songs.map(sg=>[sg.id,nk(lyricText(sg))]));const T=new Map(S.songs.map(sg=>[sg.id,nk(splitTitle(sg.title).base)]));
+  const lines=sg=>[...new Set(lyricText(sg).split("\n").map(nk).filter(x=>x.length>=6))];
   const hasSc=sg=>vers(sg).some(v=>(v.pages||[]).length);const out=[];
   for(let i=0;i<songs.length;i++){const c=songs[i];if(i%40===0){onProg&&onProg(i,songs.length);await new Promise(r=>setTimeout(r,0));}
-    const t=T.get(c.id)||"";const lc=L.get(c.id)||"";const sc=hasSc(c);let best=null;
-    for(const p of S.songs){if(p.id===c.id)continue;const lp=L.get(p.id)||"";if(lp.length<30)continue;const tp=T.get(p.id)||"";if(!tp||tp===t)continue;
-      let why="";
-      if(lc.length>=12&&lp.length>lc.length*1.3&&lp.includes(lc))why="가사 전체가 이 곡 가사 안에 들어 있어요";
-      else if(t.length>=(sc?9:5)&&lp.includes(t)&&!tp.includes(t))why="제목이 이 곡 가사의 한 구절이에요";
-      if(why){const r=(lp.length)+(hasSc(p)?5000:0)+(usage[p.id]||0)*200;if(!best||r>best.r)best={p,why,r};}}
-    if(best){const key=t.slice(0,Math.min(6,t.length));const line=lyricText(best.p).split("\n").find(l=>nk(l).includes(key))||"";out.push({c,p:best.p,why:best.why,line:line.trim(),use:usage[c.id]||0,sc});}}
-  onProg&&onProg(songs.length,songs.length);return out.sort((a,b)=>a.use-b.use||a.c.title.localeCompare(b.c.title,"ko"));}
+    /* 찬송가(장 번호가 있는 곡)와 악보가 있는 곡은 제대로 된 곡이라 빼요 */
+    if(splitTitle(c.title).hymn||hasSc(c))continue;
+    const t=T.get(c.id)||"";const cl=lines(c);let best=null;
+    for(const p of S.songs){if(p.id===c.id)continue;const lp=L.get(p.id)||"";if(lp.length<40)continue;const tp=T.get(p.id)||"";if(!tp||tp===t)continue;
+      let strong=false,why="";
+      if(cl.length){/* 가사가 있으면: 가사 줄 대부분(80%↑)이 큰 곡 가사에 그대로 들어 있고, 큰 곡이 더 길어야 해요 */
+        const hit=cl.filter(x=>lp.includes(x)).length;if(cl.length>=2&&hit/cl.length>=.8&&lp.length>=(L.get(c.id)||"").length*1.4){strong=true;why=`가사 ${hit}/${cl.length}줄이 이 곡 가사에 그대로 들어 있어요`;}}
+      else if(t.length>=10&&lp.includes(t)&&!tp.includes(t))why="가사가 없고, 제목이 이 곡 가사의 한 구절이에요";
+      if(why){const r=(strong?1e6:0)+lp.length+(hasSc(p)?5000:0)+(usage[p.id]||0)*200;if(!best||r>best.r)best={p,why,strong,r};}}
+    if(best){const key=(cl[0]||t).slice(0,6);const line=lyricText(best.p).split("\n").find(l=>nk(l).includes(key))||"";out.push({c,p:best.p,why:best.why,strong:best.strong,line:line.trim(),use:usage[c.id]||0,sc:false});}}
+  onProg&&onProg(songs.length,songs.length);return out.sort((a,b)=>(b.strong-a.strong)||a.use-b.use||a.c.title.localeCompare(b.c.title,"ko"));}
 function fragModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣은 기기에서만 할 수 있어요");
   const box=h("div",{class:"cards"});const st=h("p",{class:"hint",text:"찾는 중…"});let rows=[];
   const bulk=h("button",{class:"btn primary",text:"⚡ 모두 합치기",hidden:true,onclick:async()=>{const todo=rows.filter(r=>!r.done&&r.on);if(!todo.length)return;if(!confirmInline(bulk,`${todo.length}곡 모두 합칠까요? · 한 번 더`))return;bulk.disabled=true;let n=0;
@@ -1829,7 +1833,7 @@ function fragModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣
   const draw=()=>{const left=rows.filter(r=>!r.done);bulk.hidden=!left.length;bulk.textContent=`⚡ 체크한 ${left.filter(r=>r.on).length}곡 모두 합치기`;
     box.replaceChildren(...rows.map(r=>{const c=r.c;const ly=lyricText(c).split("\n").map(x=>x.trim()).filter(Boolean);
       if(r.done)return h("div",{class:"card fr-done"},h("b",{text:c.title}),h("span",{class:"hint",text:` → ${r.done}`}));
-      return h("div",{class:"card fr-card"},
+      return h("div",{class:"card fr-card"+(r.strong?"":" fr-weak")},r.strong?null:h("span",{class:"fr-tag",text:"확인 필요 · 가사가 없어 제목으로만 짐작"}),
         h("div",{class:"row",style:"gap:8px;flex-wrap:nowrap;align-items:flex-start"},h("input",{type:"checkbox",checked:r.on,"aria-label":"모두 합치기에 넣기",onchange:e=>{r.on=e.target.checked;draw();}}),
           h("div",{style:"flex:1;min-width:0"},h("b",{text:c.title}),
             h("div",{class:"hint",text:[r.use?`콘티 ${r.use}번 씀`:"콘티에 쓴 적 없음",r.sc?"악보 있음":"악보 없음",ly.length?`가사: ${ly.slice(0,2).join(" / ")}${ly.length>2?" …":""}`:"가사 없음"].join(" · ")}),
@@ -1839,11 +1843,11 @@ function fragModal(){if(!S.canWrite||!S.db)return toast("팀 비밀번호를 넣
           h("button",{class:"btn sm ghost danger",text:"🗑 지우기",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요?"))return;try{await S.db.doc(`songs/${c.id}`).delete();r.done="지웠어요";draw();renderSongs.redraw&&renderSongs.redraw();}catch(err){toast("지우지 못했어요");}}}),
           h("button",{class:"btn sm primary",text:`「${splitTitle(r.p.title).base}」에 합치기`,title:"이 곡의 악보 · 가사 · 유튜브를 큰 곡으로 모으고, 이 곡을 쓴 콘티도 큰 곡으로 이어요",onclick:async e=>{e.currentTarget.disabled=true;await mergeSongs(r.p,[r.c],r.p.title,true);r.done=`「${r.p.title}」에 합쳤어요`;draw();renderSongs.redraw&&renderSongs.redraw();}})));}));};
   const md=modal("🧩 자투리 곡 찾기",h("div",{class:"panel-body"},
-    h("p",{class:"hint",style:"margin:0",text:"다른 곡 가사의 한 구절(후렴 · 한 소절)이 따로 곡으로 등록된 것을 찾아요. 「합치기」를 누르면 큰 곡 하나로 모이고, 이 곡을 쓴 콘티도 큰 곡으로 이어져요."}),
+    h("p",{class:"hint",style:"margin:0",text:"다른 곡 가사의 한 부분(후렴 · 한 소절)이 따로 곡으로 등록된 것을 찾아요. 찬송가(장 번호 있는 곡)와 악보가 있는 곡은 빼고, 가사가 큰 곡 가사 속에 통째로 들어 있는 곡만 「확실」로 미리 체크해요. 가사가 없는 곡은 제목이 긴 구절일 때만 「확인 필요」로 보여 줘요."}),
     h("p",{class:"pdf-warn",text:"⚠️ 비슷한 구절이 우연히 겹친 다른 곡일 수도 있어요. 하나씩 보고, 다른 곡이면 「따로 둘게요」를 눌러 주세요."}),
     h("div",{class:"row",style:"gap:8px"},st,h("span",{class:"spacer"}),bulk),box),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})],"devedit");
-  fragCandidates((i,n)=>{st.textContent=`가사를 비교하는 중… ${i}/${n}곡`;}).then(list=>{rows=list.map(x=>({...x,on:!x.use&&!x.sc,done:""}));
-    st.textContent=rows.length?`자투리로 보이는 곡 ${rows.length}개 · 콘티에 안 쓰고 악보도 없는 곡은 미리 체크해 뒀어요`:"자투리로 보이는 곡이 없어요 👍";draw();});}
+  fragCandidates((i,n)=>{st.textContent=`가사를 비교하는 중… ${i}/${n}곡`;}).then(list=>{rows=list.map(x=>({...x,on:x.strong&&!x.use,done:""}));const ns=rows.filter(r=>r.strong).length;
+    st.textContent=rows.length?`확실해 보이는 것 ${ns}개 (미리 체크) · 확인이 필요한 것 ${rows.length-ns}개`:"자투리로 보이는 곡이 없어요 👍";draw();});}
 async function mergeSongs(keep,others,title,quiet){if(!keep)return;const upd={};const vs=clone(vers(keep));const used=new Set(vs.map(v=>v.vid));
   for(const o of others)for(const v of vers(o)){const v2=clone(v);if(used.has(v2.vid))v2.vid=uid(6);used.add(v2.vid);if(!v2.name||vs.some(x=>x.name===v2.name))v2.name=`${v2.name||"악보"} (${o.title})`;vs.push(v2);}
   upd.versions=vs;upd.pages=[];
@@ -5490,9 +5494,14 @@ function lyricsDbModal(initFiles){if(!S.canWrite||!S.db)return toast("팀 비밀
             if(rows.some(r=>!r.err&&nk(r.title)===nk(song?song.title:x.title)))continue;rows.push({file:`${f.name} (예배 PPT에서 나눔)`,g:{title:x.title},song,title:song?song.title:x.title,lyr:x.lyr,on:!!x.lyr&&!(song&&song.lyrics)});}continue;}
         const g=guessFromName(f.name);const slides=await pptxSlidesText(buf);
         if(!g.title&&!g.hymn&&slides[0]&&slides[0][0])g.title=slides[0][0];
-        const song=matchSong(g);const title=song?song.title:(g.hymn?(hymnTitleOf(g.hymn)||`${g.title}(새찬송가 ${g.hymn}장)`):g.title);
+        let song=matchSong(g);let loose=false;
+        /* 제목이 똑같지 않고 일부만 겹친 곡(예: 「단 한 분이시라」 ↔ 다른 곡)은 가사도 비슷할 때만 같은 곡으로 봐요 */
+        if(song&&!g.hymn&&nk(splitTitle(song.title).base)!==nk(g.title)){const ly0=lyricsFromSlides(slides,g.title);const have=nk(song.lyrics||"");
+          if(have){const ls=ly0.split("\n").map(nk).filter(x=>x.length>=6);const hs=(song.lyrics||"").split("\n").map(nk).filter(x=>x.length>=6);const all0=nk(ly0);
+            const a1=ls.length?ls.filter(x=>have.includes(x)).length/ls.length:0,a2=hs.length?hs.filter(x=>all0.includes(x)).length/hs.length:0;if(Math.max(a1,a2)<.5)song=null;else loose=true;}else loose=true;}
+        const title=song?song.title:(g.hymn?(hymnTitleOf(g.hymn)||`${g.title}(새찬송가 ${g.hymn}장)`):g.title);
         const lyr=lyricsFromSlides(slides,splitTitle(title).base);const fix=!!(song&&(song.lyrics||"").trim()&&lyr&&lyrFixes(song.lyrics,lyr));
-        rows.push({file:f.name,g,song,title,lyr,on:!!lyr&&(!(song&&(song.lyrics||"").trim())||fix),fix});}
+        rows.push({file:f.name,g,song,title,lyr,loose,on:!!lyr&&(!(song&&(song.lyrics||"").trim())||fix),fix});}
       catch(e){rows.push({file:f.name,err:true});}}
     st.textContent=`${files.length}개 파일을 읽었어요${old?` · 옛 형식(.ppt) ${old}개는 건너뜀`:""}. 아래에서 확인하고 「가사 넣기」를 누르세요.`;draw();};
   function draw(){list.replaceChildren();
@@ -5503,7 +5512,7 @@ function lyricsDbModal(initFiles){if(!S.canWrite||!S.db)return toast("팀 비밀
       list.append(h("div",{class:"lyrow"+(r.err||!r.lyr?" bad":"")},
         r.err||!r.lyr?null:h("input",{type:"checkbox",id,checked:r.on,onchange:e=>r.on=e.target.checked}),
         h("label",{htmlFor:id,class:"lymain"},h("b",{text:r.title||r.file}),
-          h("span",{class:"hint",text:r.err?`${r.file} · 읽지 못했어요`:!r.lyr?`${r.file} · 글자가 없어요 (그림으로 된 슬라이드)`:`${r.file} → ${r.song?(r.fix?"✚ 빠졌던 첫 줄 되살림":r.song.lyrics?"이미 가사 있음":"라이브러리 곡"):"새 곡으로 등록"} · ${r.lyr.split(/\n\s*\n/).length}묶음`})),
+          h("span",{class:"hint",text:r.err?`${r.file} · 읽지 못했어요`:!r.lyr?`${r.file} · 글자가 없어요 (그림으로 된 슬라이드)`:`${r.file} → ${r.song?(r.fix?"✚ 빠졌던 첫 줄 되살림":r.song.lyrics?"이미 가사 있음":"라이브러리 곡"):"새 곡으로 등록"}${r.loose&&r.song?` · ⚠️ 비슷한 제목 「${r.song.title}」에 맞춤 (다른 곡이면 「보기」에서 제목을 고치세요)`:""} · ${r.lyr.split(/\n\s*\n/).length}묶음`})),
         r.lyr?h("button",{type:"button",class:"btn sm ghost",text:"보기",onclick:()=>{const ta=h("textarea",{value:r.lyr,style:"min-height:300px"});const md=modal(r.title,h("div",{class:"panel-body"},
             h("div",{class:"field"},h("label",{text:"곡 제목 (라이브러리에 이렇게 들어가요)"}),h("input",{type:"text",value:r.title,oninput:e=>{r.title=e.target.value;r.song=null;}})),ta),
             [h("button",{class:"btn primary",text:"확인",onclick:()=>{r.lyr=ta.value.trim();md.close();draw();}})]);}}):null));}}
