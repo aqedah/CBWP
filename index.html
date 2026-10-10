@@ -5269,7 +5269,11 @@ const GFONTS=[
   {name:"IBM Plex Sans KR Bold",ko:"IBM 플렉스 산스 굵게",css:"IBM Plex Sans KR",dir:"ibmplexsanskr",file:"IBMPlexSansKR-Bold",bold:1},
   {name:"Sunflower Bold",ko:"해바라기 굵게",css:"Sunflower",dir:"sunflower",file:"Sunflower-Bold",bold:1},
   {name:"Do Hyeon",ko:"도현 (원래 굵은 제목체)",css:"Do Hyeon",dir:"dohyeon",file:"DoHyeon-Regular",bold:0},
-  {name:"Black Han Sans",ko:"검은고딕 (아주 굵은 제목체)",css:"Black Han Sans",dir:"blackhansans",file:"BlackHanSans-Regular",bold:0}];
+  {name:"Black Han Sans",ko:"검은고딕 (아주 굵은 제목체)",css:"Black Han Sans",dir:"blackhansans",file:"BlackHanSans-Regular",bold:0},
+  /* 구글 글꼴은 아니지만 OFL(누구나 무료 · 문서에 넣기 가능)이고 공개 파일이 있는 고딕 */
+  {name:"Pretendard Bold",ko:"프리텐다드 굵게",css:"Pretendard",url:"https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/public/static/alternative/Pretendard-Bold.ttf",bold:1,by:"오리온캑터스 · OFL"},
+  {name:"SUIT Bold",ko:"수트 굵게",css:"SUIT",url:"https://cdn.jsdelivr.net/npm/@sun-typeface/suit@2.0.5/fonts/static/ttf/SUIT-Bold.ttf",bold:1,by:"선타입페이스 · OFL"},
+  {name:"Wanted Sans Bold",ko:"원티드 산스 굵게",css:"Wanted Sans",url:"https://cdn.jsdelivr.net/npm/wanted-sans@1.0.3/fonts/ttf/WantedSans-Bold.ttf",bold:1,by:"원티드랩 · OFL"}];
 const gfOf=name=>{const n=String(name||"").replace(/\s/g,"").toLowerCase();if(!n)return null;return GFONTS.find(g=>[g.name,g.css,g.ko,g.file].some(x=>x.replace(/\s/g,"").toLowerCase()===n))||null;};
 const gfBold=name=>{const g=gfOf(name);return !!(g&&g.bold);};
 /* WOFF(1) → TTF/OTF */
@@ -5302,7 +5306,7 @@ function sfntToEot(buf){const d=new DataView(buf),inf=sfntInfo(buf),os=inf.T["OS
 const fontMem=new Map();
 async function fontSource(name){name=String(name||"").trim();if(!name)return null;if(fontMem.has(name))return fontMem.get(name);
   let src=await idb.get("font_"+name);
-  if(!src){const g=gfOf(name);if(g){const r=await fetch(`${GF_BASE}${g.dir}/${g.file}.ttf`);if(!r.ok)throw new Error("글꼴 파일을 받지 못했어요");const buf=await r.arrayBuffer();
+  if(!src){const g=gfOf(name);if(g){const r=await fetch(g.url||`${GF_BASE}${g.dir}/${g.file}.ttf`);if(!r.ok)throw new Error("글꼴 파일을 받지 못했어요");const buf=await r.arrayBuffer();
       src=g.bold?{bold:buf,from:"google"}:{regular:buf,from:"google"};}}
   if(src)fontMem.set(name,src);return src;}
 async function fontUploadList(){return (await idb.get("font_list"))||[];}
@@ -5341,11 +5345,11 @@ async function fontPickModal(onPick){const q=h("input",{type:"search",placeholde
   let ups=await fontUploadList();const sample="주님의 은혜 감사해 · 1234";
   const row=(name,sub,tag,g)=>{ensureWebFont(name);if(tag==="upload")fontPreviewLoad(name);return h("button",{type:"button",class:"fp-row",onclick:()=>{md.close();onPick(name);}},h("div",{class:"fp-name"},h("b",{text:g?g.name:name}),h("span",{class:"hint",text:sub})),h("div",{class:"fp-sample",style:`font-family:"${name}",sans-serif;font-weight:${g&&g.bold?700:400}`,text:sample}));};
   const draw=()=>{const k=q.value.trim().toLowerCase().replace(/\s/g,"");const m=t=>!k||t.toLowerCase().replace(/\s/g,"").includes(k);
-    const list=[...ups.filter(m).map(n=>row(n,"직접 올린 글꼴 · 이 기기","upload")),...GFONTS.filter(g=>m(g.name)||m(g.ko)||m(g.css)).map(g=>row(g.css,`${g.ko} · 구글 무료 글꼴`,"google",g))];
+    const list=[...ups.filter(m).map(n=>row(n,"직접 올린 글꼴 · 이 기기","upload")),...GFONTS.filter(g=>m(g.name)||m(g.ko)||m(g.css)).map(g=>row(g.css,`${g.ko} · ${g.by||"구글 무료 글꼴"}`,"google",g))];
     box.replaceChildren(...(list.length?list:[h("p",{class:"hint",text:"찾는 글꼴이 없어요. 글꼴 파일이 있으면 「📁 글꼴 파일 올리기」로 넣어 주세요."})]));};q.addEventListener("input",draw);draw();
   const up=h("input",{type:"file",accept:".ttf,.otf,.woff",hidden:true,onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;st.textContent="글꼴 파일을 읽는 중…";
     try{const r=await fontUpload(f);ups=await fontUploadList();st.textContent=`「${r.name}」을(를) 이 기기에 보관했어요${r.info.cff?" · ⚠️ OTF(CFF) 글꼴은 파워포인트가 품지 못할 수 있어요":""}`;draw();}catch(err){st.textContent=err.message||"읽지 못했어요";}}});
-  const md=modal("🔍 글꼴 고르기",h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 6px",text:"가사용 굵은 고딕 (구글 무료 글꼴)과 직접 올린 글꼴이에요. 고르면 미리보기에 바로 보이고, 「글꼴 파일도 PPT에 넣기」를 켜면 글꼴이 없는 컴퓨터에서도 그 모양으로 나와요."}),
+  const md=modal("🔍 글꼴 고르기",h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 6px",text:"가사용 굵은 고딕 (구글 무료 글꼴 · 프리텐다드 같은 OFL 무료 글꼴)과 직접 올린 글꼴이에요. 고르면 미리보기에 바로 보이고, 「글꼴 파일도 PPT에 넣기」를 켜면 글꼴이 없는 컴퓨터에서도 그 모양으로 나와요."}),
     h("div",{class:"row",style:"gap:6px;flex-wrap:nowrap"},q,h("label",{class:"btn sm filebtn",style:"flex:none"},"📁 글꼴 파일 올리기",up)),st,box),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
 /* PPT 가사 글꼴 (만들 때 고르기) · 발표하는 컴퓨터에 깔려 있어야 그 모양으로 보여요 */
 const LYRIC_FONTS=["경기천년바탕 Bold","경기천년제목 Bold","경기천년제목 Light","경기천년제목 Medium"];
@@ -5764,6 +5768,7 @@ const WEBFONTS=[[/경기천년제목|gyeonggi\s*title/i,"https://cdn.jsdelivr.ne
   [/경기천년바탕|gyeonggi\s*batang/i,"https://cdn.jsdelivr.net/npm/@noonnu/gyeonggi-batang@0.1.0/fonts/gyeonggibatang-normal.woff"]];
 const webFontDone=new Set();
 function ensureWebFont(name){name=String(name||"").replace(/"/g,"").trim();if(!name||webFontDone.has(name))return;webFontDone.add(name);const m=WEBFONTS.find(([re])=>re.test(name));
+  {let g=null;try{g=gfOf(name);}catch(e){}if(g&&g.url){try{const ff=new FontFace(g.css,`url("${g.url}")`,{weight:g.bold?"700":"400"});ff.load().then(f=>document.fonts.add(f)).catch(()=>{});}catch(e){}return;}}
   /* 목록에 없는 이름은 구글 웹폰트에서 같은 이름을 찾아 미리보기에 써요 (없으면 그냥 넘어가요) */
   if(!m){if(/^[A-Za-z0-9 ]+$/.test(name)){const l=document.createElement("link");l.rel="stylesheet";l.href=`https://fonts.googleapis.com/css2?family=${encodeURIComponent(name).replace(/%20/g,"+")}:wght@400;700&display=swap`;document.head.append(l);}return;}
   const st=document.createElement("style");st.textContent=`@font-face{font-family:"${name}";src:local("${name}"),url("${m[1]}") format("woff");font-display:swap}`;document.head.append(st);}
@@ -6017,7 +6022,7 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
   const syncEmbed=async()=>{const f=lyFont;embedCb.disabled=!f||LYRIC_FONTS.includes(f);if(!f){embedInfo.textContent="";return;}
     if(LYRIC_FONTS.includes(f)){embedCb.checked=false;S.pptEmbed=false;embedInfo.textContent="경기천년체는 방송실 컴퓨터에 깔려 있어 글꼴 파일을 넣지 않아요";return;}
     const g=gfOf(f),up=(await fontUploadList()).includes(f);if(f!==lyFont)return;
-    embedInfo.textContent=!S.pptEmbed?"":g?`구글 무료 글꼴 · 받을 때 글꼴 파일(${g.name})을 넣어요 (PPT가 1~3MB 커져요)`:up?"이 기기에 올려 둔 글꼴 파일을 넣어요":"⚠️ 이 글꼴은 파일이 없어 이름만 들어가요. 「🔍 글꼴 찾기」에서 고르거나 파일을 올려 주세요";};
+    embedInfo.textContent=!S.pptEmbed?"":g?`${g.url?"무료 공개 글꼴(OFL)":"구글 무료 글꼴"} · 받을 때 글꼴 파일(${g.name})을 넣어요 (PPT가 1~3MB 커져요)`:up?"이 기기에 올려 둔 글꼴 파일을 넣어요":"⚠️ 이 글꼴은 파일이 없어 이름만 들어가요. 「🔍 글꼴 찾기」에서 고르거나 파일을 올려 주세요";};
   const setFont=v=>{lyFont=String(v||"").trim();S.pptLyricFont=lyFont;if(lyFont){fontPreviewLoad(lyFont);if(gfOf(lyFont)&&!S.pptEmbed){S.pptEmbed=true;embedCb.checked=true;}const f0=lyFont;fontUploadList().then(l=>{if(f0===lyFont&&l.includes(f0)&&!S.pptEmbed){S.pptEmbed=true;embedCb.checked=true;syncEmbed();syncMem();}});}syncEmbed();draw();};
   const fontIn=h("input",{type:"text",list:"pp-fonts-dl",placeholder:"글꼴 이름 (예: 나눔명조)",value:custom?lyFont:"",hidden:!custom,style:"width:200px","aria-label":"글꼴 직접 입력",onchange:e=>setFont(e.target.value)});
   const fontSel=h("select",{style:"width:auto","aria-label":"가사 글꼴",onchange:e=>{const v=e.target.value;fontIn.hidden=v!=="__custom";if(v==="__custom"){fontIn.focus();if(fontIn.value.trim())setFont(fontIn.value);return;}setFont(v);}},
