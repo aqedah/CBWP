@@ -564,6 +564,7 @@ body.wide-conti .wrap{max-width:1280px}
 @media (max-width:560px){.modal .kf-row{grid-template-columns:auto minmax(0,1fr) 64px}.kf-how{grid-column:2/-1;grid-row:2;max-width:none}.modal .kf-row input.kf-k{width:64px}}
 .fr-card{display:flex;flex-direction:column;gap:6px}.fr-parent{margin-top:4px;padding:6px 8px;border-radius:8px;background:var(--soft,#eef);font-size:.9rem}.fr-done{opacity:.6}.fr-weak{border-style:dashed}.fr-med{border-color:var(--warn)}.lc-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media (max-width:640px){.lc-wrap{grid-template-columns:1fr}}.lc-col{min-width:0;display:flex;flex-direction:column;gap:6px}.lc-title{min-height:2.6em;overflow-wrap:anywhere}.lc-text{border:1px solid var(--line);border-radius:8px;padding:8px;max-height:55vh;overflow:auto;font-size:.9rem;line-height:1.6}.lc-same{background:color-mix(in srgb,var(--accent) 16%,transparent);border-radius:4px}.fr-tag{align-self:flex-start;font-size:.72rem;color:var(--warn);border:1px solid currentColor;border-radius:99px;padding:1px 8px}
 .flowppt{margin-top:6px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;gap:4px}.sec-list{display:flex;flex-direction:column;gap:6px}.sec-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center;padding:6px;border:1px solid var(--line);border-radius:8px}.sec-row select{width:100%}.sec-txt{font-size:.9rem;overflow-wrap:anywhere}@media (max-width:520px){.sec-row{grid-template-columns:1fr}}
+.fp-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:60vh;overflow:auto}.fp-row{display:flex;flex-direction:column;gap:4px;text-align:left;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--sheet);color:var(--ink);font:inherit;cursor:pointer}.fp-row:hover{border-color:var(--accent)}.fp-name{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.fp-sample{font-size:1.35rem;line-height:1.3}
 .pe-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}.pe-row{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding-bottom:8px;border-bottom:1px dashed var(--line)}.pe-row input[type=date]{width:auto}.pe-row button{grid-column:3}.pe-row input[type=text]{grid-column:1/-1;min-width:0;width:100%}
 @media (min-width:640px){.pe-row{grid-template-columns:auto 1fr auto}.pe-row input[type=text]{grid-column:2;grid-row:1}}
 .devpick{position:fixed;z-index:96;display:flex;gap:6px;background:#1d2433;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgb(0 0 0 / .35)}.devpick .btn{border-color:#3b4660;background:#2a3347;color:#fff}.devpick .btn.primary{background:#e0566b;border-color:#e0566b}
@@ -3160,6 +3161,7 @@ function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,1
   function cnt(){const n=pick().length;st.textContent=from>to?"시작 날짜가 끝 날짜보다 뒤예요":inR().length?`고른 콘티 ${n}개`:"이 기간에는 곡이 든 콘티가 없어요";go.disabled=!n||from>to;go.textContent=n>1?`⬇ PPT ${n}개 한꺼번에 저장 (.zip)`:"⬇ PPT 저장";}
   const go=h("button",{class:"btn primary",onclick:async()=>{const arr=pick();if(!arr.length)return;go.disabled=true;const files=[];let i=0;
     try{for(const c of arr){i++;st.textContent=`만드는 중… ${i}/${arr.length} · ${fmtDate(c.date)} ${wtypeOf(c)}`;
+        {const pr=(teamCfg().pptPref||{})[wtypeOf(c)||"_"]||{};S.pptLyricFont=pr.font||"";S.pptEmbed=!!pr.embed;}
         await exportLyricsPpt(c,tplOf(c),true,{collect:(blob,fname)=>{let nm=fname.replace(/\.pptx$/,`_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"")}.pptx`);if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);}});}
       if(files.length===1){if(await saveBlob(files[0][0],files[0][1]))toast("PPT를 저장했어요");}
       else{st.textContent="압축 파일로 묶는 중…";await loadScript(JSZIP_URL);const z=new window.JSZip();for(const[b,nm]of files)z.file(nm,b);const zb=await z.generateAsync({type:"blob"});
@@ -4464,6 +4466,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-10","🔤 PPT 글꼴 고르기 · 구글 무료 글꼴 · 글꼴 파일을 PPT 안에 넣기"],
   ["2026-10-10","🎚 곡 흐름이 있는 콘티는 가사 PPT도 흐름 순서대로"],
   ["2026-10-10","📄 콘티 작성에서 악보 PDF로 찬양 채우기 (한 쪽에 두 곡도 나눠 읽기)"],
   ["2026-10-10","연습 모드: 인도자가 흐름을 바꾸면 모든 팀원 화면에 실시간으로"],
@@ -5230,6 +5233,92 @@ async function exportPdf(c,opt){if(!c)return;
    ========================================================= */
 const PPTX_URL="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js";
 const JSZIP_URL="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+/* ===== 🔤 글꼴 파일을 PPT 안에 넣기 (글꼴이 없는 컴퓨터에서도 그 모양으로) =====
+   파워포인트는 글꼴을 EOT 꼴(.fntdata)로 품어요: TTF 앞에 머리말을 붙여 ppt/fonts/ 에 넣고 presentation.xml 에 적어요.
+   글꼴 출처: ① 구글 무료 한글 글꼴(jsDelivr에서 TTF) ② 직접 올린 글꼴 파일(.ttf .otf .woff · 이 기기에 보관) */
+const GF_BASE="https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/";
+const GFONTS=[["Gowun Batang","고운바탕","gowunbatang","GowunBatang",1],["Gowun Dodum","고운돋움","gowundodum","GowunDodum",0],["Nanum Myeongjo","나눔명조","nanummyeongjo","NanumMyeongjo",1],
+  ["Nanum Gothic","나눔고딕","nanumgothic","NanumGothic",1],["Nanum Pen Script","나눔손글씨 펜","nanumpenscript","NanumPenScript",0],["Nanum Brush Script","나눔손글씨 붓","nanumbrushscript","NanumBrushScript",0],
+  ["Do Hyeon","도현","dohyeon","DoHyeon",0],["Jua","주아","jua","Jua",0],["Black Han Sans","검은고딕","blackhansans","BlackHanSans",0],["Sunflower","해바라기","sunflower","Sunflower",1,"Medium"],
+  ["Gaegu","개구","gaegu","Gaegu",1],["Hi Melody","하이멜로디","himelody","HiMelody",0],["IBM Plex Sans KR","IBM 플렉스 산스","ibmplexsanskr","IBMPlexSansKR",1],["Song Myung","송명","songmyung","SongMyung",0],
+  ["Stylish","스타일리시","stylish","Stylish",0],["Yeon Sung","연성","yeonsung","YeonSung",0],["Poor Story","서툰이야기","poorstory","PoorStory",0],["Dongle","동글","dongle","Dongle",1],
+  ["Gothic A1","고딕 A1","gothica1","GothicA1",1],["Gamja Flower","감자꽃","gamjaflower","GamjaFlower",0],["Cute Font","귀여운 글꼴","cutefont","CuteFont",0],["East Sea Dokdo","동해독도","eastseadokdo","EastSeaDokdo",0],
+  ["Single Day","싱글데이","singleday","SingleDay",0],["Bagel Fat One","베이글","bagelfatone","BagelFatOne",0],["Orbit","오르빗","orbit","Orbit",0],["Diphylleia","디필레이아","diphylleia","Diphylleia",0],
+  ["Dokdo","독도","dokdo","Dokdo",0],["Gugi","구기","gugi","Gugi",0]];
+const gfOf=name=>{const n=String(name||"").replace(/\s/g,"").toLowerCase();return GFONTS.find(g=>g[0].replace(/\s/g,"").toLowerCase()===n||g[1].replace(/\s/g,"")===n.replace(/\s/g,""))||null;};
+/* WOFF(1) → TTF/OTF */
+async function woffToSfnt(buf){const d=new DataView(buf);if(d.getUint32(0)!==0x774F4646)return buf;const flavor=d.getUint32(4),n=d.getUint16(12);
+  const tabs=[];for(let i=0;i<n;i++){const o=44+i*20;tabs.push({tag:d.getUint32(o),off:d.getUint32(o+4),comp:d.getUint32(o+8),orig:d.getUint32(o+12),sum:d.getUint32(o+16)});}
+  const inflate=async u8=>new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer());
+  for(const t of tabs){const raw=new Uint8Array(buf,t.off,t.comp);t.data=t.comp<t.orig?await inflate(raw):raw.slice();}
+  const head=12+16*n;let size=head;for(const t of tabs)size+=(t.orig+3)&~3;const out=new ArrayBuffer(size),o=new DataView(out),u=new Uint8Array(out);
+  let es=1,lg=0;while(es*2<=n){es*=2;lg++;}o.setUint32(0,flavor);o.setUint16(4,n);o.setUint16(6,es*16);o.setUint16(8,lg);o.setUint16(10,n*16-es*16);
+  let off=head;tabs.forEach((t,i)=>{const r=12+i*16;o.setUint32(r,t.tag);o.setUint32(r+4,t.sum);o.setUint32(r+8,off);o.setUint32(r+12,t.orig);u.set(t.data.subarray(0,t.orig),off);off+=(t.orig+3)&~3;});return out;}
+/* 글꼴 파일 안의 표(head · OS/2 · name) 읽기 */
+function sfntInfo(buf){const d=new DataView(buf);const n=d.getUint16(4);const T={};for(let i=0;i<n;i++){const r=12+i*16;T[String.fromCharCode(d.getUint8(r),d.getUint8(r+1),d.getUint8(r+2),d.getUint8(r+3))]={off:d.getUint32(r+8),len:d.getUint32(r+12)};}
+  const names={};if(T.name){const b=T.name.off,cnt=d.getUint16(b+2),so=b+d.getUint16(b+4);for(let i=0;i<cnt;i++){const r=b+6+i*12;const pid=d.getUint16(r),lang=d.getUint16(r+4),nid=d.getUint16(r+6),len=d.getUint16(r+8),off=d.getUint16(r+10);
+      if(pid!==3&&pid!==0)continue;let s="";for(let k=0;k+1<len;k+=2)s+=String.fromCharCode(d.getUint16(so+off+k));const key=nid+"_"+(lang===0x409||pid===0?"en":lang===0x412?"ko":"x");if(!names[key])names[key]=s;}}
+  const nm=id=>names[id+"_en"]||names[id+"_ko"]||names[id+"_x"]||"";
+  const os=T["OS/2"];return{T,cff:!!T.CFF||d.getUint32(0)===0x4F54544F,family:nm(1),familyKo:names["1_ko"]||"",style:nm(2),full:nm(4),version:nm(5),fsType:os?d.getUint16(os.off+8):0,bold:os?d.getUint16(os.off+4)>=600||(d.getUint16(os.off+62)&0x20)>0:false};}
+/* TTF → EOT (파워포인트 .fntdata) */
+function sfntToEot(buf){const d=new DataView(buf),inf=sfntInfo(buf),os=inf.T["OS/2"],hd=inf.T.head;
+  const u16le=s=>{const a=new Uint8Array(s.length*2);for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a[i*2]=c&255;a[i*2+1]=c>>8;}return a;};
+  const fam=u16le(inf.family),sty=u16le(inf.style),ver=u16le(inf.version),ful=u16le(inf.full);const HS=82;
+  const total=HS+4+fam.length+4+sty.length+4+ver.length+4+ful.length+2+buf.byteLength;const out=new ArrayBuffer(total),o=new DataView(out),u=new Uint8Array(out);let p=0;
+  const w32=v=>{o.setUint32(p,v>>>0,true);p+=4;},w16=v=>{o.setUint16(p,v,true);p+=2;},w8=v=>{o.setUint8(p,v);p+=1;};
+  w32(total);w32(buf.byteLength);w32(0x00020001);w32(0);
+  for(let i=0;i<10;i++)w8(os?d.getUint8(os.off+32+i):0);w8(1);w8(os?d.getUint16(os.off+62)&1:0);w32(os?d.getUint16(os.off+4):400);w16(inf.fsType);w16(0x504C);
+  for(let i=0;i<4;i++)w32(os&&os.len>=58?d.getUint32(os.off+42+i*4):0);for(let i=0;i<2;i++)w32(os&&os.len>=86?d.getUint32(os.off+78+i*4):0);
+  w32(hd?d.getUint32(hd.off+8):0);for(let i=0;i<4;i++)w32(0);w16(0);
+  for(const [s,last] of [[fam],[sty],[ver],[ful,1]]){w16(s.length);u.set(s,p);p+=s.length;w16(0);}w16(0);/* RootStringSize */
+  u.set(new Uint8Array(buf),p);return out;}
+/* 글꼴 파일 구하기: 직접 올린 것(이 기기) → 구글 무료 글꼴 */
+const fontMem=new Map();
+async function fontSource(name){name=String(name||"").trim();if(!name)return null;if(fontMem.has(name))return fontMem.get(name);
+  let src=await idb.get("font_"+name);
+  if(!src){const g=gfOf(name);if(g){const get=async v=>{const r=await fetch(`${GF_BASE}${g[2]}/${g[3]}-${v}.ttf`);if(!r.ok)throw new Error("글꼴 파일을 받지 못했어요");return r.arrayBuffer();};
+      src={regular:await get(g[5]||"Regular"),bold:g[4]?await get("Bold").catch(()=>null):null,from:"google"};}}
+  if(src)fontMem.set(name,src);return src;}
+async function fontUploadList(){return (await idb.get("font_list"))||[];}
+async function fontUpload(file){let buf=await file.arrayBuffer();buf=await woffToSfnt(buf);const d=new DataView(buf);const sig=d.getUint32(0);
+  if(sig===0x774F4632)throw new Error("WOFF2 글꼴은 아직 못 읽어요. TTF나 WOFF 파일을 올려 주세요");if(sig!==0x00010000&&sig!==0x4F54544F&&sig!==0x74727565)throw new Error("글꼴 파일이 아니에요");
+  const inf=sfntInfo(buf);const name=inf.family||file.name.replace(/\.[^.]+$/,"");const cur=(await idb.get("font_"+name))||{};
+  const src={...cur,[inf.bold?"bold":"regular"]:buf,from:"upload"};if(!src.regular)src.regular=buf;await idb.put("font_"+name,src);fontMem.set(name,src);
+  const l=await fontUploadList();if(!l.includes(name)){l.push(name);await idb.put("font_list",l);}
+  try{const ff=new FontFace(name,buf);await ff.load();document.fonts.add(ff);}catch(e){}
+  return{name,info:inf};}
+async function fontPreviewLoad(name){const src=fontMem.get(name)||await idb.get("font_"+name);if(src&&src.regular){try{const ff=new FontFace(name,src.regular);await ff.load();document.fonts.add(ff);}catch(e){}}else ensureWebFont(name);}
+/* PPT(blob)에 글꼴 넣기 → 새 blob */
+async function embedFontInPptx(blob,name,wantBold){const src=await fontSource(name);if(!src||!src.regular)return{blob,why:"이 글꼴은 파일을 찾지 못해 이름만 넣었어요 (구글 무료 글꼴이나 직접 올린 글꼴만 넣을 수 있어요)"};
+  const inf=sfntInfo(src.regular);if((inf.fsType&0x000E)===0x0002)return{blob,why:"이 글꼴은 만든 곳에서 「문서에 넣기」를 막아 두어 이름만 넣었어요"};
+  await loadScript(JSZIP_URL);const zip=await window.JSZip.loadAsync(blob);const fam=inf.family||name;
+  const files=[["regular",src.regular]];if(wantBold&&src.bold)files.push(["bold",src.bold]);
+  let rels=await zip.file("ppt/_rels/presentation.xml.rels").async("string");let pres=await zip.file("ppt/presentation.xml").async("string");let ct=await zip.file("[Content_Types].xml").async("string");
+  if(!/Extension="fntdata"/.test(ct))ct=ct.replace(/<Types([^>]*)>/,`<Types$1><Default Extension="fntdata" ContentType="application/x-fontdata"/>`);
+  let slots="";files.forEach(([k,b],i)=>{const id=`rIdF${i+1}`;zip.file(`ppt/fonts/font${i+1}.fntdata`,sfntToEot(b),{binary:true});
+    rels=rels.replace("</Relationships>",`<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/font" Target="fonts/font${i+1}.fntdata"/></Relationships>`);slots+=`<p:${k} r:id="${id}"/>`;});
+  const lst=`<p:embeddedFontLst><p:embeddedFont><p:font typeface="${xEsc(fam)}" charset="-127"/>${slots}</p:embeddedFont></p:embeddedFontLst>`;
+  pres=pres.replace(/<p:embeddedFontLst>[\s\S]*?<\/p:embeddedFontLst>/,"");
+  if(/<p:defaultTextStyle/.test(pres))pres=pres.replace(/<p:defaultTextStyle/,lst+"<p:defaultTextStyle");else if(/<p:notesSz[^>]*\/>/.test(pres))pres=pres.replace(/(<p:notesSz[^>]*\/>)/,"$1"+lst);else pres=pres.replace("</p:presentation>",lst+"</p:presentation>");
+  pres=pres.replace(/<p:presentation\b([^>]*)>/,(m,a)=>`<p:presentation${a.replace(/\s(embedTrueTypeFonts|saveSubsetFonts)="[^"]*"/g,"")} embedTrueTypeFonts="1">`);
+  if(!/xmlns:r=/.test(pres))pres=pres.replace(/<p:presentation\b/,`<p:presentation xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"`);
+  zip.file("ppt/_rels/presentation.xml.rels",rels);zip.file("ppt/presentation.xml",pres);zip.file("[Content_Types].xml",ct);
+  /* 글꼴 속 이름과 고른 이름이 다르면(예: 나눔명조 → NanumMyeongjo) 슬라이드 글자도 속 이름으로 */
+  if(fam!==name){const re=new RegExp(`typeface="${name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}"`,"g");for(const f of Object.keys(zip.files).filter(f=>/^ppt\/(slides|slideLayouts|slideMasters)\/[^/]+\.xml$/.test(f))){const x=await zip.file(f).async("string");if(re.test(x))zip.file(f,x.replace(re,`typeface="${xEsc(fam)}"`));}}
+  const out=await zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation",compression:"DEFLATE"});
+  return{blob:out,why:"",fam,size:files.reduce((n,[,b])=>n+b.byteLength,0)};}
+async function maybeEmbed(blob,font,bold){if(!S.pptEmbed||!font)return blob;try{const r=await embedFontInPptx(blob,font,bold);if(r.why)toast(r.why,4500);return r.blob;}catch(e){console.error(e);toast("글꼴을 넣지 못해 이름만 넣었어요: "+(e.message||e),4500);return blob;}}
+/* 🔍 웹폰트 찾기 · 📁 글꼴 파일 올리기 */
+async function fontPickModal(onPick){const q=h("input",{type:"search",placeholder:"글꼴 찾기 (예: 바탕, 손글씨, Gowun)",style:"width:100%"});const box=h("div",{class:"fp-list"});const st=h("p",{class:"hint"});
+  let ups=await fontUploadList();const sample="주님의 은혜 감사해 · 1234";
+  const row=(name,sub,tag)=>{ensureWebFont(name);if(tag==="upload")fontPreviewLoad(name);return h("button",{type:"button",class:"fp-row",onclick:()=>{md.close();onPick(name);}},h("div",{class:"fp-name"},h("b",{text:name}),h("span",{class:"hint",text:sub})),h("div",{class:"fp-sample",style:`font-family:"${name}",sans-serif`,text:sample}));};
+  const draw=()=>{const k=q.value.trim().toLowerCase().replace(/\s/g,"");const m=t=>!k||t.toLowerCase().replace(/\s/g,"").includes(k);
+    const list=[...ups.filter(m).map(n=>row(n,"직접 올린 글꼴 · 이 기기","upload")),...GFONTS.filter(g=>m(g[0])||m(g[1])).map(g=>row(g[0],`${g[1]} · 구글 무료 글꼴${g[4]?" · 굵게 있음":""}`,"google"))];
+    box.replaceChildren(...(list.length?list:[h("p",{class:"hint",text:"찾는 글꼴이 없어요. 글꼴 파일이 있으면 「📁 글꼴 파일 올리기」로 넣어 주세요."})]));};q.addEventListener("input",draw);draw();
+  const up=h("input",{type:"file",accept:".ttf,.otf,.woff",hidden:true,onchange:async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;st.textContent="글꼴 파일을 읽는 중…";
+    try{const r=await fontUpload(f);ups=await fontUploadList();st.textContent=`「${r.name}」을(를) 이 기기에 보관했어요${r.info.cff?" · ⚠️ OTF(CFF) 글꼴은 파워포인트가 품지 못할 수 있어요":""}`;draw();}catch(err){st.textContent=err.message||"읽지 못했어요";}}});
+  const md=modal("🔍 글꼴 고르기",h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 6px",text:"구글 무료 한글 글꼴과 직접 올린 글꼴이에요. 고르면 미리보기에 바로 보이고, 「글꼴 파일도 PPT에 넣기」를 켜면 글꼴이 없는 컴퓨터에서도 그 모양으로 나와요."}),
+    h("div",{class:"row",style:"gap:6px;flex-wrap:nowrap"},q,h("label",{class:"btn sm filebtn",style:"flex:none"},"📁 글꼴 파일 올리기",up)),st,box),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
 /* PPT 가사 글꼴 (만들 때 고르기) · 발표하는 컴퓨터에 깔려 있어야 그 모양으로 보여요 */
 const LYRIC_FONTS=["경기천년바탕 Bold","경기천년제목 Bold","경기천년제목 Light","경기천년제목 Medium"];
 const PPT_FONTS=[...LYRIC_FONTS,"맑은 고딕","나눔고딕","나눔스퀘어","나눔명조","본고딕","Noto Sans KR","굴림","바탕"];
@@ -5341,7 +5430,8 @@ async function exportLyricsPpt(c,tplOverride,skipAsk,opts={}){S.lastPptExport=Da
         slides.forEach((lines,i)=>{const sl=(i===0&&!cfg.titleSlide)?s:pp.addSlide();if(sl!==s){sl.background=back;n++;}
           const bottom=cfg.valign==="bottom";const bx=cfg.box;txt(sl,lines.join("\n"),bx?{x:bx.x*W,y:bx.y*H,w:bx.w*W,h:bx.h*H,fontSize:cfg.size,valign:VA[cfg.anchor]||(bottom?"bottom":"middle"),lineSpacingMultiple:cfg.lnSpc||1.15}:{y:bottom?H*.62:H*.12,h:bottom?H*.32:H*.76,fontSize:cfg.size,valign:bottom?"bottom":"middle",lineSpacingMultiple:cfg.lnSpc||1.15});});
         st.textContent=`슬라이드 ${n}장 만드는 중…`;}
-      let blob=await pp.write({outputType:"blob"});if(cfg.titleSlide&&cfg.titleGrad)blob=await gradTitles(blob,cfg.titleGrad,GMARK);const fname=`${teamName(c.team||S.team)}_가사_${c.date||"날짜미정"}.pptx`;md.close();
+      let blob=await pp.write({outputType:"blob"});if(cfg.titleSlide&&cfg.titleGrad)blob=await gradTitles(blob,cfg.titleGrad,GMARK);
+      if(S.pptLyricFont&&cfg.font===S.pptLyricFont){st.textContent="글꼴 파일을 넣는 중…";blob=await maybeEmbed(blob,cfg.font,!!(cfg.bold||cfg.titleBold));}const fname=`${teamName(c.team||S.team)}_가사_${c.date||"날짜미정"}.pptx`;md.close();
       if(opts.collect){opts.collect(blob,fname,n);return;}
       if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});toast(`가사 PPT를 저장했어요 (${n}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
       else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.append(a);a.click();a.remove();}
@@ -5861,10 +5951,15 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
   const withDeco=(t,v)=>{if(v==="keep")return t;const o={...t};for(const k of DK)delete o[k];if(v==="none")o.titleDecoKind="none";if(v==="note"){const H=o.slideH||(o.ratio==="4:3"?7.5:5.625);Object.assign(o,NOTE_DECO(),{titleSize:Math.round(40*H/7.5)});}return o;};
   let base=tpl;const deco=h("select",{style:"width:auto",onchange:()=>{tpl=withDeco(base,deco.value);draw();}});
   /* 가사 글꼴: 템플릿 그대로 / 경기천년 … (예배마다 「이 설정 기억하기」에 같이 남아요) */
-  let lyFont=(pref()&&pref().font)||"";S.pptLyricFont=lyFont;
+  let lyFont=(pref()&&pref().font)||"";S.pptLyricFont=lyFont;S.pptEmbed=!!(pref()&&pref().embed);
   const withFont=t=>lyFont&&t?{...t,titleFont:lyFont,font:lyFont}:t;
   const custom=!!lyFont&&!LYRIC_FONTS.includes(lyFont);
-  const setFont=v=>{lyFont=String(v||"").trim();S.pptLyricFont=lyFont;if(lyFont)ensureWebFont(lyFont);draw();};
+  const embedInfo=h("span",{class:"hint"});
+  const embedCb=h("input",{type:"checkbox",checked:S.pptEmbed,onchange:e=>{S.pptEmbed=e.target.checked;syncEmbed();}});
+  const syncEmbed=async()=>{const f=lyFont;embedCb.disabled=!f;if(!f){embedInfo.textContent="";return;}
+    const g=gfOf(f),up=(await fontUploadList()).includes(f);if(f!==lyFont)return;
+    embedInfo.textContent=!S.pptEmbed?"":g?`구글 무료 글꼴 · 받을 때 글꼴 파일(${g[4]?"보통 · 굵게":"보통"})을 넣어요 (PPT가 수 MB 커져요)`:up?"이 기기에 올려 둔 글꼴 파일을 넣어요":"⚠️ 이 글꼴은 파일이 없어 이름만 들어가요. 「🔍 글꼴 찾기」에서 고르거나 파일을 올려 주세요";};
+  const setFont=v=>{lyFont=String(v||"").trim();S.pptLyricFont=lyFont;if(lyFont){fontPreviewLoad(lyFont);if(gfOf(lyFont)&&!S.pptEmbed){S.pptEmbed=true;embedCb.checked=true;}const f0=lyFont;fontUploadList().then(l=>{if(f0===lyFont&&l.includes(f0)&&!S.pptEmbed){S.pptEmbed=true;embedCb.checked=true;syncEmbed();syncMem();}});}syncEmbed();draw();};
   const fontIn=h("input",{type:"text",list:"pp-fonts-dl",placeholder:"글꼴 이름 (예: 나눔명조)",value:custom?lyFont:"",hidden:!custom,style:"width:200px","aria-label":"글꼴 직접 입력",onchange:e=>setFont(e.target.value)});
   const fontSel=h("select",{style:"width:auto","aria-label":"가사 글꼴",onchange:e=>{const v=e.target.value;fontIn.hidden=v!=="__custom";if(v==="__custom"){fontIn.focus();if(fontIn.value.trim())setFont(fontIn.value);return;}setFont(v);}},
     [h("option",{value:"",text:"템플릿 글꼴 그대로",selected:!lyFont}),...LYRIC_FONTS.map(f=>h("option",{value:f,text:f,selected:lyFont===f})),h("option",{value:"__custom",text:"✏️ 직접 입력…",selected:custom})]);
@@ -5886,9 +5981,9 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
   const memHint=h("span",{class:"hint"});
   const memBtn=h("button",{class:"btn sm",title:"이 예배에서는 다음부터 이 템플릿과 찬양 자리 설정으로 열어요",onclick:async()=>{if(!S.db||!S.canWrite)return toast("팀 비밀번호를 넣은 기기에서만 기억할 수 있어요");
       const all={...prefAll()};const on=pref()&&pref().tpl===base.id&&(base.kind!=="full"||JSON.stringify(pref().slots||null)===JSON.stringify(fmap?fmap.map(v=>v==null?null:v.join(",")):null));
-      if(on){delete all[wkey];}else all[wkey]={tpl:base.id||"",slots:base.kind==="full"&&fmap?fmap.map(v=>v==null?null:v.join(",")):null,font:lyFont||"",at:Date.now()};
+      if(on){delete all[wkey];}else all[wkey]={tpl:base.id||"",slots:base.kind==="full"&&fmap?fmap.map(v=>v==null?null:v.join(",")):null,font:lyFont||"",embed:!!S.pptEmbed,at:Date.now()};
       try{await S.db.doc(`teams/${S.team}`).set({...teamCfg(),pptPref:all,updatedAt:Date.now()});S.teamCfgs[S.team]={...teamCfg(),pptPref:all};toast(on?"기억한 설정을 지웠어요":`「${wtypeOf(c)||"이 예배"}」는 다음부터 이 설정으로 열어요`);syncMem();}catch(err){console.error(err);toast("저장하지 못했어요");}}});
-  const syncMem=()=>{const p=pref();const on=p&&p.tpl===base.id&&(p.font||"")===(lyFont||"")&&(base.kind!=="full"||JSON.stringify(p.slots||null)===JSON.stringify(fmap?fmap.map(v=>v==null?null:v.join(",")):null));
+  const syncMem=()=>{const p=pref();const on=p&&p.tpl===base.id&&(p.font||"")===(lyFont||"")&&!!p.embed===!!S.pptEmbed&&(base.kind!=="full"||JSON.stringify(p.slots||null)===JSON.stringify(fmap?fmap.map(v=>v==null?null:v.join(",")):null));
     memBtn.textContent=on?"📌 기억함 (누르면 잊기)":"📌 이 설정 기억하기";memBtn.classList.toggle("primary",!!on);memHint.textContent=!on&&p?"(다른 설정을 기억하고 있어요)":"";};
   function draw(){drawFull();syncMem();saveBtn.hidden=!can||deco.value==="keep"||base.kind==="full";deco.hidden=decoLbl.hidden=base.kind==="full";
     const tv=withFont(base.kind==="full"?{...base,...(base._ft||{}),titleDeco:null,titleGrad:null,titleDecoKind:"none"}:tpl);const slides=pptSlidesOf(c,tv);const miss=items.filter(it=>!lyricsOf(it).trim());
@@ -5901,8 +5996,10 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
       miss.length?h("div",{class:"banner warn",style:"margin-top:6px"},h("b",{text:"가사가 없는 곡: "}),...miss.map(it=>h("button",{class:"btn sm",style:"margin:2px",text:`${it.title} · 가사 넣기`,onclick:()=>lyricsModal(it,()=>draw())})),
         h("div",{class:"hint",text:"가사가 없으면 제목 장만 들어가요."})):null].filter(Boolean));
     grid.replaceChildren(...slides.map((sl,i)=>h("div",{class:"pptcell"+(sl.kind==="title"?" t":"")},tplPreview(tv,sl.lines,sl.kind),h("span",{class:"hint",text:`${i+1}${sl.kind==="title"?" · 제목":""}`}))));}
-  draw();
-  const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel,can&&!DEMO?h("label",{class:"btn sm filebtn",title:"예배 PPT를 올려 새 템플릿을 만들어요. PPT 라이브러리에도 함께 들어가요"},"+ 템플릿 추가",h("input",{type:"file",accept:".pptx",onchange:e=>{const f=e.target.files[0];e.target.value="";if(!f)return;md.close();S.afterTplSave=id=>previewLyricsPpt(c,id);addTplFromFile(f);}})):null,decoLbl,deco,saveBtn,memBtn,memHint),h("div",{class:"row",style:"margin-top:6px"},h("span",{class:"hint",text:"글꼴 (제목 · 가사)"}),fontSel,fontIn,fontDl,h("span",{class:"hint",text:"· 발표하는 컴퓨터에 그 글꼴이 깔려 있어야 해요"})),fullBox,info,grid),
+  draw();syncEmbed();if(lyFont)fontPreviewLoad(lyFont);
+  const md=modal(`가사 PPT 미리보기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body"},h("div",{class:"row"},h("span",{class:"hint",text:"템플릿"}),sel,can&&!DEMO?h("label",{class:"btn sm filebtn",title:"예배 PPT를 올려 새 템플릿을 만들어요. PPT 라이브러리에도 함께 들어가요"},"+ 템플릿 추가",h("input",{type:"file",accept:".pptx",onchange:e=>{const f=e.target.files[0];e.target.value="";if(!f)return;md.close();S.afterTplSave=id=>previewLyricsPpt(c,id);addTplFromFile(f);}})):null,decoLbl,deco,saveBtn,memBtn,memHint),h("div",{class:"row",style:"margin-top:6px"},h("span",{class:"hint",text:"글꼴 (제목 · 가사)"}),fontSel,fontIn,fontDl,
+      h("button",{type:"button",class:"btn sm",text:"🔍 글꼴 찾기",title:"구글 무료 한글 글꼴 · 직접 올린 글꼴에서 골라요",onclick:()=>fontPickModal(n=>{const inList=LYRIC_FONTS.includes(n);fontSel.value=inList?n:"__custom";fontIn.hidden=inList;if(!inList)fontIn.value=n;setFont(n);})})),
+    h("div",{class:"row",style:"gap:6px;margin-top:4px"},h("label",{class:"row hint",style:"gap:6px"},embedCb,"🔤 글꼴 파일도 PPT 안에 넣기 (글꼴이 없는 컴퓨터에서도 그 모양으로)"),embedInfo),fullBox,info,grid),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"⬇ PPT 받기",onclick:()=>{md.close();S.pptLyricFont=lyFont;if(base.kind==="full")return exportFullPpt(curC(),base,fmap);exportLyricsPpt(c,lyFont?withFont(tpl):(tpl&&(tpl.id||deco.value!=="keep")?tpl:null),true);}})],"editor");}
 /* =========================================================
    예배 전체 틀  (예배 순서가 다 들어 있는 PPT를 그대로 두고, 날짜·본문·설교·찬양만 바꿔 넣어요)
@@ -6123,7 +6220,7 @@ async function slimPptx(file,pg){await loadScript(JSZIP_URL);const zip=await win
   pg&&pg("파일로 묶는 중…",1);const out=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6},mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
   return out.size<file.size?out:file;}
 async function exportFullPpt(c,t,slotMap){const go=async blob=>{const md=modal("예배 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"fp-st",text:"준비하고 있어요…"})),null);const st=$("#fp-st",md.el);
-    try{const r=await buildFullPpt(blob,c,t,slotMap,s=>{st.textContent=s;});const fname=`${teamName(c.team||S.team)}_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|]/g,"")}_${c.date||"날짜미정"}.pptx`;md.close();
+    try{const r=await buildFullPpt(blob,c,t,slotMap,s=>{st.textContent=s;});if(S.pptLyricFont){st.textContent="글꼴 파일을 넣는 중…";r.blob=await maybeEmbed(r.blob,S.pptLyricFont,true);}const fname=`${teamName(c.team||S.team)}_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|]/g,"")}_${c.date||"날짜미정"}.pptx`;md.close();
       if(S.downloads){try{await S.downloads.save({filename:fname,data:r.blob});toast(`예배 PPT를 저장했어요 (${r.total}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
       else{const a=document.createElement("a");a.href=URL.createObjectURL(r.blob);a.download=fname;document.body.append(a);a.click();a.remove();toast(`예배 PPT를 만들었어요 (${r.total}장)`);}}
     catch(e){md.close();console.error(e);toast("예배 PPT를 만들지 못했어요: "+(e.message||e),4000);}};
