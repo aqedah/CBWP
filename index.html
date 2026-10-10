@@ -5371,11 +5371,13 @@ async function autoLinkContis(){if(!S.songs||!S.songs.length||!S.allContis)retur
 document.addEventListener("cbwp-contis",scheduleAutoLink);
 /* 곡 찾기: 번호(songId)로 → 합친 곡은 옛 번호로 → 번호가 없으면(손으로 친 제목 · 카톡 불러오기 등) 제목이 똑같은 라이브러리 곡으로 이어요 */
 const titleIdx={n:-1,m:null};
-function songByTitle(t){if(titleIdx.n!==S.songs.length||titleIdx.ref!==S.songs){const m=new Map();for(const s of S.songs){const k=nk(splitTitle(s.title).base);if(!k)continue;m.set(k,m.has(k)?null:s);}titleIdx.m=m;titleIdx.n=S.songs.length;titleIdx.ref=S.songs;}
-  const k=nk(splitTitle(String(t||"")).base);return k?titleIdx.m.get(k)||undefined:undefined;}
+/* 제목으로 라이브러리 곡 찾기: 같은 이름 곡이 여러 개면(중복) 제목이 똑같은 곡 → 자료(악보 · PPT · 가사)가 많은 곡 순으로 골라요 */
+function songByTitle(t){if(titleIdx.n!==S.songs.length||titleIdx.ref!==S.songs){const m=new Map();for(const s of S.songs){const k=nk(splitTitle(s.title).base);if(!k)continue;if(!m.has(k))m.set(k,[]);m.get(k).push(s);}titleIdx.m=m;titleIdx.n=S.songs.length;titleIdx.ref=S.songs;}
+  const k=nk(splitTitle(String(t||"")).base);const arr=k?titleIdx.m.get(k):null;if(!arr||!arr.length)return undefined;if(arr.length===1)return arr[0];
+  const rich=s=>(norm(s.title)===norm(t)?100:0)+vers(s).length*3+((s.ppt&&(s.ppt.slides||[]).length)?3:0)+((s.lyrics||"").trim()?2:0);return arr.slice().sort((a,b)=>rich(b)-rich(a))[0];}
 const songOf=it=>{if(!it)return undefined;if(it.songId){const s=S.songs.find(s=>s.id===it.songId)||S.songs.find(s=>(s.aliasIds||[]).includes(it.songId));if(s)return s;}
   const s=it.title?songByTitle(it.title):undefined;if(s&&!it.songId){try{it.songId=s.id;}catch(e){}}return s;};
-const lyricsOf=it=>{const s=songOf(it);return (s&&s.lyrics)||it.lyrics||"";};
+const lyricsOf=it=>{const s=songOf(it);const alt=s&&!(s.lyrics||"").trim()&&it&&it.title?songByTitle(it.title):null;return (s&&s.lyrics)||(alt&&alt.lyrics)||it.lyrics||"";};
 /* PPT 라이브러리: 곡 가사 고치기 (곡에 저장) */
 /* PPT 라이브러리의 「가사 고치기」도 콘티 작성의 가사 창과 똑같은 창을 써요 */
 function songLyricsEdit(x,onDone){lyricsModal({title:x.title,songId:x.id},onDone);}
