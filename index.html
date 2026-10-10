@@ -1206,7 +1206,8 @@ function renderTeamPick(m){m.append(h("figure",{class:"verse"},h("blockquote",{t
    바꾼 글자는 교회 공용 저장소(catalog/uitext)에 「원래 글자 → 새 글자」로 남고, 모든 팀 · 기기에 똑같이 보여요
    ========================================================= */
 const DEV={on:false,edit:true,map:new Map(),rev:new Map(),orig:new WeakMap()};
-function setUiText(doc){const pairs=(doc&&doc.pairs)||[];DEV.map=new Map(pairs.filter(p=>p&&p[0]&&p[1]!=null).map(p=>[p[0],p[1]]));DEV.rev=new Map([...DEV.map].map(([a,b])=>[b,a]));uiTextApply(document.body);}
+/* 서버(Firestore)는 배열 안에 배열을 못 넣어서 {f:원래, t:새} 꼴로 저장해요 (예전 [원래,새] 꼴도 읽어요) */
+function setUiText(doc){const pairs=((doc&&doc.pairs)||[]).map(p=>Array.isArray(p)?p:p&&[p.f,p.t]);DEV.map=new Map(pairs.filter(p=>p&&p[0]&&p[1]!=null).map(p=>[p[0],p[1]]));DEV.rev=new Map([...DEV.map].map(([a,b])=>[b,a]));uiTextApply(document.body);}
 const uiSkip=el=>!el||el.closest("textarea,input,select,[contenteditable],#devbar,.devedit,script,style");
 function uiTextNode(n){if(!DEV.map.size)return;const raw=n.nodeValue;const t=raw.trim();if(!t||!DEV.map.has(t))return;const to=DEV.map.get(t);if(to===t)return;
   if(!DEV.orig.has(n))DEV.orig.set(n,t);n.nodeValue=raw.replace(t,to);}
@@ -1215,7 +1216,7 @@ function uiTextApply(root){if(!root||!DEV.map.size)return;if(root.nodeType===3){
   root.querySelectorAll&&root.querySelectorAll("input[placeholder],textarea[placeholder]").forEach(i=>{if(i.closest("#devbar,.devedit"))return;const t=i.dataset.ph0||i.placeholder;if(DEV.map.has(t)){i.dataset.ph0=t;i.placeholder=DEV.map.get(t);}});}
 new MutationObserver(ms=>{if(!DEV.map.size)return;for(const m of ms){if(m.type==="characterData")uiTextNode(m.target);else m.addedNodes.forEach(uiTextApply);}}).observe(document.body,{childList:true,subtree:true,characterData:true});
 async function uiTextSave(from,to){const m=new Map(DEV.map);if(to==null||to===from)m.delete(from);else m.set(from,to);
-  const pairs=[...m].map(([a,b])=>[a,b]);try{await S.db.doc("catalog/uitext").set({pairs,updatedAt:Date.now()});}catch(e){console.error(e);toast("저장하지 못했어요 (팀 비밀번호로 들어와 있어야 해요)",3500);return false;}
+  const pairs=[...m].map(([a,b])=>({f:a,t:b}));try{await S.db.doc("catalog/uitext").set({pairs,updatedAt:Date.now()});}catch(e){console.error(e);toast(/permission/i.test((e&&(e.code||e.message))||"")?"저장 권한이 없어요 (관리자 비밀번호로 들어와 있는지 확인해 주세요)":"저장하지 못했어요 · "+((e&&(e.code||e.message))||"알 수 없는 오류"),4000);return false;}
   /* 화면에 이미 바뀌어 있던 글자를 원래대로 돌려놓고 다시 적용 */
   const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){const o=DEV.orig.get(n);if(o&&o===from){n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),from);DEV.orig.delete(n);}}
   setUiText({pairs});if(DEV.on)devToggle(true);return true;}
