@@ -2675,6 +2675,8 @@ function cropIntro(it,done){let pi=0,img=null,sel=null;const cv=h("canvas",{styl
   const md=modal(`인트로 잘라 쓰기 · ${it.title}`,h("div",{class:"panel-body"},h("div",{class:"row",style:"gap:8px"},pageSel,st),h("div",{style:"overflow:auto;max-height:70vh"},cv)),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),ok],"editor");
   load();}
 function renderSetlist(key){if(S.tab==="sheet"&&renderSheet.redraw){renderSheet.redraw();return;}const box=$(`#list-${key}`);if(!box)return;box.replaceChildren();const arr=S.cur[key];box.dataset.key=key;
+  /* 번호 없이 들어온 곡(카톡 · 손으로 친 제목)은 라이브러리의 같은 제목 곡과 이어 둬요 → 가사 · 악보 · PPT가 따라와요 */
+  {let linked=0;for(const it of arr||[])if(!it.songId&&it.title){const sg=songByTitle(it.title);if(sg){it.songId=sg.id;if(!it.key&&songKeyOf(sg))it.key=songKeyOf(sg);if(!(it.pages&&it.pages.length)){const f=itemFromSong(sg);it.verId=f.verId;it.pages=f.pages;}linked++;}}if(linked&&curEditable())markDirty();}
   const cn=$(`#cnt-${key}`);if(cn)cn.textContent=`${arr.length}곡`;
   if(!arr.length){const where=isWide()?"오른쪽 「곡 찾기」":"위 검색칸";
     const msg=key==="opening"?"매주 같은 곡으로 여는 경우에만 넣으세요. 비워 두어도 괜찮아요.":key==="special"?"특송이 있으면 곡을 넣으세요. 없으면 비워 두어도 괜찮아요.":key==="after"?"설교 후에 부를 곡이 있으면 넣으세요. 없으면 비워 두어도 괜찮아요.":"아직 곡이 없어요.";
@@ -5357,7 +5359,12 @@ function lyricSlides(text,per){const out=[];
   for(const para of String(text||"").replace(/\r/g,"").split(/\n\s*\n/)){const lines=para.split("\n").map(l=>l.trim()).filter(l=>l&&!SEC_LABEL.test(l));
     for(let i=0;i<lines.length;i+=per)out.push(lines.slice(i,i+per));}
   return out;}
-const songOf=it=>it&&it.songId?(S.songs.find(s=>s.id===it.songId)||S.songs.find(s=>(s.aliasIds||[]).includes(it.songId))):undefined; /* 합친 곡은 옛 번호로도 찾아요 */
+/* 곡 찾기: 번호(songId)로 → 합친 곡은 옛 번호로 → 번호가 없으면(손으로 친 제목 · 카톡 불러오기 등) 제목이 똑같은 라이브러리 곡으로 이어요 */
+const titleIdx={n:-1,m:null};
+function songByTitle(t){if(titleIdx.n!==S.songs.length||titleIdx.ref!==S.songs){const m=new Map();for(const s of S.songs){const k=nk(splitTitle(s.title).base);if(!k)continue;m.set(k,m.has(k)?null:s);}titleIdx.m=m;titleIdx.n=S.songs.length;titleIdx.ref=S.songs;}
+  const k=nk(splitTitle(String(t||"")).base);return k?titleIdx.m.get(k)||undefined:undefined;}
+const songOf=it=>{if(!it)return undefined;if(it.songId){const s=S.songs.find(s=>s.id===it.songId)||S.songs.find(s=>(s.aliasIds||[]).includes(it.songId));if(s)return s;}
+  const s=it.title?songByTitle(it.title):undefined;if(s&&!it.songId){try{it.songId=s.id;}catch(e){}}return s;};
 const lyricsOf=it=>{const s=songOf(it);return (s&&s.lyrics)||it.lyrics||"";};
 /* PPT 라이브러리: 곡 가사 고치기 (곡에 저장) */
 /* PPT 라이브러리의 「가사 고치기」도 콘티 작성의 가사 창과 똑같은 창을 써요 */
