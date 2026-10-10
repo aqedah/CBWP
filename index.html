@@ -591,6 +591,7 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .libtools>summary{cursor:pointer;font-size:.85rem;color:var(--muted);padding:4px 0}
 .flowbar{display:flex;flex-direction:column;gap:6px;padding-bottom:8px;border-bottom:1px dashed var(--line)}.flowline{font-weight:800;color:#1d3fb3;background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:4px 10px;min-width:0;overflow-wrap:anywhere}.flowline.empty{color:var(--muted);font-weight:500}
 .stage .mk.flowtop{left:2%;top:.6%;max-width:96%;background:rgb(255 255 255 / .88);color:#1d3fb3;font-weight:800;font-size:2.6cqw;line-height:1.25;padding:.15em .4em;border-radius:.3em;pointer-events:none;font-family:var(--font-body)}
+.vs-ops{display:flex;gap:2px;justify-content:flex-end}
 .demosum{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}.demosum::-webkit-details-marker{display:none}.demosum .spacer{flex:1}
 .demoban.mini{display:flex;align-items:center;gap:8px;padding:6px 12px}
 .tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
@@ -5908,7 +5909,11 @@ function versionsViewer(song,startVid){const vs=vers(song).filter(v=>(v.pages||[
       const def=Object.entries(song.teamVer||{}).filter(([,id])=>id===v.vid).map(([t])=>teamName(t)+" 기본").join(" · ");
       const item=h("button",{type:"button",class:"vs-item"+(v===cur?" on":""),onclick:()=>{cur=v;editing=null;draw();}},th,h("span",{class:"vtext"},h("b",{text:v.name||verLabel(v)}),h("small",{text:[v.key&&`Key ${v.key}`,v.alt?`이미지 ${v.pages.length}가지`:`${v.pages.length}장`,def].filter(Boolean).join(" · ")})));
       if(!canEd)return item;
-      if(editing!==v.vid)return h("div",{class:"vs-wrap"},item,h("button",{type:"button",class:"btn sm ghost vs-ren",text:"제목 변경",onclick:()=>{editing=v.vid;draw();}}));
+      if(editing!==v.vid)return h("div",{class:"vs-wrap"},item,h("div",{class:"vs-ops"},h("button",{type:"button",class:"btn sm ghost",text:"제목 변경",onclick:()=>{editing=v.vid;draw();}}),
+        h("button",{type:"button",class:"btn sm ghost danger",text:"🗑 지우기",title:"이 악보를 곡에서 지워요 (이미 쓴 콘티에는 남아요)",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? · 한 번 더"))return;
+          const all=vers(song).filter(x=>x.vid!==v.vid);const tv={...(song.teamVer||{})};for(const t in tv)if(tv[t]===v.vid)delete tv[t];
+          if(!await saveVersions(song,clone(all),{teamVer:tv}))return;toast("악보를 지웠어요. 이미 쓴 콘티에는 그대로 남아요",3200);renderSongs.redraw&&renderSongs.redraw();
+          vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));if(!vs.length){const m=list.closest(".modal");if(m)m.remove();return;}if(!vs.includes(cur))cur=vs[0];draw();}})));
       const nIn=h("input",{type:"text",value:v.name||"",placeholder:"악보 제목 (예: D코드)","aria-label":"악보 제목",style:"flex:1;min-width:110px"});
       const kIn=h("input",{type:"text",value:v.key||"",placeholder:"예: D","aria-label":"코드(Key)",style:"width:70px"});
       const sv=async()=>{const all=clone(vers(song));const x=all.find(y=>y.vid===v.vid);if(!x)return;const nn=nIn.value.trim(),kk=kIn.value.trim();
