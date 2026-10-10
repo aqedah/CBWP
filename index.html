@@ -576,6 +576,7 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .tourspot{position:fixed;left:0;top:0;z-index:58;pointer-events:none}
 .tourdim{position:fixed;inset:0;z-index:58;background:rgb(10 14 25 / .58);pointer-events:none}
 .rolepick{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.rolecard{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--sheet)}.rolecard p{margin:0 0 4px}
+.demosum{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}.demosum::-webkit-details-marker{display:none}.demosum::after{content:"▾";color:var(--muted,#888);margin-left:2px}details[open]>.demosum::after{content:"▴"}
 .demoban.mini{display:flex;align-items:center;gap:8px;padding:6px 12px}
 .tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
 .tourcard .tc-then b{font-size:.92rem;word-break:keep-all}
@@ -1438,11 +1439,12 @@ function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg"
 function spotOff(){const s=document.getElementById("tourspot");if(s)s.remove();if(TOUR&&TOUR.raf)cancelAnimationFrame(TOUR.raf);}
 function tourFromUrl(){try{const k=new URLSearchParams(location.search).get("tour");if(k&&TOURS[k])tourStart(k);}catch(e){}}
 function render(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(TOUR?h("div",{class:"banner demoban mini"},h("b",{text:"👀 체험판"}),h("span",{class:"spacer"}),h("button",{type:"button",class:"btn sm",text:"나가기",onclick:()=>{location.href=location.pathname;}})):
-    h("div",{class:"banner demoban"},h("div",{},h("b",{text:"👀 체험판 "}),"실제 교회 자료가 아니라 예시예요. 마음껏 눌러 보세요. 새로고침하면 처음으로 돌아가요."),
+    h("details",{class:"banner demoban",open:!!S.demoBanOpen,ontoggle:e=>{S.demoBanOpen=e.currentTarget.open;}},h("summary",{class:"demosum"},h("b",{text:"👀 체험판"}),h("span",{class:"hint",text:" 예시 자료예요 · 튜토리얼 보기"}),h("span",{class:"spacer"}),h("button",{type:"button",class:"btn sm ghost",text:"나가기",onclick:e=>{e.preventDefault();location.href=location.pathname;}})),
+      h("div",{class:"hint",style:"margin-top:6px"},"마음껏 눌러 보세요. 새로고침하면 처음으로 돌아가요."),
       h("div",{class:"row",style:"display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;width:100%"},h("b",{class:"hint",style:"min-width:4.5em",text:"🎤 인도자"}),h("button",{type:"button",class:"btn sm",text:"빠르게 둘러보기",onclick:()=>tourStart("leader")}),h("button",{type:"button",class:"btn sm",text:"첫 콘티 만들기",onclick:()=>tourStart("practiceConti")}),
         h("button",{type:"button",class:"btn sm",text:"악보 꾸미기",onclick:()=>tourStart("practiceSheet")}),h("button",{type:"button",class:"btn sm",text:"PPT 만들기",onclick:()=>tourStart("practicePpt")})),
       h("div",{class:"row",style:"display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;width:100%"},h("b",{class:"hint",style:"min-width:4.5em",text:"🎸 팀원"}),h("button",{type:"button",class:"btn sm",text:"내 섬김 알아보기",onclick:()=>tourStart("member")}),h("span",{class:"spacer"}),
-        S.memberOnly?h("button",{type:"button",class:"btn sm ghost",text:"인도자 화면으로",onclick:()=>{S.demoMember=false;setAccess();window.DEMO_NAME="김하늘";render();}}):null,h("button",{type:"button",class:"btn sm ghost",style:"text-decoration:underline",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}}))));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
+        S.memberOnly?h("button",{type:"button",class:"btn sm ghost",text:"인도자 화면으로",onclick:()=>{S.demoMember=false;setAccess();window.DEMO_NAME="김하늘";render();}}):null)));document.body.classList.remove("fb-pad","wb-on");dropFloat();document.body.classList.toggle("wide-conti",!!S.team&&isWide()&&groupOf(S.tab)==="conti");drawChrome();drawAdminRow();
   const ban=statusBanner();if(ban)m.append(ban);
   if((S.tab==="write"||S.tab==="sheet")&&S.team&&!S.curId&&!isWriter())S.tab="list";
   syncNav();
