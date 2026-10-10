@@ -95,6 +95,8 @@ body.has-bnav .toast{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
 .subtabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:4px}
 .subtabs button{flex:1 0 auto;border:0;background:none;padding:8px 14px;border-radius:9px;font:inherit;font-weight:700;font-size:.9rem;color:var(--ink2);cursor:pointer;white-space:nowrap}
 .subtabs button[aria-selected="true"]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 4px rgb(0 0 0 / .1)}
+.ctabs{display:flex;flex-direction:column;gap:6px}.csteps{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;padding:0 2px}.csteps button{flex:1 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}.csteps button i{font-style:normal;color:var(--team,var(--accent))}.csteps button[aria-selected="true"]{background:var(--team,var(--accent));border-color:var(--team,var(--accent));color:#fff}.csteps button[aria-selected="true"] i{color:#fff}.cs-arr{color:var(--muted);flex:none}
+@media (max-width:520px){.csteps{gap:3px}.cs-arr{display:none}.csteps button{flex:1 1 0;min-width:0;padding:5px 3px;font-size:.74rem;gap:2px;overflow:hidden;text-overflow:ellipsis}}
 .chipbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .chipbar .fchip{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--sheet);color:var(--ink2);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
 .chipbar .fchip[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
@@ -543,7 +545,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .pm-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#1d1d1f;border-bottom:1px solid #333}
 .pm-title{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pm-title b{font-size:1.1rem}.pm-key{background:#f5c542;color:#222;border-radius:6px;padding:1px 8px;font-weight:800}
 .pm-memo{padding:6px 14px;background:#2a2a2d;color:#ffd98a;font-size:.95rem}
-.pm-body{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;overflow:auto}.pm-page{max-width:none;background:#fff;border-radius:4px;height:auto}
+.pm-body{flex:1;display:flex;flex-direction:column;align-items:safe center;gap:10px;padding:10px;overflow:auto;min-height:0}.pm-page{max-width:none;background:#fff;border-radius:4px;flex:none}
 .pm-lyrics{white-space:pre-line;font-size:clamp(1.2rem,3vw,2rem);line-height:1.7;text-align:center;max-width:900px;padding:16px}.pm-empty{padding:40px;color:#aaa}
 .pm-foot{position:sticky;bottom:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;background:#1d1d1f;border-top:1px solid #333}
 .pm-dots{display:flex;gap:6px}.pm-dot{width:12px;height:12px;border-radius:50%;border:0;background:#555;padding:0;cursor:pointer}.pm-dot.on{background:#f5c542}
@@ -581,6 +583,14 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .tu-ghost{position:absolute;border:2px dashed #2f62d6;background:rgb(47 98 214 / .12);pointer-events:none}.tu-text{position:absolute;min-width:80px;min-height:0;height:auto;background:rgb(255 255 255 / .85);border:1px dashed #2f62d6;padding:0 2px;font-weight:700;line-height:1.15;resize:none;z-index:2}
 .tu-sw{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}
 .ftbl{width:100%;border-collapse:collapse}.ftbl th,.ftbl td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}.ftbl input{width:18px;height:18px}
+.srow{padding:0;gap:0}.srow-head{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;min-width:0}.srow-head:hover{background:var(--soft)}.srow-th .songthumb{width:38px;height:50px}
+.srow-t{flex:1;min-width:0;display:flex;flex-direction:column}.srow-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.srow-t small{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem}
+.srow-key{font-weight:800;font-size:.85rem;border:1px solid var(--line);border-radius:6px;padding:1px 7px}.srow-flags{display:flex;gap:4px;align-items:center}.srow-flags i{font-style:normal;font-size:.9rem}.srow-flags i.no{opacity:.22;filter:grayscale(1)}.srow-car{color:var(--muted)}
+.srow-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;border-top:1px dashed var(--line);background:var(--soft)}.srow-edit{padding:10px;border-top:1px solid var(--line)}.srow.open{border-color:var(--team,var(--accent))}
+@media (max-width:520px){.srow-flags small{display:none}.srow-head{gap:8px}}
+.libtools>summary{cursor:pointer;font-size:.85rem;color:var(--muted);padding:4px 0}
+.flowbar{display:flex;flex-direction:column;gap:6px;padding-bottom:8px;border-bottom:1px dashed var(--line)}.flowline{font-weight:800;color:#1d3fb3;background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:4px 10px;min-width:0;overflow-wrap:anywhere}.flowline.empty{color:var(--muted);font-weight:500}
+.stage .mk.flowtop{left:2%;top:.6%;max-width:96%;background:rgb(255 255 255 / .88);color:#1d3fb3;font-weight:800;font-size:2.6cqw;line-height:1.25;padding:.15em .4em;border-radius:.3em;pointer-events:none;font-family:var(--font-body)}
 .demosum{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none}.demosum::-webkit-details-marker{display:none}.demosum .spacer{flex:1}
 .demoban.mini{display:flex;align-items:center;gap:8px;padding:6px 12px}
 .tourcard .tc-then{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,#2f62d6 8%,var(--sheet));border:1px solid color-mix(in srgb,#2f62d6 40%,var(--line))}
@@ -929,7 +939,7 @@ function updUndo(){const off=!H.list.length&&JSON.stringify(S.cur)===H.last;for(
 function undoConti(){if(!curEditable())return;clearTimeout(histT);snapHist();if(!H.list.length)return toast("더 되돌릴 내용이 없어요");
   H.last=H.list.pop();S.cur=fixConti(JSON.parse(H.last));H.owner=S.cur;S.dirty=true;saveDraft();render();toast("한 단계 되돌렸어요");}
 function resetConti(btn){if(!S.curId&&!curEditable())return;if(!btn.dataset.armed){btn.dataset.armed="1";btn.textContent=S.curId?"새로 시작할까요?":"정말 비울까요?";setTimeout(()=>{delete btn.dataset.armed;btn.textContent="초기화";},3000);return;}
-  if(S.curId){S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();render();window.scrollTo({top:0});toast("새 콘티를 시작했어요. 저장해 둔 콘티는 「지난 콘티」에 그대로 있어요",3600);return;}
+  if(S.curId){S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();render();window.scrollTo({top:0});toast("새 콘티를 시작했어요. 저장해 둔 콘티는 「콘티 목록」에 그대로 있어요",3600);return;}
   clearTimeout(histT);snapHist();const b=blankConti();b.date=S.cur.date||b.date;const g=guessWtype(b.date);b.wtype=g.wtype;b.wtypeCustom=g.custom;b.team=S.cur.team||S.team;
   S.cur=b;H.owner=b;H.list.push(H.last);H.last=JSON.stringify(b);S.dirty=true;saveDraft();render();toast("내용을 비웠어요. 「실행 취소」로 되돌릴 수 있어요",3200);}
 
@@ -1059,7 +1069,7 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
   try{await S.db.doc(`songs/${song.id}`).update({yt:[...(song.yt||[]),yid],updatedAt:Date.now()});}catch(e){}}
 
 /* ---------- tabs ---------- */
-const NAVG={home:[["home","홈"]],conti:[["bible","말씀 · 묵상"],["write","콘티 작성"],["sheet","악보 편집"],["pptmake","PPT 만들기"],["list","지난 콘티"]],songs:[["songs","찬양 라이브러리"],["ppt","PPT 라이브러리"]],team:[["cal","일정"],["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bylaws","회칙"]],me:[["me","나"]]};
+const NAVG={home:[["home","홈"]],conti:[["bible","말씀 · 묵상"],["write","콘티 작성"],["sheet","악보 편집"],["pptmake","PPT 만들기"],["list","콘티 목록"]],songs:[["songs","찬양 라이브러리"],["ppt","PPT 라이브러리"]],team:[["cal","일정"],["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bylaws","회칙"]],me:[["me","나"]]};
 const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
 const PROJ_G=["home","conti","songs","team","me"];const PROJ_TEAM=["members"];
 /* 역할: admin(관리자) · lead(리더 비밀번호) · writer(인도자·리더·작성자) · clerk(서기) · member(팀원)
@@ -1086,6 +1096,15 @@ function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;const pj=isProject(
   $(".bnav-in").style.gridTemplateColumns=shown&&shown<5?`repeat(${shown},1fr)`:"";
   const on=!!S.team;$("#tabsNav").hidden=!on;document.body.classList.toggle("has-bnav",on);}
 function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)return null;
+  /* 콘티: 큰 칸 두 개 (콘티 만들기 · 콘티 목록) + 만들기 안의 ①~④ 단계 */
+  if(g==="conti"){const make=subs.filter(([k])=>k!=="list"),hasList=subs.some(([k])=>k==="list");const inMake=S.tab!=="list";if(inMake)S.lastMake=S.tab;
+    const NM={list:"지난 콘티"};const top=h("div",{class:"subtabs",role:"tablist","aria-label":"콘티 메뉴"},
+      make.length?h("button",{type:"button",role:"tab","aria-selected":String(inMake),text:"✍️ 콘티 만들기",onclick:()=>{if(!inMake)goTab(make.some(([k])=>k===S.lastMake)?S.lastMake:make[0][0]);}}):null,
+      hasList?h("button",{type:"button",role:"tab","aria-selected":String(!inMake),text:"📚 콘티 목록",onclick:()=>{if(inMake)goTab("list");}}):null);
+    if(!inMake||make.length<2)return top;
+    const steps=h("div",{class:"csteps",role:"tablist","aria-label":"콘티 만들기 단계"},make.map(([k,l],i)=>[i?h("span",{class:"cs-arr","aria-hidden":"true",text:"›"}):null,
+      h("button",{type:"button",role:"tab","aria-selected":String(k===S.tab),onclick:()=>{if(k!==S.tab)goTab(k);}},h("i",{text:circ(i+1)}),l)]));
+    return h("div",{class:"ctabs"},top,steps);}
   return h("div",{class:"subtabs",role:"tablist","aria-label":"작은 메뉴"},subs.map(([k,l])=>h("button",{type:"button",role:"tab","aria-selected":String(k===S.tab),text:l,onclick:()=>{if(k!==S.tab)goTab(k);}})));}
 {const tt=h("button",{type:"button",class:"totop","aria-label":"맨 위로",title:"맨 위로",text:"↑",onclick:()=>window.scrollTo({top:0,behavior:"smooth"})});document.body.append(tt);
   const upd=()=>tt.classList.toggle("on",window.scrollY>innerHeight*.8);window.addEventListener("scroll",upd,{passive:true});upd();}
@@ -1311,14 +1330,14 @@ const TOURS={
     {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요. 「콘티 · 악보 보기」로 곡 순서와 악보를 보고, 「🎼 연습 모드」로 곡마다 한 화면씩 넘기며 연습해요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"[홈] 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 · 「어려워요」를 눌러 알려요. 인도자 · 리더는 팀원들의 응답을 보고 편성을 짜요.",sel:byH2("참여 응답")},
     {tab:"home",t:"[홈] 앞으로 2주 일정",x:"앞으로 2주 동안의 예배 · 연습 · 모임이 날짜순으로 나와요. 「+ 일정」으로 바로 넣고, 「달력 보기」로 한 달을 한눈에 봐요.",sel:()=>byH2("앞으로 2주 일정")()||byH2("다가오는 일정")()},
-    {tab:"bible",t:"[콘티] 한눈에",x:"콘티 메뉴는 예배 하나를 준비하는 순서대로 칸이 놓여 있어요. 말씀 · 묵상 → 콘티 작성 → 악보 편집 → PPT 만들기, 그리고 예전 콘티를 다시 보는 「지난 콘티」. 왼쪽부터 차례로 따라가면 준비가 끝나요.",sel:()=>document.querySelector("#main .subtabs")},
+    {tab:"bible",t:"[콘티] 한눈에",x:"콘티 메뉴는 큰 칸 두 개예요. 「✍️ 콘티 만들기」 안에는 예배를 준비하는 순서대로 ① 말씀 · 묵상 → ② 콘티 작성 → ③ 악보 편집 → ④ PPT 만들기 단계가 있고, 「📚 콘티 목록」에서는 예전 콘티를 다시 봐요. 단계를 차례로 따라가면 준비가 끝나요.",sel:()=>document.querySelector("#main .ctabs")||document.querySelector("#main .subtabs")},
     {tab:"bible",t:"[콘티] 말씀 · 묵상",x:"설교 본문을 넣고 「말씀 펼치기」로 본문을 읽어요. 밑줄 친 낱말을 누르면 뜻이 떠요. 묵상 메모는 나중에 송리스트 공지에 함께 들어가요.",sel:()=>document.querySelector("#main .subtabs+.sheet")||document.querySelectorAll("#main .sheet")[1]},
     {tab:"write",wt:"info",t:"[콘티] 콘티 작성 · 예배 정보",x:"날짜 · 예배 · 본문 · 설교 제목을 확인해요. 「참여자」에서 자리마다 + 를 눌러 사람을 고르거나, 「불러오기」로 편성표나 저장해 둔 편성(편성 A · B)을 한 번에 채워요.",sel:()=>document.querySelector("#rosterBox")},
     {tab:"write",wt:"songs",t:"[콘티] 콘티 작성 · 찬양",x:"「찬양」 탭에서 여는 찬양 · 예배 찬양 · 특송 · 설교 후 찬양을 채워요. 빈 칸을 누르면 곡 찾기로 가요. 곡마다 키(Key) · 악보 · 메모를 정하고, ⠿를 잡고 끌어 순서를 바꿔요.",sel:()=>document.querySelector("#list-before")},
     {tab:"write",wt:"songs",t:"[콘티] 저장 · 확정 · 공지",x:"다 쓰면 「저장」을 눌러요. 처음 한 번 저장하면 그다음부터는 저절로 저장돼요. 콘티가 정해지면 「🔒 확정하기」로 잠그고, 「송리스트 공지」로 팀 단톡방에 보낼 글을 만들어요. 「+ 연습 일정」도 여기서 넣어요.",sel:()=>document.querySelector("#saveBtn")&&document.querySelector("#saveBtn").closest(".sheet")},
     {tab:"sheet",t:"[콘티] 악보 편집",x:"곡마다 악보에 구간(Intro · 1절 · 후렴) 표시를 하고, 곡 흐름 · 연주 시간을 적어요. 「🧩 자유롭게 편집」으로 쪽을 자르고 붙일 수 있어요. 마지막에 「콘티 출력」으로 팀원에게 줄 악보 묶음을 만들어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"pptmake",t:"[콘티] PPT 만들기",x:"콘티의 곡 가사로 예배 가사 PPT를 만들어요. 템플릿을 고르면 우리 교회 PPT 모양 그대로 나와요. 미리 보고 「PPT 받기」를 누르면 끝이에요.",sel:()=>document.querySelector("#main .sheet")},
-    {tab:"list",t:"[콘티] 지난 콘티",x:"저장해 둔 콘티가 날짜순으로 모여 있어요. 예전 콘티를 열어 악보 · 공지를 다시 보거나, 「불러오기」로 이어서 고칠 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
+    {tab:"list",t:"[콘티] 콘티 목록",x:"저장해 둔 콘티가 날짜순으로 모여 있어요. 예전 콘티를 열어 악보 · 공지를 다시 보거나, 「불러오기」로 이어서 고칠 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
     {tab:"songs",t:"[라이브러리] 한눈에",x:"라이브러리는 교회 전체가 함께 쓰는 곳이에요. 「찬양 라이브러리」는 곡 자체와 악보를, 「PPT 라이브러리」는 화면에 띄울 가사와 PPT 템플릿을 모아 둬요. 곡 목록은 두 곳이 같아요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"songs",t:"[라이브러리] 찬양 라이브러리",x:"곡을 찾고, 없으면 바로 등록해요. 썸네일을 누르면 코드별 악보를 보고, 가사도 여기서 보고 고쳐요. 한 번 넣어 두면 다음 콘티부터 그대로 불러와요.",sel:()=>document.querySelector("#song-q")},
     {tab:"ppt",t:"[라이브러리] PPT 라이브러리",x:"예배 PPT를 올려 템플릿으로 만들고, 곡마다 가사 PPT를 넣어 둬요. 가사만 있어도 템플릿에 맞춰 PPT를 만들 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
@@ -1778,7 +1797,7 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
     for(const{it,k,l,no}of items.slice(ti,ti+1)){const song=S.songs.find(x=>x.id===it.songId);const cur=vers(song).find(v=>v.vid===it.verId);
       const thumbs=h("div",{class:"sh-thumbs"},(it.pages||[]).map((p,pi)=>{const im=h("img",{alt:`${it.title} 악보 ${pi+1}쪽`,loading:"lazy"});getImg(p.imgId).then(u=>{if(u)im.src=u;});
         return h("button",{type:"button",class:"sh-thumb",title:"눌러서 악보에 표시 (형광펜 · 구간)",disabled:!editable,onclick:()=>edit()},im,(it.pages||[]).length>1?h("span",{class:"hint",text:`${pi+1}쪽`}):null);}));
-      const edit=()=>openScoreEditor({title:`${it.title}${cur?` · ${cur.name||""}`:""}`,pages:it.pages,songId:it.songId,verId:cur?it.verId:"",onDone:(pages,vid)=>{it.pages=pages;if(vid)it.verId=vid;markDirty();draw();}});
+      const edit=()=>openScoreEditor({item:it,title:`${it.title}${cur?` · ${cur.name||""}`:""}`,pages:it.pages,songId:it.songId,verId:cur?it.verId:"",onDone:(pages,vid)=>{it.pages=pages;if(vid)it.verId=vid;markDirty();draw();}});
       const keyIn=h("input",{type:"text",class:"key","aria-label":"키",placeholder:"Key",value:it.key||"",disabled:!editable,style:"width:70px",oninput:e=>{it.key=e.target.value;markDirty();}});
       S.flowOpen=S.flowOpen||new Set();S.flowOpen.add(it.uid);   /* 이 화면에서는 흐름 칸을 펼쳐 둬요 */
       const shc=h("div",{class:"card sh-card"},
@@ -2207,7 +2226,7 @@ function ytAddModal(c,onDone){if(!c)return;if(DEMO){c.ytSync={sig:refIds(c).join
         /videoNotFound/.test(r)?"찾을 수 없는 영상이 있어요 (비공개 · 삭제된 영상). 그 곡의 유튜브 주소를 확인해 주세요.":`담지 못했어요 (${r})`;}}});
   const md=modal(`🎵 ${teamName(S.team)} 재생목록 업데이트`,h("div",{class:"panel-body"},
     h("p",{},`재생목록의 예전 영상을 모두 빼고, 이 콘티 순서대로 영상이 있는 곡 `,h("b",{text:`${ids.length}곡`}),`을 `,h("a",{href:`https://www.youtube.com/playlist?list=${y.playlistId}`,target:"_blank",rel:"noopener",text:`${y.name} 재생목록 ↗`}),`에 다시 채워요.`),
-    !nItems?h("p",{class:"banner warn",text:"지금 열린 콘티에 곡이 없어요. 「지난 콘티」에서 담을 콘티를 열거나, 콘티 작성에서 곡을 먼저 넣어 주세요."}):
+    !nItems?h("p",{class:"banner warn",text:"지금 열린 콘티에 곡이 없어요. 「콘티 목록」에서 담을 콘티를 열거나, 콘티 작성에서 곡을 먼저 넣어 주세요."}):
     noYt.length?h("p",{class:"hint",style:ids.length?"":"color:var(--warn)",text:`유튜브 주소가 없는 곡: ${noYt.join(", ")} → 콘티 작성의 곡 카드 「레퍼런스 유튜브 주소」 칸에 붙여 넣으면 담을 수 있어요`}):null,
     h("p",{class:"hint",text:"재생목록 주인 구글 계정으로 로그인해야 바꿀 수 있어요."}),
     h("p",{class:"hint",text:"처음에는 구글이 「확인되지 않은 앱」이라고 알려 줄 수 있어요. 우리 교회 앱이니 「고급 → 계속」을 누르면 돼요."}),st,
@@ -2376,6 +2395,13 @@ const fmtDur=(sec,pad)=>{const m=Math.floor(sec/60),ss=sec%60;return `${pad?Stri
 function contiTimes(c){const out={};let cum=0;for(const[k]of SECTIONS)for(const it of c[k]||[]){const d=parseDur(it.dur);cum+=d;out[it.uid]={d,cum};}return{map:out,total:cum};}
 const flowLines=it=>String(it.flow||"").split("\n").map(l=>l.replace(/^\s*(?:[①-⑳]|\(?\d{1,2}[.)]|[-*·•])\s*/,"").trim()).filter(Boolean);
 const TRANS=["건반 전주","바로 이어짐","기도 반주","멘트 후 시작","드럼 카운트"];
+/* 진행 순서 (Intro → V1 → C …): 곡 흐름(it.flow)과 같은 자료 · 「악보 맨 위에」를 켜면 첫 쪽 위에 한 줄로 찍혀요 */
+const FLOW_TOKS=["Intro","V1","V2","V3","V4","V5","Pre","C","B","Inter","Outro","Ending"],FLOW_MODS=["× 2","× 3","KEY UP"];
+const flowOneLine=it=>flowLines(it).join(" → ");
+function syncFlowTop(it){for(const p of it.pages||[])delete p.flowTop;const p=(it.pages||[])[0];if(it.flowTop&&p&&flowLines(it).length)p.flowTop=flowOneLine(it);}
+function drawFlowTop(x,p,dx,dy,dw,dh){if(!p||!p.flowTop)return;const fs=Math.max(10,dw*.026);x.save();x.font=`800 ${fs}px ${FB}`;x.textBaseline="top";
+  const lines=wrapText(x,p.flowTop,dw*.94);const lh=fs*1.25,bh=lines.length*lh+fs*.5;const bw=Math.min(dw*.96,Math.max(...lines.map(l=>x.measureText(l).width))+fs*.8);
+  x.globalAlpha=.88;x.fillStyle="#fff";rr(x,dx+dw*.02,dy+dh*.006,bw,bh,fs*.3);x.fill();x.globalAlpha=1;x.fillStyle="#1d3fb3";lines.forEach((l,i)=>x.fillText(l,dx+dw*.02+fs*.4,dy+dh*.006+fs*.25+i*lh));x.restore();}
 const FLOW_CHIPS=["1절","2절","3절","4절","후렴","1후","2후","3후","4후","브릿지","Intro","간주","Outro","× 2","× 3","KEY UP","기도 (반주)"];
 /* 곡 메모 → 흐름: 「후렴 세 번, 2절 후 브릿지 2번, 마지막 후렴 키업」 같은 말을 읽어 흐름 줄로 바꿔요 (못 읽으면 null) */
 function memoToFlow(memo,base){const t=String(memo||"");if(!t.trim())return null;
@@ -2403,7 +2429,8 @@ function memoToFlow(memo,base){const t=String(memo||"");if(!t.trim())return null
   return lines.join("\n");}
 function flowBox(it,song,key){S.flowOpen=S.flowOpen||new Set();const ed=curEditable();
   const sum=()=>{const n=flowLines(it).length;return [n?`흐름 ${n}단계`:"",it.intro&&(it.intro.text||it.intro.imgId)?"인트로":"",it.dur?`${it.dur}`:"",it.trans||""].filter(Boolean).join(" · ")||"아직 비어 있어요";};
-  const sumEl=h("span",{class:"hint",text:sum()});const upd=()=>{markDirty();sumEl.textContent=sum();updTimes();};
+  const sumEl=h("span",{class:"hint",text:sum()});const upd=()=>{syncFlowTop(it);markDirty();sumEl.textContent=sum();updTimes();if(topCk){topCk.disabled=!flowLines(it).length;}};
+  const topCk=ed?h("input",{type:"checkbox",checked:!!it.flowTop,disabled:!flowLines(it).length,onchange:e=>{it.flowTop=e.target.checked;upd();}}):null;
   const ta=h("textarea",{id:`fl-${it.uid}`,rows:4,disabled:!ed,"aria-label":"곡 흐름",placeholder:"한 줄에 하나씩 · 번호(①②)는 저절로 붙어요\n예) 1절 × 2\n2절\n후렴 (힘을 내세요~) × 3",value:it.flow||"",style:"min-height:96px",oninput:e=>{it.flow=e.target.value;upd();}});
   /* 단추는 커서 자리에 들어가요. 「× 2 · KEY UP」은 그 줄 끝에 붙고, 「1후」는 그 줄이 「1절」로 끝나면 「후렴」만 붙여 「1절 후렴」이 돼요 */
   let lastPos=null;ta.addEventListener("blur",()=>{lastPos=[ta.selectionStart,ta.selectionEnd];});
@@ -2416,7 +2443,7 @@ function flowBox(it,song,key){S.flowOpen=S.flowOpen||new Set();const ed=curEdita
     else{const word=m?`${m[1]}절 후렴`:t;const before=v.slice(0,p0),after=v.slice(p1);out=(before&&!before.endsWith("\n")?"\n":"")+word+(after&&!after.startsWith("\n")?"\n":"");at0=p0;at1=p1;}
     ta.value=v.slice(0,at0)+out+v.slice(at1);const np=at0+out.length-(out.endsWith("\n")&&!/^×|^KEY/.test(t)?1:0);ta.focus();ta.selectionStart=ta.selectionEnd=np;lastPos=[np,np];
     it.flow=ta.value;upd();};
-  const chips=h("div",{class:"row",style:"gap:4px;flex-wrap:wrap"},FLOW_CHIPS.map(t=>h("button",{type:"button",class:"btn sm chipbtn",disabled:!ed,text:t,onclick:()=>ins(t)})));
+  const chips=h("div",{class:"row",style:"gap:4px;flex-wrap:wrap"},FLOW_CHIPS.map(t=>h("button",{type:"button",class:"btn sm chipbtn",disabled:!ed,text:t,onclick:()=>ins(t)})),topCk?h("label",{class:"row hint",style:"gap:4px;margin-left:auto"},topCk,"악보 맨 위에 한 줄로 넣기"):null);
   /* 인트로: 코드로 쓰기 / 악보에서 잘라 쓰기 / 그림 올리기 — 편한 걸로 */
   it.intro=it.intro||null;const introPrev=h("div",{class:"row",style:"gap:8px;align-items:center"});
   const itxt=h("input",{type:"text",id:`it-${it.uid}`,disabled:!ed,"aria-label":"인트로 코드",placeholder:"인트로 코드 (예: G  G7  C  Cm  G  D7  C  G)",value:(it.intro&&it.intro.text)||"",style:"flex:1;min-width:200px",
@@ -2810,7 +2837,7 @@ document.addEventListener("keydown",e=>{if(S.tab!=="write"||!(e.ctrlKey||e.metaK
 /* =========================================================
    SCORE EDITOR
    ========================================================= */
-function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault}){
+function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item}){
   const E={pages:clone(pages||[]),cur:0,tool:"label",label:"Intro",custom:"",verse:1,undo:[]};
   const editable=isSongDefault?S.canWrite:curEditable();
   const push=()=>{E.undo.push(clone(E.pages));if(E.undo.length>40)E.undo.shift();};
@@ -2819,7 +2846,7 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault}){
   const alsoDefault=h("input",{type:"checkbox",id:"se-default",checked:false});
   const foot=[
     (!isSongDefault&&songId&&!String(songId).startsWith("local-"))?h("label",{class:"row hint",htmlFor:"se-default",style:"margin-right:auto"},alsoDefault,verId?"곡에 저장된 이 악보에도 고친 내용 반영하기":"이 악보를 곡에 새 악보로 등록하기 (다음에 제목만 골라도 따라 나와요)"):null,
-    h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),
+    h("button",{class:"btn",text:"취소",onclick:()=>{if(item)syncFlowTop(item);md.close();}}),
     h("button",{class:"btn primary",text:"완료",disabled:!editable,onclick:async()=>{let vid=null;
       if(alsoDefault.checked&&!isSongDefault&&songId&&!String(songId).startsWith("local-")){vid=await rememberScore(songId,verId,E.pages,{keepMarks:true});if(vid)toast(verId?"곡에 저장된 악보에도 반영했어요":"곡에 새 악보로 등록했어요");}
       onDone(clone(E.pages),vid);md.close();}})];
@@ -2827,17 +2854,26 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault}){
   const md=modal(`악보 편집 · ${title}`,body,foot,"editor");
 
   function drawTools(){tools.replaceChildren();
+    if(item&&editable){const toks=()=>flowLines(item);const setToks=a=>{item.flow=a.join("\n");item.flowTop=item.flowTop!==false;syncFlowTop({...item,pages:E.pages});markDirty();drawTools();drawStage();};
+      const push=t=>{const a=toks();if(FLOW_MODS.includes(t)){if(!a.length)return;a[a.length-1]=a[a.length-1].replace(/\s*(× \d|KEY UP)$/,"")+" "+t;}else a.push(t);setToks(a);};
+      const line=flowOneLine(item);
+      tools.append(h("div",{class:"flowbar"},h("div",{class:"row",style:"gap:6px;align-items:center;flex-wrap:wrap"},h("b",{class:"hint",text:"진행 순서"}),
+          h("span",{class:"flowline"+(line?"":" empty"),text:line||"아래 단추를 순서대로 누르세요 (Intro → V1 → C …)"}),h("span",{class:"spacer"}),
+          h("button",{type:"button",class:"btn sm",text:"⌫",title:"마지막 하나 지우기",disabled:!line,onclick:()=>{const a=toks();a.pop();setToks(a);}}),
+          h("button",{type:"button",class:"btn sm ghost danger",text:"비우기",disabled:!line,onclick:()=>setToks([])}),
+          h("label",{class:"row hint",style:"gap:4px"},h("input",{type:"checkbox",checked:item.flowTop!==false&&!!line,disabled:!line,onchange:e=>{item.flowTop=e.target.checked;syncFlowTop({...item,pages:E.pages});markDirty();drawStage();}}),"악보 맨 위에 넣기")),
+        h("div",{class:"row",style:"gap:4px;flex-wrap:wrap"},...FLOW_TOKS.map(t=>h("button",{type:"button",class:"btn sm chipbtn",text:t,onclick:()=>push(t)})),h("span",{class:"hint",style:"margin:0 2px",text:"·"}),...FLOW_MODS.map(t=>h("button",{type:"button",class:"btn sm chipbtn ghost",text:t,onclick:()=>push(t)})))));}
     const seg=(opts,val,set)=>h("div",{class:"seg"},opts.map(([v,l])=>h("button",{type:"button","aria-pressed":String(val===v),text:l,onclick:()=>{set(v);drawTools();drawStage();}})));
     const fileIn=h("input",{type:"file",id:"se-file",accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:e=>addFiles([...e.target.files])});
     tools.append(h("div",{class:"toolrow"},
       seg([["label","구간 표시"],["hl","형광펜"]],E.tool,v=>E.tool=v),
       h("button",{class:"btn sm",text:"🖌 악보 고치기",title:"지우개로 덮고 · 펜과 글자로 이 쪽 그림을 고쳐요 (원본은 그대로 남아요)",disabled:!E.pages[E.cur],onclick:async()=>{const pg=E.pages[E.cur];if(!pg)return;
-        const r=await touchupEditor(title,pg);if(!r)return;push();if(r.edits.length){pg.imgId=r.imgId;pg.orig=r.orig;pg.edits=r.edits;}else{pg.imgId=r.orig;delete pg.orig;delete pg.edits;}drawAll();
+        const r=await touchupEditor(title,pg);if(!r)return;push();if(r.edits.length){if(!pg.ow){pg.ow=pg.w;pg.oh=pg.h;}pg.imgId=r.imgId;pg.orig=r.orig;pg.edits=r.edits;pg.w=r.w;pg.h=r.h;}else{pg.imgId=r.orig;delete pg.orig;delete pg.edits;if(pg.ow){pg.w=pg.ow;pg.h=pg.oh;delete pg.ow;delete pg.oh;}}drawAll();
         const lp=songId&&!String(songId).startsWith("local-")?libPageOf(songId,{imgId:r.orig,orig:r.orig}):null;
-        if(lp&&S.canWrite){const res=await touchupSave(lp.song,lp.vid,lp.pi,r.imgId,r.orig,r.edits);if(res)toast(`라이브러리 곡 악보에도 저장했어요${res.n?` · 다가오는 콘티 ${res.n}개에도`:""}`,3500);}
+        if(lp&&S.canWrite){const res=await touchupSave(lp.song,lp.vid,lp.pi,r.imgId,r.orig,r.edits,r);if(res)toast(`라이브러리 곡 악보에도 저장했어요${res.n?` · 다가오는 콘티 ${res.n}개에도`:""}`,3500);}
         else toast("이 쪽을 고쳤어요. 「완료」를 눌러 저장하세요",3000);}}),
       E.pages[E.cur]&&E.pages[E.cur].orig?h("button",{class:"btn sm ghost",text:"↺ 원본으로",onclick:()=>{const pg=E.pages[E.cur];askConfirm("원본 악보로 되돌리기",[h("p",{text:"수정된 이력이 있는 악보예요."}),h("p",{class:"hint",text:"지우개 · 펜 · 글자로 고친 것을 모두 빼고 처음 올린 원본 그림으로 돌아가요."})],"원본으로 되돌리기",async()=>{
-        const orig=pg.orig,lp=songId?libPageOf(songId,pg):null;push();pg.imgId=orig;delete pg.orig;delete pg.edits;drawAll();if(lp&&S.canWrite)await touchupSave(lp.song,lp.vid,lp.pi,null,orig,[]);toast("원본 악보로 되돌렸어요");});}}):null,
+        const orig=pg.orig,lp=songId?libPageOf(songId,pg):null;push();pg.imgId=orig;delete pg.orig;delete pg.edits;if(pg.ow){pg.w=pg.ow;pg.h=pg.oh;delete pg.ow;delete pg.oh;}drawAll();if(lp&&S.canWrite)await touchupSave(lp.song,lp.vid,lp.pi,null,orig,[]);toast("원본 악보로 되돌렸어요");});}}):null,
       h("span",{class:"spacer"}),
       h("button",{class:"btn sm",text:"되돌리기",disabled:!E.undo.length,onclick:()=>{E.pages=E.undo.pop();E.cur=Math.min(E.cur,Math.max(0,E.pages.length-1));drawAll();}}),
       h("button",{class:"btn sm ghost danger",text:"표시 모두 지우기",title:"모든 쪽의 구간 표시 · 형광펜을 한꺼번에 지워요 (되돌리기로 살릴 수 있어요)",disabled:!E.pages.some(p=>(p.marks||[]).length),onclick:()=>{push();E.pages.forEach(p=>p.marks=[]);drawAll();toast("표시를 모두 지웠어요");}}),
@@ -2866,7 +2902,7 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault}){
     stage.style.background="";stage.style.boxShadow="";
     const img=h("img",{alt:`${title} ${E.cur+1}쪽`});const ld=h("div",{class:"loading",text:"악보 불러오는 중…",style:p.w?`aspect-ratio:${p.w}/${p.h}`:""});
     stage.append(ld);getImg(p.imgId).then(u=>{if(!u){ld.textContent="악보를 불러오지 못했어요";return;}img.src=u;ld.replaceWith(img);});
-    p.marks.forEach((mk,mi)=>stage.append(markEl(mk,mi)));}
+    p.marks.forEach((mk,mi)=>stage.append(markEl(mk,mi)));if(p.flowTop)stage.append(h("div",{class:"mk flowtop",text:p.flowTop}));}
   function markEl(mk,mi){let el;
     if(mk.k==="H")el=h("div",{class:"mk hl",style:`left:${mk.x*100}%;top:${mk.y*100}%;width:${mk.w*100}%;height:${mk.h*100}%;background:${VCOL[(mk.v||1)-1]}`,title:`${mk.v}절`});
     else el=h("div",{class:"mk lb",style:`left:${mk.x*100}%;top:${mk.y*100}%`,text:mk.t});
@@ -3134,7 +3170,7 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
       h("span",{class:"spacer"}),fx.length?h("button",{class:"btn sm primary",text:"확인하고 바로잡기",onclick:hymnFixModal}):null,old?h("button",{class:"btn sm",text:"찬송가 → 새찬송가",onclick:newHymnFixModal}):null));}
   m.append(h("div",{class:"sheet"},h("h2",{},"찬양 라이브러리",h("span",{class:"sub",text:`모두 ${S.songs.length}곡 · 교회 전체가 함께 써요`})),
     h("input",{type:"search",id:"song-q",placeholder:"곡 찾기 · 초성 · 찬송가 장 번호 (예: 524) · 없으면 바로 등록",oninput:e=>{q=e.target.value;draw();}}),h("div",{style:"height:8px"}),chips,
-    canDel?h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),S.songs.some(x=>TONGIL_TAG.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔢 통일찬송가 번호 붙이기",onclick:tongilFixModal}):null,S.songs.some(x=>OLD_HYMN.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔁 찬송가 → 새찬송가",onclick:newHymnFixModal}):null,(hymnFixRows()||[]).length?h("button",{class:"btn sm ghost",text:`🎼 새찬송가 표시 바로잡기 (${hymnFixRows().length})`,onclick:hymnFixModal}):null,h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}})):null,S.canWrite?h("div",{class:"row",style:"margin-top:8px;gap:8px;flex-wrap:wrap"},h("button",{class:"btn sm",text:"🎼 악보 올리기 (제목 자동 찾기)",title:"악보 그림 · PDF나 가사 PPT를 이 화면에 끌어다 놓아도 돼요",onclick:()=>scoreAutoModal()})):null,h("div",{style:"height:10px"}),box));
+    canDel?h("details",{class:"libtools",open:!!S.songSel},h("summary",{text:"🔧 라이브러리 정리 도구 (중복 · 이름 정리 · 여러 곡 지우기)"}),h("div",{class:"row",style:"margin-top:6px"},h("button",{class:"btn sm ghost",text:"🔍 중복 곡 찾기 · 합치기",onclick:dupModal}),S.songs.some(x=>TONGIL_TAG.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔢 통일찬송가 번호 붙이기",onclick:tongilFixModal}):null,S.songs.some(x=>OLD_HYMN.test(x.title||""))?h("button",{class:"btn sm ghost",text:"🔁 찬송가 → 새찬송가",onclick:newHymnFixModal}):null,(hymnFixRows()||[]).length?h("button",{class:"btn sm ghost",text:`🎼 새찬송가 표시 바로잡기 (${hymnFixRows().length})`,onclick:hymnFixModal}):null,h("button",{class:"btn sm ghost",text:"🏷 악보 이름을 조성으로",onclick:verRenameModal}),h("button",{class:"btn sm ghost danger",text:"🧹 여러 곡 골라 지우기",title:"잘못 들어간 곡을 골라 한꺼번에 지워요",onclick:()=>{S.songSel=S.songSel?null:new Set();draw();}}))):null,S.canWrite?h("div",{class:"row",style:"margin-top:8px;gap:8px;flex-wrap:wrap"},h("button",{class:"btn sm",text:"🎼 악보 올리기 (제목 자동 찾기)",title:"악보 그림 · PDF나 가사 PPT를 이 화면에 끌어다 놓아도 돼요",onclick:()=>scoreAutoModal()})):null,h("div",{style:"height:10px"}),box));
   /* titles that are not in the library yet (21세기 찬송가 645곡 · 곡집 제목) */
   const more=h("div",{class:"cards"});
   const addFromList=async t=>{if(S.songs.some(s=>norm(s.title)===norm(t)))return toast("이미 라이브러리에 있어요");await createSong(t,null);toast(`「${t}」을(를) 라이브러리에 넣었어요`);draw();};
@@ -3277,29 +3313,38 @@ function songCard(s,used){const local=s.id.startsWith("local-");const can=S.canW
   const th=hasSc?h("button",{type:"button",class:"songthumb click",text:"",title:`악보 보기 · ${verLabel(tv)}${nV>1?` 외 ${nV-1}개`:""}`,"aria-label":"악보 보기",onclick:()=>versionsViewer(s,tv.vid)}):h("span",{class:"songthumb",text:"♪",title:"악보 없음"});
   if(nV>1)th.append(h("i",{class:"thn",text:String(nV)}));
   if(tv&&tv.pages.length)getImg(tv.pages[0].imgId).then(u=>{if(u){th.style.backgroundImage=`url("${u}")`;}});
-  const addBtn=h("button",{class:"btn sm primary",text:"콘티에 추가",title:"지금 쓰는 콘티의 예배 찬양 끝에 넣어요",onclick:()=>{if(!curEditable())return toast("지금 열린 콘티는 고칠 수 없어요. 「콘티 작성」에서 새 콘티를 열어 주세요");
+  const addBtn=h("button",{class:"btn sm primary",text:"＋ 지금 콘티에 넣기",title:"지금 쓰는 콘티의 예배 찬양 끝에 넣어요",onclick:()=>{if(!curEditable())return toast("지금 열린 콘티는 고칠 수 없어요. 「콘티 작성」에서 새 콘티를 열어 주세요");
     S.cur.before.push(itemFromSong(s));markDirty();saveDraft();toast(`「${s.title}」을(를) 예배 찬양 ${S.cur.before.length}번째로 넣었어요`);}});
-  return h("div",{class:"card"},
-    h("div",{class:"row",style:"flex-wrap:nowrap;align-items:flex-start"},th,h("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"},
-      h("div",{class:"row",style:"flex-wrap:nowrap"},sp.hymn?fitTitle(h("div",{class:"tbox"},tIn,h("span",{class:"tsuffix",text:`(새찬송가 ${sp.hymn}장${sp.arr?`, ${sp.arr} 편곡`:""})`}))):/통일/.test(s.title||"")?h("div",{class:"tbox"},tIn):tIn,keyIn,(()=>{const on=favs().has(s.id);const b=h("button",{type:"button",class:"star","aria-pressed":String(on),"aria-label":"즐겨찾기",title:"즐겨찾기 (이 기기에 저장)",text:on?"★":"☆",onclick:()=>{const v=toggleFav(s.id);b.setAttribute("aria-pressed",String(v));b.textContent=v?"★":"☆";toast(v?"즐겨찾기에 넣었어요":"즐겨찾기에서 뺐어요");if(S.songF&&S.songF.f==="fav"&&renderSongs.redraw)renderSongs.redraw();}});return b;})()),
-      h("div",{class:"row sbadges"},
-
-        hasSc?null:h("label",{class:"sbadge no filebtn",title:can?"악보 사진이나 PDF를 골라 넣어요":"",htmlFor:`snew-${s.id}`},can?"악보 없음 · 넣기":"악보 없음",
-          can?h("input",{type:"file",id:`snew-${s.id}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
-            const pages=[];toast("악보를 올리는 중이에요…");const n=await uploadInto(pages,files,()=>{});if(!n)return;const vs=clone(vers(s));vs.push({vid:uid(6),name:`악보 ${vs.length+1}`,key:s.key||"",pages,by:S.myId||null,at:Date.now()});
-            if(await saveVersions(s,vs))toast(`악보(${n}장)를 넣었어요. 「자세히 보기」에서 편집할 수 있어요`);}}):null),
-        h("button",{type:"button",class:"sbadge"+(s.lyrics?" ok":" no"),title:s.lyrics?"가사 보기 · 고치기":"가사 넣기",onclick:()=>lyricsModal({songId:s.id,title:s.title},()=>{renderSongs.redraw&&renderSongs.redraw();})},s.lyrics?"가사 보기 · 고치기":"가사 넣기"),
-        used?h("span",{class:"hint",text:`부른 횟수 ${used}회`}):null),
-      h("div",{class:"row"},addBtn,(s.yt||[])[0]?h("a",{class:"btn sm",href:ytUrl(s.yt[0]),target:"_blank",rel:"noopener",text:"▶ 듣기"}):null,h("span",{class:"spacer"}),can?del:null))),
-    h("details",{class:"songmore",open:S.openSong===s.id,ontoggle:e=>{if(e.target.open)S.openSong=s.id;else if(S.openSong===s.id)S.openSong=null;}},
-      h("summary",{text:"자세히 보기 · 찬송가 장, 유튜브, CCLI, 악보 관리"}),
-      h("div",{class:"songmore-in"},
-        h("div",{class:"row"},hyIn,arIn),
-        h("div",{class:"row"},ytIn),
-        h("div",{class:"row"},ccIn,auIn,s.ccli?h("a",{class:"btn sm",href:ssSong(s.ccli),target:"_blank",rel:"noopener",text:"CCLI 곡 보기"}):h("a",{class:"btn sm",href:ssSearch(s.title),target:"_blank",rel:"noopener",text:"SongSelect에서 찾기"})),
-        versionsBox(s,can),
-        h("div",{class:"row"},h("span",{class:"hint",text:`악보 ${vers(s).length}가지`}),h("span",{class:"spacer"}),
-          h("button",{class:"btn sm primary",disabled:!can,text:"정보 저장",onclick:save})))));}
+  const star=(()=>{const on=favs().has(s.id);const b=h("button",{type:"button",class:"star","aria-pressed":String(on),"aria-label":"즐겨찾기",title:"즐겨찾기 (이 기기에 저장)",text:on?"★":"☆",onclick:e=>{e.stopPropagation();const v=toggleFav(s.id);b.setAttribute("aria-pressed",String(v));b.textContent=v?"★":"☆";toast(v?"즐겨찾기에 넣었어요":"즐겨찾기에서 뺐어요");if(S.songF&&S.songF.f==="fav"&&renderSongs.redraw)renderSongs.redraw();}});return b;})();
+  /* 한 줄로 찾고 → 누르면 할 일 단추가 펼쳐져요 · 곡 정보 고치기는 그 안에 */
+  const open=S.openSong===s.id,editing=S.editSong===s.id;
+  const scoreUp=can?h("input",{type:"file",id:`snew-${s.id}`,hidden:true,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
+      const pages=[];toast("악보를 올리는 중이에요…");const n=await uploadInto(pages,files,()=>{});if(!n)return;const vs=clone(vers(s));vs.push({vid:uid(6),name:`악보 ${vs.length+1}`,key:s.key||"",pages,by:S.myId||null,at:Date.now()});
+      if(await saveVersions(s,vs)){toast(`악보(${n}장)를 넣었어요`);renderSongs.redraw&&renderSongs.redraw();}}}):null;
+  const who=[sp.hymn?`새찬송가 ${sp.hymn}장${sp.arr?` · ${sp.arr} 편곡`:""}`:"",s.author||s.artist||""].filter(Boolean).join(" · ");
+  const head=h("div",{class:"srow-head",role:"button",tabindex:"0","aria-expanded":String(open),onclick:()=>{S.openSong=open?null:s.id;if(open)S.editSong=null;renderSongs.redraw&&renderSongs.redraw();},
+      onkeydown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.currentTarget.click();}}},
+    h("span",{class:"srow-th"},th),h("span",{class:"srow-t"},h("b",{text:sp.base||s.title}),h("small",{text:who||" "})),
+    s.key?h("span",{class:"srow-key",text:s.key}):null,
+    h("span",{class:"srow-flags"},h("i",{class:hasSc?"ok":"no",title:hasSc?"악보 있음":"악보 없음",text:"🎼"}),h("i",{class:(s.lyrics||"").trim()?"ok":"no",title:(s.lyrics||"").trim()?"가사 있음":"가사 없음",text:"📝"}),used?h("small",{class:"hint",text:`${used}회`}):null),
+    star,h("span",{class:"srow-car",text:open?"▴":"▾"}));
+  th.addEventListener("click",e=>e.stopPropagation());
+  const acts=open?h("div",{class:"srow-acts"},
+    addBtn,
+    hasSc?h("button",{class:"btn sm",text:`🎼 악보 보기${nV>1?` (${nV})`:""}`,onclick:()=>versionsViewer(s,tv.vid)}):null,
+    can?h("label",{class:"btn sm",htmlFor:`snew-${s.id}`},hasSc?"＋ 악보 추가":"＋ 악보 넣기",scoreUp):null,
+    h("button",{class:"btn sm",text:(s.lyrics||"").trim()?"📝 가사":"📝 가사 넣기",onclick:()=>lyricsModal({songId:s.id,title:s.title},()=>{renderSongs.redraw&&renderSongs.redraw();})}),
+    (s.yt||[])[0]?h("a",{class:"btn sm",href:ytUrl(s.yt[0]),target:"_blank",rel:"noopener",text:"▶ 듣기"}):null,
+    h("span",{class:"spacer"}),
+    can?h("button",{class:"btn sm"+(editing?" primary":" ghost"),text:editing?"✏️ 고치는 중":"✏️ 곡 정보 고치기",onclick:()=>{S.editSong=editing?null:s.id;renderSongs.redraw&&renderSongs.redraw();}}):null):null;
+  const edit=open&&editing?h("div",{class:"songmore-in srow-edit"},
+      h("div",{class:"row",style:"flex-wrap:nowrap"},sp.hymn?fitTitle(h("div",{class:"tbox"},tIn,h("span",{class:"tsuffix",text:`(새찬송가 ${sp.hymn}장${sp.arr?`, ${sp.arr} 편곡`:""})`}))):tIn,h("span",{class:"hint",text:"Key"}),keyIn),
+      h("div",{class:"row"},hyIn,arIn),
+      h("div",{class:"row"},ytIn),
+      h("div",{class:"row"},ccIn,auIn,s.ccli?h("a",{class:"btn sm",href:ssSong(s.ccli),target:"_blank",rel:"noopener",text:"CCLI 곡 보기"}):h("a",{class:"btn sm",href:ssSearch(s.title),target:"_blank",rel:"noopener",text:"SongSelect에서 찾기"})),
+      versionsBox(s,can),
+      h("div",{class:"row"},can?del:null,h("span",{class:"spacer"}),h("button",{class:"btn sm",text:"닫기",onclick:()=>{S.editSong=null;renderSongs.redraw&&renderSongs.redraw();}}),h("button",{class:"btn sm primary",disabled:!can,text:"정보 저장",onclick:save}))):null;
+  return h("div",{class:"card srow"+(open?" open":"")},head,acts,edit);}
 /* several score versions per song (key / arrangement); each team picks its own default */
 function versionsBox(s,can){const vs=clone(vers(s));const mine=teamVer(s);const st=h("span",{class:"hint"});
   const up=h("input",{type:"file",id:`sv-${s.id}`,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,"aria-label":`${s.title} 새 악보 올리기`,disabled:!can,
@@ -4872,7 +4917,7 @@ async function exportPdf(c,opt){if(!c)return;
         x.save();x.globalCompositeOperation="multiply";x.globalAlpha=.55;for(const mk of sp.p.marks)if(mk.k==="H"){x.fillStyle=VCOL[(mk.v||1)-1];x.fillRect(dx+mk.x*dw,dy+mk.y*dh,mk.w*dw,mk.h*dh);}x.restore();
         const fs=Math.max(16,dw*.023);x.font=`700 ${fs}px ${FB}`;x.textBaseline="top";
         for(const mk of sp.p.marks)if(mk.k==="L"){const tw=x.measureText(mk.t).width;const bx=dx+mk.x*dw,by=dy+mk.y*dh;x.fillStyle="#18213a";rr(x,bx,by,tw+fs*.9,fs*1.5,fs*.3);x.fill();x.fillStyle="#fff";x.fillText(mk.t,bx+fs*.45,by+fs*.22);}
-        x.textBaseline="alphabetic";}
+        x.textBaseline="alphabetic";drawFlowTop(x,sp.p,dx,dy,dw,dh);}
       else{x.fillStyle="#7a8299";x.font=`400 24px ${FB}`;x.fillText("악보를 불러오지 못했어요",MG,top+40);}
       drawFooter(x,n,total);canvases.push(cv);}
     st.textContent="PDF로 묶는 중…";
@@ -5715,14 +5760,14 @@ function practiceSheet(){const today=todayStr();const list=S.contis.filter(c=>!c
 async function practiceMode(c){const songs=[];for(const[k,l]of SECTIONS)for(const it of c[k]||[])songs.push({it,sec:l});if(!songs.length)return toast("콘티에 곡이 없어요");
   let i=0,show="score",z=1,lock=null;const ov=h("div",{class:"pmode",role:"dialog","aria-label":"연습 모드"});document.body.append(ov);document.body.style.overflow="hidden";
   const wake=async()=>{try{if(navigator.wakeLock)lock=await navigator.wakeLock.request("screen");}catch(e){}};wake();const vis=()=>{if(document.visibilityState==="visible")wake();};document.addEventListener("visibilitychange",vis);
-  const close=()=>{ov.remove();document.body.style.overflow="";document.removeEventListener("keydown",key);document.removeEventListener("visibilitychange",vis);try{lock&&lock.release();}catch(e){}};
+  const close=()=>{ov.remove();window.removeEventListener("resize",fitPages);document.body.style.overflow="";document.removeEventListener("keydown",key);document.removeEventListener("visibilitychange",vis);try{lock&&lock.release();}catch(e){}};
   const go=n=>{const j=Math.max(0,Math.min(songs.length-1,i+n));if(j!==i){i=j;draw();}};
   const key=e=>{if(e.key==="ArrowRight"||e.key==="PageDown")go(1);else if(e.key==="ArrowLeft"||e.key==="PageUp")go(-1);else if(e.key==="Escape")close();};document.addEventListener("keydown",key);
   let tx=null;ov.addEventListener("touchstart",e=>{if(e.touches.length===1)tx=e.touches[0].clientX;},{passive:true});ov.addEventListener("touchend",e=>{if(tx==null||z>1)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>80)go(dx<0?1:-1);},{passive:true});
   function draw(){const{it,sec}=songs[i];const y=ytId(it.yt);const ly=lyricsOf(it).trim();const pages=it.pages||[];
     const body=h("div",{class:"pm-body"});
     if(show==="score"){if(!pages.length)body.append(h("div",{class:"pm-empty",text:"이 곡은 악보가 없어요. 「가사」를 눌러 보세요."}));
-      for(const p of pages){const cv=h("canvas",{class:"pm-page"});cv.style.width=`${z*100}%`;body.append(cv);
+      for(const p of pages){const cv=h("canvas",{class:"pm-page"});cv.style.aspectRatio=`${(p.w||1)/(p.h||1.414)}`;body.append(cv);
         getImg(p.imgId).then(async u=>{if(!u)return;try{const im=await loadImg(u);cv.width=im.naturalWidth;cv.height=im.naturalHeight;const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0);drawMarks(x,p,0,0,cv.width,cv.height);}catch(e){}});}}
     else body.append(h("div",{class:"pm-lyrics",text:ly||"가사가 아직 없어요."}));
     ov.replaceChildren(...[
@@ -5731,10 +5776,15 @@ async function practiceMode(c){const songs=[];for(const[k,l]of SECTIONS)for(cons
       !onRoster(c)&&myName()?h("div",{class:"pm-memo",style:"color:#ffb4a8",text:"이번 예배 편성에는 이름이 없어요. 연습용으로 보고 있어요."}):null,
       it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,body,
       h("div",{class:"pm-foot"},h("button",{class:"btn sm"+(show==="score"?" primary":""),text:"악보",onclick:()=>{show="score";draw();}}),h("button",{class:"btn sm"+(show==="ly"?" primary":""),text:"가사",onclick:()=>{show="ly";draw();}}),
-        show==="score"?h("button",{class:"btn sm",text:"－",title:"작게",onclick:()=>{z=Math.max(1,z-.25);draw();}}):null,show==="score"?h("button",{class:"btn sm",text:"＋",title:"크게",onclick:()=>{z=Math.min(3,z+.25);draw();}}):null,
+        show==="score"?h("button",{class:"btn sm",text:"－",title:"작게",onclick:()=>{z=Math.max(.4,Math.round((z-.2)*100)/100);fitPages();}}):null,show==="score"?h("button",{class:"btn sm",text:"＋",title:"크게",onclick:()=>{z=Math.min(4,Math.round((z+.25)*100)/100);fitPages();}}):null,show==="score"&&z!==1?h("button",{class:"btn sm",text:"맞춤",title:"한 쪽이 화면에 다 들어오게",onclick:()=>{z=1;draw();}}):null,
         y?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch?v=${y}`,target:"_blank",rel:"noopener",text:"▶ 레퍼런스"}):null,
         h("span",{class:"spacer"}),h("div",{class:"pm-dots"},songs.map((x,j)=>h("button",{type:"button",class:"pm-dot"+(j===i?" on":""),title:x.it.title,"aria-label":`${j+1}번 곡`,onclick:()=>{i=j;draw();}}))))].filter(Boolean));
-    ov.scrollTop=0;}
+    ov.scrollTop=0;requestAnimationFrame(fitPages);}
+  /* 처음엔 한 쪽이 화면에 다 들어오게 (z=1), －/＋로 그 크기의 몇 배로 */
+  function fitPages(){const body=ov.querySelector(".pm-body");if(!body)return;const H=Math.max(200,body.clientHeight-20),W=Math.max(200,body.clientWidth-20);
+    body.querySelectorAll(".pm-page").forEach(cv=>{const ar=parseFloat(cv.style.aspectRatio)||.707;const fitH=Math.min(H,W/ar);cv.style.height=`${Math.round(fitH*z)}px`;cv.style.width=`${Math.round(fitH*z*ar)}px`;});
+    const zb=[...ov.querySelectorAll(".pm-foot .btn")].find(b=>b.textContent==="맞춤");if(!zb&&z!==1){const plus=[...ov.querySelectorAll(".pm-foot .btn")].find(b=>b.textContent==="＋");if(plus)plus.after(h("button",{class:"btn sm",text:"맞춤",title:"한 쪽이 화면에 다 들어오게",onclick:()=>{z=1;draw();}}));}else if(zb&&z===1)zb.remove();}
+  window.addEventListener("resize",fitPages);
   draw();}
 function viewPages(title,pages){const body=h("div",{class:"panel-body",style:"align-items:center"});
   pages.forEach((p,pi)=>{const cv=h("canvas",{class:"vw-page",role:"img","aria-label":`${title} 악보 ${pi+1}쪽`});cv.style.setProperty("--ar",`${(p.w||1)/(p.h||1.414)}`);body.append(cv);
@@ -5751,38 +5801,38 @@ function pagesInto(el,pages,title){el.replaceChildren();if(!pages||!pages.length
 /* 라이브러리 「악보 보기」: 왼쪽에 이 곡의 모든 악보, 오른쪽에 크게 */
 /* ===== 악보 고치기 (덧칠): 원본 그림은 그대로 두고, 고친 그림을 새로 만들어 곡의 기본 악보로 써요 ===== */
 /* page: {imgId(보이는 그림), orig(원본 그림), edits:[고친 내용]} · ↺ 원본으로 = imgId를 orig로 되돌림 */
-async function touchupSave(song,vid,pi,newImgId,orig,edits){const all=clone(vers(song));const v=all.find(x=>x.vid===vid);if(!v||!v.pages[pi])return false;const old=v.pages[pi].imgId;
-  const pg=v.pages[pi];if(edits&&edits.length){pg.imgId=newImgId;pg.orig=orig;pg.edits=edits;}else{pg.imgId=orig;delete pg.orig;delete pg.edits;}
+async function touchupSave(song,vid,pi,newImgId,orig,edits,dims){const all=clone(vers(song));const v=all.find(x=>x.vid===vid);if(!v||!v.pages[pi])return false;const old=v.pages[pi].imgId;
+  const pg=v.pages[pi];const setPg=q=>{if(edits&&edits.length){q.imgId=newImgId;q.orig=orig;q.edits=edits;if(dims){if(!q.ow){q.ow=q.w;q.oh=q.h;}q.w=dims.w;q.h=dims.h;}}else{q.imgId=orig;delete q.orig;delete q.edits;if(q.ow){q.w=q.ow;q.h=q.oh;delete q.ow;delete q.oh;}}};setPg(pg);
   if(!await saveVersions(song,all))return false;
   /* 아직 확정 전인 다가오는 콘티에도 같은 악보면 바꿔 줘요 */
   const today=todayStr();let n=0;for(const c of (S.allContis||S.contis||[])){if(isLocked(c)||c.past||(c.date||"")<today)continue;const up={};
-    for(const[k]of SECTIONS){const arr=clone(c[k]||[]);let ch=false;for(const it of arr)if(it.songId===song.id)for(const p of it.pages||[])if(p.imgId===old||p.imgId===orig){p.imgId=pg.imgId;if(pg.orig){p.orig=pg.orig;p.edits=pg.edits;}else{delete p.orig;delete p.edits;}ch=true;}if(ch)up[k]=arr;}
+    for(const[k]of SECTIONS){const arr=clone(c[k]||[]);let ch=false;for(const it of arr)if(it.songId===song.id)for(const p of it.pages||[])if(p.imgId===old||p.imgId===orig){p.imgId=pg.imgId;p.w=pg.w;p.h=pg.h;if(pg.orig){p.orig=pg.orig;p.edits=pg.edits;p.ow=pg.ow;p.oh=pg.oh;}else{delete p.orig;delete p.edits;delete p.ow;delete p.oh;}ch=true;}if(ch)up[k]=arr;}
     if(Object.keys(up).length){try{await S.db.doc(`contis/${c.id}`).update({...up,updatedAt:Date.now()});Object.assign(c,up);n++;}catch(e){}}}
-  if(S.cur)for(const[k]of SECTIONS)for(const it of S.cur[k]||[])if(it.songId===song.id)for(const p of it.pages||[])if(p.imgId===old||p.imgId===orig){p.imgId=pg.imgId;if(pg.orig){p.orig=pg.orig;p.edits=pg.edits;}else{delete p.orig;delete p.edits;}}
+  if(S.cur)for(const[k]of SECTIONS)for(const it of S.cur[k]||[])if(it.songId===song.id)for(const p of it.pages||[])if(p.imgId===old||p.imgId===orig){p.imgId=pg.imgId;p.w=pg.w;p.h=pg.h;if(pg.orig){p.orig=pg.orig;p.edits=pg.edits;p.ow=pg.ow;p.oh=pg.oh;}else{delete p.orig;delete p.edits;delete p.ow;delete p.oh;}}
   return {n};}
 function touchupReset(song,vid,pi,after){const v=vers(song).find(x=>x.vid===vid);const pg=v&&v.pages[pi];if(!pg||!pg.orig)return;
   askConfirm("원본 악보로 되돌리기",[h("p",{text:"수정된 이력이 있는 악보예요."}),h("p",{class:"hint",text:`지우개 · 펜 · 글자로 고친 ${(pg.edits||[]).length}군데를 모두 빼고 처음 올린 원본 그림으로 돌아가요. 확정 전 다가오는 콘티에도 원본이 들어가요. 확정된 콘티와 지난 콘티는 그대로예요.`})],"원본으로 되돌리기",async()=>{
     const r=await touchupSave(song,vid,pi,null,pg.orig,[]);if(r){toast("원본 악보로 되돌렸어요");after&&after();}});}
 async function scoreTouchup(song,vid,pi,after){const v=vers(song).find(x=>x.vid===vid);const pg=v&&v.pages[pi];if(!pg)return;
-  const r=await touchupEditor(song.title,pg);if(!r)return;const res=await touchupSave(song,vid,pi,r.imgId,r.orig,r.edits);if(!res)return;
+  const r=await touchupEditor(song.title,pg);if(!r)return;const res=await touchupSave(song,vid,pi,r.imgId,r.orig,r.edits,r);if(!res)return;
   toast(r.edits.length?`악보를 고쳤어요${res.n?` · 다가오는 콘티 ${res.n}개에도 넣었어요`:""}`:"원본 그대로예요",3500);after&&after();}
 /* 라이브러리 곡에서 이 그림(또는 그 원본)을 쓰는 쪽 찾기 */
 function libPageOf(songId,pg){const song=S.songs.find(x=>x.id===songId);if(!song)return null;for(const v of vers(song))for(let i=0;i<(v.pages||[]).length;i++){const q=v.pages[i];if(q.imgId===pg.imgId||(pg.orig&&(q.orig===pg.orig||q.imgId===pg.orig)))return{song,vid:v.vid,pi:i};}return null;}
 function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=false;const fin=v=>{if(!settled){settled=true;resolve(v);}};
   const origId=pg.orig||pg.imgId;const u=await getImg(origId);if(!u){toast("악보 그림을 불러오지 못했어요");return fin(null);}const base=await loadImg(u);
-  const W=base.naturalWidth,H=base.naturalHeight;let ops=clone(pg.edits||[]);const redo=[];let tool="erase",color="#000000",pen=Math.max(3,Math.round(W/300)),fs=Math.round(W/38),showOrig=false;
-  const cv=h("canvas",{class:"tu-cv"});cv.width=W;cv.height=H;const x=cv.getContext("2d");
-  const paint=(ctx,list)=>{ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.drawImage(base,0,0);for(const o of list){
+  const W=base.naturalWidth,H=base.naturalHeight;let ops=clone(pg.edits||[]);let padTop=(ops.find(o=>o.t==="pad")||{}).top||0;ops=ops.filter(o=>o.t!=="pad");const redo=[];let tool="erase",color="#000000",pen=Math.max(3,Math.round(W/300)),fs=Math.round(W/38),showOrig=false;
+  const W0=pg.ow||W,H0=pg.oh||H;let CH=H+padTop;const cv=h("canvas",{class:"tu-cv"});cv.width=W;cv.height=CH;const x=cv.getContext("2d");
+  const paint=(ctx,list)=>{ctx.fillStyle="#fff";ctx.fillRect(0,0,W,CH);ctx.drawImage(base,0,padTop);for(const o of list){
       if(o.t==="rect"){ctx.fillStyle=o.c;ctx.fillRect(o.x,o.y,o.w,o.h);}
       else if(o.t==="pen"){ctx.strokeStyle=o.c;ctx.lineCap=ctx.lineJoin="round";const pw=q=>q[2]!=null?o.w*(.35+q[2]*1.3):o.w;
         if(o.p.length===1){ctx.lineWidth=pw(o.p[0]);ctx.beginPath();ctx.moveTo(o.p[0][0],o.p[0][1]);ctx.lineTo(o.p[0][0]+.1,o.p[0][1]);ctx.stroke();}
         else if(o.p[0][2]==null){ctx.lineWidth=o.w;ctx.beginPath();o.p.forEach(([a,b],i)=>i?ctx.lineTo(a,b):ctx.moveTo(a,b));ctx.stroke();}
         else for(let i=1;i<o.p.length;i++){const a=o.p[i-1],b=o.p[i];ctx.lineWidth=(pw(a)+pw(b))/2;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}}
       else if(o.t==="text"){ctx.fillStyle=o.c;ctx.font=`${o.b?"800":"600"} ${o.s}px "Pretendard","Noto Sans KR",sans-serif`;ctx.textBaseline="top";String(o.v).split("\n").forEach((ln,i)=>ctx.fillText(ln,o.x,o.y+i*o.s*1.15));}}};
-  const redraw=()=>{paint(x,showOrig?[]:ops);cnt.textContent=ops.length?`고친 곳 ${ops.length}군데`:"아직 고친 곳 없음";undoB.disabled=!ops.length;redoB.disabled=!redo.length;};
-  const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height];};
+  const redraw=()=>{paint(x,showOrig?[]:ops);cnt.textContent=(ops.length?`고친 곳 ${ops.length}군데`:"아직 고친 곳 없음")+(padTop?" · 위에 빈 칸 있음":"");if(typeof unpadB!=="undefined")unpadB.hidden=!padTop;undoB.disabled=!ops.length;redoB.disabled=!redo.length;};
+  const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*CH/r.height];};
   /* 지우개 색: 네모 둘레의 종이색(밝은 쪽) 자동으로 */
-  const paperAround=(rx,ry,rw,rh)=>{const tmp=document.createElement("canvas");tmp.width=W;tmp.height=H;const t=tmp.getContext("2d");paint(t,ops);const px=[];const add=(a,b)=>{a=Math.max(0,Math.min(W-1,Math.round(a)));b=Math.max(0,Math.min(H-1,Math.round(b)));const d=t.getImageData(a,b,1,1).data;px.push([d[0],d[1],d[2]]);};
+  const paperAround=(rx,ry,rw,rh)=>{const tmp=document.createElement("canvas");tmp.width=W;tmp.height=CH;const t=tmp.getContext("2d");paint(t,ops);const px=[];const add=(a,b)=>{a=Math.max(0,Math.min(W-1,Math.round(a)));b=Math.max(0,Math.min(CH-1,Math.round(b)));const d=t.getImageData(a,b,1,1).data;px.push([d[0],d[1],d[2]]);};
     const st=Math.max(2,Math.round((rw+rh)/80));for(let a=rx-3;a<=rx+rw+3;a+=st){add(a,ry-3);add(a,ry+rh+3);}for(let b=ry;b<=ry+rh;b+=st){add(rx-3,b);add(rx+rw+3,b);}
     px.sort((p,q)=>(q[0]+q[1]+q[2])-(p[0]+p[1]+p[2]));const top=px.slice(0,Math.max(1,Math.round(px.length*.5)));const m=[0,1,2].map(i=>Math.round(top.reduce((s,p)=>s+p[i],0)/top.length));
     return "#"+m.map(v=>v.toString(16).padStart(2,"0")).join("");};
@@ -5820,14 +5870,17 @@ function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=
   const redoB=h("button",{type:"button",class:"btn sm",text:"↷",title:"다시 하기",onclick:()=>{if(redo.length){ops.push(redo.pop());redraw();}}});
   const origB=h("button",{type:"button",class:"btn sm ghost",text:"👁 원본 보기",title:"누르고 있는 동안 원본을 보여 줘요"});
   ["pointerdown"].forEach(ev=>origB.addEventListener(ev,()=>{showOrig=true;redraw();}));["pointerup","pointerleave","pointercancel"].forEach(ev=>origB.addEventListener(ev,()=>{if(showOrig){showOrig=false;redraw();}}));
+  const shiftOps=d=>{for(const o of ops){if(o.t==="pen")o.p.forEach(q=>{q[1]+=d;});else o.y+=d;}};
+  const padB=h("button",{type:"button",class:"btn sm",text:"⬆ 위에 빈 칸 늘리기",title:"악보 위쪽에 진행 순서 · 메모를 쓸 빈 칸을 더해요",onclick:()=>{const d=Math.round(H*.08);padTop+=d;CH=H+padTop;shiftOps(d);cv.height=CH;redraw();}});
+  const unpadB=h("button",{type:"button",class:"btn sm ghost",text:"빈 칸 빼기",onclick:()=>{shiftOps(-padTop);padTop=0;CH=H;cv.height=CH;redraw();}});
   const cnt=h("span",{class:"hint"});
   const syncTools=()=>{tools.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("primary",b.dataset.t===tool));cv.style.cursor=tool==="text"?"text":tool==="pick"?"copy":"crosshair";};
   const md=modal(`🖌 악보 고치기 · ${title}`,h("div",{class:"panel-body"},
     h("p",{class:"hint",style:"margin:0 0 6px",text:"원본 그림은 그대로 남고, 고친 그림이 이 곡의 기본 악보가 돼요. 언제든 「↺ 원본으로」 돌아갈 수 있어요."}),
-    tools,h("div",{class:"row tu-tools"},h("span",{class:"hint",text:"색"}),sw,presets,autoCk,h("span",{class:"hint",text:"펜 굵기"}),penIn,h("span",{class:"hint",text:"글자 크기"}),sizeIn,boldCk,h("span",{class:"spacer"}),undoB,redoB,origB),cnt,wrap),
+    tools,h("div",{class:"row tu-tools"},h("span",{class:"hint",text:"색"}),sw,presets,autoCk,h("span",{class:"hint",text:"펜 굵기"}),penIn,h("span",{class:"hint",text:"글자 크기"}),sizeIn,boldCk,h("span",{class:"spacer"}),undoB,redoB,origB),h("div",{class:"row",style:"gap:6px;align-items:center"},padB,unpadB,cnt),wrap),
     [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:async e=>{const btn=e.currentTarget;btn.disabled=true;
-      try{let nid=null;if(ops.length){showOrig=false;paint(x,ops);nid=await storeImage({url:cv.toDataURL("image/jpeg",.9),w:W,h:H});}
-        fin({imgId:nid||origId,orig:origId,edits:clone(ops)});md.close(true);}
+      try{let nid=null;const all=(padTop?[{t:"pad",top:padTop}]:[]).concat(clone(ops));if(all.length){showOrig=false;paint(x,ops);nid=await storeImage({url:cv.toDataURL("image/jpeg",.9),w:W,h:CH});}
+        fin({imgId:nid||origId,orig:origId,edits:all,w:W,h:all.length?CH:H,ow:W0===W&&!pg.ow?W:W0,oh:pg.oh||H});md.close(true);}
       catch(err){console.error(err);toast("저장하지 못했어요");btn.disabled=false;}}})],"tu-modal",{beforeClose:()=>{if(Date.now()-lastUp<400)return false;fin(null);return true;}});
   syncTools();redraw();});}
 function versionsViewer(song,startVid){const vs=vers(song).filter(v=>(v.pages||[]).length);if(!vs.length)return toast("이 곡에는 악보가 없어요");
@@ -5965,7 +6018,7 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
 function drawMarks(x,p,dx,dy,dw,dh){x.save();x.globalCompositeOperation="multiply";x.globalAlpha=.55;for(const mk of p.marks||[])if(mk.k==="H"){x.fillStyle=VCOL[(mk.v||1)-1];x.fillRect(dx+mk.x*dw,dy+mk.y*dh,mk.w*dw,mk.h*dh);}x.restore();
   const fs=Math.max(9,dw*.023);x.font=`700 ${fs}px ${FB}`;x.textBaseline="top";
   for(const mk of p.marks||[])if(mk.k==="L"){const tw=x.measureText(mk.t).width;const bx=dx+mk.x*dw,by=dy+mk.y*dh;x.fillStyle="#18213a";rr(x,bx,by,tw+fs*.9,fs*1.5,fs*.3);x.fill();x.fillStyle="#fff";x.fillText(mk.t,bx+fs*.45,by+fs*.22);}
-  x.textBaseline="alphabetic";}
+  x.textBaseline="alphabetic";drawFlowTop(x,p,dx,dy,dw,dh);}
 async function exportCompact(c,opt){if(!c)return;
   const secs=SECTIONS.map(([k,l])=>[l,c[k]||[]]);
   const items=[];let no=0;for(const[l,arr]of secs)for(const it of arr){no++;(it.pages||[]).forEach((p,pi)=>items.push({it,no,p,pi,pn:it.pages.length,sec:l}));}
