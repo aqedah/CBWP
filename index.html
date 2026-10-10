@@ -3135,6 +3135,33 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item}){
 /* =========================================================
    LIST TAB
    ========================================================= */
+/* 🎞 PPT 일괄 저장: 기간 안 콘티마다 가사 PPT를 만들어 한 압축 파일(.zip)로 · 예배마다 기억한 템플릿 · 글꼴을 써요 */
+function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,13);
+  const fI=h("input",{type:"date",value:from,style:"width:auto",onchange:e=>{from=e.target.value;draw();}}),tI=h("input",{type:"date",value:to,style:"width:auto",onchange:e=>{to=e.target.value;draw();}});
+  const setR=(a,b)=>{from=a;to=b;fI.value=a;tI.value=b;draw();};const td=parseD(today);
+  const ym=(y,m)=>{const a=new Date(y,m,1),b=new Date(y,m+1,0);const f=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;return[f(a),f(b)];};
+  const quick=h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},[["이번 주",()=>setR(weekStart(today),addDays(weekStart(today),6))],["다음 주",()=>setR(addDays(weekStart(today),7),addDays(weekStart(today),13))],["이번 달",()=>setR(...ym(td.getFullYear(),td.getMonth()))],["다음 달",()=>setR(...ym(td.getFullYear(),td.getMonth()+1))]]
+    .map(([t,f])=>h("button",{type:"button",class:"btn sm ghost",text:t,onclick:f})));
+  const off=new Set();const list=h("div",{class:"cards"});const st=h("p",{class:"hint"});
+  const tplOf=c=>{const pr=(teamCfg().pptPref||{})[wtypeOf(c)||"_"];const all=pptTpls();let t=(pr&&all.find(x=>x.id===pr.tpl))||tplFor(c);
+    if(t&&t.kind==="full")t=all.find(x=>x.kind!=="full"&&(x.wtypes||[]).includes(wtypeOf(c)))||all.find(x=>x.kind!=="full")||{...PPT_DEF,id:"",name:"기본 (검은 화면)"};
+    const font=pr&&pr.font;return font?{...t,titleFont:t.titleFont||t.font,font}:t;};
+  const inR=()=>S.contis.filter(c=>c.date&&!c.noService&&c.date>=from&&c.date<=to&&allItems(c).length).sort((a,b)=>a.date.localeCompare(b.date)||wtypeOf(a).localeCompare(wtypeOf(b)));
+  function draw(){const arr=inR();list.replaceChildren(...arr.map(c=>{const id=c.id||c.date+wtypeOf(c);const t=tplOf(c);const miss=allItems(c).filter(it=>!lyricsOf(it).trim()).length;
+      return h("label",{class:"row",style:"gap:8px;flex-wrap:nowrap;padding:6px 8px;border:1px solid var(--line);border-radius:8px"},h("input",{type:"checkbox",checked:!off.has(id),onchange:e=>{e.target.checked?off.delete(id):off.add(id);cnt();}}),
+        h("div",{style:"flex:1;min-width:0"},h("b",{text:`${fmtDate(c.date)} · ${wtypeOf(c)}`}),h("div",{class:"hint",text:`곡 ${allItems(c).length}개 · 템플릿 「${tplShort(t)}」${t.font?` · ${t.font}`:""}${miss?` · ⚠️ 가사 없는 곡 ${miss}개 (제목 장만)`:""}`})));}));cnt();}
+  const pick=()=>inR().filter(c=>!off.has(c.id||c.date+wtypeOf(c)));
+  function cnt(){const n=pick().length;st.textContent=from>to?"시작 날짜가 끝 날짜보다 뒤예요":inR().length?`고른 콘티 ${n}개`:"이 기간에는 곡이 든 콘티가 없어요";go.disabled=!n||from>to;go.textContent=n>1?`⬇ PPT ${n}개 한꺼번에 저장 (.zip)`:"⬇ PPT 저장";}
+  const go=h("button",{class:"btn primary",onclick:async()=>{const arr=pick();if(!arr.length)return;go.disabled=true;const files=[];let i=0;
+    try{for(const c of arr){i++;st.textContent=`만드는 중… ${i}/${arr.length} · ${fmtDate(c.date)} ${wtypeOf(c)}`;
+        await exportLyricsPpt(c,tplOf(c),true,{collect:(blob,fname)=>{let nm=fname.replace(/\.pptx$/,`_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"")}.pptx`);if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);}});}
+      if(files.length===1){if(await saveBlob(files[0][0],files[0][1]))toast("PPT를 저장했어요");}
+      else{st.textContent="압축 파일로 묶는 중…";await loadScript(JSZIP_URL);const z=new window.JSZip();for(const[b,nm]of files)z.file(nm,b);const zb=await z.generateAsync({type:"blob"});
+        if(await saveBlob(zb,`${teamName(S.team)}_가사PPT_${from}~${to}.zip`))toast(`가사 PPT ${files.length}개를 한 파일(.zip)로 저장했어요`,3500);}
+      md.close();}catch(e){console.error(e);toast("PPT를 만들지 못했어요. 인터넷 연결을 확인해 주세요.");go.disabled=false;cnt();}}});
+  const md=modal("🎞 PPT 일괄 저장",h("div",{class:"panel-body"},
+    h("p",{class:"hint",style:"margin:0 0 6px",text:"기간 안 콘티마다 가사 PPT를 만들어 한 압축 파일(.zip)로 저장해요. 예배마다 「📌 이 설정 기억하기」로 정해 둔 템플릿 · 가사 글꼴을 쓰고, 곡 흐름이 있으면 흐름대로 넣어요."}),
+    h("div",{class:"lab",text:"기간"}),h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},fI,h("span",{text:"~"}),tI),quick,st,list),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);draw();}
 /* 콘티 표로 내보내기: 엑셀(주마다 한 장 · 날짜마다 한 칸) 또는 CSV(콘티마다 한 줄) */
 const XLSX_URL="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 const dayLbl=ds=>{const d=parseD(ds);return `${d.getMonth()+1}/${d.getDate()}(${"주월화수목금토"[d.getDay()]}${d.getDay()?"":"일"})`;};
@@ -3190,7 +3217,7 @@ function renderList(m){let q="";
   const box=h("div",{class:"cards"});
   const search=h("input",{type:"search",id:"list-q",placeholder:"날짜 · 제목 · 곡 · 인도자로 찾기 (초성 가능)",oninput:e=>{q=e.target.value;draw();}});
   const nPast=S.contis.filter(c=>c.past).length;
-  m.append(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`이 프로그램으로 쓴 콘티 ${S.contis.length-nPast}개${nPast?` · 지난 콘티 ${nPast}개는 「지난 콘티 입력」에 있어요`:""}`})),search,h("div",{class:"row",style:"margin-top:8px"},h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal})),h("div",{style:"height:12px"}),box));
+  m.append(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`이 프로그램으로 쓴 콘티 ${S.contis.length-nPast}개${nPast?` · 지난 콘티 ${nPast}개는 「지난 콘티 입력」에 있어요`:""}`})),search,h("div",{class:"row",style:"margin-top:8px"},h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal}),h("button",{class:"btn sm",text:"🎞 PPT 일괄 저장",title:"기간 안 콘티의 가사 PPT를 한꺼번에 (.zip)",onclick:pptBulkModal})),h("div",{style:"height:12px"}),box));
   function draw(){box.replaceChildren();
     const arr=S.contis.filter(c=>!c.past).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.updatedAt||0)-(a.updatedAt||0))
       .filter(c=>{if(!q.trim())return true;const hay=[dateKeys(c.date),wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),...allItems(c).map(i=>i.title)].join(" ");return hay.includes(q.trim())||matchRank(hay,q)>-1;});
@@ -3297,6 +3324,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
   const nPast=team.filter(c=>c.past).length;
   const listSheet=m.appendChild(h("div",{class:"sheet"},h("h2",{},"콘티 목록",h("span",{class:"sub",text:`모두 ${team.length}개 (예전 기록 ${nPast}개 포함) · 결산에 함께 들어가요`})),
     h("div",{class:"row",style:"flex-wrap:nowrap"},search,can&&isWriter()?h("button",{class:"btn",text:"📄 PDF 한꺼번에",title:"여러 날의 콘티 악보 PDF를 한꺼번에 올리면 날짜·곡·악보를 채워요",onclick:()=>pdfPastModal()}):null,can&&isWriter()?h("button",{class:"btn primary",text:"+ 새 콘티",onclick:()=>{newConti();}}):null),
+    h("div",{class:"row",style:"margin-top:8px;gap:6px;flex-wrap:wrap"},h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal}),h("button",{class:"btn sm",text:"🎞 PPT 일괄 저장",title:"기간 안 콘티의 가사 PPT를 한꺼번에 (.zip)",onclick:pptBulkModal})),
     h("label",{class:"row hint",htmlFor:"list-blank",style:"margin-top:8px;gap:6px"},showBlank,"기록 없는 주일도 보기 (예배가 없었다면 비고에 사유를 남겨 주세요)"),h("div",{style:"height:10px"}),box));
   const noteRow=(c,date,mine)=>{const inp=h("input",{type:"text",id:`note-${c?c.id:date}`,placeholder:"비고 (예: 세대통합예배로 오후예배 없음)",value:c?.note||"",disabled:!mine,style:"flex:1;min-width:180px"});
     return h("div",{class:"row"},h("span",{class:"lab",style:"margin:0",text:"비고"}),inp,mine?h("button",{class:"btn sm",text:"비고 저장",onclick:()=>saveNote(c,date,inp.value.trim())}):null);};
@@ -4365,7 +4393,7 @@ function projectListSheet(){const today=todayStr();const all=S.contis.filter(c=>
   return h("div",{class:"sheet"},h("h2",{},teamName(S.team),h("span",{class:"row",style:"gap:6px"},h("span",{class:"sub",text:all.length?`${all.length}개 · ${keys.length}주`:"아직 콘티가 없어요"}),
       keys.length>1?h("button",{class:"btn sm ghost",text:allOpen?"모두 접기":"모두 펼치기",onclick:()=>{keys.forEach(k=>S.pwOpen[k]=!allOpen);render();}}):null)),
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},keys.map(week)),
-    h("div",{class:"row",style:"margin-top:8px;gap:6px"},isWriter()?h("button",{class:"btn sm",text:"+ 새 집회 콘티",onclick:()=>newConti()}):null,h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal})));}
+    h("div",{class:"row",style:"margin-top:8px;gap:6px"},isWriter()?h("button",{class:"btn sm",text:"+ 새 집회 콘티",onclick:()=>newConti()}):null,h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal}),h("button",{class:"btn sm",text:"🎞 PPT 일괄 저장",title:"기간 안 콘티의 가사 PPT를 한꺼번에 (.zip)",onclick:pptBulkModal})));}
 /* 행사 프로젝트 홈: 앞으로 2주 달력 · 날마다 설교자 · 특송 */
 function projectCalSheet(){const today=todayStr();const st=weekStart(today);const DW="일월화수목금토";
   const cells=Array.from({length:14},(_,i)=>{const d=addDays(st,i);const dt=parseD(d);const cs=S.contis.filter(c=>c.date===d&&!c.noService);const hol=HOLIDAYS[d];
@@ -5282,9 +5310,9 @@ async function gradTitles(blob,g,mark){try{await loadScript(JSZIP_URL);const zip
   const re=new RegExp(`<a:solidFill><a:srgbClr val="${mark}"\\s*(?:/>|>[\\s\\S]*?</a:srgbClr>)</a:solidFill>`,"g");
   for(const f of Object.values(zip.files).filter(f=>/^ppt\/slides\/slide\d+\.xml$/.test(f.name))){const x=await f.async("string");if(x.includes(mark))zip.file(f.name,x.replace(re,gx));}
   return await zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});}catch(e){console.error(e);return blob;}}
-async function exportLyricsPpt(c,tplOverride,skipAsk){S.lastPptExport=Date.now();if(!c)return;const items=allItems(c);if(!items.length)return toast("콘티에 곡이 없어요");
+async function exportLyricsPpt(c,tplOverride,skipAsk,opts={}){S.lastPptExport=Date.now();if(!c)return;const items=allItems(c);if(!items.length)return opts.collect?null:toast("콘티에 곡이 없어요");
   const missing=items.filter(it=>!lyricsOf(it).trim());
-  const go=async()=>{const md=modal("가사 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"ppt-st",text:"준비하고 있어요…"})),null);const st=$("#ppt-st",md.el);
+  const go=async()=>{const md=opts.collect?{close(){}}:modal("가사 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"ppt-st",text:"준비하고 있어요…"})),null);const st=opts.collect?{textContent:""}:$("#ppt-st",md.el);
     try{await loadScript(PPTX_URL);const cfg=tplOverride||tplFor(c);const bg=await bgDataUrl(cfg);
       const pp=new window.PptxGenJS();let W=10,H=cfg.ratio==="4:3"?7.5:5.625;
       if(cfg.slideW&&cfg.slideH){W=cfg.slideW;H=cfg.slideH;pp.defineLayout({name:"TPL",width:W,height:H});pp.layout="TPL";}else pp.layout=cfg.ratio==="4:3"?"LAYOUT_4x3":"LAYOUT_16x9";
@@ -5308,9 +5336,10 @@ async function exportLyricsPpt(c,tplOverride,skipAsk){S.lastPptExport=Date.now()
           const bottom=cfg.valign==="bottom";const bx=cfg.box;txt(sl,lines.join("\n"),bx?{x:bx.x*W,y:bx.y*H,w:bx.w*W,h:bx.h*H,fontSize:cfg.size,valign:VA[cfg.anchor]||(bottom?"bottom":"middle"),lineSpacingMultiple:cfg.lnSpc||1.15}:{y:bottom?H*.62:H*.12,h:bottom?H*.32:H*.76,fontSize:cfg.size,valign:bottom?"bottom":"middle",lineSpacingMultiple:cfg.lnSpc||1.15});});
         st.textContent=`슬라이드 ${n}장 만드는 중…`;}
       let blob=await pp.write({outputType:"blob"});if(cfg.titleSlide&&cfg.titleGrad)blob=await gradTitles(blob,cfg.titleGrad,GMARK);const fname=`${teamName(c.team||S.team)}_가사_${c.date||"날짜미정"}.pptx`;md.close();
+      if(opts.collect){opts.collect(blob,fname,n);return;}
       if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});toast(`가사 PPT를 저장했어요 (${n}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
       else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.append(a);a.click();a.remove();}
-    }catch(e){md.close();console.error(e);toast("PPT를 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");}};
+    }catch(e){md.close();console.error(e);if(opts.collect)throw e;toast("PPT를 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");}};
   if(!missing.length||skipAsk)return go();
   const okBtn=h("button",{class:"btn primary",text:"그대로 만들기",onclick:()=>{lm.close();go();}});
   const persist=async it=>{if(songOf(it)||!c.id||!S.db||!S.canWrite||!canEditConti(c,c.id))return;
