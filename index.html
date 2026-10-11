@@ -34,7 +34,7 @@
 <style>
 /* Layout: one working column — sticky header with tabs, then stacked "sheets" like pages on a music stand. */
 :root{
-  --bg:#eef1f4; --sheet:#ffffff; --ink:#18213a; --ink2:#4a5370; --muted:#7a8299;
+  --bg:#eef1f4; --sheet:#ffffff; --ink:#18213a; --ink2:#4a5370; --muted:#7a8299; --navoff:#a3a8b2; --navon:var(--team,var(--accent));
   --line:#d7dce5; --soft:#f5f7fa; --accent:#2b3f8f; --accent-ink:#ffffff; --accent-soft:#e6eaf7;
   --danger:#b3261e; --ok:#1d7a4d; --warn:#9a6400;
   --v1:#ffe45c; --v2:#7fd3ff; --v3:#ff9fc9; --v4:#a8ee8c; --v5:#ffb86b; --v6:#c9a8ff;
@@ -43,11 +43,11 @@
   --r:10px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#10141f; --sheet:#181e2c; --ink:#e9ecf5; --ink2:#b5bcd0; --muted:#8a92a8;
+  --bg:#10141f; --sheet:#181e2c; --ink:#e9ecf5; --ink2:#b5bcd0; --muted:#8a92a8; --navoff:#6b7182; --navon:color-mix(in srgb,var(--team,var(--accent)) 60%,#fff);
   --line:#2c3447; --soft:#1e2536; --accent:#9fb1ff; --accent-ink:#10141f; --accent-soft:#252f4d;
   --danger:#ff8a80; --ok:#6fd3a0; --warn:#f2c46b; color-scheme:dark }}
 :root[data-theme="dark"]{
-  --bg:#10141f; --sheet:#181e2c; --ink:#e9ecf5; --ink2:#b5bcd0; --muted:#8a92a8;
+  --bg:#10141f; --sheet:#181e2c; --ink:#e9ecf5; --ink2:#b5bcd0; --muted:#8a92a8; --navoff:#6b7182; --navon:color-mix(in srgb,var(--team,var(--accent)) 60%,#fff);
   --line:#2c3447; --soft:#1e2536; --accent:#9fb1ff; --accent-ink:#10141f; --accent-soft:#252f4d;
   --danger:#ff8a80; --ok:#6fd3a0; --warn:#f2c46b; color-scheme:dark }
 *{box-sizing:border-box}
@@ -586,13 +586,13 @@ body.lite #adminRow{display:none!important}
 .lyhit{display:flex;gap:6px;align-items:baseline;font-size:.86rem;color:var(--ink2,#555);margin:0 0 6px;min-width:0}.lyhit span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.cards .lyhit{margin:10px 12px 0}
 /* 휴대폰 아래 메뉴: 콘티 · 홈 · 나 (홈이 가운데) */
 body.lite .bnav [data-group=conti]{order:-1}body.lite .bnav [data-group=me]{order:1}
-/* 홈을 가운데 둥근 큰 단추로 띄워서 「여기가 중심」이 보이게 */
-body.lite .bnav [data-group=home]{color:var(--team,var(--accent));overflow:visible}
-body.lite .bnav [data-group=home] svg{box-sizing:border-box;width:60px;height:60px;padding:16px;margin-top:-30px;border-radius:50%;background:var(--team,var(--accent));stroke:#fff;stroke-width:2;border:4px solid var(--sheet);box-shadow:0 6px 16px color-mix(in srgb,var(--team,var(--accent)) 40%,transparent);transition:transform .15s}
-body.lite .bnav [data-group=home]::before{display:none}
-body.lite .bnav [data-group=home][aria-current="page"] svg{box-shadow:0 0 0 3px color-mix(in srgb,var(--team,var(--accent)) 30%,transparent),0 6px 16px color-mix(in srgb,var(--team,var(--accent)) 40%,transparent)}
-body.lite .bnav [data-group=home]:active svg{transform:scale(.94)}
-body.lite .bnav [data-group=home] span{font-weight:800}
+/* 아래 메뉴: 꺼진 탭은 옅은 회색, 켜진 탭은 팀 색 + 아이콘 뒤 알약 배경 · 홈은 아이콘만 조금 크게 */
+.bnav button{color:var(--navoff)}.bnav button span{font-weight:600}
+.bnav svg{box-sizing:content-box;padding:4px 16px;border-radius:16px;transition:background .15s}
+.bnav button[aria-current="page"]{color:var(--navon)}.bnav button[aria-current="page"] span{font-weight:800}
+.bnav button[aria-current="page"] svg{background:color-mix(in srgb,var(--team,var(--accent)) 16%,transparent);stroke-width:2.1}
+.bnav button[aria-current="page"]::before{display:none}
+body.lite .bnav [data-group=home] svg{width:27px;height:27px;padding:3px 16px}
 .lyhit-tag{flex:none;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3c4;color:#7a5a00}
 .servebrief{display:flex;gap:8px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;padding:10px 12px}.servebrief .sb-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.servebrief .sb-pos{color:var(--accent,#2b3f8f);white-space:nowrap}
 .servemore{margin-top:10px}.servemore>summary,.oldfold>summary{cursor:pointer;list-style:none;margin:6px 0}.servemore>summary{color:var(--accent,#2b3f8f);font-weight:600}.oldfold>summary{width:100%;text-align:center}.oldfold[open]>summary{margin-bottom:10px}.oldfold{display:grid;gap:10px}
