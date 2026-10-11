@@ -537,6 +537,7 @@ header.top{border-top:4px solid var(--team,transparent)}
 .pinfo-row{display:grid;grid-template-columns:92px 1fr;align-items:center;min-height:46px}
 .pinfo-row+.pinfo-row{border-top:1px solid var(--line)}
 @media (min-width:720px){.pinfo.two{display:grid;grid-template-columns:1fr 1fr}.pinfo.two .pinfo-row{border-top:1px solid var(--line)}.pinfo.two .pinfo-row:nth-child(-n+2){border-top:0}.pinfo.two .pinfo-row:nth-child(even){border-left:1px solid var(--line)}}
+.lgrid td.lcell{cursor:pointer;border-radius:6px}.lgrid td.lcell:hover{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}.lgrid td.lcell:empty:hover::after{content:"+ 고르기";color:var(--accent);font-size:.8rem;font-weight:700}
 .rsfold{border:1px solid var(--line);border-radius:10px;background:var(--soft)}.rsfold>summary{cursor:pointer;padding:10px 14px;list-style-position:inside}.rsfold[open]>summary{border-bottom:1px solid var(--line)}.rsfold-in{padding:12px 14px;background:var(--sheet);border-radius:0 0 10px 10px}
 .pinfo dt{align-self:stretch;display:flex;align-items:center;padding:0 14px;background:var(--soft);color:var(--ink2);font-size:.84rem;font-weight:700}
 .pinfo dd{margin:0;padding:10px 14px;font-weight:600;min-width:0}
@@ -4040,12 +4041,16 @@ function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);i
     h("div",{class:"avcols"},col("가능","ok",yes,x=>h("span",{class:"lchip ok",text:x.mb.name})),col("불참","no",no,x=>h("span",{class:"lchip no",text:`${x.mb.name}${x.r.note?` · ${x.r.note}`:""}`})),col("응답 전","",none,x=>h("span",{class:"lchip",text:x.mb.name}))));
   /* 한눈에 (엑셀 멤버 구성표처럼) */
   const posUsed=[...new Set(ds.flatMap(x=>{const pl=planOf(x);return pl&&!pl.off?(pl.roster||[]).map(r=>r.pos):[];}).concat(L.roster.filter(r=>(r.people||[]).length).map(r=>r.pos)))].sort((a,b)=>(POSITIONS.indexOf(a)+99)%199-(POSITIONS.indexOf(b)+99)%199);
-  const grid=posUsed.length?h("div",{class:"sheet"},h("h2",{},"편성 요약",h("span",{class:"sub",text:"앞으로 6주 · 줄을 누르면 그 날 편성으로"})),h("div",{class:"tablewrap"},h("table",{class:"t lgrid"},h("thead",{},h("tr",{},h("th",{text:"날짜"}),posUsed.map(p=>h("th",{text:p})),h("th",{text:"비고"}))),
+  const grid=posUsed.length?h("div",{class:"sheet"},h("h2",{},"편성 요약",h("span",{class:"sub",text:can?"칸을 누르면 바로 고르고 저장돼요 · 날짜를 누르면 아래에서 자세히":"앞으로 6주 · 줄을 누르면 그 날 편성으로"})),h("div",{class:"tablewrap"},h("table",{class:"t lgrid"},h("thead",{},h("tr",{},h("th",{text:"날짜"}),posUsed.map(p=>h("th",{text:p})),h("th",{text:"비고"}))),
     h("tbody",{},ds.map(x=>{const pl=planOf(x);return h("tr",{class:x===d?"sel":"",onclick:()=>{S.lineDay=x;render();}},h("th",{text:dLabel(x)}),
-      pl&&pl.off?h("td",{colSpan:posUsed.length,class:"hint",text:pl.label||"쉬는 주"}):posUsed.map(p=>h("td",{text:pl?((pl.roster||[]).find(r=>r.pos===p)||{people:[]}).people.map(q=>q.name).join(", "):""})),
+      pl&&pl.off?h("td",{colSpan:posUsed.length,class:"hint",text:pl.label||"쉬는 주"}):posUsed.map(p=>h("td",{class:can?"lcell":"",title:can?`${dLabel(x)} ${p} 고르기`:"",text:pl?((pl.roster||[]).find(r=>r.pos===p)||{people:[]}).people.map(q=>q.name).join(", "):"",
+        onclick:can?e=>{e.stopPropagation();S.lineDay=x;S.lineOpen={d:x,pos:p};render();}:null})),
       h("td",{class:"hint",text:pl?(pl.note||""):"편성 전"}));}))))):null;
   /* 요약(앞으로 편성 한눈에)을 맨 위로 */
-  if(grid)m.append(grid);m.append(card,respSheet);}
+  if(grid)m.append(grid);m.append(card,respSheet);
+  /* 요약 표의 칸을 누르면: 그 날 · 그 자리 고르기 → 「적용」하면 바로 저장 */
+  if(S.lineOpen&&S.lineOpen.d===d&&can&&!L.off){const pos=S.lineOpen.pos;S.lineOpen=null;let slot=L.roster.find(r=>r.pos===pos);if(!slot){slot={pos,people:[]};L.roster.push(slot);}
+    openPicker(slot,async()=>{L.dirty=true;if(await savePlan(d,L)){S.lineDraft=null;toast(`${dLabel(d)} ${pos} 편성을 저장했어요`);}render();},L.roster,badge);}else S.lineOpen=null;}
 function lineupNotice(d){const pl=planOf(d);if(!pl)return;let short=true;
   const nm=n=>short&&n.length>=3?n.slice(1):n;
   const build=()=>{const no=Object.entries(availOf(d)).filter(([,v])=>!v.ok).map(([n,v])=>`${nm(resolveName(n))}${v.note?`(${v.note})`:""}`);
