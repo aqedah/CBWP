@@ -4982,7 +4982,17 @@ const WT_ALIAS=[[/3\s*주\s*기도회|좋은\s*만남/,"좋은만남의축제"],
 /* 사진에서 읽은 글: 한 글자씩 띄어 읽힌 것을 붙여요 (찬 양 해 → 찬양해) */
 function tidyOcr(t){return String(t||"").split("\n").map(line=>{const tk=line.trim().split(/\s+/);const out=[];let buf="";
     for(const w of tk){if(/^[가-힣]$/.test(w)){buf+=w;continue;}if(buf){if(/^[가-힣]/.test(w)){out.push(buf+w);buf="";continue;}out.push(buf);buf="";}out.push(w);}if(buf)out.push(buf);return out.join(" ");}).join("\n");}
-function parseKakao(text){const out={};const t=(text||"").replace(/\r/g,"").replace(/[\[\]]/g," ");const today=todayStr();
+function parseKakao(text){const out={};const today=todayStr();
+  /* 날짜 바로 뒤의 요일(10/28 수 · 10/28(수) · 10월 28일 수요일)은 지워요: 「수」가 여호수아, 「시」가 시편으로 읽히지 않게 */
+  const t=(text||"").replace(/\r/g,"").replace(/[\[\]]/g," ").replace(/\t/g,"\n").replace(/(\d{1,2}\s*[.\/월]\s*\d{1,2}\s*일?)\s*[(（]?\s*[월화수목금토일](?:요일)?\s*[)）]?(?=[\s\/·|,，]|$)/gm,"$1");
+  const isWd=x=>/^[(（]?\s*[월화수목금토일](?:요일)?\s*[)）]?$/.test(String(x).trim());
+  /* 줄 안 어디에 있든 본문(장 번호가 있는 것만)을 찾아요: 「요 8:2-12 생명의 빛」 → 「요 8:2-12」 */
+  const findRefIn=v=>{const re=/(^|[^가-힣0-9])((?:[1-3]\s?)?[가-힣]{1,7})\s*(\d{1,3})(?:\s*(?:[:：.]\s*\d{1,3}|(?:장|편)(?:\s*\d{1,3}\s*절)?)\s*절?)?(?:\s*[-~]\s*(?:\d{1,3}\s*(?:[:：]|장)\s*)?\d{1,3}\s*절?)?/g;let m;
+    while((m=re.exec(v))){const st=m.index+m[1].length;const txt=v.slice(st,re.lastIndex).trim();const r=parseRef(txt.replace(/：/g,":"));
+      if(r&&(typeof BIB==="undefined"||!BIB||BIB[r.b]))return txt;re.lastIndex=st+1;}return null;};
+  /* 라이브러리에 있는 곡 제목인지 (설교 후 찬양을 「설교 후」 표시 없이 쓴 경우) */
+  const songSet=new Set();for(const x of S.songs){songSet.add(norm(x.title));songSet.add(norm(splitTitle(x.title).base));}
+  const isSong=x=>{const n=norm(String(x||"").replace(/[“”"'‘’「」『』]/g,""));return n.length>=3&&songSet.has(n);};
   let dm=t.match(/(?:(\d{4})[.\-\/년]\s*)?(\d{1,2})\s*[.\/월]\s*(\d{1,2})\s*일?/);
   if(!dm){const m4=t.trim().match(/^(\d{2})(\d{2})(?!\d)/);if(m4)dm=[m4[0],null,m4[1],m4[2]];}
   if(dm){let y=dm[1]?+dm[1]:+today.slice(0,4);const mo=+dm[2],d=+dm[3];if(mo>=1&&mo<=12&&d>=1&&d<=31){if(!dm[1]&&`${y}-${pad(mo)}-${pad(d)}`<addDays(today,-60))y++;out.date=`${y}-${pad(mo)}-${pad(d)}`;}}
@@ -4998,7 +5008,12 @@ function parseKakao(text){const out={};const t=(text||"").replace(/\r/g,"").repl
     else if(!q&&by&&S.songs.some(x=>norm(x.title)===norm(by))){song=by;by="";}
     if(song)out.special=song;if(by)out.specialBy=by;}}
   for(let i=0;i<parts.length;i++){const x=parts[i];
-    if(!out.passage){const v=lab(/(?:본문|말씀)\s*[:：]\s*(.+)$/,x)||x;const r=parseRef(v.replace(/[()]/g," ").trim());if(r&&typeof BIB!=="undefined"&&(!BIB||BIB[r.b]))out.passage=v.trim();}
+    if(!out.passage&&!isWd(x)){const lv=lab(/(?:본문|말씀)\s*[:：]\s*(.+)$/,x);const v=(lv||x).replace(/[()]/g," ").trim();const f=lv&&parseRef(v)?v:findRefIn(v);
+      if(f){out.passage=f;
+        /* 같은 줄에 남은 글(날짜 · 예배 이름 · 설교자를 뺀 나머지)은 제목 후보로 */
+        if(!lv){let rem=v.replace(f,"  ");if(dm)rem=rem.replace(dm[0],"  ");for(const w of WTYPES)if(w!=="직접쓰기")rem=rem.replace(new RegExp(w.replace(/\s+/g,"\\s*")),"  ");
+          for(const[re]of WT_ALIAS)rem=rem.replace(re,"  ");rem=rem.replace(/[가-힣]{2,4}\s*(?:목사|전도사|강도사)/g,"  ").replace(/^[\s,，·:：\-–—]+|[\s,，·:：\-–—]+$/g,"").replace(/\s{2,}/g," ");
+          if(rem.replace(/[^가-힣a-zA-Z]/g,"").length>=2)parts[i]=rem;else if(!rem)parts[i]="";}}}
     if(!out.sermonTitle){const v=lab(/(?:제목|설교\s*제목)\s*[:：]\s*(.+)$/,x)||lab(/[「『"“](.+?)[」』"”]/,x);if(v)out.sermonTitle=v;}
     if(!out.preacher){const v=lab(/설교자?\s*[:：]\s*(.+)$/,x)||lab(/([가-힣]{2,4}\s*(?:목사|전도사|강도사))/,x);if(v&&!/후/.test(v))out.preacher=v;}
     if(afterIdx<0&&afterRe.test(x)){afterIdx=i;const v=x.match(afterRe)[1];out.after=v?v.split(/[,，、]/).map(y=>y.trim()).filter(Boolean):[];}}
@@ -5014,7 +5029,12 @@ function parseKakao(text){const out={};const t=(text||"").replace(/\r/g,"").repl
   /* 「특송」 표시 없이 맨 끝에 교회·성가대·선교회 이름만 쓴 경우 → 특송 부르는 사람 */
   if(!out.specialBy&&!out.special){const SP=/(교회|성가대|찬양대|선교회|중창단|합창단|청년부|청년회|권사회|장로회|집사회|남전도회|여전도회|목장|찬양팀|워십|가족|부부|형제|자매|특송)$/;
     const cand=parts.slice().reverse().find(x=>SP.test(x.replace(/\s/g,""))&&x.replace(/\s/g,"").length<=20&&!/목사|전도사|강도사|설교|본문/.test(x)&&!parseRef(x));if(cand&&cand!==out.sermonTitle)out.specialBy=cand;}
-  if(!out.sermonTitle){const rest=parts.filter(x=>x!==out.specialBy).filter((x,i)=>i!==afterIdx&&!(out.after||[]).includes(x)&&!parseRef(x)&&!/\d{1,2}\s*[.\/월]\s*\d{1,2}/.test(x)&&!WTYPES.some(w=>x.replace(/\s+/g,"").includes(w.replace(/\s+/g,"")))&&!/목사|전도사|본문|설교자|예배/.test(x)&&!/^[\d\s.,:~\-/()]+$/.test(x)&&x.replace(/\s/g,"").length>=2);if(rest.length)out.sermonTitle=rest[0];}
+  if(!out.sermonTitle){const rest=parts.filter(x=>x!==out.specialBy).filter((x,i)=>i!==afterIdx&&!(out.after||[]).includes(x)&&!parseRef(x)&&!(out.passage&&x.includes(out.passage))&&!/^(?:본문|말씀)\s*[:：]/.test(x)&&!/\d{1,2}\s*[.\/월]\s*\d{1,2}/.test(x)&&!WTYPES.some(w=>x.replace(/\s+/g,"").includes(w.replace(/\s+/g,"")))&&!/목사|전도사|본문|설교자|예배/.test(x)&&!/^[\d\s.,:~\-/()]+$/.test(x)&&x.replace(/\s/g,"").length>=2);if(rest.length)out.sermonTitle=(rest.filter(x=>!isWd(x)).find(x=>!isSong(x))||rest.filter(x=>!isWd(x))[0]||"")||undefined;}
+  /* 「설교 후 찬양」 표시 없이 라이브러리 곡 제목만 쓴 줄 · 제목 뒤에 쉼표로 붙인 곡 → 설교 후 찬양 */
+  if(!(out.after&&out.after.length)){const extra=[];
+    if(out.sermonTitle&&/[,，]/.test(out.sermonTitle)){const seg=out.sermonTitle.split(/\s*[,，]\s*/);while(seg.length>1&&isSong(seg[seg.length-1]))extra.unshift(seg.pop());if(extra.length)out.sermonTitle=seg.join(", ");}
+    for(const x of parts)if(x&&x!==out.sermonTitle&&x!==out.passage&&x!==out.specialBy&&!extra.includes(x)&&!/[:：]/.test(x)&&isSong(x))extra.push(x);
+    if(extra.length)out.after=extra.slice(0,3);}
   if(typeof isProject==="function"&&isProject()){const pj=projOf(S.team);if(pj)out.wtype=pj.wtype;}
   return out;}
 function itemByTitle(t){const n=norm(t);const sg=S.songs.find(x=>norm(x.title)===n)||S.songs.find(x=>norm(splitTitle(x.title).base)===n);return sg?itemFromSong(sg):{uid:uid(8),songId:null,title:t,key:"",yt:"",memo:"",pages:[]};}
