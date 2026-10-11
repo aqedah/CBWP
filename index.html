@@ -2129,7 +2129,7 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"},
 
       S.canWrite?h("button",{class:"btn",onclick:addPracticeEvent,title:"예배 전 토요일 오전 11시 연습 일정을 일정 탭에 넣어요",text:"+ 연습 일정"}):null,
-      h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF나 이미지로",text:"🖨 콘티 출력"}),
+      h("button",{class:"btn primary",onclick:()=>outputModal(S.cur),title:"콘티 · A3 압축 · 인도자 콘티를 PDF · 이미지로 저장하거나 바로 인쇄",text:"🖨 콘티 출력"}),
       h("button",{class:"btn",disabled:!!c.reopenedAt&&!isLocked(c),title:c.reopenedAt&&!isLocked(c)?"확정을 푼 동안은 꺼 둬요":"",onclick:async()=>{if(!S.curId&&curEditable()&&S.db){toast("새 콘티를 먼저 저장해요");await saveConti();if(!S.curId)return;}contiNotice(S.cur);},text:"📣 콘티 공지"}),
       h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>previewLyricsPpt(S.cur),title:"가사 PPT를 미리 보고 받아요",text:"다음: PPT 만들기 →"})));
   const sBotEl=isLocked(c)?finishPanel(c,"sheet"):sBot;m.append(sBotEl);floatSave(shTop,editable,["다음: PPT 만들기 →",()=>previewLyricsPpt(S.cur)],sBotEl);updateStatus();}
@@ -3398,7 +3398,7 @@ function renderList(m){let q="";
         h("div",{class:"hint",text:[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`,leaderOf(c)&&`인도 ${leaderOf(c)}`].filter(Boolean).join(" · ")}),
         h("div",{class:"songs slist"},songs.length?h("ol",{},songs.map(t=>h("li",{text:t}))):"곡 없음"),
         h("div",{class:"row"},h("button",{class:"btn sm primary",text:"보기",onclick:()=>viewConti(c)}),mine?h("button",{class:"btn sm",text:"열어서 고치기",onclick:()=>openConti(c)}):null,
-          h("button",{class:"btn sm",text:"🖨 출력",title:"콘티 · A3 압축을 PDF나 이미지로",onclick:()=>outputModal(c)}),
+          h("button",{class:"btn sm",text:"🖨 출력",title:"콘티 · A3 압축을 PDF · 이미지로 저장하거나 바로 인쇄",onclick:()=>outputModal(c)}),
           isWriter()?h("button",{class:"btn sm",text:"복제",onclick:()=>duplicateConti(c)}):null,h("span",{class:"spacer"}),del)));}
     resolveNames(arr.map(c=>c.authorId));}
   draw();renderList.redraw=draw;}
@@ -3516,7 +3516,7 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
       h("div",{class:"row"},h("button",{class:"btn sm primary",text:"보기",onclick:()=>viewConti(c)}),mine?h("button",{class:"btn sm",text:"열어서 고치기",onclick:()=>openConti(c)}):null,
         c.past&&mine?h("button",{class:"btn sm",text:"빠르게 고치기",onclick:()=>{S.pastOpen=true;editPast(c);}}):null,
         (mine||isWriter())&&S.db&&!isLocked(c)?h("button",{class:"btn sm",text:"📄 악보 PDF 넣기",title:"이 콘티에 악보 PDF를 올려 곡과 악보를 채워요",onclick:()=>pdfPastModal(c)}):null,
-        h("button",{class:"btn sm",text:"🖨 출력",title:"콘티 · A3 압축을 PDF나 이미지로",onclick:()=>outputModal(c)}),h("button",{class:"btn sm",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
+        h("button",{class:"btn sm",text:"🖨 출력",title:"콘티 · A3 압축을 PDF · 이미지로 저장하거나 바로 인쇄",onclick:()=>outputModal(c)}),h("button",{class:"btn sm",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
         h("span",{class:"spacer"}),mine&&S.db&&c.id&&allItems(c).length&&!isLocked(c)?h("button",{class:"btn sm ghost danger",text:"찬양 비우기",title:"이 콘티의 곡을 모두 빼요 (날짜 · 설교 · 참여자는 그대로)",onclick:()=>clearContiSongs(c)}):null,canDel?delBtn(c):null));};
   function draw(){box.replaceChildren();let placed=false;const qq=q.trim();
     const match=c=>{if(!qq)return true;const hay=[dateKeys(c.date),wtypeOf(c),c.sermonTitle,c.passage,c.preacher,leaderOf(c),c.note,...allItems(c).map(i=>i.title)].join(" ");return hay.includes(qq)||matchRank(hay,qq)>-1;};
@@ -4624,6 +4624,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-11","🖨 콘티 출력에서 바로 인쇄 (A3 콘티도 A4에 맞춰 줄여 인쇄 가능)"],
   ["2026-10-11","🧹 정리 파일 가져오기: 정리 목록에서 고른 곡 합치기 · 지우기 · 제목 바꾸기를 한 번에 (되돌리기 가능)"],
   ["2026-10-11","📥 고친 가사 가져오기: 수백 곡도 몇 초 만에 저장 · 저장하는 동안 창 닫힘 막기"],
   ["2026-10-10","🔤 PPT 글꼴 고르기 · 구글 무료 글꼴 · 글꼴 파일을 PPT 안에 넣기"],
@@ -6831,7 +6832,7 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
     try{await S.db.doc(`contis/${c.id}`).delete();if(S.curId===c.id){S.curId=null;S.dirty=true;saveDraft();}md.close();toast("콘티를 지웠어요");}catch(e){toast("지우지 못했어요");}}});
   if(c.authorId)resolveNames([c.authorId]);
   const md=modal(`${fmtDate(c.date)} · ${wtypeOf(c)}`,body,[
-    allItems(c).length?h("button",{class:"btn primary",text:"🎼 연습 모드",title:"태블릿을 악보대처럼 · 곡마다 한 화면",onclick:()=>{md.close();practiceMode(c);}}):null,    h("button",{class:"btn",text:"🖨 출력",title:"콘티 · A3 압축을 PDF나 이미지로",onclick:()=>outputModal(c)}),h("button",{class:"btn",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
+    allItems(c).length?h("button",{class:"btn primary",text:"🎼 연습 모드",title:"태블릿을 악보대처럼 · 곡마다 한 화면",onclick:()=>{md.close();practiceMode(c);}}):null,    h("button",{class:"btn",text:"🖨 출력",title:"콘티 · A3 압축을 PDF · 이미지로 저장하거나 바로 인쇄",onclick:()=>outputModal(c)}),h("button",{class:"btn",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)}),
     h("span",{class:"spacer"}),canDelV?delV:null,editable?h("button",{class:"btn primary",text:"고치기",onclick:()=>{md.close();openConti(c);}}):null],"viewer");}
 /* 압축버전: 모든 악보를 A3 한 장에 */
 function drawMarks(x,p,dx,dy,dw,dh){x.save();x.globalCompositeOperation="multiply";x.globalAlpha=.55;for(const mk of p.marks||[])if(mk.k==="H"){x.fillStyle=VCOL[(mk.v||1)-1];x.fillRect(dx+mk.x*dw,dy+mk.y*dh,mk.w*dw,mk.h*dh);}x.restore();
@@ -6945,18 +6946,41 @@ async function exportLeader(c,opt){if(!c)return;const items=[];let no=0;for(cons
 /* 콘티 출력: 콘티(악보) · A3 압축 × PDF · 이미지 */
 async function saveBlob(blob,fname){if(S.downloads){try{await S.downloads.save({filename:fname,data:blob});return true;}catch(e){if(e&&e.code==="declined"){toast("저장을 취소했어요");return false;}}}
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);return true;}
-function outputModal(c){if(!c)return;let kind="full",fmt="pdf";
-  const opt=(name,val,cur,label,sub)=>h("label",{class:"pick",style:"align-items:flex-start"},h("input",{type:"radio",name,checked:cur===val,onchange:()=>{if(name==="ok")kind=val;else fmt=val;}}),h("span",{},h("b",{text:label}),sub?h("div",{class:"hint",text:sub}):null));
-  const md=modal("콘티 출력",h("div",{class:"panel-body"},
-    h("div",{class:"lab",text:"무엇을"}),h("div",{class:"picklist"},opt("ok","full",kind,"콘티 (곡마다 악보)","A4 · 곡 순서대로 악보가 이어져요"),opt("ok","a3",kind,"압축버전 (A3)","모든 악보를 A3 가로 한두 장에 모아요"),opt("ok","leader",kind,"인도자 콘티 (A3)","곡마다 세로 3단: 위 흐름 · 가운데 인트로와 악보 · 아래 연주 시간"),c.layout&&(c.layout.pages||[]).some(p=>p.els.length)?opt("ok","layout",kind,"자유롭게 편집한 그대로",`${(PAPER[c.layout.paper]||PAPER.a3l).name} · 악보 편집 → 🧩 자유롭게 편집에서 놓은 모양`):null),
-    h("div",{class:"lab",text:"어떤 파일로"}),h("div",{class:"picklist"},opt("of","pdf",fmt,"PDF","인쇄 · 태블릿 악보 앱에 좋아요"),opt("of","img",fmt,"이미지 (PNG)","카톡으로 보기 좋아요 · 여러 쪽이면 묶음(zip)으로 받아요"))),
-    [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:async()=>{md.close();
+/* 🖨 바로 인쇄: 만든 쪽 그림을 화면에 안 보이는 인쇄 전용 칸에 넣고 브라우저 인쇄 창을 열어요. 인쇄할 때는 그 칸만 찍혀요 */
+async function printCanvases(canvases,paper){document.getElementById("print-root")?.remove();document.getElementById("print-style")?.remove();
+  const urls=[];const root=h("div",{id:"print-root","aria-hidden":"true"});
+  for(const cv of canvases){const b=await new Promise(r=>cv.toBlob(r,"image/png"));const u=URL.createObjectURL(b);urls.push(u);root.append(h("div",{class:"print-pg"},h("img",{src:u,alt:""})));}
+  const css=`@page{size:${paper.w}mm ${paper.h}mm;margin:0}
+@media screen{#print-root{display:none}}
+@media print{html,body{margin:0!important;padding:0!important;background:#fff!important;height:auto!important;overflow:visible!important}
+body>*:not(#print-root){display:none!important}#print-root{display:block!important}
+.print-pg{width:${paper.w}mm;height:${paper.h-0.6}mm;overflow:hidden;break-after:page;page-break-after:always;display:flex;align-items:center;justify-content:center}
+.print-pg:last-child{break-after:auto;page-break-after:auto}.print-pg img{max-width:100%;max-height:100%;display:block}}`;
+  const style=h("style",{id:"print-style",text:css});document.head.append(style);document.body.append(root);
+  await Promise.all([...root.querySelectorAll("img")].map(im=>im.decode?im.decode().catch(()=>{}):null));
+  const clean=()=>{root.remove();style.remove();urls.forEach(u=>URL.revokeObjectURL(u));};
+  window.addEventListener("afterprint",()=>setTimeout(clean,800),{once:true});
+  window.print();}
+function outputModal(c){if(!c)return;let kind="full";
+  let pref={};try{pref=JSON.parse(localStorage.getItem("cbwp-out")||"{}")||{};}catch(e){}
+  let fmt=["pdf","img","print"].includes(pref.fmt)?pref.fmt:"pdf",paperMode=pref.paper==="a4"?"a4":"orig";
+  const sync=()=>{paperRow.hidden=fmt!=="print";goBtn.textContent=fmt==="print"?"🖨 인쇄":"저장";};
+  const opt=(name,val,cur,label,sub)=>h("label",{class:"pick",style:"align-items:flex-start"},h("input",{type:"radio",name,checked:cur===val,onchange:()=>{if(name==="ok")kind=val;else if(name==="pp")paperMode=val;else fmt=val;sync();}}),h("span",{},h("b",{text:label}),sub?h("div",{class:"hint",text:sub}):null));
+  const paperRow=h("div",null,h("div",{class:"lab",text:"인쇄 용지"}),h("div",{class:"picklist"},opt("pp","orig",paperMode,"콘티 크기 그대로","A4 콘티는 A4로, A3 콘티는 A3로"),opt("pp","a4",paperMode,"모두 A4에 맞춰 줄이기","A3 프린터가 없을 때 · A3 콘티를 A4 가로 한 장에 그대로 줄여요")));
+  const goBtn=h("button",{class:"btn primary",text:"저장",onclick:async()=>{md.close();try{localStorage.setItem("cbwp-out",JSON.stringify({fmt,paper:paperMode}));}catch(e){}
       const r=kind==="layout"?await exportLayout(c):kind==="leader"?await exportLeader(c):kind==="a3"?await exportCompact(c,{blob:true}):await exportPdf(c,{blob:true});if(!r)return;
+      if(fmt==="print"){const base=kind==="full"?{w:210,h:297}:kind==="layout"?(PAPER[c.layout&&c.layout.paper]||PAPER.a3l):{w:420,h:297};
+        const paper=paperMode==="a4"?(base.w>base.h?{w:297,h:210}:{w:210,h:297}):{w:base.w,h:base.h};
+        try{await printCanvases(r.canvases,paper);}catch(e){console.error(e);toast("인쇄 창을 열지 못했어요. PDF로 저장해서 인쇄해 주세요.",4000);}return;}
       if(fmt==="pdf"){if(await saveBlob(r.blob,r.fname))toast("PDF를 저장했어요");return;}
       const base=r.fname.replace(/\.pdf$/,"");const pngs=await Promise.all(r.canvases.map(cv=>new Promise(res=>cv.toBlob(res,"image/png"))));
       if(pngs.length===1){if(await saveBlob(pngs[0],base+".png"))toast("이미지를 저장했어요");return;}
       try{await loadScript(JSZIP_URL);const z=new window.JSZip();pngs.forEach((b,i)=>z.file(`${base}_${String(i+1).padStart(2,"0")}.png`,b));
-        if(await saveBlob(await z.generateAsync({type:"blob"}),base+"_이미지.zip"))toast(`이미지 ${pngs.length}장을 묶어서 저장했어요`);}catch(e){console.error(e);showPreview(r.canvases);}}})]);}
+        if(await saveBlob(await z.generateAsync({type:"blob"}),base+"_이미지.zip"))toast(`이미지 ${pngs.length}장을 묶어서 저장했어요`);}catch(e){console.error(e);showPreview(r.canvases);}}});
+  const md=modal("콘티 출력",h("div",{class:"panel-body"},
+    h("div",{class:"lab",text:"무엇을"}),h("div",{class:"picklist"},opt("ok","full",kind,"콘티 (곡마다 악보)","A4 · 곡 순서대로 악보가 이어져요"),opt("ok","a3",kind,"압축버전 (A3)","모든 악보를 A3 가로 한두 장에 모아요"),opt("ok","leader",kind,"인도자 콘티 (A3)","곡마다 세로 3단: 위 흐름 · 가운데 인트로와 악보 · 아래 연주 시간"),c.layout&&(c.layout.pages||[]).some(p=>p.els.length)?opt("ok","layout",kind,"자유롭게 편집한 그대로",`${(PAPER[c.layout.paper]||PAPER.a3l).name} · 악보 편집 → 🧩 자유롭게 편집에서 놓은 모양`):null),
+    h("div",{class:"lab",text:"어떻게"}),h("div",{class:"picklist"},opt("of","pdf",fmt,"PDF 파일로 저장","태블릿 악보 앱 · 나중에 인쇄할 때"),opt("of","img",fmt,"이미지 (PNG)로 저장","카톡으로 보기 좋아요 · 여러 쪽이면 묶음(zip)으로 받아요"),opt("of","print",fmt,"🖨 바로 인쇄","프린터로 바로 보내요 · 인쇄 창이 열려요")),paperRow),
+    [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),goBtn]);sync();}
 function showPreview(canvases){const body=h("div",{class:"panel-body pdfprev"},h("p",{class:"hint",text:"이 화면에서는 파일 저장이 안 돼요. 아래 이미지를 길게 누르거나 오른쪽 클릭해서 저장하세요."}),canvases.map(cv=>h("img",{src:cv.toDataURL("image/jpeg",.85),alt:"콘티 페이지"})));
   modal("출력 미리보기",body,null);}
 
