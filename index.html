@@ -537,7 +537,8 @@ header.top{border-top:4px solid var(--team,transparent)}
 .pinfo-row{display:grid;grid-template-columns:92px 1fr;align-items:center;min-height:46px}
 .pinfo-row+.pinfo-row{border-top:1px solid var(--line)}
 @media (min-width:720px){.pinfo.two{display:grid;grid-template-columns:1fr 1fr}.pinfo.two .pinfo-row{border-top:1px solid var(--line)}.pinfo.two .pinfo-row:nth-child(-n+2){border-top:0}.pinfo.two .pinfo-row:nth-child(even){border-left:1px solid var(--line)}}
-.lgrid td.lcell{cursor:pointer;border-radius:6px}.lgrid td.lcell:hover{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}.lgrid td.lcell:empty:hover::after{content:"+ 고르기";color:var(--accent);font-size:.8rem;font-weight:700}
+.lgrid td.lcell{cursor:pointer;border-radius:6px;position:relative}.lgrid td.lcell:hover{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}.lgrid td.lcell:empty:hover::after{content:"+ 고르기";position:absolute;inset:0;display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden;color:var(--accent);font-size:.8rem;font-weight:700}
+.lgrid .lnm{white-space:nowrap}.lgrid .lmk{font-weight:800;margin-left:2px;font-size:.85em}.lgrid .lmk.ok{color:#1f9d55}.lgrid .lmk.no{color:#d93025}.lgrid tr.draft td{color:var(--ink2);font-style:italic}
 .rsfold{border:1px solid var(--line);border-radius:10px;background:var(--soft)}.rsfold>summary{cursor:pointer;padding:10px 14px;list-style-position:inside}.rsfold[open]>summary{border-bottom:1px solid var(--line)}.rsfold-in{padding:12px 14px;background:var(--sheet);border-radius:0 0 10px 10px}
 .pinfo dt{align-self:stretch;display:flex;align-items:center;padding:0 14px;background:var(--soft);color:var(--ink2);font-size:.84rem;font-weight:700}
 .pinfo dd{margin:0;padding:10px 14px;font-weight:600;min-width:0}
@@ -4025,9 +4026,8 @@ function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);i
   const diffConti=conti&&JSON.stringify((conti.roster||[]).filter(r=>(r.people||[]).length).map(r=>[r.pos,r.people.map(p=>normName(p.name))]))!==JSON.stringify(L.roster.filter(r=>(r.people||[]).length).map(r=>[r.pos,r.people.map(p=>normName(p.name))]));
   const card=h("div",{class:"sheet"},h("h2",{},`${dLabel(d)} 편성`,h("span",{class:"sub",text:can?"고친 뒤 「편성 저장」":"리더가 정한 편성이에요"})),days,
     L.off?h("div",{class:"empty",style:"margin-top:10px"},`이 주는 「${L.label||"쉬는 주"}」예요.`,can?h("div",{style:"margin-top:8px"},h("button",{class:"btn sm",text:"보통 주로 되돌리기",onclick:async()=>{L.off=false;await save();}})):null):h("div",{style:"margin-top:12px;display:flex;flex-direction:column;gap:12px"},
-      !saved&&can?h("div",{class:"banner"},h("b",{text:"아직 저장 전이에요. "}),conti?"콘티 참여자를 바탕으로 채워 두었어요.":"기본 편성으로 미리 채워 두었어요. 불참한 사람(빨간색)을 바꾸고 저장하세요."):null,
+      !saved&&can?h("div",{class:"banner"},h("b",{text:"아직 저장 전이에요. "}),conti?"콘티 참여자를 바탕으로 위 편성표에 채워 두었어요.":"기본 편성으로 위 편성표에 채워 두었어요. ✕(불참)인 사람은 칸을 눌러 바꾸고 저장하세요."):null,
       L.dirty&&saved&&can?h("div",{class:"banner warn"},"고친 내용이 아직 저장되지 않았어요."):null,
-      h("dl",{class:"pinfo two",style:"max-width:none"},rows),
       prBox,h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"ln-note",text:"비고"}),noteIn)),
       can?h("div",{class:"row"},h("button",{class:"btn primary",text:"편성 저장",onclick:save}),rosterSetBtns((id)=>{L.roster=basicAsRoster(id);dirty();}),
         conti&&diffConti&&saved?h("button",{class:"btn",text:"콘티 참여자에 반영",title:"이 날 콘티의 참여자를 편성표대로 바꿔요",onclick:async()=>{try{await S.db.doc(`contis/${conti.id}`).update({roster:planRoster(saved),updatedAt:Date.now()});toast("콘티 참여자를 편성표대로 바꿨어요");}catch(e){toast("바꾸지 못했어요");}}}):null,
@@ -4041,11 +4041,16 @@ function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);i
     h("div",{class:"avcols"},col("가능","ok",yes,x=>h("span",{class:"lchip ok",text:x.mb.name})),col("불참","no",no,x=>h("span",{class:"lchip no",text:`${x.mb.name}${x.r.note?` · ${x.r.note}`:""}`})),col("응답 전","",none,x=>h("span",{class:"lchip",text:x.mb.name}))));
   /* 한눈에 (엑셀 멤버 구성표처럼) */
   const posUsed=[...new Set(ds.flatMap(x=>{const pl=planOf(x);return pl&&!pl.off?(pl.roster||[]).map(r=>r.pos):[];}).concat(L.roster.filter(r=>(r.people||[]).length).map(r=>r.pos)))].sort((a,b)=>(POSITIONS.indexOf(a)+99)%199-(POSITIONS.indexOf(b)+99)%199);
+  if(!posUsed.length)posUsed.push(...L.roster.map(r=>r.pos));
   const grid=posUsed.length?h("div",{class:"sheet"},h("h2",{},"편성 요약",h("span",{class:"sub",text:can?"칸을 누르면 바로 고르고 저장돼요 · 날짜를 누르면 아래에서 자세히":"앞으로 6주 · 줄을 누르면 그 날 편성으로"})),h("div",{class:"tablewrap"},h("table",{class:"t lgrid"},h("thead",{},h("tr",{},h("th",{text:"날짜"}),posUsed.map(p=>h("th",{text:p})),h("th",{text:"비고"}))),
-    h("tbody",{},ds.map(x=>{const pl=planOf(x);return h("tr",{class:x===d?"sel":"",onclick:()=>{S.lineDay=x;render();}},h("th",{text:dLabel(x)}),
-      pl&&pl.off?h("td",{colSpan:posUsed.length,class:"hint",text:pl.label||"쉬는 주"}):posUsed.map(p=>h("td",{class:can?"lcell":"",title:can?`${dLabel(x)} ${p} 고르기`:"",text:pl?((pl.roster||[]).find(r=>r.pos===p)||{people:[]}).people.map(q=>q.name).join(", "):"",
-        onclick:can?e=>{e.stopPropagation();S.lineDay=x;S.lineOpen={d:x,pos:p};render();}:null})),
-      h("td",{class:"hint",text:pl?(pl.note||""):"편성 전"}));}))))):null;
+    h("tbody",{},ds.map(x=>{const pl=planOf(x);const cur=x===d;const draft=cur&&(!saved||L.dirty)&&!L.off;const off=cur?L.off:!!(pl&&pl.off);
+      const ros=cur?L.roster:pl&&!pl.off?(pl.roster||[]):[];
+      /* 이름 옆에 참여 응답: 초록 ✓ 가능 · 빨강 ✕ 불참 */
+      const nm=q=>{const r=respOf(x,q.name);return h("span",{class:"lnm"},q.name,r?h("span",{class:"lmk "+(r.ok?"ok":"no"),title:r.ok?"참여 가능":`불참${r.note?` · ${r.note}`:""}`,"aria-label":r.ok?"참여 가능":"불참",text:r.ok?"✓":"✕"}):null);};
+      return h("tr",{class:(cur?"sel":"")+(draft?" draft":""),onclick:()=>{S.lineDay=x;render();}},h("th",{text:dLabel(x)}),
+      off?h("td",{colSpan:posUsed.length,class:"hint",text:(cur?L.label:pl.label)||"쉬는 주"}):posUsed.map(p=>{const ppl=(ros.find(r=>r.pos===p)||{people:[]}).people||[];
+        return h("td",{class:can?"lcell":"",title:can?`${dLabel(x)} ${p} 고르기`:"",onclick:can?e=>{e.stopPropagation();S.lineDay=x;S.lineOpen={d:x,pos:p};render();}:null},...ppl.flatMap((q,k)=>k?[", ",nm(q)]:[nm(q)]));}),
+      h("td",{class:"hint",text:draft?"저장 전":pl?(pl.note||""):"편성 전"}));}))))):null;
   /* 요약(앞으로 편성 한눈에)을 맨 위로 */
   if(grid)m.append(grid);m.append(card,respSheet);
   /* 요약 표의 칸을 누르면: 그 날 · 그 자리 고르기 → 「적용」하면 바로 저장 */
