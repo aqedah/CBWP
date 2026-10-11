@@ -3288,6 +3288,9 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item}){
 /* =========================================================
    LIST TAB
    ========================================================= */
+/* 파일 이름: 팀_예배_날짜 · 팀 이름과 예배 이름이 같으면(집회 프로젝트) 한 번만 */
+function fileStem(c,extra){const tm=teamName(c.team||S.team||"");const wt=(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"");const nk2=x=>String(x).replace(/\s+/g,"");
+  return [tm,nk2(tm)===nk2(wt)?"":wt,extra||"",c.date||"날짜미정"].filter(Boolean).join("_");}
 /* 🎞 PPT 일괄 저장: 기간 안 콘티마다 가사 PPT를 만들어 한 압축 파일(.zip)로 · 예배마다 기억한 템플릿 · 글꼴을 써요 */
 function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,13);
   const fI=h("input",{type:"date",value:from,style:"width:auto",onchange:e=>{from=e.target.value;draw();}}),tI=h("input",{type:"date",value:to,style:"width:auto",onchange:e=>{to=e.target.value;draw();}});
@@ -3319,9 +3322,9 @@ function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,1
         const pr=prOf(c)||{};S.pptLyricFont=pr.font||"";S.pptEmbed=!!pr.embed;
         const ft=rawTpl(c);if(ft&&ft.kind==="full"){const fb=await fullBlobOf(ft).catch(()=>null);
           if(fb){const slots=Array.isArray(pr.slots)?pr.slots.map(v=>v==null?null:String(v).split(",").filter(Boolean)):null;const r=await buildFullPpt(fb,c,ft,slots,()=>{});let blob=r.blob;if(S.pptLyricFont)blob=await maybeEmbed(blob,S.pptLyricFont,true);
-            let nm=`${teamName(c.team||S.team)}_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"")}_${c.date||"날짜미정"}.pptx`;if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);continue;}
+            let nm=`${fileStem(c)}.pptx`;if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);continue;}
           noFull.push(`${fmtDate(c.date)} ${wtypeOf(c)}`);}
-        await exportLyricsPpt(c,tplOf(c),true,{collect:(blob,fname)=>{let nm=fname.replace(/\.pptx$/,`_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"")}.pptx`);if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);}});}
+        await exportLyricsPpt(c,tplOf(c),true,{collect:(blob,fname)=>{let nm=`${fileStem(c,"가사")}.pptx`;if(files.some(f=>f[1]===nm))nm=nm.replace(/\.pptx$/,`_${i}.pptx`);files.push([blob,nm]);}});}
       if(files.length===1){if(await saveBlob(files[0][0],files[0][1]))toast("PPT를 저장했어요");}
       else{st.textContent="압축 파일로 묶는 중…";await loadScript(JSZIP_URL);const z=new window.JSZip();for(const[b,nm]of files)z.file(nm,b);const zb=await z.generateAsync({type:"blob"});
         if(await saveBlob(zb,`${teamName(S.team)}_가사PPT_${from}~${to}.zip`))toast(`PPT ${files.length}개를 한 파일(.zip)로 저장했어요`,3500);}
@@ -6475,7 +6478,7 @@ async function slimPptx(file,pg){await loadScript(JSZIP_URL);const zip=await win
   pg&&pg("파일로 묶는 중…",1);const out=await zip.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6},mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
   return out.size<file.size?out:file;}
 async function exportFullPpt(c,t,slotMap){const go=async blob=>{const md=modal("예배 PPT 만드는 중",h("div",{class:"panel-body"},h("p",{id:"fp-st",text:"준비하고 있어요…"})),null);const st=$("#fp-st",md.el);
-    try{const r=await buildFullPpt(blob,c,t,slotMap,s=>{st.textContent=s;});if(S.pptLyricFont){st.textContent="글꼴 파일을 넣는 중…";r.blob=await maybeEmbed(r.blob,S.pptLyricFont,true);}const fname=`${teamName(c.team||S.team)}_${(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|]/g,"")}_${c.date||"날짜미정"}.pptx`;md.close();
+    try{const r=await buildFullPpt(blob,c,t,slotMap,s=>{st.textContent=s;});if(S.pptLyricFont){st.textContent="글꼴 파일을 넣는 중…";r.blob=await maybeEmbed(r.blob,S.pptLyricFont,true);}const fname=`${fileStem(c)}.pptx`;md.close();
       if(S.downloads){try{await S.downloads.save({filename:fname,data:r.blob});toast(`예배 PPT를 저장했어요 (${r.total}장)`);}catch(e){if(e&&e.code==="declined")toast("저장을 취소했어요");else toast("저장하지 못했어요");}}
       else{const a=document.createElement("a");a.href=URL.createObjectURL(r.blob);a.download=fname;document.body.append(a);a.click();a.remove();toast(`예배 PPT를 만들었어요 (${r.total}장)`);}}
     catch(e){md.close();console.error(e);toast("예배 PPT를 만들지 못했어요: "+(e.message||e),4000);}};
