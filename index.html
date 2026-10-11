@@ -3295,7 +3295,9 @@ function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,1
   const ym=(y,m)=>{const a=new Date(y,m,1),b=new Date(y,m+1,0);const f=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;return[f(a),f(b)];};
   const quick=h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},[["이번 주",()=>setR(weekStart(today),addDays(weekStart(today),6))],["다음 주",()=>setR(addDays(weekStart(today),7),addDays(weekStart(today),13))],["이번 달",()=>setR(...ym(td.getFullYear(),td.getMonth()))],["다음 달",()=>setR(...ym(td.getFullYear(),td.getMonth()+1))]]
     .map(([t,f])=>h("button",{type:"button",class:"btn sm ghost",text:t,onclick:f})));
-  const off=new Set();const list=h("div",{class:"cards"});const st=h("p",{class:"hint"});
+  const off=new Set();const list=h("div",{class:"cards"});
+  /* 고른 개수 · 만드는 중 표시는 아래 「저장」 단추 바로 옆에 (누른 곳 가까이에서 보이게) */
+  const st=h("p",{class:"hint","aria-live":"polite",style:"margin:0;flex:1 1 160px;min-width:0;align-self:center;text-align:left;font-weight:600"});
   /* 예배마다 기억한 틀 (예배 전체 틀이면 그 틀 그대로 · 이 기기에 틀 파일이 없으면 가사 틀로) */
   const prOf=c=>(teamCfg().pptPref||{})[wtypeOf(c)||"_"]||null;
   const rawTpl=c=>{const pr=prOf(c);return (pr&&pptTpls().find(x=>x.id===pr.tpl))||tplFor(c);};
@@ -3327,7 +3329,7 @@ function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,1
       md.close();}catch(e){console.error(e);toast("PPT를 만들지 못했어요. 인터넷 연결을 확인해 주세요.");go.disabled=false;cnt();}}});
   const md=modal("🎞 PPT 일괄 저장",h("div",{class:"panel-body"},
     h("p",{class:"hint",style:"margin:0 0 6px",text:"기간 안 콘티마다 가사 PPT를 만들어 한 압축 파일(.zip)로 저장해요. 예배마다 「📌 이 설정 기억하기」로 정해 둔 템플릿 · 가사 글꼴을 쓰고, 곡 흐름이 있으면 흐름대로 넣어요."}),
-    h("div",{class:"lab",text:"기간"}),h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},fI,h("span",{text:"~"}),tI),quick,st,list),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);draw();}
+    h("div",{class:"lab",text:"기간"}),h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},fI,h("span",{text:"~"}),tI),quick,h("div",{class:"lab",style:"margin-top:10px",text:"만들 콘티"}),list),[st,h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);draw();}
 /* 콘티 표로 내보내기: 엑셀(주마다 한 장 · 날짜마다 한 칸) 또는 CSV(콘티마다 한 줄) */
 const XLSX_URL="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 const dayLbl=ds=>{const d=parseD(ds);return `${d.getMonth()+1}/${d.getDate()}(${"주월화수목금토"[d.getDay()]}${d.getDay()?"":"일"})`;};
