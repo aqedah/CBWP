@@ -3288,9 +3288,9 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item}){
 /* =========================================================
    LIST TAB
    ========================================================= */
-/* 파일 이름: 팀_예배_날짜 · 팀 이름과 예배 이름이 같으면(집회 프로젝트) 한 번만 */
+/* PPT 파일 이름: 예배_날짜 (팀 이름은 넣지 않아요) */
 function fileStem(c,extra){const tm=teamName(c.team||S.team||"");const wt=(wtypeOf(c)||"예배").replace(/[\\/:*?"<>|\s]/g,"");const nk2=x=>String(x).replace(/\s+/g,"");
-  return [tm,nk2(tm)===nk2(wt)?"":wt,extra||"",c.date||"날짜미정"].filter(Boolean).join("_");}
+  return [wt,extra||"",c.date||"날짜미정"].filter(Boolean).join("_");}
 /* 🎞 PPT 일괄 저장: 기간 안 콘티마다 가사 PPT를 만들어 한 압축 파일(.zip)로 · 예배마다 기억한 템플릿 · 글꼴을 써요 */
 function pptBulkModal(){const today=todayStr();let from=today,to=addDays(today,13);
   const fI=h("input",{type:"date",value:from,style:"width:auto",onchange:e=>{from=e.target.value;draw();}}),tI=h("input",{type:"date",value:to,style:"width:auto",onchange:e=>{to=e.target.value;draw();}});
