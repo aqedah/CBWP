@@ -2303,6 +2303,7 @@ function layoutEditor(c,onSave){const editable=curEditable();
       editable&&L.pages.some(p=>p.els.length)?h("button",{type:"button",class:"btn sm ghost danger",text:"전체 지우기",title:"모든 쪽을 비우고 빈 종이 한 장으로",onclick:ev=>{if(!confirmInline(ev.currentTarget,"모든 쪽을 지울까요? · 한 번 더"))return;L.pages=[{els:[]}];pi=0;sel.clear();commit();draw();toast("모두 지웠어요. 되돌리기(↶)로 살릴 수 있어요");}}):null,
       h("span",{class:"hint",style:"margin-left:auto",text:sel.size>1?`${sel.size}개 골랐어요`:""})].filter(Boolean));
     const e=one();const many=sel.size>1;selBar.hidden=!editable||(!e&&!many);
+    toPrev.hidden=pi<=0;toPrev.textContent=`◀ ${pi}쪽으로`;toPrev.title=`고른 것을 ${pi}쪽으로 옮겨요`;toNext.textContent=pi>=L.pages.length-1?"새 쪽으로 ▶":`${pi+2}쪽으로 ▶`;toNext.title="고른 것을 다음 쪽으로 옮겨요";
     if(e||many){const allT=selEls().every(x=>x.type==="text");fsz.hidden=bld.hidden=algn.hidden=brd.hidden=!allT;crop.hidden=!(e&&e.type==="img");
       fsz.textContent=e&&e.type==="text"?`글씨 ${Math.round((e.size||5)*10)/10}`:"";if(e){bld.classList.toggle("primary",!!e.bold);brd.classList.toggle("primary",!!e.border);}}
     hlBtn.classList.toggle("primary",tool==="hl");hlPal.hidden=tool!=="hl";penBtn.classList.toggle("primary",tool==="pen");penPal.hidden=tool!=="pen";[...penPal.querySelectorAll(".ly-sw")].forEach(b=>b.classList.toggle("on",b.dataset.c===penColor));lblBtn.classList.toggle("primary",tool==="lbl");lblRow.hidden=tool!=="lbl";[...lblRow.querySelectorAll(".lbtn")].forEach(b=>b.setAttribute("aria-pressed",String(!lblCustom&&b.textContent===lblText)));
@@ -2410,7 +2411,12 @@ function layoutEditor(c,onSave){const editable=curEditable();
   const z=d=>{const els=page().els;const pick=els.filter(e=>sel.has(e.id));if(!pick.length)return;const rest=els.filter(e=>!sel.has(e.id));page().els=d>0?[...rest,...pick]:[...pick,...rest];commit();draw();};
   const dup=()=>{const pick=selEls();if(!pick.length)return;const ids=[];for(const e of pick){const n=clone(e);n.id=uid(6);n.x+=4;n.y+=4;page().els.push(n);ids.push(n.id);}sel=new Set(ids);commit();draw();};
   const del=()=>{if(!sel.size)return;page().els=page().els.filter(e=>!sel.has(e.id));sel.clear();commit();draw();};
-  const selBar=h("div",{class:"row ly-selbar",style:"gap:4px;flex-wrap:wrap"},h("button",{type:"button",class:"btn sm ghost",text:"A−",onclick:()=>chSize(-.5)}),fsz,h("button",{type:"button",class:"btn sm ghost",text:"A+",onclick:()=>chSize(.5)}),bld,algn,brd,crop,
+  /* 고른 것을 다른 쪽으로 옮기기 (예: 2쪽으로 넘어간 악보를 1쪽으로) · 옮긴 뒤 빈 마지막 쪽은 정리 */
+  const movePage=dir=>{const to=pi+dir;if(to<0||!sel.size)return;if(to>=L.pages.length)L.pages.push({els:[]});const from=page();const mv=from.els.filter(e=>sel.has(e.id));if(!mv.length)return;
+    from.els=from.els.filter(e=>!sel.has(e.id));L.pages[to].els.push(...mv);const src=pi;pi=to;let gone=false;if(!L.pages[src].els.length&&src===L.pages.length-1&&L.pages.length>1){L.pages.splice(src,1);gone=true;}
+    commit();draw();toast(`${mv.length>1?`${mv.length}개를`:"고른 것을"} ${to+1}쪽으로 옮겼어요${gone?" · 빈 쪽은 지웠어요":""}`);};
+  const toPrev=h("button",{type:"button",class:"btn sm",onclick:()=>movePage(-1)}),toNext=h("button",{type:"button",class:"btn sm",onclick:()=>movePage(1)});
+  const selBar=h("div",{class:"row ly-selbar",style:"gap:4px;flex-wrap:wrap"},toPrev,toNext,h("button",{type:"button",class:"btn sm ghost",text:"A−",onclick:()=>chSize(-.5)}),fsz,h("button",{type:"button",class:"btn sm ghost",text:"A+",onclick:()=>chSize(.5)}),bld,algn,brd,crop,
     h("button",{type:"button",class:"btn sm ghost",text:"앞으로",onclick:()=>z(1)}),h("button",{type:"button",class:"btn sm ghost",text:"뒤로",onclick:()=>z(-1)}),h("button",{type:"button",class:"btn sm ghost",text:"복제",onclick:dup}),h("button",{type:"button",class:"btn sm ghost danger",text:"지우기",onclick:del}));
   const pageBar=h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;align-items:center"});
   const tools=editable?h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;align-items:center"},paperSel,h("button",{type:"button",class:"btn sm primary",text:"🎼 악보 넣기",onclick:pickScore}),
@@ -2430,7 +2436,7 @@ function layoutEditor(c,onSave){const editable=curEditable();
   document.addEventListener("keydown",key,true);
   const save=()=>{c.layout=clone(L);dirty=false;onSave&&onSave(L);};
   const md=modal("🧩 자유롭게 편집",h("div",{class:"panel-body ly-body"},h("div",{class:"ly-top"},tools,lblRow,pageBar,selBar),stageWrap,
-    h("p",{class:"hint",style:"margin:4px 0 0",text:"끌어서 옮기기 · Shift+클릭으로 여러 개 · Ctrl+A 전체 선택 · 오른쪽 아래 점으로 크기 · 글상자는 두 번 눌러 쓰기 · Ctrl+휠 확대 · ◀ ▶ 쪽 넘기기"})),
+    h("p",{class:"hint",style:"margin:4px 0 0",text:"끌어서 옮기기 · 고른 뒤 「◀ 1쪽으로」로 다른 쪽에 옮기기 · Shift+클릭으로 여러 개 · Ctrl+A 전체 선택 · 오른쪽 아래 점으로 크기 · 글상자는 두 번 눌러 쓰기 · Ctrl+휠 확대 · ◀ ▶ 쪽 넘기기"})),
     [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),
      h("button",{class:"btn",text:"⬇ PDF · 그림",onclick:async()=>{save();const r=await exportLayout(c);if(r)outputPick(r);}}),
      editable?h("button",{class:"btn primary",text:"콘티에 저장",onclick:async()=>{save();S.lySaved=Date.now();if(S.cur===c||!c.id){if(curEditable())await saveConti();}else toast("담았어요");}}):null],"editor layout",
@@ -4730,6 +4736,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-12","🧩 자유롭게 편집: 고른 악보 · 글상자를 다른 쪽으로 옮기기 (「◀ 1쪽으로」 · 「2쪽으로 ▶」)"],
   ["2026-10-11","📱 휴대폰 아래 메뉴를 「콘티 · 홈 · 나」 셋으로 · 일정 · 출결 · 찬양 찾기는 ☰ 메뉴에"],
   ["2026-10-11","🔎 찬양 라이브러리에서 가사로도 곡 찾기 (예: 「부르신 곳에서」 → 따스한 성령님)"],
   ["2026-10-11","📱 휴대폰은 보기 중심의 간단한 화면으로 (콘티 · 찬양 · 일정 · 출결 · 공지 · 전광판) · 「💻 PC 화면」으로 언제든 전체 기능"],
