@@ -871,6 +871,8 @@ const SECTIONS=[["opening","여는 찬양","고정된 시작 찬양 · 없으면
 const allItems=c=>[...(c.opening||[]),...(c.before||[]),...(c.special||[]),...(c.after||[])];
 /* hymn titles look like "제목 (찬송가 79장)" or "제목 (찬송가 79장, 팀이름 편곡)" */
 const HYMN_RE=/\s*\((?:새)?찬송가\s*(\d{1,3})장(?:\s*,\s*([^)]*?)\s*편곡)?\)\s*$/;
+/* PPT 화면 제목: 방송실 요청으로 「(505장)」 같은 장 번호는 빼고 제목만 */
+const pptName=t=>(splitTitle(t).base||t||"").replace(/\s*\((?:새)?(?:찬송가\s*)?\d{1,3}\s*장[^)]*\)\s*$/,"").trim()||(t||"").trim();
 function splitTitle(t){const m=(t||"").match(HYMN_RE);return m?{base:t.slice(0,m.index).trim(),hymn:+m[1],arr:m[2]||""}:{base:(t||"").trim(),hymn:null,arr:""};}
 /* 「제목 (부제)」 → 「제목(부제)」: 괄호 앞 띄어쓰기를 없애요 */
 const glueSub=t=>String(t||"").replace(/(\S)\s+(?=[\(\[])/g,"$1").trim();
@@ -4736,6 +4738,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-14","📺 가사 PPT 제목에서 찬송가 장 번호를 빼고 제목만 (방송실 요청) · 라이브러리 번호 검색은 그대로"],
   ["2026-10-12","🧩 자유롭게 편집: 고른 악보 · 글상자를 다른 쪽으로 옮기기 (「◀ 1쪽으로」 · 「2쪽으로 ▶」)"],
   ["2026-10-11","📱 휴대폰 아래 메뉴를 「콘티 · 홈 · 나」 셋으로 · 일정 · 출결 · 찬양 찾기는 ☰ 메뉴에"],
   ["2026-10-11","🔎 찬양 라이브러리에서 가사로도 곡 찾기 (예: 「부르신 곳에서」 → 따스한 성령님)"],
@@ -5765,12 +5768,12 @@ async function exportLyricsPpt(c,tplOverride,skipAsk,opts={}){S.lastPptExport=Da
       for(const it of items){const s=pp.addSlide();s.background=back;n++;
         const tb=cfg.titleBox;if(cfg.titleSlide){for(const d of deco){if(d.kind==="shape")s.addShape(d.prst||"rect",{x:d.x*W,y:d.y*H,w:d.w*W,h:d.h*H,fill:{color:d.hex,transparency:Math.round((1-(d.alpha??1))*100)},line:{type:"none"},rectRadius:d.prst==="roundRect"?Math.min(d.w*W,d.h*H)*.1667:undefined});
             else if(d.png)s.addImage({data:d.png,x:d.x*W,y:d.y*H,w:d.w*W,h:d.h*H});}
-          const tW=(tb?(((cfg.titleAlign||cfg.align)==="left")?Math.max(tb.w,.98-tb.x):tb.w):(W-.8)/W)*W;const tLen=[...it.title].reduce((n,ch)=>n+(/[가-힣]/.test(ch)?1:/\s/.test(ch)?.35:.6),0);
+          const tW=(tb?(((cfg.titleAlign||cfg.align)==="left")?Math.max(tb.w,.98-tb.x):tb.w):(W-.8)/W)*W;const tLen=[...pptName(it.title)].reduce((n,ch)=>n+(/[가-힣]/.test(ch)?1:/\s/.test(ch)?.35:.6),0);
           const tFs=Math.max(12,Math.min(cfg.titleSize||Math.round(cfg.size*1.15),Math.floor(tW*72/(tLen*1.15))));
           const tOpt={wrap:false,fontSize:tFs,fontFace:cfg.titleFont||cfg.font,bold:cfg.titleBold??cfg.bold,align:cfg.titleAlign||cfg.align||"center",color:cfg.titleGrad?GMARK:(cfg.titleColor||cfg.color).replace("#",""),...(cfg.titleShadow===false?{shadow:undefined}:{})};
-          txt(s,it.title.replace(/\s*\((?:새)?찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)"),tb?{x:tb.x*W,y:tb.y*H,w:(tOpt.align==="left"?Math.max(tb.w,.98-tb.x):tb.w)*W,h:tb.h*H,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:VA[cfg.titleAnchor]||"middle",...tOpt}:{y:H*.35,h:H*.3,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:"middle",...tOpt});}
+          txt(s,pptName(it.title),tb?{x:tb.x*W,y:tb.y*H,w:(tOpt.align==="left"?Math.max(tb.w,.98-tb.x):tb.w)*W,h:tb.h*H,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:VA[cfg.titleAnchor]||"middle",...tOpt}:{y:H*.35,h:H*.3,fontSize:cfg.titleSize||Math.round(cfg.size*1.15),valign:"middle",...tOpt});}
         const slides=slidesFor(it,cfg);
-        if(!cfg.titleSlide&&!slides.length)txt(s,it.title,{y:H*.35,h:H*.3,fontSize:cfg.size,valign:"middle"});
+        if(!cfg.titleSlide&&!slides.length)txt(s,pptName(it.title),{y:H*.35,h:H*.3,fontSize:cfg.size,valign:"middle"});
         slides.forEach((lines,i)=>{const sl=(i===0&&!cfg.titleSlide)?s:pp.addSlide();if(sl!==s){sl.background=back;n++;}
           const bottom=cfg.valign==="bottom";const bx=cfg.box;txt(sl,lines.join("\n"),bx?{x:bx.x*W,y:bx.y*H,w:bx.w*W,h:bx.h*H,fontSize:cfg.size,valign:lines.length===1?"middle":(VA[cfg.anchor]||(bottom?"bottom":"middle")),lineSpacingMultiple:cfg.lnSpc||1.15}:{y:bottom?H*.62:H*.12,h:bottom?H*.32:H*.76,fontSize:cfg.size,valign:lines.length===1?"middle":(bottom?"bottom":"middle"),lineSpacingMultiple:cfg.lnSpc||1.15});});
         st.textContent=`슬라이드 ${n}장 만드는 중…`;}
@@ -6293,7 +6296,7 @@ function flowPptReport(c,cfg){return allItems(c).map(it=>{const seq=parseFlowSeq
   const r=flowArrange(it,cfg);if(!(r&&r.slides))return{it,st:"miss",miss:(r&&r.miss)||[],seq};
   /* 가사에는 있는데 흐름에 없는 구간 → PPT에 안 나와요 (알려 줘요) */
   const {tags}=secTagsOf(it,cfg);const used=new Set(seq.map(x=>x.sec));const unused=[...new Set(tags.filter(t=>t!=="-"&&!used.has(t)))];return{it,st:"ok",seq,unused};});}
-function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=it.title.replace(/\s*\((?:새)?찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
+function pptSlidesOf(c,cfg){const out=[];for(const it of allItems(c)){const t=pptName(it.title);
     if(cfg.titleSlide)out.push({kind:"title",lines:[t],song:it});const sl=slidesFor(it,cfg);if(!cfg.titleSlide&&!sl.length)out.push({kind:"title",lines:[it.title],song:it});
     for(const l of sl)out.push({kind:"lyric",lines:l,song:it});}return out;}
 function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items=allItems(c);const list=pptTpls();
@@ -6496,7 +6499,7 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
   const regions=[];const items=k=>(c[k]||[]);
   A.slots.forEach((s,si)=>{const keys=slotMap&&slotMap[si]!==undefined?slotMap[si]:fullSlotMap(A.slots.map(x=>x.idx[0]),A.sermon?A.sermon.i:-1,c,A.slots.map(x=>x.idx.length),A.special?A.special.i:-1)[si];if(keys===null)return;const songs=keys.flatMap(items);const gen=[];
     const tB=s.t!=null?A.order[s.t]:null,lB=A.order[s.l];
-    for(const it of songs){const ttl=it.title.replace(/\s*\((?:새)?찬송가\s*(\d+)장.*\)\s*$/,"  ($1장)");
+    for(const it of songs){const ttl=pptName(it.title);
       const tb=tB||lB;gen.push({base:tb,title:true,edit:x=>titleDress(x,tb.sps[0].sp,fontizeSp(setShapeLines(tb.sps[0].sp,[ttl]),S.pptLyricFont),tB?1:.8)});
       for(const ls of slidesFor(it,{lines:A.lines}))gen.push({base:lB,edit:x=>x.replace(lB.sps[0].sp,()=>oneLineCenter(fontizeSp(setShapeLines(lB.sps[0].sp,ls),S.pptLyricFont),ls))});}
     regions.push({idx:s.idx,gen,what:`찬양 ${si+1}`,n:songs.length});});
