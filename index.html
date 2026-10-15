@@ -738,6 +738,7 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .se-flow.flowbar{padding-bottom:10px;border:1px solid color-mix(in srgb,#1d3fb3 25%,var(--line))}.se-flow{background:color-mix(in srgb,#1d3fb3 5%,var(--sheet));border-color:color-mix(in srgb,#1d3fb3 25%,var(--line))}.se-flow .se-h b{color:#1d3fb3}
 .se-mark{background:var(--sheet)}.se-mark .toolrow{margin:0}
 .lbrow .lbtn{background:#18213a;color:#fff;border-color:#18213a;border-radius:5px;opacity:.5}.lbrow .lbtn:hover{opacity:.8}.lbrow .lbtn[aria-pressed="true"]{opacity:1;box-shadow:0 0 0 2px var(--sheet),0 0 0 4px #18213a}
+.fe-tokw{position:relative;display:inline-flex}.fe-x{position:absolute;top:-9px;right:-9px;width:20px;height:20px;border-radius:50%;border:2px solid var(--sheet);background:#c62828;color:#fff;font-size:11px;font-weight:800;line-height:1;padding:0;cursor:pointer;display:grid;place-items:center;z-index:1}
 .tu-sw{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}
 .ftbl{width:100%;border-collapse:collapse}.ftbl th,.ftbl td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}.ftbl input{width:18px;height:18px}
 .srow{padding:0;gap:0}.srow-head{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer;min-width:0}.srow-head:hover{background:var(--soft)}.srow-th .songthumb{width:38px;height:50px}
@@ -3012,8 +3013,16 @@ function libScorePicker(title,onPick){let q="";const chosen=[];const res=h("div"
         const b=h("button",{type:"button",class:"lsp-th"+(on()?" on":""),onclick:()=>{const k=on();if(k)chosen.splice(k-1,1);else chosen.push(o);draw();sync();}},im,h("span",{class:"hint",text:on()?`✓ ${on()}번째`:`${pi+1}쪽`}));return b;}))))));};
   const inp=h("input",{type:"search",placeholder:"곡 제목 · 초성 · 가사 · 찬송가 번호",oninput:e=>{q=e.target.value;draw();}});
   const md=modal(title,h("div",{class:"panel-body"},inp,cnt,res),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),goB],"tu-modal");draw();setTimeout(()=>inp.focus(),50);}
-function flowEditor(it,{editable=true,onChange}={}){let sel=null,drag=null;const box=h("div",{class:"fe"});
-  const toks=()=>flowLines(it);const save=(a,ns)=>{it.flow=a.join("\n");sel=ns===undefined?sel:ns;if(sel!=null&&sel>=a.length)sel=a.length?a.length-1:null;onChange&&onChange();draw();};
+/* Ctrl+Z / Ctrl+Shift+Z(Ctrl+Y): 마지막으로 만진 진행 순서 편집기에서 되돌리기 · 다시 하기 */
+document.addEventListener("keydown",e=>{const f=S._fe;if(!f||!f.box.isConnected||!(e.ctrlKey||e.metaKey))return;const k=e.key.toLowerCase();if(k!=="z"&&k!=="y")return;
+  const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&(!f.box.contains(a)||a.value))return;
+  const redo=k==="y"||e.shiftKey;if(redo?!f.canRedo():!f.canUndo())return;e.preventDefault();e.stopImmediatePropagation();redo?f.redo():f.undo();},true);
+function flowEditor(it,{editable=true,onChange}={}){let sel=null,drag=null;const box=h("div",{class:"fe"});const hist=[],fut=[];
+  const ctl={box,canUndo:()=>hist.length>0,canRedo:()=>fut.length>0,
+    undo:()=>{if(!hist.length)return;fut.push(it.flow||"");it.flow=hist.pop();sel=null;onChange&&onChange();draw();toast("되돌렸어요",1200);},
+    redo:()=>{if(!fut.length)return;hist.push(it.flow||"");it.flow=fut.pop();sel=null;onChange&&onChange();draw();}};
+  box.addEventListener("pointerdown",()=>{S._fe=ctl;},true);box.addEventListener("focusin",()=>{S._fe=ctl;});
+  const toks=()=>flowLines(it);const save=(a,ns)=>{const nf=a.join("\n");if(nf!==(it.flow||"")){hist.push(it.flow||"");if(hist.length>60)hist.shift();fut.length=0;}it.flow=nf;sel=ns===undefined?sel:ns;if(sel!=null&&sel>=a.length)sel=a.length?a.length-1:null;onChange&&onChange();draw();};
   const inp=h("input",{type:"text",class:"fe-in",disabled:!editable,"aria-label":"진행 순서 직접 쓰기",placeholder:"직접 쓰기 (예: V2 (여자만) · 간주 8마디) → Enter",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();addText(sel!=null&&e.shiftKey);}}});
   function addText(replace){const v=inp.value.trim();if(!v)return;const a=toks();if(replace&&sel!=null){a[sel]=v;save(a);}else{const at=sel==null?a.length:sel+1;a.splice(at,0,v);save(a,at);}inp.value="";inp.focus();}
   const push=t=>{const a=toks();if(FE_MODS.includes(t)){const i=sel!=null?sel:a.length-1;if(i<0)return toast("먼저 순서를 하나 넣어 주세요");a[i]=feMod(a[i],t);save(a);return;}const at=sel==null?a.length:sel+1;a.splice(at,0,t);save(a,at);};
@@ -3024,7 +3033,9 @@ function flowEditor(it,{editable=true,onChange}={}){let sel=null,drag=null;const
       chip.addEventListener("dragstart",e=>{drag=i;e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",String(i));}catch(_){}});
       chip.addEventListener("dragover",e=>{if(drag!=null){e.preventDefault();chip.classList.add("over");}});chip.addEventListener("dragleave",()=>chip.classList.remove("over"));
       chip.addEventListener("drop",e=>{e.preventDefault();chip.classList.remove("over");if(drag==null||drag===i)return;const b=toks();const [x]=b.splice(drag,1);b.splice(i,0,x);drag=null;save(b,i);});
-      chip.addEventListener("dragend",()=>{drag=null;});strip.append(chip);});
+      chip.addEventListener("dragend",()=>{drag=null;});
+      if(editable&&i===sel)strip.append(h("span",{class:"fe-tokw"},chip,h("button",{type:"button",class:"fe-x","aria-label":`「${t}」 지우기`,title:"이 조각 지우기",text:"✕",onclick:()=>{const b=toks();b.splice(i,1);save(b,null);inp.value="";}})));
+      else strip.append(chip);});
     const selOn=sel!=null&&sel<a.length;
     const tools=editable?h("div",{class:"row fe-tools"},
       selOn?h("span",{class:"hint",text:`${sel+1}번째 「${a[sel]}」 골랐어요 · 단추를 누르면 그 뒤에 들어가요`}):h("span",{class:"hint",text:a.length?"조각을 누르면 그 자리부터 고치거나 넣을 수 있어요":""}),h("span",{class:"spacer"}),
@@ -3032,10 +3043,12 @@ function flowEditor(it,{editable=true,onChange}={}){let sel=null,drag=null;const
       selOn?h("button",{type:"button",class:"btn sm",text:"▶",title:"뒤로",disabled:sel>=a.length-1,onclick:()=>{const b=toks();[b[sel+1],b[sel]]=[b[sel],b[sel+1]];save(b,sel+1);}}):null,
       h("button",{type:"button",class:"btn sm",text:selOn?"✕ 이 조각 지우기":"⌫",title:selOn?"고른 조각 지우기":"마지막 하나 지우기",disabled:!a.length,onclick:()=>{const b=toks();if(selOn){b.splice(sel,1);save(b,sel>0?sel-1:null);}else{b.pop();save(b,null);}}}),
       selOn?h("button",{type:"button",class:"btn sm ghost",text:"고르기 풀기",onclick:()=>{sel=null;inp.value="";draw();}}):null,
+      h("button",{type:"button",class:"btn sm",text:"↶ 되돌리기",title:"되돌리기 (Ctrl+Z)",disabled:!hist.length,onclick:ctl.undo}),
+      h("button",{type:"button",class:"btn sm",text:"↷",title:"다시 하기 (Ctrl+Shift+Z)",disabled:!fut.length,onclick:ctl.redo}),
       h("button",{type:"button",class:"btn sm ghost danger",text:"비우기",disabled:!a.length,onclick:e=>{if(!confirmInline(e.currentTarget,"모두 지울까요? · 한 번 더"))return;save([],null);}})):null;
     const btns=editable?h("div",{class:"fe-btns"},h("div",{class:"row",style:"gap:4px;flex-wrap:wrap"},...FE_MAIN.map(t=>h("button",{type:"button",class:"btn sm chipbtn",text:t,onclick:()=>push(t)}))),
       h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;align-items:center"},h("span",{class:"hint",text:"붙이기"}),...FE_MODS.map(t=>h("button",{type:"button",class:"btn sm chipbtn ghost",text:t,title:`${selOn?"고른 조각":"마지막 조각"}에 「${t}」 붙이기`,onclick:()=>push(t)})),
-        (()=>{const ci=h("input",{type:"text",class:"fe-who-in",placeholder:"직접입력 (예: 솔로, 건반만)",style:"width:170px;min-height:30px;padding:4px 8px",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}}});
+        (()=>{const ci=h("input",{type:"text",class:"fe-who-in",placeholder:"괄호로 붙이기 (예: 솔로)",title:"고른 조각 뒤에 (솔로)처럼 괄호로 붙어요. 새 조각은 아래 「직접 쓰기」 칸에 쓰세요",style:"width:170px;min-height:30px;padding:4px 8px",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}}});
           const go=()=>{const v=ci.value.trim().replace(/[()]/g,"");if(!v)return;const a=toks();const i=sel!=null?sel:a.length-1;if(i<0)return toast("먼저 순서를 하나 넣어 주세요");a[i]=feMod(a[i],`(${v})`);ci.value="";save(a);};
           return h("span",{class:"row",style:"gap:4px;align-items:center"},ci,h("button",{type:"button",class:"btn sm",text:"붙이기",onclick:go}));})()),
       h("div",{class:"row",style:"gap:4px;flex-wrap:nowrap"},inp,h("button",{type:"button",class:"btn sm",text:selOn?"뒤에 넣기":"넣기",onclick:()=>addText(false)}),selOn?h("button",{type:"button",class:"btn sm primary",text:"바꾸기",title:"고른 조각을 이 글로 바꿔요 (Shift+Enter)",onclick:()=>addText(true)}):null)):null;
