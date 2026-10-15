@@ -1327,9 +1327,13 @@ const LITE_TABS={home:1,conti:["list"],songs:["songs"],team:["attend"],me:1};
 function setPcMode(on){try{localStorage.setItem("cbwp-pc",on?"1":"0");}catch(e){}document.body.classList.toggle("lite",isLite());
   if(isLite()&&!["home","list","songs","attend","me"].includes(S.tab))S.tab="home";render();window.scrollTo(0,0);
   toast(on?"PC 화면으로 바꿨어요. 모든 기능을 쓸 수 있어요":"휴대폰 화면으로 바꿨어요",2500);}
-const subsOf=g=>{const w=isWriter()||!!S.curId;const l=NAVG[g].filter(([k])=>((k!=="write"&&k!=="sheet")||w)&&tabAllowed(g,k));return g==="conti"&&!w?l.slice().sort((a,b)=>(a[0]==="list"?-1:0)-(b[0]==="list"?-1:0)):l;};
+/* 「한눈에」(대시보드)는 세부 항목이 아니라 메뉴 자체예요 — 메뉴 이름을 누르면 나와요 */
+const DASH={conti:"cdash",songs:"ldash",team:"tdash"};const isDashTab=k=>/^[clt]dash$/.test(k);
+const dashOf=g=>{const k=DASH[g];return k&&!isLite()&&tabAllowed(g,k)?k:null;};
+const subsOf=g=>{const w=isWriter()||!!S.curId;const l=NAVG[g].filter(([k])=>!isDashTab(k)&&((k!=="write"&&k!=="sheet")||w)&&tabAllowed(g,k));return g==="conti"&&!w?l.slice().sort((a,b)=>(a[0]==="list"?-1:0)-(b[0]==="list"?-1:0)):l;};
 S.lastSub={};
 document.querySelectorAll(".bnav button").forEach(b=>b.addEventListener("click",()=>{const g=b.dataset.group;const subs=subsOf(g).map(x=>x[0]);
+  const dk=dashOf(g);if(dk){if(S.tab===dk){window.scrollTo({top:0,behavior:"smooth"});return;}goTab(dk);return;}
   if(groupOf(S.tab)===g&&subs.length>1){window.scrollTo({top:0,behavior:"smooth"});return;}
   const last=S.lastSub[g];goTab(subs.includes(last)?last:subs[0]);}));
 function goTab(k){if((k==="write"||k==="sheet"||(k==="bible"&&isWriter()))&&S.team){const saved=S.curId&&S.contis.find(x=>x.id===S.curId);
@@ -1347,7 +1351,7 @@ function drawSideNav(){let nav=document.getElementById("sideNav");const on=sideO
   if(!nav){nav=h("nav",{id:"sideNav",class:"sidenav-bar","aria-label":"메뉴"});document.body.append(nav);}nav.hidden=false;
   const cg=groupOf(S.tab);const items=[];
   document.querySelectorAll(".bnav button").forEach(b=>{if(b.hidden)return;const g=b.dataset.group;const subs=subsOf(g);const lab=(b.querySelector("span")||{}).textContent||"";
-    const svg=b.querySelector("svg");const gb=h("button",{type:"button",class:"sn-g"+(g===cg?" on":""),"aria-current":g===cg?"page":"false",onclick:()=>{const ks=subs.map(x=>x[0]);const last=S.lastSub[g];goTab(ks.includes(last)?last:ks[0]);}},svg?svg.cloneNode(true):null,h("span",{text:lab}));
+    const svg=b.querySelector("svg");const gb=h("button",{type:"button",class:"sn-g"+(g===cg?" on":""),"aria-current":g===cg?"page":"false",onclick:()=>{const dk=dashOf(g);if(dk)return goTab(dk);const ks=subs.map(x=>x[0]);const last=S.lastSub[g];goTab(ks.includes(last)?last:ks[0]);}},svg?svg.cloneNode(true):null,h("span",{text:lab}));
     items.push(gb);
     if(subs.length>1)items.push(h("div",{class:"sn-subs"},subs.map(([k,l])=>h("button",{type:"button",class:"sn-s"+(k===S.tab?" on":""),"aria-current":k===S.tab?"page":"false",onclick:()=>goTab(k)},l))));});
   const logo=document.querySelector(".brandlogo");
