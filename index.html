@@ -5424,8 +5424,13 @@ function bylawDiffOpt(b, vs) {
   const curText = cur.filter(q => !q.head).map(q => blNorm(q.full)).join('');
   const removed = ps.filter(q => !q.head && !/^=+/.test(q.full.trim()) && !seenKeys.has(q.key) && !curText.includes(blNorm(q.txt)));
   const artName = (q, src) => /\d+\s*차\s*수정\s*:|공포\s*서기/.test(q.txt) ? '개정 이력' : (() => { const a = q.key.split('|')[0]; if (a === 'pre') return '머리말'; const m = a.match(/^A(\d+)(?:-(\d+))?$/); return m ? `제${m[1]}조${m[2] ? '의' + m[2] : ''}` : a; })();
-  const changes = [...cur.filter(q => !q.head && q.chg).map(q => ({ art: artName(q), kind: q.chg === 1 ? '바뀜' : '새로 생김', html: String(q.html || '').replace(/^\s*[:：]\s*/, '') })), ...removed.map(q => ({ art: artName(q), kind: '빠짐', html: `<del class="bl-del">${blEsc(q.txt.trim().replace(/^[:：]\s*/, ''))}</del>` }))];
-  const opt = { prev: P, pv, removed, changes, nChg: cur.filter(q => q.chg === 1).length, nNew: cur.filter(q => q.chg === 2).length };
+  /* 같은 조(제5조 등)가 앞 판에도 있었으면 '신설'이 아니라 '개정' · 조 안의 글이 모두 바뀌고 옛 글이 빠졌으면 '전면 개정' */
+  const prevArts = new Set(ps.filter(q => !q.head).map(q => artName(q)));
+  const keepArts = new Set(cur.filter(q => !q.head && !q.chg && String(q.txt || '').replace(/^[\s:：]+/, '').trim()).map(q => artName(q)));
+  const remArts = new Set(removed.map(q => artName(q)));
+  const full = new Set([...new Set(cur.filter(q => !q.head && q.chg).map(q => artName(q)))].filter(a => a !== '머리말' && a !== '개정 이력' && prevArts.has(a) && !keepArts.has(a)));
+  const changes = [...cur.filter(q => !q.head && q.chg).map(q => ({ art: artName(q), kind: q.chg === 1 || prevArts.has(artName(q)) ? '개정' : '신설', html: String(q.html || '').replace(/^\s*[:：]\s*/, '') })), ...removed.map(q => ({ art: artName(q), kind: '빠짐', html: `<del class="bl-del">${blEsc(q.txt.trim().replace(/^[:：]\s*/, ''))}</del>` }))];
+  const opt = { prev: P, pv, removed, changes, full, nChg: cur.filter(q => q.chg === 1).length, nNew: cur.filter(q => q.chg === 2).length };
   _blDiff.k = ck; _blDiff.opt = opt; return opt;
 }
 const BL_LIBS = { cfb: 'https://cdn.jsdelivr.net/npm/cfb@1.2.2/dist/cfb.min.js', pako: 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js', jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', pdf: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', pdfw: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', html2pdf: 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js' };
@@ -5626,7 +5631,7 @@ function renderBylaws(m){const box=h("div",{class:"sheet"},h("p",{class:"hint",t
       admin?h("div",{class:"row",style:"margin-top:8px;gap:6px;flex-wrap:wrap"},...adminBtns.filter(Boolean)):null);
     const dif=S.bylNoDiff?{}:bylawDiffOpt(b,vs);const body=h("div",{class:"bylaw-text"});
     const bar=(()=>{const o=bylawDiffOpt(b,vs);if(!o.pv)return h("div",{class:"bl-diffbar",text:"비교할 이전 판이 없어요 (가장 오래된 판)."});
-      const d=h("div",{class:"bl-diffbar"});d.innerHTML=`<b>${blEsc(o.pv.revision||"이전 판")}${o.pv.date?" ("+blEsc(o.pv.date)+")":""}</b>과 비교 — 바뀐 곳 ${o.nChg} · 새로 생긴 곳 ${o.nNew} · 빠진 곳 ${o.removed.length} <span class="lg"><ins class="bl-add">새로 들어간 글</ins> <del class="bl-del">빠진 글</del></span>`;
+      const d=h("div",{class:"bl-diffbar"});d.innerHTML=`<b>${blEsc(o.pv.revision||"이전 판")}${o.pv.date?" ("+blEsc(o.pv.date)+")":""}</b>과 비교 — 개정 ${o.changes.filter(x=>x.kind==="개정").length} · 신설 ${o.changes.filter(x=>x.kind==="신설").length} · 빠진 곳 ${o.removed.length} <span class="lg"><ins class="bl-add">새로 들어간 글</ins> <del class="bl-del">빠진 글</del></span>`;
       d.append(h("button",{class:"btn sm",text:S.bylNoDiff?"달라진 점 표시":"표시 끄기",onclick:()=>{S.bylNoDiff=!S.bylNoDiff;render();}}));return d;})();
     function drawBody(){const qq=bylQ.trim();if(!qq){body.innerHTML=bylawHTML(b.text,dif)||'<p class="hint">본문이 없어요.</p>';
         body.querySelectorAll("[data-bltoc]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();const t=body.querySelector("#"+a.dataset.bltoc);if(t)t.scrollIntoView({behavior:"smooth",block:"start"});}));return;}
@@ -5639,7 +5644,7 @@ function renderBylaws(m){const box=h("div",{class:"sheet"},h("p",{class:"hint",t
     const chg=(()=>{const o=bylawDiffOpt(b,vs);const c=h("div",{class:"sheet bl-chgcard"});if(!o.pv){c.append(h("h2",{},"앞 판에서 바뀐 점"),h("p",{class:"hint",text:"이 판보다 앞선 판이 없어 비교할 수 없어요."}));return c;}
       const groups=[];o.changes.forEach(x=>{let g=groups.find(y=>y.art===x.art);if(!g)groups.push(g={art:x.art,items:[]});g.items.push(x);});
       c.append(h("h2",{},`${b.revision||"이 판"}에서 바뀐 점`,h("span",{class:"sub",text:`${o.pv.revision||"앞 판"} 대비 · 조문 ${groups.length}곳`})));
-      const d=h("div");d.innerHTML=groups.length?groups.map(g=>`<div class="bl-cg"><div class="bl-cg-h">${blEsc(g.art)} ${[...new Set(g.items.map(x=>x.kind))].map(k=>`<span class="blpill ${k==="빠짐"?"bad":k==="새로 생김"?"ok":"warn"}">${k}</span>`).join(" ")}</div>${g.items.map(x=>`<div class="bl-cg-b">${x.html}</div>`).join("")}</div>`).join(""):'<p class="hint">앞 판과 글자가 같아요.</p>';c.append(d);return c;})();
+      const d=h("div");d.innerHTML=groups.length?groups.map(g=>`<div class="bl-cg"><div class="bl-cg-h">${blEsc(g.art)} ${(o.full&&o.full.has(g.art)?["전면 개정"]:[...new Set(g.items.map(x=>x.kind))]).map(k=>`<span class="blpill ${k==="빠짐"?"bad":k==="신설"?"ok":"warn"}">${k}</span>`).join(" ")}</div>${g.items.map(x=>`<div class="bl-cg-b">${x.html}</div>`).join("")}</div>`).join(""):'<p class="hint">앞 판과 글자가 같아요.</p>';c.append(d);return c;})();
     box.replaceWith(h("div",{class:"blwrap"},head,h("div",{class:"bylaw-grid"},h("div",{class:"sheet blmain"},bar,body),h("div",{class:"blside"},list,chg))));})();}
 
 /* =========================================================
