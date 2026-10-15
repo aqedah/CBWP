@@ -417,7 +417,7 @@ table.t td.n{text-align:right;font-variant-numeric:tabular-nums}
 .vw-roster span.me{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--sheet))}
 .vw-nav{flex:none;position:sticky;top:0;z-index:2;display:flex;gap:6px;overflow-x:auto;padding:8px 16px;background:var(--sheet);border-bottom:1px solid var(--line);scrollbar-width:none}
 .vw-nav button{flex:none;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:.82rem;cursor:pointer;white-space:nowrap}
-.vw-fit .vw-page,.gfit .vw-page{height:var(--fitH);width:auto;max-width:100%;object-fit:contain;aspect-ratio:auto!important}
+.vw-fit .vw-page,.gfit .vw-page{height:var(--fitH);width:auto;max-width:100%;object-fit:contain;object-position:top center;aspect-ratio:auto!important}
 @media (hover:hover) and (pointer:fine){.vw-nav{flex-wrap:wrap;overflow:visible}}
 .gnav{position:static;padding:8px 0}
 .vw-nav button.on{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
@@ -7674,7 +7674,8 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
     let sx=0,sy=0;body.addEventListener("touchstart",e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;},{passive:true});
     body.addEventListener("touchend",e=>{const t=e.changedTouches[0];const dx=t.clientX-sx,dy=t.clientY-sy;if(Math.abs(dx)>60&&Math.abs(dy)<50&&!e.target.closest(".vw-nav"))step(dx<0?1:-1);},{passive:true});
     const keyH=e=>{if(!body.isConnected)return document.removeEventListener("keydown",keyH);if(/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||""))return;if(e.key==="ArrowRight")step(1);else if(e.key==="ArrowLeft")step(-1);};
-    document.addEventListener("keydown",keyH);window.addEventListener("resize",()=>{if(curSong!=="all"&&body.isConnected)fitSong(curSong);});
+    document.addEventListener("keydown",keyH);/* 휴대폰은 위아래로 밀 때 주소창이 숨었다 나오며 높이만 바뀌어요 → 그때는 다시 맞추지 않아요 (악보가 들썩이지 않게) · 가로 폭이 바뀔 때만 */
+    let lastW=innerWidth;window.addEventListener("resize",()=>{if(Math.abs(innerWidth-lastW)<2)return;lastW=innerWidth;if(curSong!=="all"&&body.isConnected)fitSong(curSong);});
     if(document.body.classList.contains("vwflow"))requestAnimationFrame(()=>{const hd=body.closest(".panel")?.querySelector(".panel-head");if(hd)document.documentElement.style.setProperty("--vwhead",hd.offsetHeight+"px");});
     pickSong(0);}
   const canDelV=canDeleteConti(c);let armedV=false;
