@@ -2992,7 +2992,9 @@ const TRANS=["건반 전주","바로 이어짐","기도 반주","멘트 후 시�
 const FLOW_TOKS=["Intro","V1","V2","V3","V4","V5","Pre","C","B","Inter","Outro","Ending"],FLOW_MODS=["× 2","× 3","KEY UP"];
 const flowOneLine=it=>flowLines(it).join(" → ");
 /* 진행 순서는 악보 맨 위에 띄우는 게 기본 (끈 곡만 빼요) */
-function syncFlowTop(it){for(const p of it.pages||[]){delete p.flowTop;delete p.flowSize;}if(it.flowTop!==false&&flowLines(it).length)for(const p of it.pages||[]){p.flowTop=flowOneLine(it);if(it.flowSize&&it.flowSize!==1)p.flowSize=it.flowSize;}}
+/* 진행 순서 글씨 크기: 마지막으로 고른 크기를 이 기기에 기억해 두고, 크기를 따로 안 정한 곡에 써요 */
+function flowSizeDef(){try{const v=+localStorage.getItem("cbwp-flowsize");return v>=.6&&v<=2.2?v:1;}catch(e){return 1;}}
+function syncFlowTop(it){for(const p of it.pages||[]){delete p.flowTop;delete p.flowSize;}if(it.flowTop!==false&&flowLines(it).length)for(const p of it.pages||[]){p.flowTop=flowOneLine(it);const fz=it.flowSize||flowSizeDef();if(fz!==1)p.flowSize=fz;}}
 function drawFlowTop(x,p,dx,dy,dw,dh){if(!p||!p.flowTop)return;const fs=Math.max(10,dw*.026*(p.flowSize||1));x.save();x.font=`800 ${fs}px ${FB}`;x.textBaseline="top";
   const lines=wrapText(x,p.flowTop,dw*.94);const lh=fs*1.25,bh=lines.length*lh+fs*.5;const bw=Math.min(dw*.96,Math.max(...lines.map(l=>x.measureText(l).width))+fs*.8);
   x.globalAlpha=.88;x.fillStyle="#fff";rr(x,dx+dw*.02,dy+dh*.006,bw,bh,fs*.3);x.fill();x.globalAlpha=1;x.fillStyle="#1d3fb3";lines.forEach((l,i)=>x.fillText(l,dx+dw*.02+fs*.4,dy+dh*.006+fs*.25+i*lh));x.restore();}
@@ -3555,7 +3557,7 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item}){
       const push=t=>{const a=toks();if(FLOW_MODS.includes(t)){if(!a.length)return;a[a.length-1]=a[a.length-1].replace(/\s*(× \d|KEY UP)$/,"")+" "+t;}else a.push(t);setToks(a);};
       const line=flowOneLine(item);
       const fe=flowEditor(item,{editable:true,onChange:()=>{item.flowTop=item.flowTop!==false;syncFlowTop({...item,pages:E.pages});markDirty();drawStage();topRow.replaceWith(topRow=mkTop());}});
-      const mkTop=()=>{const line=flowOneLine(item);const cur=item.flowSize||1;const sz=v=>{item.flowSize=Math.round(Math.min(2.2,Math.max(.6,v))*100)/100;syncFlowTop({...item,pages:E.pages});markDirty();drawStage();topRow.replaceWith(topRow=mkTop());};
+      const mkTop=()=>{const line=flowOneLine(item);const cur=item.flowSize||flowSizeDef();const sz=v=>{item.flowSize=Math.round(Math.min(2.2,Math.max(.6,v))*100)/100;try{localStorage.setItem("cbwp-flowsize",String(item.flowSize));}catch(e){}syncFlowTop({...item,pages:E.pages});markDirty();drawStage();topRow.replaceWith(topRow=mkTop());};
         return h("div",{class:"row",style:"gap:8px;align-items:center;flex-wrap:wrap"},h("div",{class:"se-h"},h("b",{text:"① 진행 순서"}),h("span",{class:"hint",text:"곡 전체 순서 · 악보 맨 위에 한 줄로 찍혀요"})),h("span",{class:"spacer"}),
           h("label",{class:"row hint",style:"gap:4px"},h("input",{type:"checkbox",checked:item.flowTop!==false&&!!line,disabled:!line,onchange:e=>{item.flowTop=e.target.checked;syncFlowTop({...item,pages:E.pages});markDirty();drawStage();}}),"악보 맨 위에 넣기 (모든 쪽)"),
           h("span",{class:"row",style:"gap:2px;align-items:center"},h("span",{class:"hint",text:"글씨"}),h("button",{type:"button",class:"btn sm",text:"A−",title:"진행 순서 글씨 작게",disabled:!line||cur<=.6,onclick:()=>sz(cur-.15)}),
