@@ -597,6 +597,16 @@ body.lite .bnav [data-group=conti]{order:-1}body.lite .bnav [data-group=me]{orde
 body.lite .bnav [data-group=home] svg{width:27px;height:27px;padding:3px 16px}
 .hint.here{color:#7a5a00}
 .sbadge.here{background:#fff3c4;color:#7a5a00;border-color:#f0d98a}
+body.dash .wrap{max-width:1320px}
+.dashtiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.dtile{display:grid;gap:4px;align-content:start;text-align:left;font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;cursor:pointer;min-width:0;transition:border-color .15s,box-shadow .15s}
+.dtile:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:0 4px 14px rgb(0 0 0 / .06)}
+.dtile .dt-lab{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtile .dt-big{font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25}.dtile .dt-big small{font-size:.8rem;font-weight:700;color:var(--accent)}
+.dtile .dt-sub{font-size:.84rem;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtile .ok{color:#1f9d55}.dtile .no{color:#d93025}.dtile.warn{border-left:4px solid #e0a100}.dtile.good{border-left:4px solid #1f9d55}
+.dashgrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+.dashcol{display:flex;flex-direction:column;gap:16px;min-width:0}
 .lyhit-tag{flex:none;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3c4;color:#7a5a00}
 .servebrief{display:flex;gap:8px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;padding:10px 12px}.servebrief .sb-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.servebrief .sb-pos{color:var(--accent,#2b3f8f);white-space:nowrap}
 .servemore{margin-top:10px}.servemore>summary,.oldfold>summary{cursor:pointer;list-style:none;margin:6px 0}.servemore>summary{color:var(--accent,#2b3f8f);font-weight:600}.oldfold>summary{width:100%;text-align:center}.oldfold[open]>summary{margin-bottom:10px}.oldfold{display:grid;gap:10px}
@@ -1619,7 +1629,7 @@ function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg"
     TOUR&&(TOUR.raf=requestAnimationFrame(tick));};tick();}
 function spotOff(){const s=document.getElementById("tourspot");if(s)s.remove();if(TOUR&&TOUR.raf)cancelAnimationFrame(TOUR.raf);}
 function tourFromUrl(){try{const k=new URLSearchParams(location.search).get("tour");if(k&&TOURS[k])tourStart(k);}catch(e){}}
-function render(){const same=S._lastTab===S.tab&&!!S.team,y=window.scrollY;renderInner();S._lastTab=S.tab;
+function render(){const same=S._lastTab===S.tab&&!!S.team,y=window.scrollY;document.body.classList.toggle("dash",!!S.team&&dashOn());renderInner();S._lastTab=S.tab;
   /* 같은 화면을 다시 그릴 때(출결 체크 · 저장 등)는 보던 자리 그대로 */
   if(same&&y>0){if(Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);requestAnimationFrame(()=>{if(S._lastTab===S.tab&&Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);});}}
 function renderInner(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(TOUR?h("div",{class:"banner demoban mini"},h("b",{text:"👀 체험판"}),h("span",{class:"spacer"}),h("button",{type:"button",class:"btn sm",text:"나가기",onclick:()=>{location.href=location.pathname;}})):
@@ -4728,7 +4738,26 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
       h("div",{class:"empty",text:"2주 안에 잡힌 일정이 없어요."}));
   if(isProject())return m.append(patchSheet(),h("figure",{class:"verse homeverse"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})),projectListSheet(),myServeSheet(),nbox,projectCalSheet());
   /* 팀원이 앱을 열면 먼저 「이번 주 내가 할 일」: 나의 섬김 → 참여 응답 → 공지 → 일정 → 한마디 · 나눔 */
-  m.append(patchSheet(),myServeSheet(),availSheet()||"",nbox,sch,boardSheet(),h("figure",{class:"verse homeverse",style:"margin-top:8px"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]})));}
+  const verse=h("figure",{class:"verse homeverse",style:"margin-top:8px"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]}));
+  /* PC 넓은 화면: 대시보드 — 위에 한눈에 보는 칸 4개, 아래 두 단 (왼쪽: 나의 섬김 · 일정 · 기도제목 / 오른쪽: 참여 응답 · 공지) */
+  if(dashOn()){m.append(...[patchSheet(),dashTiles(),h("div",{class:"dashgrid"},h("div",{class:"dashcol"},myServeSheet(),sch,boardSheet()),h("div",{class:"dashcol"},...[availSheet(),nbox].filter(Boolean))),verse].filter(Boolean));return;}
+  m.append(patchSheet(),myServeSheet(),availSheet()||"",nbox,sch,boardSheet(),verse);}
+const dashOn=()=>S.tab==="home"&&!isLite()&&window.innerWidth>=1100&&!isProject();
+{let was=null,t=0;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(()=>{const v=!!S.team&&dashOn();if(was!==null&&v!==was&&S.tab==="home")render();was=v;},200);});}
+/* 대시보드 위 칸: 다음 예배 · 참여 응답 · 준비 상황 · 다음 연습 */
+function dashTiles(){const today=todayStr();const tile=(lab,big,sub,fn,cls="")=>h("button",{type:"button",class:"dtile "+cls,onclick:fn},h("span",{class:"dt-lab",text:lab}),h("span",{class:"dt-big"},...[].concat(big)),h("span",{class:"dt-sub"},...[].concat(sub)));
+  const c=S.contis.filter(x=>!x.noService&&x.date&&x.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0];const d=c?c.date:nextServiceDate();
+  const t1=c?tile("다음 예배",[fmtDate(c.date).replace(/^\d{4}\.\s*/,"")," ",h("small",{text:ddayLabel(c.date)})],`${wtypeOf(c)}${leaderOf(c)?` · 인도 ${leaderOf(c)}`:""} · ${allItems(c).length}곡`,()=>viewConti(c)):
+    tile("다음 예배","콘티 없음",S.canWrite&&isWriter()?"눌러서 콘티 쓰기":"아직 콘티가 올라오지 않았어요",()=>S.canWrite&&isWriter()?goTab("write"):setTab("list"),"warn");
+  const resp=availOf(d);const vals=Object.values(resp);const ok=vals.filter(v=>v.ok).length,no=vals.filter(v=>!v.ok).length;
+  const act=S.members.filter(mb=>!["게스트","휴면"].includes(tierOf(mb))).length;const wait=Math.max(0,act-ok-no);
+  const t2=tile(`참여 응답 · ${dLabel(d)}`,[h("span",{class:"ok",text:`가능 ${ok}`})," ",h("span",{class:"no",text:`불참 ${no}`})],wait?`응답 전 ${wait}명`:"모두 응답했어요",()=>tabAllowed("team","lineup")?setTab("lineup"):document.querySelector(".dashcol .sheet h2")?.scrollIntoView({behavior:"smooth"}));
+  let t3;if(c&&allItems(c).length){const its=allItems(c).filter(it=>SCORE_SECS.some(([k])=>(c[k]||[]).includes(it)));const n=its.length;const sc=its.filter(it=>(it.pages||[]).length).length,ly=allItems(c).filter(it=>lyricsOf(it).trim()).length,ky=its.filter(it=>(it.key||"").trim()).length;
+    const done=sc===n&&ly===allItems(c).length;t3=tile("준비 상황",done?"다 됐어요 ✓":`악보 ${sc}/${n}`,`가사 ${ly}/${allItems(c).length} · 키 ${ky}/${n}`,()=>canEditConti(c,c.id)&&S.canWrite&&isWriter()?openConti(c):viewConti(c),done?"good":"warn");}
+  else t3=tile("준비 상황","—","다음 콘티에 곡이 들어오면 보여요",()=>setTab("list"));
+  const pr=(S.events||[]).filter(e=>e.kind==="practice"&&evEnd(e)>=today).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")))[0];
+  const t4=pr?tile("다음 연습",[fmtDate(pr.date).replace(/^\d{4}\.\s*/,""),pr.time?` ${pr.time}`:""],[pr.place||pr.title||"찬양 연습"," · ",ddayLabel(pr.date)],()=>eventModal(pr)):tile("다음 연습","잡힌 연습 없음",S.canWrite?"눌러서 일정에 넣기":"일정 탭에서 확인해요",()=>S.canWrite?eventModal(null,{date:addDays(d,-1),kind:"practice",title:"찬양 연습"}):setTab("cal"));
+  return h("div",{class:"dashtiles"},t1,t2,t3,t4);}
 /* home: my serving, one-line board, prayer & sharing */
 const myName=()=>((window.CBWP&&window.CBWP.myName&&window.CBWP.myName())||S.meName||"").trim();
 const POSTK={talk:"한마디",prayer:"기도제목",share:"나눔"};
@@ -4742,6 +4771,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","🖥 PC 홈을 대시보드로: 다음 예배 · 참여 응답 · 준비 상황 · 다음 연습을 한눈에, 아래는 두 단"],
   ["2026-10-15","🖨 악보 출력에서 특송은 빼요 · 인도자 콘티는 한 장에 2~3곡씩 가로로, A3 두 장까지"],
   ["2026-10-15","📄 「콘티 없이 PPT 만들기」에서도 초청팀 가사 파일(Word · 글)을 넣으면 보낸 가사 그대로 PPT"],
   ["2026-10-14","📄 이 콘티에만 쓰는 가사: 초청팀 가사 파일(Word)을 콘티 곡 순서대로 · 가사 창에 「이 콘티에만 저장」 · [간주] 자리는 제목 장"],
