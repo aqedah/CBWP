@@ -241,6 +241,7 @@ html{scrollbar-gutter:stable}
 .fin-no{color:var(--muted);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}.fin-t{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
 .fin-in{grid-column:2;display:flex;gap:6px;align-items:center;min-width:0}.fin-in input{flex:1;min-width:0}.fin-ok{font-size:.75rem;color:var(--ok);white-space:nowrap}.fin-ok.warn,.fin-pl.warn{color:var(--warn)}
 .fin-pl{margin-top:6px}.fin-diff ul{margin:6px 0 8px;padding-left:18px}
+.sh-tabs,.se-nav,.vw-nav,.th-strip{scrollbar-width:none;-ms-overflow-style:none}.sh-tabs::-webkit-scrollbar,.se-nav::-webkit-scrollbar,.vw-nav::-webkit-scrollbar,.th-strip::-webkit-scrollbar{display:none}
 .sh-tabrow{display:flex;align-items:center;gap:8px;min-width:0}.sh-tabrow .sh-tabs{flex:1;min-width:0}.sh-free{flex:none}
 .vsplit{display:grid!important;grid-template-columns:minmax(260px,380px) minmax(0,1fr);gap:14px;align-items:start;padding:12px!important}
 .lyrow .lyfirst{margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}.drow{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sheet);font:inherit;color:var(--ink);cursor:pointer}.drow:hover{border-color:var(--accent)}.dr-l{font-weight:700;font-size:.85rem;color:var(--ink2);font-variant-numeric:tabular-nums}.dr-m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dr-r{font-size:.78rem;color:var(--muted);white-space:nowrap}
@@ -2901,6 +2902,8 @@ function askConfirm(title,content,okText,onOk){const md=modal(title,h("div",{cla
 {const vv=window.visualViewport;if(vv){const set=()=>{const r=document.documentElement.style;r.setProperty("--vvh",vv.height+"px");r.setProperty("--vvt",vv.offsetTop+"px");};vv.addEventListener("resize",set);vv.addEventListener("scroll",set);set();}}
 {const sync=()=>{const on=!!document.querySelector("body>.modal:not(.vwflow-m)");document.documentElement.classList.toggle("modal-open",on);};
   new MutationObserver(sync).observe(document.body,{childList:true});}
+/* 스크롤바를 숨긴 가로 곡 탭: 마우스 휠(위아래)로도 옆으로 넘겨요 */
+document.addEventListener("wheel",e=>{const el=e.target.closest&&e.target.closest(".sh-tabs,.se-nav,.vw-nav,.th-strip");if(!el||el.scrollWidth<=el.clientWidth+2||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;e.preventDefault();el.scrollLeft+=e.deltaY;},{passive:false});
 function modal(title,body,foot,cls="",opts={}){const panel=h("div",{class:"panel",role:"dialog","aria-modal":"true","aria-label":title},
     h("div",{class:"panel-head"},h("h3",{text:title}),h("button",{class:"btn ghost",text:"닫기",onclick:()=>close()})),body,foot?h("div",{class:"panel-foot"},foot):null);
   const wrap=h("div",{class:"modal "+cls},panel);
@@ -3160,7 +3163,7 @@ function flowBox(it,song,key){S.flowOpen=S.flowOpen||new Set();const ed=curEdita
       h("button",{type:"button",class:"btn sm",disabled:!ed||!it.pages.length,title:it.pages.length?"악보에서 인트로 부분을 네모로 잡아 잘라 써요":"먼저 악보를 고르세요",text:"✂ 악보에서 잘라 쓰기",onclick:()=>cropIntro(it,()=>{drawIntro();upd();})}),
       ed?h("label",{class:"btn sm"},upIn,"🖼 그림 올리기"):null),introPrev);drawIntro();
   const dur=h("input",{type:"text",id:`du-${it.uid}`,disabled:!ed,"aria-label":"연주 시간",placeholder:"3:00",value:it.dur||"",style:"width:80px",oninput:e=>{it.dur=e.target.value.trim();upd();}});
-  const tr=h("input",{type:"text",id:`tr-${it.uid}`,disabled:!ed,list:"trans-dl","aria-label":"넘어가는 방식",placeholder:"건반 전주 · 바로 이어짐…",value:it.trans||"",style:"width:180px",oninput:e=>{it.trans=e.target.value;upd();}});
+  const tr=h("input",{type:"text",id:`tr-${it.uid}`,disabled:!ed,list:"trans-dl","aria-label":"넘어가는 방식",placeholder:"예: 건반 전주, 바로 이어짐",title:"이 곡이 끝나고 다음 곡으로 어떻게 넘어가는지",value:it.trans||"",style:"flex:1;min-width:150px;max-width:280px",oninput:e=>{it.trans=e.target.value;upd();}});
   const cumEl=h("span",{class:"hint cumtime","data-uid":it.uid});
   const pref=song&&song.flowPref;
   /* 메모에 「후렴 세 번 · 브릿지 2번 · 키업」이 있으면: 진행 순서가 비어 있을 때 미리 채워요 */
@@ -3175,7 +3178,7 @@ function flowBox(it,song,key){S.flowOpen=S.flowOpen||new Set();const ed=curEdita
       it.flow="";it.intro=null;it.dur="";it.trans="";ta.value="";itxt.value="";dur.value="";tr.value="";drawIntro();upd();toast("진행 순서 · 인트로 · 시간을 비웠어요");}}):null;
   const det=h("details",{class:"flowbox",open:S.flowOpen.has(it.uid)},h("summary",{},h("b",{text:"진행 순서 · 인트로 · 시간 "}),sumEl),
     h("div",{style:"display:flex;flex-direction:column;gap:8px;margin-top:8px"},h("div",{class:"row",style:"gap:6px"},loadBtn,memoBtn,h("span",{class:"spacer"}),clrBtn),memoNote,fe,taFold,chips,introRow,
-      h("div",{class:"row",style:"gap:6px;flex-wrap:wrap;align-items:center"},h("b",{class:"hint",text:"연주 시간"}),dur,tr,cumEl)));
+      h("div",{class:"row",style:"gap:6px;flex-wrap:wrap;align-items:center"},h("b",{class:"hint",text:"연주 시간"}),dur,h("b",{class:"hint",style:"margin-left:6px",text:"다음 곡으로"}),tr,cumEl)));
   det.addEventListener("toggle",()=>{det.open?S.flowOpen.add(it.uid):S.flowOpen.delete(it.uid);});
   setTimeout(updTimes,0);return det;}
 function confirmInline(btn,msg){if(btn.dataset.arm){delete btn.dataset.arm;if(btn.dataset.t)btn.textContent=btn.dataset.t;return true;}btn.dataset.arm="1";btn.dataset.t=btn.textContent;btn.textContent=msg||"이미 쓴 내용을 덮어써요 · 한 번 더 누르세요";setTimeout(()=>{if(!btn.dataset.arm)return;delete btn.dataset.arm;btn.textContent=btn.dataset.t;},3000);return false;}
