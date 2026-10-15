@@ -565,7 +565,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .pmode{position:fixed;inset:0;z-index:9999;background:#111;color:#f5f5f5;display:flex;flex-direction:column;overflow:auto;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
 .pmode .btn:not(.primary){color:#222}.pmode .btn:disabled{opacity:.45}
 .pm-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#1d1d1f;border-bottom:1px solid #333}
-.pm-title{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pm-title b{font-size:1.1rem}.pm-key{background:#f5c542;color:#222;border-radius:6px;padding:1px 8px;font-weight:800}
+.pm-title{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden}.pm-title b{font-size:1.1rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pm-no{flex:none;font-weight:800;color:#cfd6e6;font-size:1rem;font-variant-numeric:tabular-nums}.pm-title .pm-key,.pm-title .pm-sec{flex:none;white-space:nowrap}@media (max-width:600px){.pm-title .pm-sec{display:none}}.pm-key{background:#f5c542;color:#222;border-radius:6px;padding:1px 8px;font-weight:800}
 .pm-memo{padding:6px 14px;background:#2a2a2d;color:#ffd98a;font-size:.95rem}
 .pm-body{flex:1;display:flex;flex-direction:column;align-items:safe center;gap:10px;padding:10px;overflow:auto;min-height:0}.pm-page{max-width:none;background:#fff;border-radius:4px;flex:none}
 .pm-lyrics{white-space:pre-line;font-size:clamp(1.2rem,3vw,2rem);line-height:1.7;text-align:center;max-width:900px;padding:16px}.pm-empty{padding:40px;color:#aaa}
@@ -7416,10 +7416,11 @@ async function practiceMode(c){const songs=[];let C=c;const cid=c.id||(c===S.cur
         getImg(p.imgId).then(async u=>{if(!u)return;try{const im=await loadImg(u);cv.width=im.naturalWidth;cv.height=im.naturalHeight;const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0);drawMarks(x,p,0,0,cv.width,cv.height);}catch(e){}});}}
     else body.append(h("div",{class:"pm-lyrics",text:ly||"가사가 아직 없어요."}));
     ov.replaceChildren(...[
-      h("div",{class:"pm-top"},h("button",{class:"btn sm",text:"✕ 닫기",onclick:close}),h("div",{class:"pm-title"},h("b",{text:`${i+1} / ${songs.length} · ${it.title}`}),it.key?h("span",{class:"pm-key",text:it.key}):null,h("span",{class:"hint",text:sec})),
+      h("div",{class:"pm-top"},h("button",{class:"btn sm",text:"✕ 닫기",onclick:close}),/* 머리줄은 곡마다 같은 모양: 번호 · 제목(길면 …) · 키 — 한 줄 고정 (진행 순서는 악보 맨 위에 있어요) */
+        h("div",{class:"pm-title",title:`${it.title}${sec?` · ${sec}`:""}`},h("span",{class:"pm-no",text:`${i+1} / ${songs.length}`}),h("b",{text:it.title}),it.key?h("span",{class:"pm-key",text:it.key}):null,h("span",{class:"hint pm-sec",text:sec})),
         h("div",{class:"pm-nav"},h("button",{class:"btn",text:"← 이전 곡",disabled:i===0,onclick:()=>go(-1)}),h("button",{class:"btn primary",text:"다음 곡 →",disabled:i===songs.length-1,onclick:()=>go(1)}))),
       !onRoster(c)&&myName()?h("div",{class:"pm-memo",style:"color:#ffb4a8",text:"이번 예배 편성에는 이름이 없어요. 연습용으로 보고 있어요."}):null,
-      it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,flowBar,flowPad,body,
+      it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,body,
       h("div",{class:"pm-foot"},h("button",{class:"btn sm"+(show==="score"?" primary":""),text:"악보",onclick:()=>{show="score";draw();}}),h("button",{class:"btn sm"+(show==="ly"?" primary":""),text:"가사",onclick:()=>{show="ly";draw();}}),
         show==="score"?h("button",{class:"btn sm",text:"－",title:"작게",onclick:()=>{z=Math.max(.4,Math.round((z-.2)*100)/100);fitPages();}}):null,show==="score"?h("button",{class:"btn sm",text:"＋",title:"크게",onclick:()=>{z=Math.min(4,Math.round((z+.25)*100)/100);fitPages();}}):null,show==="score"&&z!==1?h("button",{class:"btn sm",text:"맞춤",title:"한 쪽이 화면에 다 들어오게",onclick:()=>{z=1;draw();}}):null,
         y?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch?v=${y}`,target:"_blank",rel:"noopener",text:"▶ 레퍼런스"}):null,
