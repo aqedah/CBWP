@@ -741,7 +741,8 @@ body.fb-pad .tourcard{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .fe-tokw{position:relative;display:inline-flex}.fe-x{position:absolute;top:-9px;right:-9px;width:20px;height:20px;border-radius:50%;border:2px solid var(--sheet);background:#c62828;color:#fff;font-size:11px;font-weight:800;line-height:1;padding:0;cursor:pointer;display:grid;place-items:center;z-index:1}
 .se-body{display:flex;flex-direction:column;flex:1;min-height:0}.se-body>.toolsbox{order:1}.se-left{order:2;display:flex;flex-direction:column;flex:1;min-height:0}
 .se-tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sheet);flex:none}.se-tabs button{flex:1;border:0;background:none;padding:9px 8px;font:inherit;font-weight:700;font-size:.9rem;color:var(--muted);cursor:pointer}.se-tabs button+button{border-left:1px solid var(--line)}.se-tabs button[aria-selected="true"]{background:var(--ink);color:var(--sheet)}
-.stage.view{cursor:default}.thumbs{flex-direction:column;align-items:stretch;gap:6px}.th-strip{display:flex;gap:8px;overflow-x:auto;padding:2px}.th-acts{gap:6px;flex-wrap:wrap;align-items:center}.th-h{margin:0;align-items:center}.th-tg{display:none}@media (max-width:999px){.th-tg{display:inline-flex}.thumbs:not(.open) .th-acts{display:none}.thumbs{padding:6px 12px}.th-strip .thumb{height:52px;width:40px}}.se-hist{margin:0}
+.stage.view{cursor:default}.se-wrap{display:flex;flex-direction:column;flex:1;min-height:0}.se-nav{flex:none;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--sheet)}.se-split{display:none}
+@media (min-width:1000px){.se-split{display:block;order:2;flex:none;width:8px;cursor:col-resize;background:var(--line);opacity:.5;touch-action:none;position:relative}.se-split:hover,.se-split.on{opacity:1;background:var(--accent)}.se-split::after{content:"⋮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--sheet);font-weight:900;font-size:14px}.se-body>.toolsbox{order:3!important;width:var(--se-w,440px)!important;border-left:0!important}}.thumbs{flex-direction:column;align-items:stretch;gap:6px}.th-strip{display:flex;gap:8px;overflow-x:auto;padding:2px}.th-acts{gap:6px;flex-wrap:wrap;align-items:center}.th-h{margin:0;align-items:center}.th-tg{display:none}@media (max-width:999px){.th-tg{display:inline-flex}.thumbs:not(.open) .th-acts{display:none}.thumbs{padding:6px 12px}.th-strip .thumb{height:52px;width:40px}}.se-hist{margin:0}
 @media (min-width:1000px){.toolsbox>.thumbs{border-top:1px solid var(--line);margin:0 16px 16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sheet)}}.se-tabs~.se-sec .se-h>b{display:none}.se-mark .seg{flex-wrap:nowrap;overflow-x:auto;max-width:100%}.se-mark .seg button{white-space:nowrap}
 @media (min-width:1000px){.editor .panel{width:min(1560px,98vw)}.se-body{flex-direction:row}.se-left{order:1;min-width:0}.se-body>.toolsbox{order:2;width:440px;flex:none;max-height:none;overflow:auto;border-left:1px solid var(--line);background:var(--soft)}.se-body .tools{border-bottom:0}.se-body .se-flow .fe-in{width:150px!important}}
 .tu-sw{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}
@@ -2365,7 +2366,9 @@ function renderSheet(m){const c=fixConti(S.cur);const editable=curEditable();ini
     for(const{it,k,l,no}of items.slice(ti,ti+1)){const song=S.songs.find(x=>x.id===it.songId);const cur=vers(song).find(v=>v.vid===it.verId);
       const thumbs=h("div",{class:"sh-thumbs"},(it.pages||[]).map((p,pi)=>{const im=h("img",{alt:`${it.title} 악보 ${pi+1}쪽`,loading:"lazy"});getImg(p.imgId).then(u=>{if(u)im.src=u;});
         return h("button",{type:"button",class:"sh-thumb",title:"눌러서 악보에 표시 (형광펜 · 구간)",disabled:!editable,onclick:()=>edit()},im,(it.pages||[]).length>1?h("span",{class:"hint",text:`${pi+1}쪽`}):null);}));
-      const edit=()=>openScoreEditor({item:it,title:`${it.title}${cur?` · ${cur.name||""}`:""}`,pages:it.pages,songId:it.songId,verId:cur?it.verId:"",onDone:(pages,vid)=>{it.pages=pages;if(vid)it.verId=vid;markDirty();draw();}});
+      const edit=()=>openScoreEditor({item:it,title:`${it.title}${cur?` · ${cur.name||""}`:""}`,pages:it.pages,songId:it.songId,verId:cur?it.verId:"",onDone:(pages,vid)=>{it.pages=pages;if(vid)it.verId=vid;markDirty();draw();},
+        /* 위쪽 곡 탭으로 다음 곡 · 앞 곡 악보 편집으로 바로 넘어가요 */
+        nav:{list:items.map(x=>({no:x.no,title:x.it.title,warn:!(x.it.pages||[]).length})),idx:ti,go:j=>{S.sheetTab=j;draw();setTimeout(()=>S._shEdit&&S._shEdit(),0);}}});S._shEdit=edit;
       const keyIn=h("input",{type:"text",class:"key","aria-label":"키",placeholder:"Key",value:it.key||"",disabled:!editable,style:"width:70px",oninput:e=>{it.key=e.target.value;markDirty();}});
       S.flowOpen=S.flowOpen||new Set();S.flowOpen.add(it.uid);   /* 이 화면에서는 진행 순서 칸을 펼쳐 둬요 */
       const shc=h("div",{class:"card sh-card"},
@@ -3521,7 +3524,7 @@ document.addEventListener("keydown",e=>{if(S.tab!=="write"||!(e.ctrlKey||e.metaK
 /* =========================================================
    SCORE EDITOR
    ========================================================= */
-function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item}){
+function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item,nav}){
   const E={pages:clone(pages||[]),cur:0,pane:item?(S.sePane||"flow"):"mark",tool:"label",label:"Intro",custom:"",verse:1,undo:[]};
   const editable=isSongDefault?S.canWrite:curEditable();
   const push=()=>{E.undo.push(clone(E.pages));if(E.undo.length>40)E.undo.shift();E.redo=[];};
@@ -3543,14 +3546,29 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item}){
   const foot=[
     (!isSongDefault&&songId&&!String(songId).startsWith("local-"))?h("label",{class:"row hint",htmlFor:"se-default",style:"margin-right:auto"},alsoDefault,verId?"곡에 저장된 이 악보에도 고친 내용 반영하기":"이 악보를 곡에 새 악보로 등록하기 (다음에 제목만 골라도 따라 나와요)"):null,
     h("button",{class:"btn",text:"취소",onclick:()=>{if(item)syncFlowTop(item);md.close();}}),
-    h("button",{class:"btn primary",text:"완료",disabled:!editable,onclick:async()=>{let vid=null;await commitTU();
+    h("button",{class:"btn primary",text:"완료",disabled:!editable,onclick:()=>finish()})];
+  async function finish(){let vid=null;await commitTU();
       if(alsoDefault.checked&&!isSongDefault&&songId&&!String(songId).startsWith("local-")){vid=await rememberScore(songId,verId,E.pages,{keepMarks:true});if(vid)toast(verId?"곡에 저장된 악보에도 반영했어요":"곡에 새 악보로 등록했어요");}
-      onDone(clone(E.pages),vid);md.close();}})];
+      onDone(clone(E.pages),vid);md.close();}
   /* 휴대폰: 도구를 접으면 악보를 넓게 봐요 */
   const tbox=h("div",{class:"toolsbox"+(innerWidth<700&&S.seToolsMin?" min":"")});const tToggle=h("button",{type:"button",class:"btn sm ghost tbtoggle",onclick:()=>{const m=!tbox.classList.contains("min");tbox.classList.toggle("min",m);S.seToolsMin=m;tToggle.textContent=m?"🧰 도구 펼치기 ▼":"🧰 도구 접기 ▲";}},tbox.classList.contains("min")?"🧰 도구 펼치기 ▼":"🧰 도구 접기 ▲");
   if(editable)tbox.append(tToggle,tools);else tbox.append(h("div",{class:"tools hint",text:"보기 전용이에요."}));
   /* PC: 왼쪽 악보 크게 · 오른쪽 도구 / 휴대폰: 위 도구(접기) · 아래 악보 */
-  const seLeft=h("div",{class:"se-left"},stageWrap);const body=h("div",{class:"se-body"},seLeft,tbox);
+  const seLeft=h("div",{class:"se-left"},stageWrap);
+  /* PC: 악보 | 도구 사이를 끌어서 넓이 조절 (이 기기에 기억) */
+  const split=h("div",{class:"se-split",role:"separator","aria-orientation":"vertical",title:"끌어서 악보 · 도구 넓이 조절 (두 번 누르면 처음대로)"});
+  const seBody=h("div",{class:"se-body"},seLeft,split,tbox);
+  try{const w=+localStorage.getItem("cbwp-se-w");if(w>=300)seBody.style.setProperty("--se-w",w+"px");}catch(e){}
+  split.addEventListener("pointerdown",e=>{e.preventDefault();try{split.setPointerCapture(e.pointerId);}catch(_){}split.classList.add("on");
+    const mv=ev=>{const r=seBody.getBoundingClientRect();const w=Math.round(Math.min(r.width-380,Math.max(300,r.right-ev.clientX)));seBody.style.setProperty("--se-w",w+"px");};
+    const up=ev=>{split.removeEventListener("pointermove",mv);split.removeEventListener("pointerup",up);split.removeEventListener("pointercancel",up);split.classList.remove("on");
+      try{localStorage.setItem("cbwp-se-w",parseInt(getComputedStyle(seBody).getPropertyValue("--se-w"))||440);}catch(_){}};
+    split.addEventListener("pointermove",mv);split.addEventListener("pointerup",up);split.addEventListener("pointercancel",up);});
+  split.addEventListener("dblclick",()=>{seBody.style.removeProperty("--se-w");try{localStorage.removeItem("cbwp-se-w");}catch(_){}});
+  const navBar=nav&&nav.list.length>1?h("div",{class:"se-nav sh-tabs",role:"tablist"},nav.list.map((x,j)=>h("button",{type:"button",role:"tab",class:"sh-tab"+(j===nav.idx?" on":""),"aria-selected":String(j===nav.idx),title:j===nav.idx?x.title:`${x.title} — 지금 고친 것을 저장하고 넘어가요`,
+      onclick:async()=>{if(j===nav.idx)return;if(editable)await finish();else md.close();nav.go(j);}},h("span",{class:"sh-tabno",text:circ(x.no)}),h("span",{class:"sh-tabt",text:x.title}),x.warn?h("span",{class:"sh-tabwarn",title:"악보 없음",text:"!"}):null))):null;
+  if(navBar)setTimeout(()=>{const on=navBar.querySelector(".on");if(on)navBar.scrollLeft=on.offsetLeft-navBar.clientWidth/2+on.offsetWidth/2;},0);
+  const body=h("div",{class:"se-wrap"},navBar,seBody);
   const mqW=matchMedia("(min-width:1000px)");const placeThumbs=()=>{if(mqW.matches)tbox.append(thumbs);else seLeft.append(thumbs);};placeThumbs();try{mqW.addEventListener("change",placeThumbs);}catch(e){}
   const md=modal(`악보 편집 · ${title}`,body,foot,"editor");
 
