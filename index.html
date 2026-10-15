@@ -2707,8 +2707,11 @@ function workbench(fs,c,editable,wtabs){document.body.classList.add("wb-on");con
   const mini=colR.firstChild;mini.style.overflow="auto";
   const sync=()=>{if(!mini.isConnected)return ro.disconnect();const pan=[...colC.children].find(e=>e.offsetParent!==null);const first=pan&&(pan.classList.contains("sheet")?pan:pan.querySelector(".sheet"));
     /* 왼쪽 상자가 곡으로 길어지면(420px 넘게) 맞추지 않아요 — 곡 찾기가 너무 아래로 밀리지 않게 */
-    const hh=first?first.offsetHeight:0;mini.style.height=hh&&hh<=420?hh+"px":"";};
-  const ro=new ResizeObserver(()=>requestAnimationFrame(sync));[...colC.children,...colC.querySelectorAll(".sheet")].forEach(ch=>ro.observe(ch));}
+    const hh=first?first.offsetHeight:0;mini.style.height=hh&&hh<=420?hh+"px":"";
+    /* 곡 찾기 높이를 왼쪽 단 끝에 맞춰요 — 아래 「저장 · 다음 단계」 위에 빈자리가 안 생기게 (브라우저마다 글자 높이가 달라도 늘 실제 높이로 맞춰요) */
+    const lib=colR.querySelector(".wb-lib");if(lib){const room=colC.getBoundingClientRect().height-mini.getBoundingClientRect().height-16;
+      lib.style.maxHeight=Math.round(Math.max(260,Math.min(room,window.innerHeight-120)))+"px";}};
+  const ro=new ResizeObserver(()=>requestAnimationFrame(sync));[colC,...colC.children,...colC.querySelectorAll(".sheet")].forEach(ch=>ro.observe(ch));window.addEventListener("resize",()=>requestAnimationFrame(sync));}
 function wordPanel(c,editable){const box=h("div",{class:"wb-word"});const r=parseRef((c.passage||"").trim());
   const memo=h("textarea",{id:"wb-med",value:c.meditation||"",placeholder:"묵상 메모 (콘티 공지에 함께 들어가요)",style:"min-height:80px",disabled:!editable,oninput:e=>{c.meditation=e.target.value;markDirty();}});
   if(r)loadBible().then(()=>{if(!BIB[r.b]||!BIB[r.b][r.ch-1])return box.replaceChildren(h("div",{class:"hint",text:"본문을 찾지 못했어요"}));
