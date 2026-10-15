@@ -1296,14 +1296,14 @@ async function attachYt(song,yid){if(!yid||(song.yt||[]).includes(yid)||!S.db||s
   try{await S.db.doc(`songs/${song.id}`).update({yt:[...(song.yt||[]),yid],updatedAt:Date.now()});}catch(e){}}
 
 /* ---------- tabs ---------- */
-const NAVG={home:[["home","홈"]],conti:[["bible","말씀 · 묵상"],["write","콘티 작성"],["sheet","악보 편집"],["pptmake","PPT 만들기"],["list","콘티 목록"]],songs:[["songs","찬양 라이브러리"],["ppt","가사 라이브러리"]],team:[["cal","일정"],["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bylaws","회칙"]],me:[["me","나"]]};
+const NAVG={home:[["home","홈"]],conti:[["bible","말씀 · 묵상"],["write","콘티 작성"],["sheet","악보 편집"],["pptmake","PPT 만들기"],["list","콘티 목록"]],songs:[["songs","찬양 라이브러리"],["ppt","가사 라이브러리"]],team:[["members","멤버"],["lineup","편성"],["attend","출결"],["stats","결산"],["bylaws","회칙"]],me:[["me","나"]]};
 const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
 const PROJ_G=["home","conti","songs","team","me"];const PROJ_TEAM=["members"];
 /* 역할: admin(관리자) · lead(리더 비밀번호) · writer(인도자·리더·작성자) · clerk(서기) · member(팀원)
    팀원에게는 「홈 · 일정 · 나」만, 서기에게는 운영(편성·출결·멤버·결산)만 보여요. 기능은 그대로, 보이는 메뉴만 달라요 */
 function role(){if(!window.CBWP)return"admin";if(S.isOwner||window.CBWP.isAdmin())return"admin";if(S.memberOnly)return"member";if(canLead())return"lead";if(isWriter())return"writer";
   const me=normName(myName());const mb=me&&S.members.find(x=>normName(x.name)===me);if(mb&&mb.role==="서기")return"clerk";return"member";}
-const ROLE_TABS={member:{home:1,team:["cal"],me:1},clerk:{home:1,team:["cal","members","lineup","attend","stats","bylaws"],me:1}};
+const ROLE_TABS={member:{home:1,me:1},clerk:{home:1,team:["members","lineup","attend","stats","bylaws"],me:1}};
 /* 팀마다 끈 메뉴 (관리자가 개발자 모드 「🧩 메뉴 켜고 끄기」에서 정해요) · 정하지 않았으면 출결은 기드온만 */
 /* 메뉴 속 작은 칸(수습 기록 등)도 함께 켜고 꺼요 · 이런 칸은 기드온 말고는 처음에 꺼져 있어요 (켜면 onTabs에 남아요) */
 const TOGGLE_EXTRA=[{g:"team",k:"probation",lb:"멤버 › 수습 기록"}];
@@ -1319,9 +1319,9 @@ function tabAllowed(g,k){if(S.team&&!isProject()&&offTabsOf(S.team).includes(k))
 const isPhone=()=>{const sw=Math.min(screen.width||9999,screen.height||9999);return sw<600||Math.min(window.innerWidth,window.innerHeight)<480&&matchMedia("(pointer:coarse)").matches;};
 const pcPref=()=>{try{return localStorage.getItem("cbwp-pc")==="1";}catch(e){return false;}};
 const isLite=()=>isPhone()&&!pcPref();
-const LITE_TABS={home:1,conti:["list"],songs:["songs"],team:["cal","attend"],me:1};
+const LITE_TABS={home:1,conti:["list"],songs:["songs"],team:["attend"],me:1};
 function setPcMode(on){try{localStorage.setItem("cbwp-pc",on?"1":"0");}catch(e){}document.body.classList.toggle("lite",isLite());
-  if(isLite()&&!["home","list","songs","cal","attend","me"].includes(S.tab))S.tab="home";render();window.scrollTo(0,0);
+  if(isLite()&&!["home","list","songs","attend","me"].includes(S.tab))S.tab="home";render();window.scrollTo(0,0);
   toast(on?"PC 화면으로 바꿨어요. 모든 기능을 쓸 수 있어요":"휴대폰 화면으로 바꿨어요",2500);}
 const subsOf=g=>{const w=isWriter()||!!S.curId;const l=NAVG[g].filter(([k])=>((k!=="write"&&k!=="sheet")||w)&&tabAllowed(g,k));return g==="conti"&&!w?l.slice().sort((a,b)=>(a[0]==="list"?-1:0)-(b[0]==="list"?-1:0)):l;};
 S.lastSub={};
@@ -1333,7 +1333,7 @@ function goTab(k){if((k==="write"||k==="sheet"||(k==="bible"&&isWriter()))&&S.te
     if(!keep){S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();}}
   setTab(k);}
 function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;const pj=isProject();let shown=0;document.querySelectorAll(".bnav button").forEach(b=>{const gg=b.dataset.group;b.setAttribute("aria-current",gg===g?"page":"false");b.hidden=!!S.team&&!subsOf(gg).length||isLite()&&gg==="songs";if(!b.hidden)shown++;
-    const lb=b.querySelector("span");if(lb&&gg==="songs")lb.textContent=isLite()?"찬양":"라이브러리";if(lb&&gg==="me")lb.textContent="나";if(lb&&gg==="team"){const only=subsOf("team");lb.textContent=only.length===1&&only[0][0]==="cal"?"일정":"우리 팀";}});
+    const lb=b.querySelector("span");if(lb&&gg==="songs")lb.textContent=isLite()?"찬양":"라이브러리";if(lb&&gg==="me")lb.textContent="나";if(lb&&gg==="team"){const only=subsOf("team");lb.textContent=only.length===1?only[0][1]:"우리 팀";}});
   $(".bnav-in").style.gridTemplateColumns=shown&&shown<5?`repeat(${shown},1fr)`:"";
   const on=!!S.team;$("#tabsNav").hidden=!on;document.body.classList.toggle("has-bnav",on);drawSideNav();}
 /* PC 넓은 화면: 아래 메뉴 대신 왼쪽 세로 메뉴 (CBCS처럼) — 큰 메뉴 아래에 작은 칸까지 한눈에 */
@@ -1365,7 +1365,8 @@ function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)
 {const tt=h("button",{type:"button",class:"totop","aria-label":"맨 위로",title:"맨 위로",text:"↑",onclick:()=>window.scrollTo({top:0,behavior:"smooth"})});document.body.append(tt);
   const upd=()=>tt.classList.toggle("on",window.scrollY>innerHeight*.8);window.addEventListener("scroll",upd,{passive:true});upd();}
 $("#homeLink").addEventListener("click",e=>{e.preventDefault();if(S.team)switchTeam();else window.scrollTo({top:0});});
-function setTab(t){S.tab=t;render();window.scrollTo({top:0});}
+/* 「일정」은 홈에 합쳤어요: 예전 「일정」으로 가는 길은 홈의 달력을 펼쳐서 보여 줘요 */
+function setTab(t){if(t==="cal"){t="home";S.homeCal=true;}S.tab=t;render();window.scrollTo({top:0});if(S.homeCal&&t==="home")setTimeout(()=>{const c=document.querySelector("#homeCal");if(c&&arguments[0]==="cal")c.scrollIntoView({block:"start",behavior:"smooth"});},60);}
 /* who writes contis: admin, team leader password, a member marked 리더 or 인도자 (by the name given on this device), or someone who already wrote one */
 function isWriter(){if(!S.canWrite||S.memberOnly)return false;if(!window.CBWP||isProject())return true;if(window.CBWP.isAdmin()||canLead())return true;
   if(S.contis.some(c=>isAuthor(c)&&!c.past))return true;const me=normName(myName());if(!me)return false;
@@ -1635,7 +1636,7 @@ const TOURS={
     {tab:"songs",t:"[라이브러리] 한눈에",x:"라이브러리는 교회 전체가 함께 쓰는 곳이에요. 「찬양 라이브러리」는 곡 자체와 악보를, 「가사 라이브러리」는 화면에 띄울 가사와 PPT 템플릿을 모아 둬요. 곡 목록은 두 곳이 같아요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"songs",t:"[라이브러리] 찬양 라이브러리",x:"곡이 한 줄씩 나와요. 찾고 → 누르면 「＋ 지금 콘티에 넣기 · 🎼 악보 보기 · 📝 가사 · ✏️ 곡 정보 고치기」가 펼쳐져요. 악보 보기에서 「🖌 악보 고치기」로 손글씨를 지우거나 코드를 고칠 수 있어요. 한 번 넣어 두면 다음 콘티부터 그대로 불러와요.",sel:()=>document.querySelector("#song-q")},
     {tab:"ppt",t:"[라이브러리] 가사 라이브러리",x:"예배 PPT를 올려 템플릿으로 만들고, 곡마다 가사 PPT를 넣어 둬요. 가사만 있어도 템플릿에 맞춰 PPT를 만들 수 있어요.",sel:()=>document.querySelector("#main .sheet")},
-    {tab:"cal",t:"[우리 팀] 한눈에",x:"우리 팀 메뉴는 콘티와 따로, 팀을 꾸리는 곳이에요. 일정 · 멤버 · 편성 · 출결 · 결산 · 회칙이 있어요. 지금은 「일정」이에요. 연습 · 모임 · 행사를 넣으면 팀원이 홈에서 참여 여부를 알려 줘요.",sel:()=>document.querySelector("#main .subtabs")},
+    {tab:"members",t:"[우리 팀] 한눈에",x:"우리 팀 메뉴는 콘티와 따로, 팀을 꾸리는 곳이에요. 멤버 · 편성 · 출결 · 결산 · 회칙이 있어요. 일정 달력은 홈에 있어요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"members",t:"[우리 팀] 멤버 · 편성",x:"「멤버」에서 팀원 이름 · 맡는 자리 · 회원 구분을 관리해요. 「편성」에서는 주일마다 누가 어느 자리를 맡을지 미리 짜 두고, 팀원들이 남긴 「참여 가능 · 어려워요」 응답을 보며 정해요. 여기서 짠 편성은 콘티 작성의 「참여자 → 불러오기」로 그대로 들어가요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"stats",t:"[우리 팀] 출결 · 결산 · 회칙",x:"「출결」에서 연습 · 주일 출석을 체크하면, 「결산」이 한 해 동안 누가 몇 번 섬겼는지, 어떤 곡을 많이 불렀는지 모아 줘요. 「회칙」에는 팀 규칙을 적어 둬요.",sel:()=>document.querySelector("#main .subtabs")},
     {tab:"me",t:"[나] 한눈에",x:"내 이름 · 사진 · 맡는 자리를 정하고, 「다른 기기 연결」로 휴대폰 · 태블릿 · 컴퓨터를 함께 써요. 이제 체험판에서 마음껏 눌러 보세요!",sel:()=>document.querySelector("#main .sheet")}]},
@@ -1689,7 +1690,7 @@ const TOURS={
     {tab:"home",t:"[홈] 콘티 · 악보 보기",x:"「콘티 · 악보 보기」를 누르면 곡 순서 · 키 · 악보 · 연습 영상을 한 화면에서 봐요.",sel:byBtn("콘티 · 악보 보기")},
     {tab:"home",t:"[홈] 연습 모드",x:"「🎼 연습 모드」는 태블릿 · 휴대폰을 악보대처럼 써요. 곡마다 한 화면, 옆으로 넘기면 다음 곡이에요. 위쪽 「진행」 줄에 곡 순서(Intro → V1 → C …)가 나오고, 인도자가 연습 중에 바꾸면 내 화면에도 바로 바뀌어요.",sel:byBtn("연습 모드")},
     {tab:"home",t:"[홈] 참여 응답",x:"주일 · 연습마다 「참여 가능」 「어려워요」를 눌러 알려요. 리더가 편성할 때 봐요.",sel:byH2("참여 응답")},
-    {tab:"cal",t:"[일정]",x:"연습 · 모임 날짜와 장소를 달력으로 봐요. 날짜를 누르면 그날 일정이 나와요.",sel:()=>document.querySelector("#main .sheet")},
+    {tab:"home",t:"[홈] 일정 달력",x:"홈의 「📅 달력 펼치기」를 누르면 연습 · 모임 날짜를 달력으로 봐요. 날짜를 누르면 그날 일정을 보고 더할 수 있어요.",sel:()=>document.querySelector("#homeCal")||document.querySelector("#main .sheet")},
     {tab:"me",t:"[나]",x:"내 이름 · 사진 · 맡는 자리, 출결을 봐요. 「다른 기기 연결」로 휴대폰 · 태블릿을 함께 써요. 이제 마음껏 둘러보세요!",sel:()=>document.querySelector("#main .sheet")}]}};
 let TOUR=null;
 /* 탭 이름: 아래 메뉴 · 위 칸 메뉴 이름으로 (예: 콘티 › 악보 편집) */
@@ -1799,7 +1800,7 @@ function pcLayout(){if(pcObs){pcObs.disconnect();pcObs=null;}const cfg=PCL[S.tab
   /* 나중에 그려지는 칸(본문 풀이 · 낱말 풀이 등)도 같은 규칙으로 제자리에 */
   const tab=S.tab;pcObs=new MutationObserver(ms=>{if(S.tab!==tab)return;for(const mu of ms)for(const e of mu.addedNodes){if(e.nodeType!==1||e.parentNode!==m||SKIP(e))continue;
       const t=ttl(e);if(cfg.TOP&&cfg.TOP(t,e))continue;if(cfg.BOT&&cfg.BOT(t,e))continue;(cfg.R(t,e)?colR:colL).append(e);}});pcObs.observe(m,{childList:true});}
-function render(){if(document.body.classList.contains("vwflow")&&!document.querySelector(".modal.vwflow-m"))document.body.classList.remove("vwflow");const same=S._lastTab===S.tab&&!!S.team,y=window.scrollY;document.body.classList.toggle("dash",!!S.team&&dashOn());document.body.dataset.tab=S.tab||"";renderInner();try{pcLayout();}catch(e){console.error(e);}S._lastTab=S.tab;
+function render(){if(S.tab==="cal"){S.tab="home";S.homeCal=true;}if(document.body.classList.contains("vwflow")&&!document.querySelector(".modal.vwflow-m"))document.body.classList.remove("vwflow");const same=S._lastTab===S.tab&&!!S.team,y=window.scrollY;document.body.classList.toggle("dash",!!S.team&&dashOn());document.body.dataset.tab=S.tab||"";renderInner();try{pcLayout();}catch(e){console.error(e);}S._lastTab=S.tab;
   /* 같은 화면을 다시 그릴 때(출결 체크 · 저장 등)는 보던 자리 그대로 */
   if(same&&y>0){if(Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);requestAnimationFrame(()=>{if(S._lastTab===S.tab&&Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);});}}
 function renderInner(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(TOUR?h("div",{class:"banner demoban mini"},h("b",{text:"👀 체험판"}),h("span",{class:"spacer"}),h("button",{type:"button",class:"btn sm",text:"나가기",onclick:()=>{location.href=location.pathname;}})):
@@ -4357,11 +4358,14 @@ function availSheet(){const me=myName();if(!me||!S.team)return null;const mb=S.m
           h("button",{class:"btn sm"+(r&&!r.ok?" noon":""),disabled:!can,text:r&&!r.ok?`✕ 불참${r.note?` (${r.note})`:""}`:"어려워요",onclick:no})));}),
       prs.length?h("div",{class:"lab",style:"margin-top:6px",text:"연습"}):null,...prs.map(prRow)));}
 /* 우리 팀 → 편성 */
+/* 콘티에 참여자를 넣었으면(확정 전이어도) 편성에도 보여요 — 편성표에 사람이 아직 없을 때 콘티 참여자로 채워요 */
+const hasPeople=ros=>(ros||[]).some(r=>(r.people||[]).length);
+const contiOnDate=d=>S.contis.find(c=>c.date===d&&!c.noService&&!c.past&&hasPeople(c.roster))||S.contis.find(c=>c.date===d&&!c.noService&&!c.past);
 function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);if(!S.lineDay||!ds.includes(S.lineDay))S.lineDay=ds[0];const d=S.lineDay;
-  const saved=planOf(d);const conti=S.contis.find(c=>c.date===d&&!c.noService&&!c.past);
+  const saved=planOf(d);const conti=contiOnDate(d);
   if(!S.lineDraft||S.lineDraft.d!==d||S.lineDraft.at!==(saved?saved.updatedAt:0)){
-    const base=saved?planRoster(saved):conti&&(conti.roster||[]).some(r=>(r.people||[]).length)?planRoster({roster:conti.roster}):basicAsRoster();
-    S.lineDraft={d,at:saved?saved.updatedAt:0,roster:base,practice:saved?saved.practice:"",prAt:clone((saved&&saved.practiceAt)||{date:addDays(d,-(((parseD(d).getDay()+1)%7)||7)),time:"11:00",place:""}),prOwn:!!(saved&&saved.practiceRoster),prNames:(saved&&saved.practiceRoster)||[],note:saved?saved.note:"",off:saved?saved.off:false,label:saved?saved.label:"",dirty:!saved};}
+    const base=saved&&hasPeople(saved.roster)?planRoster(saved):conti&&hasPeople(conti.roster)?planRoster({roster:conti.roster}):saved?planRoster(saved):basicAsRoster();
+    S.lineDraft={d,at:saved?saved.updatedAt:0,roster:base,practice:saved?saved.practice:"",prAt:clone((saved&&saved.practiceAt)||{date:addDays(d,-(((parseD(d).getDay()+1)%7)||7)),time:"11:00",place:""}),prOwn:!!(saved&&saved.practiceRoster),prNames:(saved&&saved.practiceRoster)||[],note:saved?saved.note:"",off:saved?saved.off:false,label:saved?saved.label:"",dirty:!saved||(!hasPeople(saved.roster)&&hasPeople(base))};}
   const L=S.lineDraft;const resp=availOf(d);
   const people=S.members.filter(mb=>!["게스트","휴면"].includes(tierOf(mb))).sort((a,b)=>tierRank(a)-tierRank(b)||a.name.localeCompare(b.name,"ko"));
   const yes=[],no=[],none=[];const seen=new Set();
@@ -4373,7 +4377,7 @@ function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);i
   /* 날짜 고르기 */
   const days=h("div",{class:"attdays"},ds.map(x=>{const pl=planOf(x);const n=Object.values(availOf(x)).filter(v=>!v.ok).length,y=Object.values(availOf(x)).filter(v=>v.ok).length;
     return h("button",{type:"button",class:"attday"+(x===d?" on":"")+(pl&&pl.off?" off":""),onclick:()=>{S.lineDay=x;render();}},h("b",{text:dLabel(x).replace(/\(.\)/,"")}),
-      h("span",{text:pl?(pl.off?(pl.label||"쉼"):"편성 ✓"):"편성 전"}),(y||n)?h("span",{class:"avcnt"},y?h("span",{class:"avy",text:`참여 ${y}`}):null,n?h("span",{class:"avn",text:`불참 ${n}`}):null):null);}));
+      h("span",{text:pl&&pl.off?(pl.label||"쉼"):pl&&hasPeople(pl.roster)?"편성 ✓":(contiOnDate(x)&&hasPeople(contiOnDate(x).roster))?"콘티 참여자":"편성 전"}),(y||n)?h("span",{class:"avcnt"},y?h("span",{class:"avy",text:`참여 ${y}`}):null,n?h("span",{class:"avn",text:`불참 ${n}`}):null):null);}));
   /* 편성표 */
   const rows=L.roster.filter(r=>can||(r.people||[]).length).map(slot=>h("div",{class:"pinfo-row"},h("dt",{text:slot.pos}),h("dd",{},h("span",{class:"pchips"},(slot.people||[]).map(chip),
     can?h("button",{class:"btn sm add",text:(slot.people||[]).length?"바꾸기":"+ 고르기",onclick:()=>openPicker(slot,()=>dirty(),L.roster,badge)}):null))));
@@ -4394,7 +4398,7 @@ function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);i
   const diffConti=conti&&JSON.stringify((conti.roster||[]).filter(r=>(r.people||[]).length).map(r=>[r.pos,r.people.map(p=>normName(p.name))]))!==JSON.stringify(L.roster.filter(r=>(r.people||[]).length).map(r=>[r.pos,r.people.map(p=>normName(p.name))]));
   const card=h("div",{class:"sheet"},h("h2",{},`${dLabel(d)} 편성`,h("span",{class:"sub",text:can?"고친 뒤 「편성 저장」":"리더가 정한 편성이에요"})),days,
     L.off?h("div",{class:"empty",style:"margin-top:10px"},`이 주는 「${L.label||"쉬는 주"}」예요.`,can?h("div",{style:"margin-top:8px"},h("button",{class:"btn sm",text:"보통 주로 되돌리기",onclick:async()=>{L.off=false;await save();}})):null):h("div",{style:"margin-top:12px;display:flex;flex-direction:column;gap:12px"},
-      !saved&&can?h("div",{class:"banner"},h("b",{text:"아직 저장 전이에요. "}),conti?"콘티 참여자를 바탕으로 위 편성표에 채워 두었어요.":"기본 편성으로 위 편성표에 채워 두었어요. ✕(불참)인 사람은 칸을 눌러 바꾸고 저장하세요."):null,
+      !saved&&can?h("div",{class:"banner"},h("b",{text:"아직 저장 전이에요. "}),conti&&hasPeople(conti.roster)?"콘티 참여자를 바탕으로 위 편성표에 채워 두었어요.":"기본 편성으로 위 편성표에 채워 두었어요. ✕(불참)인 사람은 칸을 눌러 바꾸고 저장하세요."):null,
       L.dirty&&saved&&can?h("div",{class:"banner warn"},"고친 내용이 아직 저장되지 않았어요."):null,
       prBox,h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"ln-note",text:"비고"}),noteIn)),
       can?h("div",{class:"row"},h("button",{class:"btn primary",text:"편성 저장",onclick:save}),rosterSetBtns((id)=>{L.roster=basicAsRoster(id);dirty();}),
@@ -4408,17 +4412,18 @@ function renderLineup(m){const can=canPlan()&&!!S.db;const ds=upcomingDates(6);i
   const respSheet=h("div",{class:"sheet"},h("h2",{},"참여 응답",h("span",{class:"sub",text:"팀원이 홈에서 직접 알려요"})),
     h("div",{class:"avcols"},col("가능","ok",yes,x=>h("span",{class:"lchip ok",text:x.mb.name})),col("불참","no",no,x=>h("span",{class:"lchip no",text:`${x.mb.name}${x.r.note?` · ${x.r.note}`:""}`})),col("응답 전","",none,x=>h("span",{class:"lchip",text:x.mb.name}))));
   /* 한눈에 (엑셀 멤버 구성표처럼) */
-  const posUsed=[...new Set(ds.flatMap(x=>{const pl=planOf(x);return pl&&!pl.off?(pl.roster||[]).map(r=>r.pos):[];}).concat(L.roster.filter(r=>(r.people||[]).length).map(r=>r.pos)))].sort((a,b)=>(POSITIONS.indexOf(a)+99)%199-(POSITIONS.indexOf(b)+99)%199);
+  const rosOn=x=>{const pl=planOf(x);if(pl&&pl.off)return[];if(pl&&hasPeople(pl.roster))return pl.roster;const c=contiOnDate(x);return c&&hasPeople(c.roster)?c.roster:(pl?pl.roster||[]:[]);};
+  const posUsed=[...new Set(ds.flatMap(x=>rosOn(x).filter(r=>(r.people||[]).length).map(r=>r.pos)).concat(L.roster.filter(r=>(r.people||[]).length).map(r=>r.pos)))].sort((a,b)=>(POSITIONS.indexOf(a)+99)%199-(POSITIONS.indexOf(b)+99)%199);
   if(!posUsed.length)posUsed.push(...L.roster.map(r=>r.pos));
   const grid=posUsed.length?h("div",{class:"sheet"},h("h2",{},"편성 요약",h("span",{class:"sub",text:can?"칸을 누르면 바로 고르고 저장돼요 · 날짜를 누르면 아래에서 자세히":"앞으로 6주 · 줄을 누르면 그 날 편성으로"})),h("div",{class:"tablewrap"},h("table",{class:"t lgrid"},h("thead",{},h("tr",{},h("th",{text:"날짜"}),posUsed.map(p=>h("th",{text:p})),h("th",{text:"비고"}))),
     h("tbody",{},ds.map(x=>{const pl=planOf(x);const cur=x===d;const draft=cur&&(!saved||L.dirty)&&!L.off;const off=cur?L.off:!!(pl&&pl.off);
-      const ros=cur?L.roster:pl&&!pl.off?(pl.roster||[]):[];
+      const ros=cur?L.roster:rosOn(x);const fromConti=!cur&&!(pl&&hasPeople(pl.roster))&&hasPeople(ros);
       /* 이름 옆에 참여 응답: 초록 ✓ 가능 · 빨강 ✕ 불참 */
       const nm=q=>{const r=respOf(x,q.name);return h("span",{class:"lnm"},q.name,r?h("span",{class:"lmk "+(r.ok?"ok":"no"),title:r.ok?"참여 가능":`불참${r.note?` · ${r.note}`:""}`,"aria-label":r.ok?"참여 가능":"불참",text:r.ok?"✓":"✕"}):null);};
       return h("tr",{class:(cur?"sel":"")+(draft?" draft":""),onclick:()=>{S.lineDay=x;render();}},h("th",{text:dLabel(x)}),
       off?h("td",{colSpan:posUsed.length,class:"hint",text:(cur?L.label:pl.label)||"쉬는 주"}):posUsed.map(p=>{const ppl=(ros.find(r=>r.pos===p)||{people:[]}).people||[];
         return h("td",{class:can?"lcell":"",title:can?`${dLabel(x)} ${p} 고르기`:"",onclick:can?e=>{e.stopPropagation();S.lineDay=x;S.lineOpen={d:x,pos:p};render();}:null},...ppl.flatMap((q,k)=>k?[", ",nm(q)]:[nm(q)]));}),
-      h("td",{class:"hint",text:draft?"저장 전":pl?(pl.note||""):"편성 전"}));}))))):null;
+      h("td",{class:"hint",text:draft?"저장 전":fromConti?"콘티 참여자":pl?(pl.note||""):"편성 전"}));}))))):null;
   /* 요약(앞으로 편성 한눈에)을 맨 위로 */
   if(grid)m.append(grid);m.append(card,respSheet);
   /* 요약 표의 칸을 누르면: 그 날 · 그 자리 고르기 → 「적용」하면 바로 저장 */
@@ -4956,10 +4961,10 @@ function eventModal(ev,preset={}){const can=S.canWrite&&!S.memberOnly&&!!S.db;co
     if(!body.time){timeIn.focus();return toast("시간을 넣어 주세요");}
     if(!body.place){placeIn.focus();return toast("장소를 넣어 주세요");}
     try{if(ev)await S.db.doc(`events/${ev.id}`).update(body);else await S.db.collection("events").add({...body,by:S.myId||null,createdAt:Date.now()});
-      md.close();toast(`${fmtDate(body.date)}에 「${body.title}」 일정을 ${ev?"고쳤어요":"넣었어요"}`);S.calMonth=body.date.slice(0,7);if(S.tab==="cal")render();}
+      md.close();toast(`${fmtDate(body.date)}에 「${body.title}」 일정을 ${ev?"고쳤어요":"넣었어요"}`);S.calMonth=body.date.slice(0,7);if(S.tab==="cal"||S.tab==="home")render();}
     catch(err){toast("일정을 저장하지 못했어요");}};
   let armed=false;const del=ev&&can?h("button",{class:"btn danger",text:"지우기",onclick:async x=>{if(!armed){armed=true;x.currentTarget.textContent="정말 지울까요?";return;}
-    try{await S.db.doc(`events/${ev.id}`).delete();md.close();toast("일정을 지웠어요");if(S.tab==="cal")render();}catch(err){toast("지우지 못했어요");}}}):null;
+    try{await S.db.doc(`events/${ev.id}`).delete();md.close();toast("일정을 지웠어요");if(S.tab==="cal"||S.tab==="home")render();}catch(err){toast("지우지 못했어요");}}}):null;
   const md=modal(ev?"일정 고치기":"일정 추가",h("div",{class:"panel-body"},h("div",{class:"grid"},fld("ev-kind","종류",h("div",{style:"display:flex;flex-direction:column;gap:6px"},kindSel,kindName)),fld("ev-date","날짜 (시작)",dateIn),fld("ev-end","끝나는 날 (여러 날이면)",endIn),fld("ev-time","시간",timeIn),fld("ev-place","장소",placeIn)),
     fld("ev-title","제목",titleIn),fld("ev-memo","메모 (선택)",memoIn),
     ev&&ev.kind==="practice"?(()=>{const rs=Object.entries(availOf(`pr-${ev.id}`));const ok=rs.filter(([,v])=>v.ok),no=rs.filter(([,v])=>!v.ok);
@@ -5078,7 +5083,7 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
   const up=[...S.events.filter(e=>e.date<=end&&evEnd(e)>=today).map(e=>({d:e.date<today?today:e.date,t:e.time||"",k:e.kind,label:e.title+(evSpan(e)?` (${evSpan(e)})`:"")+(e.place?` @ ${e.place}`:""),ev:e})),
     ...S.contis.filter(c=>c.date>=today&&c.date<=end&&!c.noService).map(c=>({d:c.date,t:"",k:"service",label:wtypeOf(c)+(leaderOf(c)?` · 인도 ${leaderOf(c)}`:""),c})),
     ...Object.entries(HOLIDAYS).filter(([d])=>d>=today&&d<=end).map(([d,n])=>({d,t:"",k:"hol",label:n}))].sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));
-  const sch=h("div",{class:"sheet"},h("h2",{},"앞으로 2주 일정",h("span",{class:"row",style:"gap:6px"},canN?h("button",{class:"btn sm",text:"+ 일정",onclick:()=>eventModal(null,{date:today})}):null,h("button",{class:"btn sm",text:"달력 보기",onclick:()=>setTab("cal")}))),
+  const sch=h("div",{class:"sheet"},h("h2",{},"앞으로 2주 일정",h("span",{class:"row",style:"gap:6px"},canN?h("button",{class:"btn sm",text:"+ 일정",onclick:()=>eventModal(null,{date:today})}):null,h("button",{class:"btn sm"+(S.homeCal?" primary":""),text:S.homeCal?"📅 달력 접기":"📅 달력 펼치기",onclick:()=>{S.homeCal=!S.homeCal;render();if(S.homeCal)setTimeout(()=>{const c=document.querySelector("#homeCal");if(c)c.scrollIntoView({block:"start",behavior:"smooth"});},60);}}))),
     up.length?h("div",{class:"uplist"},up.map(x=>h("button",{type:"button",class:`uprow k-${x.k}`+(x.d===today?" today":""),onclick:()=>x.ev?eventModal(x.ev):x.c?viewConti(x.c):setTab("cal")},
       h("span",{class:"when",text:x.d===today?"오늘":fmtDate(x.d)}),h("span",{class:`chipc k-${x.k}`,text:x.k==="service"?"예배":x.k==="hol"?"공휴일":evKindName(x.k,x.ev)}),h("span",{text:(x.t?x.t+" ":"")+x.label})))):
       h("div",{class:"empty",text:"2주 안에 잡힌 일정이 없어요."}));
@@ -5086,8 +5091,11 @@ function renderHome(m){const today=todayStr();const can=S.canWrite&&!!S.db;
   /* 팀원이 앱을 열면 먼저 「이번 주 내가 할 일」: 나의 섬김 → 참여 응답 → 공지 → 일정 → 한마디 · 나눔 */
   const verse=h("figure",{class:"verse homeverse",style:"margin-top:8px"},h("blockquote",{text:VERSE[0]}),h("figcaption",{text:VERSE[1]}));
   /* PC 넓은 화면: 대시보드 — 위에 한눈에 보는 칸 4개, 아래 두 단 (왼쪽: 나의 섬김 · 일정 · 기도제목 / 오른쪽: 참여 응답 · 공지) */
-  if(dashOn()){m.append(...[patchSheet(),dashTiles(),h("div",{class:"dashgrid"},h("div",{class:"dashcol"},myServeSheet(),sch,boardSheet()),h("div",{class:"dashcol"},...[availSheet(),nbox].filter(Boolean))),verse].filter(Boolean));return;}
-  m.append(patchSheet(),myServeSheet(),availSheet()||"",nbox,sch,boardSheet(),verse);}
+  const cal=S.homeCal?homeCalSheet():null;
+  if(dashOn()){m.append(...[patchSheet(),dashTiles(),cal,h("div",{class:"dashgrid"},h("div",{class:"dashcol"},myServeSheet(),sch,boardSheet()),h("div",{class:"dashcol"},...[availSheet(),nbox].filter(Boolean))),verse].filter(Boolean));return;}
+  m.append(...[patchSheet(),myServeSheet(),availSheet()||"",nbox,sch,cal,boardSheet(),verse].filter(Boolean));}
+/* 홈의 달력 = 예전 「우리 팀 › 일정」 달력 (날짜를 누르면 그날 일정 · 더하기) */
+function homeCalSheet(){const tmp=h("div");renderCal(tmp);const sh=tmp.firstElementChild;if(!sh)return null;sh.id="homeCal";return sh;}
 const dashOn=()=>S.tab==="home"&&!isLite()&&window.innerWidth>=1100&&!isProject();
 {let was=null,t=0;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(()=>{const v=!!S.team&&dashOn();if(was!==null&&v!==was&&S.tab==="home")render();was=v;},200);});}
 /* 대시보드 위 칸: 다음 예배 · 참여 응답 · 준비 상황 · 다음 연습 */
@@ -5117,6 +5125,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","📅 「우리 팀 › 일정」을 홈으로 합쳤어요 (「📅 달력 펼치기」) · 🧑‍🤝‍🧑 콘티에 넣은 참여자가 편성에도 바로 보여요 · 📜 회칙: Enter로 끊긴 줄 이어 붙이기"],
   ["2026-10-15","📝 「PPT 라이브러리」 → 「가사 라이브러리」: 가사 한 줄로도 찾고, 가사 보기 · 고치기 · PPT 받기를 한곳에서 · 🎼 라이브러리 「악보 보기」에서 팀 기본 · 표시 · 편집 · 새 악보까지"],
   ["2026-10-15","🧭 악보 편집: 위쪽 곡 탭으로 다음 곡 · 악보 위 막대(되돌리기 · 쪽 넘기기 · 빈 칸 · 장 넣기) · 악보|도구 사이 끌어서 넓이 조절"],
   ["2026-10-15","🖼 악보 편집 창: PC는 왼쪽 악보 크게 · 오른쪽 도구, 「① 진행 순서 / ② 악보에 표시 · 고치기」 탭으로 나눴어요"],
@@ -5282,6 +5291,7 @@ function wordDiffHTML(oldT, newT, known = '') {
   return res.changed ? html : null;
 }
 function bylawParas(t) { const c = []; bylawHTML(t, { collect: c }); return c; }
+const BL_NEW = /^(제\s*\d+\s*(편|장|절|관|조)|[가-하]\s*[.)]\s*\S|(제\s*)?\d+\s*항|[①-⑳]|\(\d+\)|（\d+）|\d+\s*[.)]\s*\S|[*※]|부\s*칙|[<〈《【\[「])/;
 function bylawHTML(t, opt = {}) {
   if (!String(t || '').trim()) return '';
   const out = [], toc = []; let n = 0, started = false, inArticles = false, pre = false, para = null, art = 'pre', pi = 0;
@@ -5299,7 +5309,9 @@ function bylawHTML(t, opt = {}) {
   const ends = x => /([.。!?」』)\]]|다|함|음|됨|임|요)$/.test(x);
   const L = t.split('\n');
   for (let li = 0; li < L.length; li++) { const raw = L[li];
-    const x = raw.trim(); if (!x) { flush(); continue; }
+    const x = raw.trim();
+    // 빈 줄: 원래는 문단 끝. 다만 한글에서 Enter를 두 번 쳐 줄을 맞춘 흔적이면(앞 문장이 안 끝났고 다음 줄이 조 · 항 · 번호로 시작하지 않으면) 이어 붙인다
+    if (!x) { if (para && !ends(para.txt)) { let k = li + 1; while (k < L.length && !L[k].trim()) k++; const nx = (L[k] || '').trim(); if (nx && !BL_NEW.test(nx)) continue; } flush(); continue; }
     if (/^={3,}/.test(x)) continue; // 예전에 여러 파일을 합칠 때 넣은 "===== 파일이름" 구분 줄
     const indented = /^\s{2,}/.test(raw);
     // 조문 바로 뒤 괄호 한 줄 "(…)"은 앞 문장에 딸린 덧붙임 — 판마다 줄을 바꿨다 붙였다 해서 비교가 어긋나므로 한 문단으로 잇는다
