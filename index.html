@@ -564,6 +564,7 @@ abbr.gl{text-decoration:underline dotted var(--accent);text-underline-offset:3px
 .pcal-d{display:flex;gap:4px;align-items:baseline;flex-wrap:wrap}.pcal-hol{color:#c0392b;font-size:.7rem}.pcal-e{display:flex;flex-direction:column;gap:1px}.pcal-p{font-weight:700;overflow-wrap:anywhere}.pcal-s{color:var(--accent);overflow-wrap:anywhere}
 .pmode{position:fixed;inset:0;z-index:9999;background:#111;color:#f5f5f5;display:flex;flex-direction:column;overflow:auto;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
 .pmode .btn:not(.primary){color:#222}.pmode .btn:disabled{opacity:.45}
+.pm-arrow{position:fixed;top:50%;transform:translateY(-50%);z-index:5;width:44px;height:72px;border:0;border-radius:14px;background:rgb(0 0 0 / .38);color:#fff;font-size:2.6rem;line-height:1;font-weight:300;display:grid;place-items:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .35s;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.pm-arrow.l{left:6px}.pm-arrow.r{right:6px}.arrows-on .pm-arrow{opacity:.75;pointer-events:auto}.pm-arrow:active{background:rgb(0 0 0 / .55)}
 .pm-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#1d1d1f;border-bottom:1px solid #333}
 .pm-title{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden}.pm-title b{font-size:1.1rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pm-no{flex:none;font-weight:800;color:#cfd6e6;font-size:1rem;font-variant-numeric:tabular-nums}.pm-title .pm-key,.pm-title .pm-sec{flex:none;white-space:nowrap}@media (max-width:600px){.pm-title .pm-sec{display:none}}.pm-key{background:#f5c542;color:#222;border-radius:6px;padding:1px 8px;font-weight:800}
 .pm-memo{padding:6px 14px;background:#2a2a2d;color:#ffd98a;font-size:.95rem}
@@ -7416,7 +7417,10 @@ async function practiceMode(c){const songs=[];let C=c;const cid=c.id||(c===S.cur
   ov.addEventListener("touchstart",e=>{if(e.touches.length===1&&z<=1){tx=e.touches[0].clientX;ty=e.touches[0].clientY;horiz=null;}else tx=null;},{passive:true});
   ov.addEventListener("touchmove",e=>{if(tx==null)return;const dx=e.touches[0].clientX-tx,dy=e.touches[0].clientY-ty;if(horiz==null&&Math.hypot(dx,dy)>10)horiz=Math.abs(dx)>Math.abs(dy)*1.2;
     if(horiz){const b=pbEl();if(b){const edge=(dx>0&&i===0)||(dx<0&&i===songs.length-1);b.style.transition="none";b.style.transform=`translateX(${dx*(edge?.25:.6)}px)`;b.style.opacity=String(1-Math.min(.5,Math.abs(dx)/600));}}},{passive:true});
-  ov.addEventListener("touchend",e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;const b=pbEl();if(b){b.style.transform="";b.style.opacity="";}if(horiz&&Math.abs(dx)>80)go(dx<0?1:-1);else if(horiz&&b&&b.animate)b.animate([{transform:`translateX(${dx*.6}px)`},{transform:"none"}],{duration:180,easing:"ease-out"});horiz=null;},{passive:true});
+  ov.addEventListener("touchend",e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;const b=pbEl();if(b){b.style.transform="";b.style.opacity="";}if(horiz===null&&!e.target.closest("button,a"))showArrows();if(horiz&&Math.abs(dx)>80)go(dx<0?1:-1);else if(horiz&&b&&b.animate)b.animate([{transform:`translateX(${dx*.6}px)`},{transform:"none"}],{duration:180,easing:"ease-out"});horiz=null;},{passive:true});
+  let arT=0;function showArrows(){ov.classList.add("arrows-on");clearTimeout(arT);arT=setTimeout(()=>ov.classList.remove("arrows-on"),2500);}
+  ov.addEventListener("mousedown",e=>{if(!e.target.closest("button,a,input"))showArrows();});ov.addEventListener("mousemove",()=>{if(matchMedia("(hover:hover)").matches)showArrows();});
+  setTimeout(showArrows,300);
   function draw(keep){const{it,sec}=songs[i];const y=ytId(it.yt);const ly=lyricsOf(it).trim();const pages=it.pages||[];
     const fl=flowOneLine(it);const toks=flowLines(it);
     const flowBar=fl||canFlow()?h("div",{class:"pm-flow"+(Date.now()-flash<2500?" flash":"")},h("b",{class:"pm-flowlab",text:"진행"}),h("span",{class:"pm-flowtxt",text:fl||"아직 진행 순서가 없어요"}),
@@ -7433,7 +7437,10 @@ async function practiceMode(c){const songs=[];let C=c;const cid=c.id||(c===S.cur
     ov.replaceChildren(...[
       h("div",{class:"pm-top"},h("button",{class:"btn sm",text:"✕ 닫기",onclick:close}),/* 머리줄은 곡마다 같은 모양: 번호 · 제목(길면 …) · 키 — 한 줄 고정 (진행 순서는 악보 맨 위에 있어요) */
         h("div",{class:"pm-title",title:`${it.title}${sec?` · ${sec}`:""}`},h("span",{class:"pm-no",text:`${i+1} / ${songs.length}`}),h("b",{text:it.title}),it.key?h("span",{class:"pm-key",text:it.key}):null,h("span",{class:"hint pm-sec",text:sec})),
-        h("div",{class:"pm-nav"},h("button",{class:"btn",text:"← 이전 곡",disabled:i===0,onclick:()=>go(-1)}),h("button",{class:"btn primary",text:"다음 곡 →",disabled:i===songs.length-1,onclick:()=>go(1)}))),
+        ),
+      /* ‹ › 반투명 넘기기: 악보를 톡 누르면 나타나고, 가만히 두면 사라져요 */
+      i>0?h("button",{type:"button",class:"pm-arrow l","aria-label":"이전 곡",text:"‹",onclick:e=>{e.stopPropagation();go(-1);showArrows();}}):null,
+      i<songs.length-1?h("button",{type:"button",class:"pm-arrow r","aria-label":"다음 곡",text:"›",onclick:e=>{e.stopPropagation();go(1);showArrows();}}):null,
       !onRoster(c)&&myName()?h("div",{class:"pm-memo",style:"color:#ffb4a8",text:"이번 예배 편성에는 이름이 없어요. 연습용으로 보고 있어요."}):null,
       it.memo?h("div",{class:"pm-memo",text:`메모: ${it.memo}`}):null,body,
       h("div",{class:"pm-foot"},h("button",{class:"btn sm"+(show==="score"?" primary":""),text:"악보",onclick:()=>{show="score";draw();}}),h("button",{class:"btn sm"+(show==="ly"?" primary":""),text:"가사",onclick:()=>{show="ly";draw();}}),
