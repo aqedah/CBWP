@@ -647,6 +647,19 @@ ins.bl-add{text-decoration:none;color:#0b6b3a;background:#e3f4ea;border-radius:2
 .sh-split{display:flex;flex-direction:column;gap:12px}.sh-left,.sh-right{display:flex;flex-direction:column;gap:10px;min-width:0}
 @media (min-width:1000px){body:not(.lite) .sh-split{display:grid;grid-template-columns:fit-content(55%) minmax(0,1fr);gap:20px;align-items:start}body:not(.lite) .sh-right .flowbox{margin-top:0}}
 .outprev{display:flex;flex-direction:column;gap:14px;align-items:center;background:var(--soft)}.outpg{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}.outpg img{max-width:100%;max-height:78vh;box-shadow:0 2px 12px rgb(0 0 0 / .18);background:#fff}
+/* PC 왼쪽 메뉴 */
+.sidenav-bar{position:fixed;left:0;top:0;bottom:0;width:212px;z-index:45;background:var(--sheet);border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 18px) 12px 18px;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
+body.sidenav{padding-left:212px}body.sidenav .bnav{display:none!important}body.sidenav.has-bnav{padding-bottom:0}
+body.sidenav main{padding-bottom:40px}body.sidenav .totop{bottom:20px}body.sidenav .toast{bottom:24px}body.sidenav .floatbar{bottom:0;left:212px;padding-bottom:8px}body.sidenav.fb-pad{padding-bottom:80px}
+.sn-team{font-weight:800;font-size:.95rem;color:var(--team,var(--accent));padding:4px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-g{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;font:inherit;font-weight:700;font-size:.92rem;color:var(--ink2);padding:9px 10px;border-radius:10px;cursor:pointer}
+.sn-g svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sn-g:hover{background:var(--soft)}.sn-g.on{background:color-mix(in srgb,var(--team,var(--accent)) 13%,transparent);color:var(--navon,var(--accent))}
+.sn-subs{display:flex;flex-direction:column;gap:1px;margin:0 0 6px 30px;padding-left:8px;border-left:2px solid var(--line)}
+.sn-s{text-align:left;border:0;background:none;font:inherit;font-size:.86rem;color:var(--muted);padding:6px 10px;border-radius:8px;cursor:pointer}
+.sn-s:hover{background:var(--soft);color:var(--ink)}.sn-s.on{color:var(--navon,var(--accent));font-weight:800;background:color-mix(in srgb,var(--team,var(--accent)) 8%,transparent)}
+body.sidenav .subtabs[aria-label="작은 메뉴"],body.sidenav .ctabs>.subtabs[aria-label="콘티 메뉴"]{display:none}
+@media print{.sidenav-bar{display:none!important}body.sidenav{padding-left:0}}
 .lyhit-tag{flex:none;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3c4;color:#7a5a00}
 .servebrief{display:flex;gap:8px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;padding:10px 12px}.servebrief .sb-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.servebrief .sb-pos{color:var(--accent,#2b3f8f);white-space:nowrap}
 .servemore{margin-top:10px}.servemore>summary,.oldfold>summary{cursor:pointer;list-style:none;margin:6px 0}.servemore>summary{color:var(--accent,#2b3f8f);font-weight:600}.oldfold>summary{width:100%;text-align:center}.oldfold[open]>summary{margin-bottom:10px}.oldfold{display:grid;gap:10px}
@@ -1268,7 +1281,19 @@ function goTab(k){if((k==="write"||k==="sheet"||(k==="bible"&&isWriter()))&&S.te
 function syncNav(){const g=groupOf(S.tab);S.lastSub[g]=S.tab;const pj=isProject();let shown=0;document.querySelectorAll(".bnav button").forEach(b=>{const gg=b.dataset.group;b.setAttribute("aria-current",gg===g?"page":"false");b.hidden=!!S.team&&!subsOf(gg).length||isLite()&&(gg==="songs"||gg==="team");if(!b.hidden)shown++;
     const lb=b.querySelector("span");if(lb&&gg==="songs")lb.textContent=isLite()?"찬양":"라이브러리";if(lb&&gg==="me")lb.textContent=isLite()?"내 정보":"나";if(lb&&gg==="team"){const only=subsOf("team");lb.textContent=isLite()||only.length===1&&only[0][0]==="cal"?"일정":"우리 팀";}});
   $(".bnav-in").style.gridTemplateColumns=shown&&shown<5?`repeat(${shown},1fr)`:"";
-  const on=!!S.team;$("#tabsNav").hidden=!on;document.body.classList.toggle("has-bnav",on);}
+  const on=!!S.team;$("#tabsNav").hidden=!on;document.body.classList.toggle("has-bnav",on);drawSideNav();}
+/* PC 넓은 화면: 아래 메뉴 대신 왼쪽 세로 메뉴 (CBCS처럼) — 큰 메뉴 아래에 작은 칸까지 한눈에 */
+const sideOn=()=>!!S.team&&!isLite()&&window.innerWidth>=1100;
+function drawSideNav(){let nav=document.getElementById("sideNav");const on=sideOn();document.body.classList.toggle("sidenav",on);
+  if(!on){if(nav)nav.hidden=true;return;}
+  if(!nav){nav=h("nav",{id:"sideNav",class:"sidenav-bar","aria-label":"메뉴"});document.body.append(nav);}nav.hidden=false;
+  const cg=groupOf(S.tab);const items=[];
+  document.querySelectorAll(".bnav button").forEach(b=>{if(b.hidden)return;const g=b.dataset.group;const subs=subsOf(g);const lab=(b.querySelector("span")||{}).textContent||"";
+    const svg=b.querySelector("svg");const gb=h("button",{type:"button",class:"sn-g"+(g===cg?" on":""),"aria-current":g===cg?"page":"false",onclick:()=>{const ks=subs.map(x=>x[0]);const last=S.lastSub[g];goTab(ks.includes(last)?last:ks[0]);}},svg?svg.cloneNode(true):null,h("span",{text:lab}));
+    items.push(gb);
+    if(subs.length>1)items.push(h("div",{class:"sn-subs"},subs.map(([k,l])=>h("button",{type:"button",class:"sn-s"+(k===S.tab?" on":""),"aria-current":k===S.tab?"page":"false",onclick:()=>goTab(k)},l))));});
+  nav.replaceChildren(h("div",{class:"sn-team",text:teamName(S.team)}),...items);}
+{let t=0,was=null;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(()=>{const v=sideOn();if(v!==was){was=v;if(S.team)syncNav();}},150);});}
 function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)return null;
   /* 콘티: 큰 칸 두 개 (콘티 만들기 · 콘티 목록) + 만들기 안의 ①~④ 단계 */
   if(g==="conti"){const make=subs.filter(([k])=>k!=="list"),hasList=subs.some(([k])=>k==="list");const inMake=S.tab!=="list";if(inMake)S.lastMake=S.tab;
@@ -1532,7 +1557,7 @@ const byH2=t=>()=>[...document.querySelectorAll("#main .sheet")].find(x=>{const 
 const byBtn=t=>()=>[...document.querySelectorAll("#main button,#main a.btn")].find(b=>b.textContent.includes(t));
 const TOURS={
   leader:{name:"인도자 튜토리얼",then:["practiceConti","✍️ 네, 콘티 짜는 연습 해 볼게요","이제 직접 콘티를 짜 볼까요? 방금 본 순서대로, 하나씩 눌러 보며 연습해요."],steps:[
-    {tab:"home",t:"화면 아래 메뉴부터 볼까요?",x:"밝게 보이는 화면 맨 아래가 앱의 큰 메뉴예요. 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개가 있어요. 메뉴마다 먼저 전체를 소개하고, 그 안의 칸을 하나씩 보여 드릴게요.",sel:()=>document.querySelector(".bnav")},
+    {tab:"home",t:"화면 아래 메뉴부터 볼까요?",x:"밝게 보이는 화면 맨 아래(PC는 왼쪽)가 앱의 큰 메뉴예요. 홈 · 콘티 · 라이브러리 · 우리 팀 · 나, 다섯 개가 있어요. 메뉴마다 먼저 전체를 소개하고, 그 안의 칸을 하나씩 보여 드릴게요.",sel:()=>document.body.classList.contains("sidenav")?document.getElementById("sideNav"):document.querySelector(".bnav")},
     {tab:"home",t:"[홈] 한눈에",x:"홈은 이번 주를 한눈에 보는 곳이에요. 나의 섬김 · 참여 응답 · 공지 · 앞으로 2주 일정이 모여 있어요. 하나씩 볼게요.",sel:()=>[...document.querySelectorAll("#main .sheet")].filter(x=>!x.parentElement.closest("#main .sheet"))},
     {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요. 「콘티 · 악보 보기」로 곡 순서와 악보를 보고, 「🎼 연습 모드」로 곡마다 한 화면씩 넘기며 연습해요. 연습 중에 인도자가 연습 모드에서 흐름을 바꾸면, 함께 보고 있는 팀원 모두의 화면에 바로 바뀌어요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"[홈] 참여 응답",x:"다가오는 주일과 연습마다 「참여 가능」 · 「어려워요」를 눌러 알려요. 인도자 · 리더는 팀원들의 응답을 보고 편성을 짜요.",sel:byH2("참여 응답")},
@@ -1597,7 +1622,7 @@ const TOURS={
     {t:"🎉 PPT 만들기 끝!",x:"악보 편집 → 미리보기 → 템플릿 → PPT 받기, 그리고 라이브러리에서 준비하는 법까지 알아봤어요."}]},
   /* ===== 싱어 · 악기팀: 실제 팀원 화면(홈 · 일정 · 나)으로 ===== */
   member:{name:"싱어 · 악기팀 둘러보기",member:true,steps:[
-    {tab:"home",t:"팀원 화면이에요",x:"팀원 비밀번호로 들어오면 아래 메뉴가 홈 · 일정 · 나, 세 개만 보여요. 매주 필요한 건 여기 다 있어요.",sel:()=>document.querySelector(".bnav")},
+    {tab:"home",t:"팀원 화면이에요",x:"팀원 비밀번호로 들어오면 아래 메뉴가 홈 · 일정 · 나, 세 개만 보여요. 매주 필요한 건 여기 다 있어요.",sel:()=>document.body.classList.contains("sidenav")?document.getElementById("sideNav"):document.querySelector(".bnav")},
     {tab:"home",t:"[홈] 나의 섬김",x:"내가 들어간 다가오는 콘티와 맡은 자리가 나와요.",sel:()=>document.querySelector("#main .sheet.myserve")},
     {tab:"home",t:"[홈] 콘티 · 악보 보기",x:"「콘티 · 악보 보기」를 누르면 곡 순서 · 키 · 악보 · 연습 영상을 한 화면에서 봐요.",sel:byBtn("콘티 · 악보 보기")},
     {tab:"home",t:"[홈] 연습 모드",x:"「🎼 연습 모드」는 태블릿 · 휴대폰을 악보대처럼 써요. 곡마다 한 화면, 옆으로 넘기면 다음 곡이에요. 위쪽 「진행」 줄에 곡 순서(Intro → V1 → C …)가 나오고, 인도자가 연습 중에 바꾸면 내 화면에도 바로 바뀌어요.",sel:byBtn("연습 모드")},
@@ -4851,6 +4876,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","🖥 PC에서는 메뉴가 왼쪽 세로로 (큰 메뉴 아래 작은 칸까지 한눈에)"],
   ["2026-10-15","📜 회칙: Enter + 스페이스로 줄 맞춘 조문을 한 문장으로 잇고, 장 · 조 · 항 · 호 · 목 순서로 들여쓰기"],
   ["2026-10-15","🎼 악보 편집: PC는 악보 · 흐름 좌우로 · 자유롭게 편집은 아래로 · 진행 순서 글씨 크기 조절 · 이름표는 진행 순서 띠 아래로 · 콘티 출력 미리보기"],
   ["2026-10-15","📚 콘티 목록: 날짜를 팀 색으로 크게 · 상태(작성 중 · 확정 · 지난 콘티)를 눌러서 바꾸기"],
