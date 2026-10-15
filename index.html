@@ -244,7 +244,7 @@ html{scrollbar-gutter:stable}
 .sh-tabrow{display:flex;align-items:center;gap:8px;min-width:0}.sh-tabrow .sh-tabs{flex:1;min-width:0}.sh-free{flex:none}
 .vsplit{display:grid!important;grid-template-columns:minmax(260px,380px) minmax(0,1fr);gap:14px;align-items:start;padding:12px!important}
 .lyrow .lyfirst{margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}.drow{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sheet);font:inherit;color:var(--ink);cursor:pointer}.drow:hover{border-color:var(--accent)}.dr-l{font-weight:700;font-size:.85rem;color:var(--ink2);font-variant-numeric:tabular-nums}.dr-m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dr-r{font-size:.78rem;color:var(--muted);white-space:nowrap}
-.vs-drag{cursor:grab}.vs-drag.dragging{opacity:.45}.vs-drag.over{outline:2px dashed var(--accent);outline-offset:2px;border-radius:12px}.vs-new{align-self:flex-start;margin-top:4px}.vs-list{display:flex;flex-direction:column;gap:8px;position:sticky;top:0;max-height:calc(100vh - 160px);overflow:auto;min-width:0}
+.vs-handle{position:absolute;left:-2px;top:8px;z-index:2;width:22px;height:40px;border:0;background:none;color:var(--muted);font-size:1.1rem;cursor:grab;touch-action:none;padding:0}.vs-handle:hover{color:var(--accent)}.vs-wrap.dragging{opacity:.6}.vs-wrap:has(.vs-handle)>.vs-item{padding-left:22px}.vs-drag{cursor:grab}.vs-drag.dragging{opacity:.45}.vs-drag.over{outline:2px dashed var(--accent);outline-offset:2px;border-radius:12px}.vs-new{align-self:flex-start;margin-top:4px}.vs-list{display:flex;flex-direction:column;gap:8px;position:sticky;top:0;max-height:calc(100vh - 160px);overflow:auto;min-width:0}
 .vs-prev{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;background:var(--soft);border-radius:10px;padding:10px}
 .vs-prev .vw-page{max-width:100%}
 .vs-item{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--sheet);cursor:pointer;font:inherit;color:var(--ink)}
@@ -7670,13 +7670,10 @@ function versionsViewer(song,startVid,vopt={}){const vs=vers(song).filter(v=>(v.
       setTimeout(()=>nIn.focus(),0);
       return h("div",{class:"vs-wrap"},item,h("div",{class:"vs-edit"},nIn,h("span",{class:"hint",text:"Key"}),kIn,h("button",{class:"btn sm primary",text:"저장",onclick:sv}),h("button",{class:"btn sm ghost",text:"취소",onclick:()=>{editing=null;draw();}})));}));
     /* 끌어서 악보 순서 바꾸기 — 팀 기본을 안 정한 팀은 맨 위 악보가 기본이에요 */
-    if(canEd&&vs.length>1){let from=null;[...list.querySelectorAll(":scope > .vs-wrap")].forEach((w,i)=>{w.draggable=true;w.classList.add("vs-drag");w.title="끌어서 순서를 바꿔요";
-      w.addEventListener("dragstart",e=>{from=i;w.classList.add("dragging");try{e.dataTransfer.setData("text/plain",String(i));e.dataTransfer.effectAllowed="move";}catch(_){}});
-      w.addEventListener("dragend",()=>{w.classList.remove("dragging");list.querySelectorAll(".over").forEach(x=>x.classList.remove("over"));});
-      w.addEventListener("dragover",e=>{if(from==null)return;e.preventDefault();w.classList.add("over");});w.addEventListener("dragleave",()=>w.classList.remove("over"));
-      w.addEventListener("drop",async e=>{e.preventDefault();w.classList.remove("over");if(from==null||from===i)return;const ord=vs.map(v=>v.vid);const [m]=ord.splice(from,1);ord.splice(i,0,m);from=null;
+    if(canEd&&vs.length>1)[...list.querySelectorAll(":scope > .vs-wrap")].forEach((w,i)=>{w.dataset.i=i;const hd=h("button",{type:"button",class:"vs-handle","aria-label":"끌어서 순서 바꾸기",title:"끌어서 순서 바꾸기",text:"⠿"});w.prepend(hd);
+      dragRows(hd,w,list,async order=>{if(order.every((x,k)=>x===k))return draw();const ord=order.map(k=>vs[k].vid);
         const all=clone(vers(song));all.sort((a,b)=>{const ia=ord.indexOf(a.vid),ib=ord.indexOf(b.vid);return (ia<0?999:ia)-(ib<0?999:ib);});
-        if(!await saveVersions(song,all))return;toast("악보 순서를 바꿨어요");vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));draw();renderSongs.redraw&&renderSongs.redraw();});});}
+        if(!await saveVersions(song,all))return draw();toast("악보 순서를 바꿨어요");vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));draw();renderSongs.redraw&&renderSongs.redraw();});});
     if(canUp){const st=h("span",{class:"hint"});const up=h("input",{type:"file",hidden:true,accept:"image/*,.heic,.heif,.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp",multiple:true,onchange:async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
         /* 파일 이름에 조성이 붙어 있으면(예: 곡_D.png · 곡_Bb.png) 조성마다 따로 악보로, 아니면 한 악보의 여러 쪽으로 */
         const keyOfName=n=>{const m=String(n).replace(/\.[^.]+$/,"").match(/(?:^|[_\s\-(\[])([A-G](?:#|b|♭|♯)?m?)(?:코드|key)?[_\s)\]]*$/i);return m?m[1].replace("♭","b").replace("♯","#").replace(/^./,c=>c.toUpperCase()):"";};
