@@ -2737,12 +2737,24 @@ function songsFromText(text){const r=parseKakao(text);let groups=r.songs&&r.song
     groups=lines.map(x=>{const notes=[...x.matchAll(/\(([^)]+)\)/g)].map(m=>m[1].trim());return{titles:x.replace(/\([^)]*\)/g," ").split(/\s*\+\s*/).map(y=>y.replace(/\s+/g," ").trim()).filter(Boolean),memo:notes.join(" · ")};});}
   titlePool=null;const items=[];for(const sg of groups)sg.titles.forEach((tt,i)=>{const g=guessTitle([{text:tt,h:0}]);const lib=g&&g.songId?S.songs.find(x=>x.id===g.songId):null;
     const it=lib?itemFromSong(lib):g?itemByTitle(g.title):itemByTitle(tt);if(i===0&&sg.memo)it.memo=sg.memo;else if(i>0)it.memo="(앞 곡과 이어서)";items.push(it);});return items;}
+/* 글로 된 콘티를 칸별로 나눠요: [말씀 후] [설교 후] → 설교 후 찬양 · [축도 전] [헌금] → 설교 후 찬양(메모로 자리 표시) · [여는 찬양] · [특송] · [10/18 기드온 콘티] 같은 제목 줄은 건너뛰어요 */
+const SEC_HEAD=[[/여는\s*찬양|오프닝/i,"opening",0],[/특\s*송/,"special",0],[/(?:말씀|설교)\s*후|결단|응답\s*찬양/,"after",0],[/축도|파송|폐회|봉헌|헌금|성찬/,"after",1],[/예배\s*찬양|경배|찬양/,"before",0]];
+function splitSecText(text,base){const chunks=[];let cur={key:base,memo:"",lines:[]};chunks.push(cur);
+  for(const raw of String(text||"").replace(/\r/g,"").split("\n")){const x=raw.trim();const m=x.match(/^[\[<【〈(（]\s*([^\]>】〉)）]{1,24})\s*[\]>】〉)）]\s*[:：]?$/)||x.match(/^([가-힣 ]{2,10})\s*[:：]$/);
+    if(m){const lab=m[1].trim();if(/\d{1,2}\s*[\/.월]\s*\d{1,2}/.test(lab)||/콘티/.test(lab))continue;const hit=SEC_HEAD.find(([re])=>re.test(lab));
+      if(hit){cur={key:hit[1],memo:hit[2]?lab:"",lines:[]};chunks.push(cur);}continue;}
+    cur.lines.push(raw);}
+  return chunks.filter(c=>c.lines.some(l=>l.trim())).map(c=>{const items=songsFromText(c.lines.join("\n"));if(c.memo)items.forEach(it=>{it.memo=it.memo?`${c.memo} · ${it.memo}`:c.memo;});return{key:c.key,items};}).filter(c=>c.items.length);}
 function songSearch(key,onPick){let pendingYt=null,sel=-1,opts=[];
   const input=h("input",{type:"search",id:`q-${key}`,placeholder:"곡 제목 · 초성(ㅈㄴㅇㄱ) · 찬송가 장 번호 · 유튜브 주소 · 곡 목록 여러 줄 붙여넣기",autocomplete:"off"});
-  if(!onPick)input.addEventListener("paste",e=>{const t=(e.clipboardData||window.clipboardData).getData("text")||"";if(t.replace(/\r/g,"").split("\n").filter(x=>x.trim()).length<2)return;
-    e.preventDefault();if(!curEditable||!curEditable())return toast("지금 열린 콘티는 고칠 수 없어요");const items=songsFromText(t);if(!items.length)return toast("곡 제목을 찾지 못했어요");
-    const arr=S.cur[key]=S.cur[key]||[];const have=new Set(arr.map(x=>norm(x.title)));const add=items.filter(x=>!have.has(norm(x.title)));arr.push(...add);markDirty();renderSetlist(key);input.value="";
-    const unk=add.filter(x=>!x.songId).length;toast(`${add.length}곡을 넣었어요${items.length>add.length?` (이미 있던 ${items.length-add.length}곡은 뺐어요)`:""}${unk?` · 라이브러리에 없는 곡 ${unk}곡은 제목만 들어갔어요`:""}`,3800);});
+  /* 여러 줄을 붙여 넣으면 곡 목록으로: 칸마다 있는 찾기 칸 · PC 오른쪽 「곡 찾기」(넣을 칸 기준) 모두 */
+  if(!onPick||key==="wb")input.addEventListener("paste",e=>{const t=(e.clipboardData||window.clipboardData).getData("text")||"";if(t.replace(/\r/g,"").split("\n").filter(x=>x.trim()).length<2)return;
+    e.preventDefault();if(!curEditable||!curEditable())return toast("지금 열린 콘티는 고칠 수 없어요");const parts=splitSecText(t,key==="wb"?((document.getElementById("wb-tgt")||{}).value||"before"):key);if(!parts.length)return toast("곡 제목을 찾지 못했어요");
+    /* 칸마다 넣기 · 같은 칸에 이미 있는 곡만 빼요 (예배 찬양과 설교 후 찬양에 같은 곡이 있어도 둘 다 넣어요) */
+    const got=[];let dup=0,unk=0;for(const p of parts){const arr=S.cur[p.key]=S.cur[p.key]||[];const have=new Set(arr.map(x=>norm(x.title)));const add=p.items.filter(x=>{const k=norm(x.title);if(have.has(k)){dup++;return false;}have.add(k);return true;});
+      arr.push(...add);unk+=add.filter(x=>!x.songId).length;if(add.length){const lb=(SECTIONS.find(([k])=>k===p.key)||[,""])[1];const g=got.find(x=>x.lb===lb);if(g)g.n+=add.length;else got.push({lb,n:add.length});}}
+    markDirty();for(const[k]of SECTIONS)renderSetlist(k);input.value="";
+    toast(`${got.map(g=>`${g.lb} ${g.n}곡`).join(" · ")||"새로 넣은 곡이 없어요"}${dup?` (이미 있던 ${dup}곡은 뺐어요)`:""}${unk?` · 라이브러리에 없는 곡 ${unk}곡은 제목만 들어갔어요`:""}`,4200);});
   const list=h("div",{class:"suggest",role:"listbox"});list.hidden=true;
   const pend=h("div",{class:"pending"});
   const showPend=()=>{pend.replaceChildren();if(!pendingYt)return;const known=S.songs.find(s=>(s.yt||[]).includes(pendingYt));
@@ -4802,6 +4814,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","📝 글로 된 콘티 붙여넣기: [말씀 후] · [축도 전] · [특송] 같은 칸 표시를 알아보고 칸마다 나눠 넣어요"],
   ["2026-10-15","📜 회칙 화면을 CBCS처럼: 차례 · 편/장/조/항 구분 · 판(版) 목록 · 앞 판과 바뀐 낱말 표시 · HWP · PDF · Word 올리기"],
   ["2026-10-15","🖥 PC 홈을 대시보드로: 다음 예배 · 참여 응답 · 준비 상황 · 다음 연습을 한눈에, 아래는 두 단"],
   ["2026-10-15","🖨 악보 출력에서 특송은 빼요 · 인도자 콘티는 한 장에 2~3곡씩 가로로, A3 두 장까지"],
@@ -5497,8 +5510,10 @@ function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!
       if(r.passage){c.passage=r.passage;got.push("본문");bibQ=r.passage;}if(r.sermonTitle){c.sermonTitle=r.sermonTitle;got.push("제목");}if(r.preacher){c.preacher=r.preacher;got.push("설교자");}
       if(r.specialBy){c.specialBy=r.specialBy;got.push("특송");}if(r.special){c.special=[itemByTitle(r.special)];if(!got.includes("특송"))got.push("특송");}
       if(r.after&&r.after.length){c.after=r.after.map(itemByTitle);got.push(`설교 후 찬양 ${r.after.length}곡`);}
-      if(r.songs&&r.songs.length){const items=songsFromText(kt.value);
-        c.before=items;got.push(`예배 찬양 ${items.length}곡(콘티 작성에 넣음)`);}
+      {const secs=splitSecText(kt.value,"before");const extra=secs.filter(p=>p.key!=="before");
+        if(r.songs&&r.songs.length){const base=secs.find(p=>p.key==="before");const items=extra.length&&base?base.items:songsFromText(kt.value);c.before=items;got.push(`예배 찬양 ${items.length}곡(콘티 작성에 넣음)`);}
+        for(const p of extra){c[p.key]=p.key==="after"&&!c._afterSet?[]:(c[p.key]||[]);if(p.key==="after")c._afterSet=1;c[p.key].push(...p.items);}
+        delete c._afterSet;const na=extra.filter(p=>p.key==="after").reduce((a,p)=>a+p.items.length,0);if(na){const i=got.findIndex(x=>x.startsWith("설교 후"));if(i>=0)got.splice(i,1);got.push(`설교 후 찬양 ${na}곡`);}}
       markDirty();saveDraft();toast(got.length?`${got.join(" · ")}을(를) 채웠어요. 맞는지 확인해 주세요`:"알아본 내용이 없어요. 아래 칸에 직접 써 주세요",3500);if(photo===true&&c.sermonTitle&&c.passage&&!/\s/.test(c.sermonTitle))loadBible().then(()=>{const rr=parseRef(c.passage);if(!rr)return;const txt=refRows(rr).map(x=>x[2]).join(" ");
         const re=new RegExp([...c.sermonTitle].map(ch=>ch.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s*"));const m=txt.match(re);if(m){c.sermonTitle=m[0];markDirty();saveDraft();}}).catch(()=>{});
       render();};   /* 사진으로 넣어도 말씀 · 묵상에 그대로 있어요 (곡은 콘티 작성 「예배 찬양」에 들어가요) */
