@@ -669,6 +669,20 @@ body.vwflow .modal.vwflow-m .panel-head{position:sticky;top:0;z-index:6;backgrou
 body.vwflow .modal.vwflow-m .panel-body{overflow:visible;flex:none}
 body.vwflow .modal.vwflow-m .vw-nav{top:var(--vwhead,58px)}
 body.vwflow .modal.vwflow-m .panel-foot{position:sticky;bottom:0;z-index:6;background:var(--sheet);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px)}
+/* PC 화면 틀 */
+body.sidenav .wrap{max-width:1280px;padding-inline:28px}
+body.sidenav header.top .homelink{display:none}body.sidenav .brand{padding-right:0;padding-block:10px;min-height:56px}body.sidenav .brand h1{font-size:1rem;min-height:36px}
+.pagetitle{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--ink);margin-right:6px;white-space:nowrap}.pagetitle .pt-g{color:var(--muted);font-weight:500;font-size:1.05rem}
+.sn-brand{display:flex;align-items:center;gap:8px;border:0;background:none;padding:2px 6px 10px;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}.sn-brand img{height:30px;width:auto}.sn-brand span{display:flex;flex-direction:column;line-height:1.15;font-family:var(--font-display)}.sn-brand b{font-size:.82rem;font-weight:700}.sn-brand span span{font-size:.74rem;color:var(--ink2)}
+body.sidenav .sn-team{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;border:0;cursor:pointer;font:inherit;font-weight:800;font-size:.9rem;color:#fff;background:var(--team,var(--accent));border-radius:10px;padding:8px 12px;margin:0 0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidenav-bar>*{flex:none}.sn-items{display:flex;flex-direction:column;gap:3px;flex:1 0 auto}
+.sn-foot{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line);margin-top:12px}.sn-foot a,.sn-foot .lockchip{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink2);text-decoration:none;justify-content:flex-start;width:100%}.sn-foot svg{width:18px;height:18px}
+.pcgrid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+.pccol{display:flex;flex-direction:column;gap:16px;min-width:0}
+body.sidenav .dashgrid{grid-template-columns:minmax(0,1fr) 380px;gap:20px}
+body.sidenav .bylaw-grid{grid-template-columns:minmax(0,1fr) 380px;gap:20px}
+body.sidenav[data-tab="list"] .sheet>.cards,body.sidenav[data-tab="list"] .oldfold .cards,body.sidenav[data-tab="pptmake"] .sheet>.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+body.sidenav .pcside .pinfo,body.sidenav .pcside .grid{grid-template-columns:1fr}
 .lyhit-tag{flex:none;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3c4;color:#7a5a00}
 .servebrief{display:flex;gap:8px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;padding:10px 12px}.servebrief .sb-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.servebrief .sb-pos{color:var(--accent,#2b3f8f);white-space:nowrap}
 .servemore{margin-top:10px}.servemore>summary,.oldfold>summary{cursor:pointer;list-style:none;margin:6px 0}.servemore>summary{color:var(--accent,#2b3f8f);font-weight:600}.oldfold>summary{width:100%;text-align:center}.oldfold[open]>summary{margin-bottom:10px}.oldfold{display:grid;gap:10px}
@@ -1301,7 +1315,10 @@ function drawSideNav(){let nav=document.getElementById("sideNav");const on=sideO
     const svg=b.querySelector("svg");const gb=h("button",{type:"button",class:"sn-g"+(g===cg?" on":""),"aria-current":g===cg?"page":"false",onclick:()=>{const ks=subs.map(x=>x[0]);const last=S.lastSub[g];goTab(ks.includes(last)?last:ks[0]);}},svg?svg.cloneNode(true):null,h("span",{text:lab}));
     items.push(gb);
     if(subs.length>1)items.push(h("div",{class:"sn-subs"},subs.map(([k,l])=>h("button",{type:"button",class:"sn-s"+(k===S.tab?" on":""),"aria-current":k===S.tab?"page":"false",onclick:()=>goTab(k)},l))));});
-  nav.replaceChildren(h("div",{class:"sn-team",text:teamName(S.team)}),...items);}
+  const logo=document.querySelector(".brandlogo");
+  const brand=h("button",{type:"button",class:"sn-brand",title:"처음 화면 (팀 고르기)",onclick:()=>{const a=document.getElementById("homeLink");if(a)a.click();}},logo?h("img",{src:logo.src,alt:""}):null,h("span",{},h("b",{text:"Central Bible Church"}),h("span",{text:"Worship Planner"})));
+  const team=h("button",{type:"button",class:"sn-team",title:"눌러서 팀 바꾸기",onclick:switchTeam},h("span",{text:teamName(S.team)}),h("span",{class:"sn-dd",text:"▾"}));
+  nav.replaceChildren(brand,team,h("div",{class:"sn-items"},...items),h("div",{class:"sn-foot"},...(S._sideLinks||[])));}
 {let t=0,was=null;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(()=>{const v=sideOn();if(v!==was){was=v;if(S.team)syncNav();}},150);});}
 function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)return null;
   /* 콘티: 큰 칸 두 개 (콘티 만들기 · 콘티 목록) + 만들기 안의 ①~④ 단계 */
@@ -1344,7 +1361,10 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   /* 휴대폰: 위에는 팀 이름과 「☰」만 · 팀 바꾸기 · 로그인 · 화면 바꾸기 · 홈 화면에 추가 · 유튜브는 모두 ☰ 안으로 */
   if(isPhone()){if(S.team)nm.append(h("button",{type:"button",class:"teamchip tcbtn",title:"팀 바꾸기","aria-label":`${teamName(S.team)} · 눌러서 팀 바꾸기`,onclick:switchTeam},h("span",{class:"tc-nm",text:teamName(S.team)}),h("span",{class:"tc-dd","aria-hidden":"true",text:"▾"})));
     $("#topLinks").replaceChildren(h("button",{type:"button",class:"menubtn","aria-label":"메뉴",title:"메뉴",onclick:phoneMenu},h("span",{text:"☰"})));return;}
-  if(S.team)nm.append(h("span",{class:"teamchip"},h("button",{type:"button",class:"tc-nm",style:"text-decoration:none;opacity:1;font-weight:600",title:"팀 바꾸기",onclick:switchTeam,text:teamName(S.team)}),h("button",{type:"button",text:"팀 바꾸기",onclick:switchTeam})));
+  const pcSide=sideOn();
+  if(S.team&&pcSide){const g=groupOf(S.tab);const gl=((document.querySelector(`.bnav [data-group="${g}"] span`)||{}).textContent)||"";const sl=(NAVG[g].find(([k])=>k===S.tab)||[,""])[1];
+    nm.append(h("span",{class:"pagetitle"},NAVG[g].length>1?h("span",{class:"pt-g",text:gl+" › "}):null,h("span",{text:NAVG[g].length>1?sl:gl})));}
+  else if(S.team)nm.append(h("span",{class:"teamchip"},h("button",{type:"button",class:"tc-nm",style:"text-decoration:none;opacity:1;font-weight:600",title:"팀 바꾸기",onclick:switchTeam,text:teamName(S.team)}),h("button",{type:"button",text:"팀 바꾸기",onclick:switchTeam})));
   if(S.team&&window.CBWP&&S.ready&&!S.dbFailed)nm.append(S.memberOnly?h("button",{type:"button",class:"lockchip",title:"인도자·리더 비밀번호를 넣으면 콘티를 쓰고 고칠 수 있어요",text:"팀원 · 인도자 비밀번호",onclick:()=>unlockModal(S.team)}):S.canWrite?(S.isOwner?h("button",{type:"button",class:"lockchip on",title:"눌러서 관리자 로그아웃",text:"관리자 ✕",onclick:adminLogout}):h("span",{class:"lockchip on",title:"이 기기에서 콘티를 쓸 수 있어요",text:"쓰기 가능"})):
     h("button",{type:"button",class:"lockchip",title:"팀 비밀번호를 넣으면 콘티를 쓸 수 있어요",text:"🔒 보기 전용",onclick:()=>unlockModal(S.team)}));
   if(S.team&&isPhone())nm.append(h("button",{type:"button",class:"lockchip modechip",title:isLite()?"콘티 쓰기 · 악보 편집 · PPT까지 모든 기능을 써요":"보기 중심의 간단한 휴대폰 화면으로",text:isLite()?"💻 PC 화면":"📱 휴대폰 화면",onclick:()=>setPcMode(isLite())}));
@@ -1352,6 +1372,7 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
   const inst=!isStandalone()?h("button",{type:"button",class:"lockchip instchip",title:IN_KAKAO?"브라우저로 열기":"홈 화면에 앱처럼 추가해요","aria-label":IN_KAKAO?"브라우저로 열기":"홈 화면에 추가",onclick:installHelp},h("span",{text:IN_KAKAO?"🌐":"📲"}),h("span",{class:"instlabel",text:IN_KAKAO?" 브라우저로 열기":" 홈 화면에 추가"})):null;
   const links=[inst,h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
+  if(pcSide){$("#topLinks").replaceChildren();S._sideLinks=links.filter(Boolean);drawSideNav();return;}
   $("#topLinks").replaceChildren(...links.filter(Boolean));}
 /* 팀원 비밀번호(보기 · 참여 응답)로 들어온 기기인지 */
 const canIn=id=>!window.CBWP||window.CBWP.canWrite(id)||!!(window.CBWP.canRead&&window.CBWP.canRead(id));
@@ -1718,7 +1739,35 @@ function spotOn(getEls,practice){spotOff();const NS="http://www.w3.org/2000/svg"
     TOUR&&(TOUR.raf=requestAnimationFrame(tick));};tick();}
 function spotOff(){const s=document.getElementById("tourspot");if(s)s.remove();if(TOUR&&TOUR.raf)cancelAnimationFrame(TOUR.raf);}
 function tourFromUrl(){try{const k=new URLSearchParams(location.search).get("tour");if(k&&TOURS[k])tourStart(k);}catch(e){}}
-function render(){if(document.body.classList.contains("vwflow")&&!document.querySelector(".modal.vwflow-m"))document.body.classList.remove("vwflow");const same=S._lastTab===S.tab&&!!S.team,y=window.scrollY;document.body.classList.toggle("dash",!!S.team&&dashOn());renderInner();S._lastTab=S.tab;
+/* ===== PC 화면 틀 (원칙) =====
+   ① 왼쪽 메뉴 212px + 본문(최대 1280px) — 모든 화면 같은 폭
+   ② 본문은 두 단: 왼쪽 「주 작업」(남는 폭 전부) · 오른쪽 「곁 단」 380px (도움 · 요약 · 입력 칸)
+   ③ 가로로 넓어야 하는 표 · 달력은 두 단 위나 아래에 「한 단 넓게」 (편성 요약 · 월별 출결표 등)
+   ④ 같은 종류가 여러 개면 카드 격자 (콘티 목록 · PPT 만들기 목록)
+   ⑤ 큰 메뉴 · 작은 칸은 왼쪽 메뉴에만, 본문 안 탭은 「같은 자료를 다르게 보기」와 콘티 단계(①~④)만
+   휴대폰 화면은 이 틀을 쓰지 않아요 (body.sidenav 일 때만) */
+const PCL={
+  bible:{R:t=>/^(예배 정보|묵상 메모|저장 · 다음 단계)/.test(t)},
+  songs:{R:(t,e)=>e.tagName==="DETAILS"&&e.classList.contains("sheet")},
+  ppt:{R:t=>/^(PPT 라이브러리|PPT 템플릿)/.test(t)},
+  cal:{R:t=>/^다가오는 일정/.test(t)},
+  members:{R:t=>/^(멤버 슬롯|멤버 등록|수습 기록)/.test(t)},
+  lineup:{TOP:t=>/^편성 요약/.test(t),R:t=>/^참여 응답/.test(t)},
+  stats:{inner:true,TOP:t=>/^결산$/.test(t),R:t=>/^(한눈에 보기|인도자별)/.test(t)},
+  me:{R:(t,e)=>e.classList.contains("profile")||/연습 모드/.test(t)}};
+let pcObs=null;
+function pcLayout(){if(pcObs){pcObs.disconnect();pcObs=null;}const cfg=PCL[S.tab];if(!cfg||!sideOn())return;const m=$("#main");
+  if(cfg.inner)[...m.children].filter(e=>e.tagName==="DIV"&&!e.className&&e.querySelector(":scope > .sheet")).forEach(d=>d.replaceWith(...d.children));
+  const ttl=e=>{const h2=e.querySelector("h2");if(!h2)return"";const n=[...h2.childNodes].find(x=>x.nodeType===3&&x.textContent.trim())||h2.firstElementChild;return((n&&n.textContent)||h2.textContent||"").trim();};
+  const SKIP=e=>e.matches(".demoban,.ctabs,.subtabs,.intabs,.patchbar,.banner:not(.sheet),.wtabs,datalist,script,style");
+  const items=[...m.children].filter(e=>!SKIP(e));if(!items.length)return;
+  const T=[],L=[],R=[],B=[];for(const e of items){const t=ttl(e);(cfg.TOP&&cfg.TOP(t,e)?T:cfg.BOT&&cfg.BOT(t,e)?B:cfg.R(t,e)?R:L).push(e);}
+  if(!R.length||!L.length)return;const anchor=h("div");items[0].before(anchor);
+  const colL=h("div",{class:"pccol pcmain"},...L),colR=h("div",{class:"pccol pcside"},...R);anchor.replaceWith(...T,h("div",{class:"pcgrid"},colL,colR),...B);
+  /* 나중에 그려지는 칸(본문 풀이 · 낱말 풀이 등)도 같은 규칙으로 제자리에 */
+  const tab=S.tab;pcObs=new MutationObserver(ms=>{if(S.tab!==tab)return;for(const mu of ms)for(const e of mu.addedNodes){if(e.nodeType!==1||e.parentNode!==m||SKIP(e))continue;
+      const t=ttl(e);if(cfg.TOP&&cfg.TOP(t,e))continue;if(cfg.BOT&&cfg.BOT(t,e))continue;(cfg.R(t,e)?colR:colL).append(e);}});pcObs.observe(m,{childList:true});}
+function render(){if(document.body.classList.contains("vwflow")&&!document.querySelector(".modal.vwflow-m"))document.body.classList.remove("vwflow");const same=S._lastTab===S.tab&&!!S.team,y=window.scrollY;document.body.classList.toggle("dash",!!S.team&&dashOn());document.body.dataset.tab=S.tab||"";renderInner();try{pcLayout();}catch(e){console.error(e);}S._lastTab=S.tab;
   /* 같은 화면을 다시 그릴 때(출결 체크 · 저장 등)는 보던 자리 그대로 */
   if(same&&y>0){if(Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);requestAnimationFrame(()=>{if(S._lastTab===S.tab&&Math.abs(window.scrollY-y)>2)window.scrollTo(0,y);});}}
 function renderInner(){const m=$("#main");m.replaceChildren();if(DEMO)m.append(TOUR?h("div",{class:"banner demoban mini"},h("b",{text:"👀 체험판"}),h("span",{class:"spacer"}),h("button",{type:"button",class:"btn sm",text:"나가기",onclick:()=>{location.href=location.pathname;}})):
@@ -3835,7 +3884,7 @@ function renderSongs(m){let q="";const box=h("div",{class:"cards"});if(!S.songF)
         h("input",{type:"checkbox",checked:sel.has(x.id),onchange:e=>{e.target.checked?sel.add(x.id):sel.delete(x.id);upd();}}),
         h("div",{style:"flex:1;min-width:0"},h("b",{text:x.title}),h("div",{class:"hint",text:[usage[x.id]?`${usage[x.id]}번 부름`:"부른 적 없음",ly?`가사: ${ly.split("\n")[0].slice(0,40)}…`:"가사 없음",(x.ppt&&(x.ppt.slides||[]).length)?"PPT 있음":""].filter(Boolean).join(" · ")}))));}
       if(arr.length>lim2)box.append(h("p",{class:"hint",text:`${lim2}곡까지 보여요. 검색이나 거르기로 좁혀 주세요.`}));return;}
-    const PER=5,sig=[F.f,q,F.sort].join("|");if(S.libSig!==sig){S.libSig=sig;S.libPage=1;}const pages=Math.max(1,Math.ceil(arr.length/PER));S.libPage=Math.min(S.libPage||1,pages);
+    const PER=sideOn()?10:5,sig=[F.f,q,F.sort].join("|");if(S.libSig!==sig){S.libSig=sig;S.libPage=1;}const pages=Math.max(1,Math.ceil(arr.length/PER));S.libPage=Math.min(S.libPage||1,pages);
     if(lyH.size){const nT=arr.length-lyH.size;box.append(h("div",{class:"hint",style:"margin:0 2px 6px",text:nT?`제목에서 ${nT}곡 · 가사에서 ${lyH.size}곡 찾았어요`:`가사에서 ${lyH.size}곡 찾았어요`}));}
     for(const s of arr.slice((S.libPage-1)*PER,S.libPage*PER)){const cd=songCard(s,usage[s.id]||0);const lh=lyH.get(s.id);if(lh)cd.prepend(lyHitEl(lh,q));box.append(cd);}
     if(!arr.length&&q.trim())box.append(h("div",{class:"empty",text:"찾는 곡이 없어요."}));
@@ -4887,6 +4936,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","🖥 PC 화면 새 틀: 모든 화면 같은 폭 · 왼쪽 큰 칸(주 작업) + 오른쪽 곁 단(380px) · 머리줄에 지금 화면 이름 · 콘티 목록 · PPT 만들기는 두 줄 카드"],
   ["2026-10-15","📱 휴대폰 콘티 보기를 보통 페이지처럼 (주소창이 다시 나와요) · 연습 모드 · 콘티 보기에서 밀어 넘길 때 넘어가는 효과"],
   ["2026-10-15","🖥 PC에서는 메뉴가 왼쪽 세로로 (큰 메뉴 아래 작은 칸까지 한눈에)"],
   ["2026-10-15","📜 회칙: Enter + 스페이스로 줄 맞춘 조문을 한 문장으로 잇고, 장 · 조 · 항 · 호 · 목 순서로 들여쓰기"],
