@@ -623,8 +623,11 @@ body:has(.blwrap) .wrap{max-width:1280px}
 .bylaw-text .bl-special{font-weight:700;font-size:15.5px;margin:20px 0 6px;color:var(--accent);border-bottom:1px dashed var(--line);padding-bottom:3px}
 .bylaw-text .bl-sub{font-size:14px;margin:12px 0 4px;font-weight:700}
 .bylaw-text .bl-pre{padding:2px 12px;border-left:3px solid var(--line);margin:0}
-.bylaw-text .bl-cl1{padding-left:1.4em;text-indent:-1em;margin:0 0 3px 1em}
-.bylaw-text .bl-cl2{padding-left:1.4em;text-indent:-1em;margin:0 0 3px 2.2em}
+.bylaw-text p.bl-art{padding-left:1.2em;text-indent:-1.2em;margin:6px 0 4px 1.2em}
+.bylaw-text .bl-cl1{padding-left:1.2em;text-indent:-1.2em;margin:0 0 3px 2.6em}
+.bylaw-text .bl-cl2{padding-left:1.4em;text-indent:-1.4em;margin:0 0 3px 3.8em}
+.bylaw-text .bl-cl3{padding-left:1.4em;text-indent:-1.4em;margin:0 0 3px 5em}
+.bylaw-text .bl-chap+p.bl-art{margin-top:2px}
 .bylaw-text .bl-cl2.bl-pre{margin-left:0;padding-left:calc(1.4em + 12px)}
 .bylaw-text .bl-note{margin:0 0 4px 2.4em;font-size:13px;color:var(--muted)}
 .bylaw-text .bl-hit{padding:6px 0;border-bottom:1px dotted var(--line)}
@@ -632,7 +635,7 @@ body:has(.blwrap) .wrap{max-width:1280px}
 .bl-toc b{font-size:12px;color:var(--muted);margin-bottom:2px}.bl-toc a{text-decoration:none;color:var(--ink)}.bl-toc a:hover{color:var(--accent)}.bl-toc a.t-part{font-weight:700;color:var(--accent);margin-top:4px}.bl-toc a.t-chap{padding-left:12px}
 ins.bl-add{text-decoration:none;color:#0b6b3a;background:#e3f4ea;border-radius:2px;padding:0 2px;font-weight:600}del.bl-del{color:#b42318;background:#fdecea;text-decoration:line-through;border-radius:2px;padding:0 2px}
 .bylaw-text .bl-chg{position:relative}.bylaw-text .bl-chg::before{content:"";position:absolute;top:2px;bottom:2px;left:-10px;width:3px;border-radius:2px;background:#2e9d5b}
-.bylaw-text .bl-cl1.bl-chg::before{left:calc(-1em - 10px)}.bylaw-text .bl-cl2.bl-chg::before{left:calc(-2.2em - 10px)}
+.bylaw-text .bl-chg::before{left:-10px}
 .bl-diffbar{font-size:12.5px;line-height:1.7;padding:8px 10px;margin:0 0 12px;border:1px dashed var(--line);border-radius:8px;background:var(--bg)}.bl-diffbar .lg{margin:0 8px;font-size:12px}.bl-diffbar .btn{margin-left:4px}
 .bl-chgcard .bl-cg{padding:8px 0;border-top:1px dotted var(--line)}.bl-chgcard .bl-cg:first-child{border-top:0}.bl-cg-h{font-weight:700;font-size:13px;margin-bottom:3px;display:flex;gap:6px;align-items:center}.bl-cg-b{font-size:12.5px;line-height:1.65}.bl-cg-b+.bl-cg-b{margin-top:4px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) ins.bl-add{color:#7fe0a6;background:#123a24}:root:not([data-theme="light"]) del.bl-del{color:#ff9b91;background:#3d1714}}
@@ -4848,6 +4851,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","📜 회칙: Enter + 스페이스로 줄 맞춘 조문을 한 문장으로 잇고, 장 · 조 · 항 · 호 · 목 순서로 들여쓰기"],
   ["2026-10-15","🎼 악보 편집: PC는 악보 · 흐름 좌우로 · 자유롭게 편집은 아래로 · 진행 순서 글씨 크기 조절 · 이름표는 진행 순서 띠 아래로 · 콘티 출력 미리보기"],
   ["2026-10-15","📚 콘티 목록: 날짜를 팀 색으로 크게 · 상태(작성 중 · 확정 · 지난 콘티)를 눌러서 바꾸기"],
   ["2026-10-15","📝 글로 된 콘티 붙여넣기: [말씀 후] · [축도 전] · [특송] 같은 칸 표시를 알아보고 칸마다 나눠 넣어요"],
@@ -5033,12 +5037,12 @@ function bylawHTML(t, opt = {}) {
     if (/^제\s*\d+\s*장/.test(x)) { pre = false; head(3, 'bl-chap', x.replace(/\s{2,}/g, ' ')); continue; }
     if (/^제\s*\d+\s*(절|관)/.test(x)) { pre = false; head(4, 'bl-sect', x.replace(/\s{2,}/g, ' ')); continue; }
     let m = x.match(/^(제\s*\d+\s*조(?:\s*의\s*\d+)?\s*(?:[(（][^)）]*[)）])?)(.*)$/);
-    if (m) { pre = false; inArticles = true; started = true; start('bl-art', m[2], m[1]); continue; }
+    if (m) { pre = false; inArticles = true; started = true; const cm = m[2].match(/^\s*([①-⑳].*)$/); if (cm) { start('bl-art', '', m[1]); start('bl-cl1', cm[1]); } else start('bl-art', m[2], m[1]); continue; }
     if (BL_SPECIAL.test(x) || /^[<〈《【\[「]\s*[^<>〈〉《》【】\[\]]{1,24}\s*[>〉》】\]」]$/.test(x)) { pre = true; head(3, 'bl-special', x.replace(/^[\[【<〈《(「]\s*|\s*[\]】>〉》)」]$/g, '')); continue; }
     m = x.match(/^((?:제\s*)?\d+\s*항\s*(?:[(（][^)）]*[)）])?)(.*)$/); // "제1항"뿐 아니라 "1항 :"도 항으로 — 조 제목 줄에 붙지 않고 따로 줄을 잡음
     if (m) { start('bl-cl1', m[2], m[1]); continue; }
     if (/^([①-⑳])/.test(x)) { start('bl-cl1', x); continue; }
-    if (/^(\(\d+\)|（\d+）|\d+\s*[.)]|[가-하]\s*[.)])\s*/.test(x) && !/^\d{4}\s*[.년]/.test(x)) { start('bl-cl2' + (pre && !inArticles ? ' bl-pre' : ''), x); continue; }
+    if (/^(\(\d+\)|（\d+）|\d+\s*[.)]|[가-하]\s*[.)])\s*/.test(x) && !/^\d{4}\s*[.년]/.test(x)) { start((/^([가-하]\s*[.)]|\(\d+\)|（\d+）)/.test(x) ? 'bl-cl3' : 'bl-cl2') + (pre && !inArticles ? ' bl-pre' : ''), x); continue; }
     if (/^[*※]/.test(x)) { start('bl-note', x); continue; }
     if (para && (indented || !ends(para.txt))) { para.txt += (/[가-힣]$/.test(para.txt) && /^[가-힣]/.test(x) ? ' ' : ' ') + x; continue; }
     if (!started && x.length <= 30) { flush(); out.push(`<div class="${out.some(o => o.includes('bl-title')) ? 'bl-subtitle' : 'bl-title'}">${blEsc(x.replace(/\s{2,}/g, ' '))}</div>`); continue; }
@@ -5098,7 +5102,21 @@ async function hwpxToText(buf) {
   for (const n of names) { const xml = await z.file(n).async('string'); const doc = new DOMParser().parseFromString(xml, 'application/xml'); doc.querySelectorAll('*').forEach(el => { if (el.localName === 'p') { const t = [...el.children].filter(c => c.localName === 'run').map(r => [...r.children].filter(x => x.localName === 't').map(x => x.textContent).join('')).join(''); lines.push(t); } }); }
   return lines.join('\n');
 }
-async function blPdfToText(buf) { const pages = await pdfToText(buf.slice(0)); return pages.join("\n"); }
+async function blPdfToText(buf) { return pdfToLayoutText(buf); }
+/* PDF 글자를 자리 그대로 읽기: 한글에서 Enter + 스페이스로 맞춘 들여쓰기 · 줄 가운데 띄운 칸을 공백으로 되살려요 (그래야 끊긴 조문을 다시 이을 수 있어요) */
+async function pdfToLayoutText(buf){await loadScript(PDFJS_URL);await loadScript(PDFJS_WORKER);const lib=window.pdfjsLib;lib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+  const pdf=await lib.getDocument({data:buf.slice(0)}).promise;const all=[];
+  for(let pn=1;pn<=pdf.numPages;pn++){const tc=await (await pdf.getPage(pn)).getTextContent();const rows=[];
+    for(const it of tc.items){if(!it.str)continue;const x=it.transform[4],y=it.transform[5],fs=Math.abs(it.transform[0])||Math.abs(it.transform[3])||10;
+      let row=rows.find(r=>Math.abs(r.y-y)<=fs*.35);if(!row){row={y,fs,items:[]};rows.push(row);}row.items.push({x,w:it.width||0,s:it.str,fs});}
+    rows.sort((a,b)=>b.y-a.y);if(!rows.length)continue;
+    const fsAvg=rows.reduce((a,r)=>a+r.fs,0)/rows.length;const minX=Math.min(...rows.map(r=>Math.min(...r.items.map(i=>i.x))));let prevY=null;
+    for(const row of rows){row.items.sort((a,b)=>a.x-b.x);const cw=row.fs*.5;let line="",end=null;
+      for(const it of row.items){if(end!=null){const gap=it.x-end;if(gap>cw*3)line+=" ".repeat(Math.max(4,Math.round(gap/cw)));else if(gap>row.fs*.12&&!/\s$/.test(line)&&!/^\s/.test(it.s))line+=" ";}line+=it.s;end=it.x+it.w;}
+      if(prevY!=null&&prevY-row.y>fsAvg*2.3)all.push("");prevY=row.y;
+      const lead=Math.round((Math.min(...row.items.map(i=>i.x))-minX)/cw);all.push(" ".repeat(Math.max(0,lead))+line.replace(/\s+$/,""));}
+    all.push("");}
+  return all.join("\n");}
 async function docxToText(buf) {
   const JSZip = await blLoadLib('jszip', 'JSZip'); const z = await JSZip.loadAsync(buf); const f = z.file('word/document.xml'); if (!f) throw new Error('Word(DOCX) 파일이 아닙니다');
   const doc = new DOMParser().parseFromString(await f.async('string'), 'application/xml'); const lines = [];
@@ -5189,7 +5207,7 @@ function cleanBylawText(t) { return t.replace(/\r/g, '').split('\n').map(l => l.
 /* 회칙 화면 (CBCS 회칙 화면처럼): 왼쪽 본문(차례 · 편/장/조/항 · 앞 판과 바뀐 낱말) · 오른쪽 판(版) 목록 · 바뀐 점 */
 const BYL_ST={current:"현행",draft:"개정안",old:"이전 판"};
 function bylVersions(B){if(!B||B.none)return[];if(Array.isArray(B.versions)&&B.versions.length)return B.versions;
-  if(Array.isArray(B.pages)&&B.pages.length)return[{id:"pdf",title:`${teamName(S.team)} 회칙`,revision:"올린 PDF",date:"",status:"current",text:cleanBylawText(unwrapHwpText((B.pages||[]).join("\n"))),pdf:true,notes:B.updatedAt?`${new Date(B.updatedAt).toLocaleDateString("ko-KR")} 올림`:""}];return[];}
+  if(Array.isArray(B.pages)&&B.pages.length)return[{id:"pdf",title:`${teamName(S.team)} 회칙`,revision:"올린 PDF",date:"",status:"current",text:B._lt||cleanBylawText(unwrapHwpText((B.pages||[]).join("\n"))),pdf:true,notes:B.updatedAt?`${new Date(B.updatedAt).toLocaleDateString("ko-KR")} 올림`:""}];return[];}
 async function bylSave(vs){if(!S.db)return toast("저장소에 연결되지 않았어요"),false;const team=S.team;
   try{const ref=S.db.doc(`bylaws/${team}`);if(BYL&&!BYL.none)await ref.update({versions:clone(vs),updatedAt:Date.now(),by:S.myId||null});else await ref.set({team,versions:clone(vs),updatedAt:Date.now(),by:S.myId||null});
     BYL={...(BYL&&!BYL.none?BYL:{team}),versions:clone(vs),updatedAt:Date.now()};return true;}catch(e){console.error(e);toast("저장하지 못했어요");return false;}}
@@ -5214,7 +5232,10 @@ async function bylUpload(vs,cur,file){const st=toast("파일에서 글자를 읽
   md.el.querySelector(".bylaw-text").innerHTML=bylawHTML(text);}
 function renderBylaws(m){const box=h("div",{class:"sheet"},h("p",{class:"hint",text:"회칙을 불러오는 중…"}));m.append(box);
   (async()=>{try{if(!BYL||BYL.team!==S.team){const d=S.db?await S.db.doc(`bylaws/${S.team}`).get():null;BYL=d&&d.exists?{team:S.team,...d.data()}:{none:true,team:S.team};}}catch(e){BYL={none:true,team:S.team};}
-    if(S.tab!=="bylaws")return;const admin=isAdminUser();const DOC=`${teamName(S.team)} 회칙`;
+    if(S.tab!=="bylaws")return;
+    if(!(Array.isArray(BYL.versions)&&BYL.versions.length)&&BYL.n&&BYL._lt==null){BYL._lt="";box.replaceChildren(h("p",{class:"hint",text:"회칙 원본에서 줄 맞춤을 살려 다시 읽는 중…"}));
+      try{BYL._lt=cleanBylawText(unwrapHwpText(await pdfToLayoutText((await bylawsPdf(BYL)).buffer)));}catch(e){console.error(e);}if(S.tab!=="bylaws")return;}
+    const admin=isAdminUser();const DOC=`${teamName(S.team)} 회칙`;
     const vs=bylVersions(BYL).slice().sort(bylawOrder);const b=vs.find(x=>x.id===S.bylSel)||bylCurrent(vs);
     const fin=h("input",{type:"file",accept:".hwp,.hwpx,.pdf,.docx,.odt,.txt",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)bylUpload(vs,b,f);}});
     const adminBtns=admin?[h("span",{class:"btn sm primary filebtn",title:"한글(HWP · HWPX) · PDF · Word 원본에서 본문을 읽어 와요"},"파일 올리기 (HWP · PDF · Word)",fin),
