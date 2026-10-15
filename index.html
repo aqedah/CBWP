@@ -638,6 +638,9 @@ ins.bl-add{text-decoration:none;color:#0b6b3a;background:#e3f4ea;border-radius:2
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) ins.bl-add{color:#7fe0a6;background:#123a24}:root:not([data-theme="light"]) del.bl-del{color:#ff9b91;background:#3d1714}}
 :root[data-theme="dark"] ins.bl-add{color:#7fe0a6;background:#123a24}:root[data-theme="dark"] del.bl-del{color:#ff9b91;background:#3d1714}
 @media print{body.printbyl *{visibility:hidden}body.printbyl .blmain,body.printbyl .blmain *{visibility:visible}body.printbyl .blmain{position:absolute;left:0;top:0;width:100%;border:0}body.printbyl .bl-diffbar,body.printbyl .bl-toc{display:none}body.printbyl .bylaw-text .bl-chg::before{display:none}body.printbyl ins.bl-add{color:inherit;background:none;font-weight:inherit}body.printbyl del.bl-del{display:none}}
+.card .when.when-hi{font-size:1rem;font-weight:800;color:var(--team,var(--accent))}
+.stbtn{cursor:pointer;font:inherit;font-size:.72rem;font-weight:700;background:transparent;line-height:1.5}.stbtn:hover{filter:brightness(.95);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.menuitem.on{border-color:var(--accent)}
 .lyhit-tag{flex:none;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3c4;color:#7a5a00}
 .servebrief{display:flex;gap:8px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;padding:10px 12px}.servebrief .sb-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.servebrief .sb-pos{color:var(--accent,#2b3f8f);white-space:nowrap}
 .servemore{margin-top:10px}.servemore>summary,.oldfold>summary{cursor:pointer;list-style:none;margin:6px 0}.servemore>summary{color:var(--accent,#2b3f8f);font-weight:600}.oldfold>summary{width:100%;text-align:center}.oldfold[open]>summary{margin-bottom:10px}.oldfold{display:grid;gap:10px}
@@ -1101,6 +1104,21 @@ const fmtStamp=t=>{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} 
 function stBadge(c){if(c.past)return h("span",{class:"stbadge draft",text:"지난 콘티"});const st=statusOf(c);
   const t=isLocked(c)?"🔒 확정"+((c.finalCount||0)>1?" · 고친 뒤 다시 확정":""):st==="final"?"확정":(c.reopenedAt?"작성 중 · 확정 풀림":"작성 중");
   return h("span",{class:`stbadge ${st}`+(c.reopenedAt&&st!=="final"?" reopen":""),title:isLocked(c)&&c.finalAt?`확정 ${fmtStamp(c.finalAt)}`:c.reopenedAt&&st!=="final"?`확정 풀림 ${fmtStamp(c.reopenedAt)}`:"",text:t});}
+/* 콘티 목록에서 상태 바꾸기: 상태 표시를 누르면 작성 중 · 확정 · 지난 콘티(기록) 중에서 골라요 */
+function stBadgeBtn(c){const mine=!!c.id&&!!S.db&&S.canWrite&&canEditConti(c,c.id);const b=stBadge(c);if(!mine)return b;
+  const btn=h("button",{type:"button",class:b.className+" stbtn",title:"눌러서 상태 바꾸기",onclick:()=>contiStatusModal(c)},b.textContent+" ▾");return btn;}
+function contiStatusModal(c){const cur=c.past?"past":isLocked(c)||c.status==="final"?"final":"draft";
+  const opt=(k,t,sub)=>h("button",{type:"button",class:"menuitem"+(k===cur?" on":""),onclick:()=>{md.close();if(k!==cur)setContiStatus(c,k);}},h("span",{class:"mi-ic",text:k===cur?"✓":""}),h("span",{class:"mi-tx"},h("b",{text:t}),h("span",{class:"hint",text:sub})));
+  const md=modal(`상태 바꾸기 · ${fmtDate(c.date)} ${wtypeOf(c)}`,h("div",{class:"panel-body menulist"},
+    opt("draft","작성 중","아직 고치는 중 · 팀원에게 「작성 중」으로 보여요"),
+    opt("final","🔒 확정","잠겨서 고칠 수 없어요 · 팀원에게 최종 콘티로 보여요"),
+    opt("past","지난 콘티 (기록)","예전 예배를 기록해 둔 콘티 · 결산 · 통계에만 쓰여요")),null);}
+async function setContiStatus(c,to){let p;const now=Date.now();
+  if(to==="final"){const snap=contiSnap(c);p={past:false,status:"final",finalAt:now,finalCount:(c.finalCount||0)+1,finalSnap:snap,finalDiff:c.finalSnap?contiDiff(c.finalSnap,snap):[],updatedAt:now};}
+  else if(to==="draft")p={past:false,status:"draft",...(c.status==="final"?{reopenedAt:now}:{}),updatedAt:now};
+  else p={past:true,updatedAt:now};
+  try{await S.db.doc(`contis/${c.id}`).update(p);Object.assign(c,p);if(S.curId===c.id&&S.cur){Object.assign(S.cur,p);saveDraft();}toast(to==="final"?"확정했어요 🔒":to==="draft"?"작성 중으로 바꿨어요":"지난 콘티로 바꿨어요");render();}
+  catch(e){console.error(e);toast("상태를 바꾸지 못했어요");}}
 async function finalizeConti(){if(!S.db)return toast("팀 저장소에 연결되어야 확정할 수 있어요");
   if(!S.curId||S.dirty){await saveConti();if(!S.curId||S.dirty)return toast("먼저 저장을 마쳐 주세요");}
   askConfirm("콘티를 확정할까요?",[h("p",{text:"확정하면 이 콘티는 잠겨서 고칠 수 없어요. 팀원에게는 최종 콘티로 보여요."}),h("p",{class:"hint",text:"고칠 일이 생기면 작성자가 「확정 풀기」를 누르면 돼요. 고친 뒤 다시 확정하면 「고친 뒤 다시 확정」 표시가 남아요."})],"콘티 확정",async()=>{
@@ -3542,7 +3560,7 @@ function renderList(m){let q="";
         try{await S.db.doc(`contis/${c.id}`).delete();if(S.curId===c.id){S.curId=null;S.dirty=true;saveDraft();}toast("지웠어요");}catch(e){toast("지우지 못했어요");}}}):null;
       const songs=[...((c.opening||[]).length?["(여는) "+c.opening.map(i=>i.title).join(", ")]:[]),...(c.before||[]).map(i=>i.title),...((c.after||[]).length?["(설교 후) "+c.after.map(i=>i.title).join(", ")]:[])];
       box.append(h("div",{class:"card"},
-        h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),stBadge(c),h("span",{class:"spacer"}),h("span",{class:"hint"},"작성 ",authorEl(c.authorId,c.authorName))),
+        h("div",{class:"row"},h("span",{class:"when when-hi",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),stBadgeBtn(c),h("span",{class:"spacer"}),h("span",{class:"hint"},"작성 ",authorEl(c.authorId,c.authorName))),
         h("h3",{text:c.sermonTitle||"(설교 제목 없음)"}),
         h("div",{class:"hint",text:[c.passage&&`본문 ${c.passage}`,c.preacher&&`설교 ${c.preacher}`,leaderOf(c)&&`인도 ${leaderOf(c)}`].filter(Boolean).join(" · ")}),
         h("div",{class:"songs slist"},songs.length?h("ol",{},songs.map(t=>h("li",{text:t}))):"곡 없음"),
@@ -3653,8 +3671,8 @@ function renderPast(m){if(!S.past)S.past=blankPast();const P=S.past;P.roster=P.r
     const songs=()=>h("div",{class:"songs slist"},SECTIONS.filter(([k])=>(c[k]||[]).length||(k==="special"&&(c.specialBy||"").trim())).map(([k,l])=>h("div",{class:"sgrp"},k==="before"&&!(c.opening||[]).length&&!(c.after||[]).length?null:h("div",{class:"sgl",text:l}),
       k==="before"?h("ol",{},c[k].map(i=>h("li",{text:i.title}))):h("div",{class:"sone"},k==="special"?specLines(c):c[k].map(i=>h("div",{text:i.title}))))));
     return h("div",{class:"card"},
-      h("div",{class:"row"},h("span",{class:"when",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),
-        stBadge(c),
+      h("div",{class:"row"},h("span",{class:"when when-hi",text:fmtDate(c.date)}),h("span",{class:"tag",text:wtypeOf(c)}),
+        stBadgeBtn(c),
         h("span",{class:"spacer"}),c.past?null:h("span",{class:"hint"},"콘티 제작 - ",authorEl(c.authorId,c.authorName)),
         !c.past&&c.id&&S.db&&S.canWrite&&(isAuthor(c)||S.isOwner)?h("button",{class:"btn sm ghost",text:"↪ 넘기기",title:"이 콘티를 다른 인도자에게 넘겨요",onclick:()=>handoverModal(c)}):null,
         c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:/watch\?v=/.test(c.playlist)?"예배 영상":"재생목록"}):null),
@@ -4814,6 +4832,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","📚 콘티 목록: 날짜를 팀 색으로 크게 · 상태(작성 중 · 확정 · 지난 콘티)를 눌러서 바꾸기"],
   ["2026-10-15","📝 글로 된 콘티 붙여넣기: [말씀 후] · [축도 전] · [특송] 같은 칸 표시를 알아보고 칸마다 나눠 넣어요"],
   ["2026-10-15","📜 회칙 화면을 CBCS처럼: 차례 · 편/장/조/항 구분 · 판(版) 목록 · 앞 판과 바뀐 낱말 표시 · HWP · PDF · Word 올리기"],
   ["2026-10-15","🖥 PC 홈을 대시보드로: 다음 예배 · 참여 응답 · 준비 상황 · 다음 연습을 한눈에, 아래는 두 단"],
