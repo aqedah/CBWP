@@ -689,7 +689,7 @@ body.sidenav .pcside .pinfo,body.sidenav .pcside .grid{grid-template-columns:1fr
 .fe-tok{font:inherit;font-weight:800;font-size:.95rem;color:#1d3fb3;background:var(--sheet);border:1px solid color-mix(in srgb,#1d3fb3 30%,var(--line));border-radius:8px;padding:3px 9px;cursor:pointer}
 .fe-tok.on{background:#1d3fb3;color:#fff;border-color:#1d3fb3}.fe-tok.over{box-shadow:0 0 0 2px var(--accent)}.fe-tok:disabled{cursor:default}
 .fe-arr{color:var(--muted);font-weight:700}
-.fe-tools{gap:6px;flex-wrap:wrap;align-items:center}.fe-btns{display:flex;flex-direction:column;gap:6px}.fe-in{flex:1;min-width:0}
+.fe-tools{gap:6px;flex-wrap:wrap;align-items:center}.fe-btns{display:flex;flex-direction:column;gap:6px}.fe-in{flex:none;min-width:0;max-width:100%}
 .fe-text>summary{cursor:pointer}
 .lsp-res{display:flex;flex-direction:column;gap:12px;margin-top:10px}.lsp-song{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px dashed var(--line)}.lsp-ver{display:flex;flex-direction:column;gap:4px;padding-left:8px}
 .lsp-th{display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid var(--line);border-radius:8px;background:#fff;padding:4px;cursor:pointer}.lsp-th img{height:110px;width:auto}.lsp-th.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
@@ -3023,7 +3023,7 @@ function flowEditor(it,{editable=true,onChange}={}){let sel=null,drag=null;const
     redo:()=>{if(!fut.length)return;hist.push(it.flow||"");it.flow=fut.pop();sel=null;onChange&&onChange();draw();}};
   box.addEventListener("pointerdown",()=>{S._fe=ctl;},true);box.addEventListener("focusin",()=>{S._fe=ctl;});
   const toks=()=>flowLines(it);const save=(a,ns)=>{const nf=a.join("\n");if(nf!==(it.flow||"")){hist.push(it.flow||"");if(hist.length>60)hist.shift();fut.length=0;}it.flow=nf;sel=ns===undefined?sel:ns;if(sel!=null&&sel>=a.length)sel=a.length?a.length-1:null;onChange&&onChange();draw();};
-  const inp=h("input",{type:"text",class:"fe-in",disabled:!editable,"aria-label":"진행 순서 직접 쓰기",placeholder:"직접 쓰기 (예: V2 (여자만) · 간주 8마디) → Enter",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();addText(sel!=null&&e.shiftKey);}}});
+  const inp=h("input",{type:"text",class:"fe-in",disabled:!editable,"aria-label":"진행 순서 직접 쓰기",placeholder:"직접입력 (예: 간주, Bridge 2) → Enter",style:"width:200px;min-height:30px;padding:4px 8px",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();addText(sel!=null&&e.shiftKey);}}});
   function addText(replace){const v=inp.value.trim();if(!v)return;const a=toks();if(replace&&sel!=null){a[sel]=v;save(a);}else{const at=sel==null?a.length:sel+1;a.splice(at,0,v);save(a,at);}inp.value="";inp.focus();}
   const push=t=>{const a=toks();if(FE_MODS.includes(t)){const i=sel!=null?sel:a.length-1;if(i<0)return toast("먼저 순서를 하나 넣어 주세요");a[i]=feMod(a[i],t);save(a);return;}const at=sel==null?a.length:sel+1;a.splice(at,0,t);save(a,at);};
   function draw(){const a=toks();const strip=h("div",{class:"fe-strip"+(a.length?"":" empty")});
@@ -3046,12 +3046,12 @@ function flowEditor(it,{editable=true,onChange}={}){let sel=null,drag=null;const
       h("button",{type:"button",class:"btn sm",text:"↶ 되돌리기",title:"되돌리기 (Ctrl+Z)",disabled:!hist.length,onclick:ctl.undo}),
       h("button",{type:"button",class:"btn sm",text:"↷",title:"다시 하기 (Ctrl+Shift+Z)",disabled:!fut.length,onclick:ctl.redo}),
       h("button",{type:"button",class:"btn sm ghost danger",text:"비우기",disabled:!a.length,onclick:e=>{if(!confirmInline(e.currentTarget,"모두 지울까요? · 한 번 더"))return;save([],null);}})):null;
-    const btns=editable?h("div",{class:"fe-btns"},h("div",{class:"row",style:"gap:4px;flex-wrap:wrap"},...FE_MAIN.map(t=>h("button",{type:"button",class:"btn sm chipbtn",text:t,onclick:()=>push(t)}))),
+    const btns=editable?h("div",{class:"fe-btns"},h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;align-items:center"},...FE_MAIN.map(t=>h("button",{type:"button",class:"btn sm chipbtn",text:t,onclick:()=>push(t)})),
+        h("span",{class:"row",style:"gap:4px;align-items:center"},inp,h("button",{type:"button",class:"btn sm",text:selOn?"뒤에 넣기":"넣기",onclick:()=>addText(false)}),selOn?h("button",{type:"button",class:"btn sm primary",text:"바꾸기",title:"고른 조각을 이 글로 바꿔요 (Shift+Enter)",onclick:()=>addText(true)}):null)),
       h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;align-items:center"},h("span",{class:"hint",text:"붙이기"}),...FE_MODS.map(t=>h("button",{type:"button",class:"btn sm chipbtn ghost",text:t,title:`${selOn?"고른 조각":"마지막 조각"}에 「${t}」 붙이기`,onclick:()=>push(t)})),
         (()=>{const ci=h("input",{type:"text",class:"fe-who-in",placeholder:"괄호로 붙이기 (예: 솔로)",title:"고른 조각 뒤에 (솔로)처럼 괄호로 붙어요. 새 조각은 아래 「직접 쓰기」 칸에 쓰세요",style:"width:170px;min-height:30px;padding:4px 8px",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}}});
           const go=()=>{const v=ci.value.trim().replace(/[()]/g,"");if(!v)return;const a=toks();const i=sel!=null?sel:a.length-1;if(i<0)return toast("먼저 순서를 하나 넣어 주세요");a[i]=feMod(a[i],`(${v})`);ci.value="";save(a);};
-          return h("span",{class:"row",style:"gap:4px;align-items:center"},ci,h("button",{type:"button",class:"btn sm",text:"붙이기",onclick:go}));})()),
-      h("div",{class:"row",style:"gap:4px;flex-wrap:nowrap"},inp,h("button",{type:"button",class:"btn sm",text:selOn?"뒤에 넣기":"넣기",onclick:()=>addText(false)}),selOn?h("button",{type:"button",class:"btn sm primary",text:"바꾸기",title:"고른 조각을 이 글로 바꿔요 (Shift+Enter)",onclick:()=>addText(true)}):null)):null;
+          return h("span",{class:"row",style:"gap:4px;align-items:center"},ci,h("button",{type:"button",class:"btn sm",text:"붙이기",onclick:go}));})())):null;
     box.replaceChildren(...[strip,tools,btns].filter(Boolean));}
   draw();box.redraw=()=>{sel=null;draw();};return box;}
 const FLOW_CHIPS=["1절","2절","3절","4절","후렴","1후","2후","3후","4후","브릿지","Intro","간주","Outro","× 2","× 3","KEY UP","기도 (반주)"];
