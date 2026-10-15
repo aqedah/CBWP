@@ -7687,7 +7687,8 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
     allItems(c).length?h("button",{class:"btn primary",text:"🎼 연습 모드",title:"태블릿을 악보대처럼 · 곡마다 한 화면",onclick:()=>{md.close();practiceMode(c);}}):null,    ...(isLite()?[]:[h("button",{class:"btn",text:"🖨 출력",title:"콘티 · A3 압축을 PDF · 이미지로 저장하거나 바로 인쇄",onclick:()=>outputModal(c)}),h("button",{class:"btn",text:"PPT 만들기",onclick:()=>previewLyricsPpt(c)})]),
     h("span",{class:"spacer"}),canDelV&&!isLite()?delV:null,editable&&!isLite()?h("button",{class:"btn primary",text:"고치기",onclick:()=>{md.close();openConti(c);}}):null],"viewer vwflow-m");}
 /* ===== 휴대폰 보기 모드 화면: 콘티 보기 · 찬양 찾기 ===== */
-function liteHint(){if(!isWriter())return null;return h("div",{class:"lite-hint"},h("span",{text:"콘티 쓰기 · 악보 편집 · PPT · 출력은 PC나 태블릿에서 해요. 급하게 고쳐야 하면"}),h("button",{type:"button",class:"btn sm",text:"💻 PC 화면으로",onclick:()=>setPcMode(true)}));}
+/* 휴대폰 화면의 「PC 화면으로」 안내는 뺐어요 (☰ 메뉴에 있어요) */
+function liteHint(){return null;}
 function renderListLite(m){const today=todayStr();const me=normName(myName());let q=S.listQ||"";let more=S.liteMore||12;
   const box=h("div",{class:"lite-list"});
   const search=h("input",{type:"search",id:"lite-q",placeholder:"날짜 · 제목 · 곡으로 찾기",value:q,oninput:e=>{q=S.listQ=e.target.value;draw();}});
