@@ -5016,7 +5016,7 @@ const PATCH_NOTES=[
   ["2026-10-10","🎚 곡 진행 순서가 있는 콘티는 가사 PPT도 진행 순서대로"],
   ["2026-10-10","📄 콘티 작성에서 악보 PDF로 찬양 채우기 (한 쪽에 두 곡도 나눠 읽기)"],
   ["2026-10-10","연습 모드: 인도자가 진행 순서를 바꾸면 모든 팀원 화면에 실시간으로"],
-  ["2026-10-10","🖌 악보 고치기: 지우개 · 펜 · 글자 · 색으로 지우기 (원본은 그대로)"],
+  ["2026-10-10","🖌 악보 고치기: 지우개 · 펜 · 글자 (원본은 그대로)"],
   ["2026-10-10","라이브러리 한 줄 목록 · 콘티 메뉴 「만들기 / 목록」으로 정리"],
   ["2026-10-10","악보 맨 위 진행 순서 · 스타일러스 손글씨"],
   ["2026-10-09","예배 PPT 틀을 교회 서버에 보관"],
@@ -7408,7 +7408,7 @@ function touchupEditor(title,pg){return new Promise(async resolve=>{let settled=
     inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"&&!ev.shiftKey){ev.preventDefault();done(true);}else if(ev.key==="Escape"){ev.stopPropagation();done(false);}});inp.addEventListener("blur",()=>done(true));wrap.append(inp);setTimeout(()=>inp.focus(),0);};
   let eraseAuto=true,prevTool="erase",bold=true,tol=70;
   const tb=(k,label,title)=>h("button",{type:"button",class:"btn sm","data-t":k,text:label,title,onclick:()=>{if(k==="pick")prevTool=tool==="pick"?prevTool:tool;tool=k;syncTools();}});
-  const tools=h("div",{class:"row tu-tools"},tb("erase","🩹 지우개(덮기)","지울 곳을 네모로 끌어요. 둘레 종이색으로 덮어요"),tb("cerase","🎨 색으로 지우기","스포이드로 손글씨 색을 집고, 범위를 네모로 끌면 그 색만 지워요 (검은 악보는 남아요)"),tb("pen","🖊 펜","끌어서 그려요"),tb("text","🔤 글자","쓸 자리를 눌러요"),tb("pick","💧 스포이드","악보에서 색을 집어요"));
+  const tools=h("div",{class:"row tu-tools"},tb("erase","🩹 지우개(덮기)","지울 곳을 네모로 끌어요. 둘레 종이색으로 덮어요"),tb("pen","🖊 펜","끌어서 그려요"),tb("text","🔤 글자","쓸 자리를 눌러요"),tb("pick","💧 스포이드","악보에서 색을 집어요"));
   const sw=h("input",{type:"color",value:color,title:"색 고르기","aria-label":"색",style:"width:42px;height:32px;padding:0;border:none;background:none",oninput:e=>{color=e.target.value;}});
   const presets=h("div",{class:"row",style:"gap:4px"},...["#000000","#ffffff","#d64545","#2f62d6"].map(c=>h("button",{type:"button",class:"tu-sw",style:`background:${c}`,title:c,onclick:()=>{color=c;sw.value=c;}})));
   const autoCk=h("label",{class:"row hint",style:"gap:4px"},h("input",{type:"checkbox",checked:true,onchange:e=>{eraseAuto=e.target.checked;}}),"지우개는 종이색 자동");
