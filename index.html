@@ -351,7 +351,7 @@ body.has-bnav.fb-pad .totop{bottom:calc(142px + env(safe-area-inset-bottom,0px))
 .posts{display:flex;flex-direction:column;gap:8px}.post{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--sheet)}.post.prayer{border-left:4px solid #8a4fc4}.post.share{border-left:4px solid #1f8a5e}
 .post .ptext{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.post .pname{font-size:.85rem}.btn.on{background:var(--accent-soft);border-color:var(--accent)}
 .rolebadge{font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap}.rolebadge.lead{background:var(--team,var(--accent));color:#fff}.rolebadge.duty{background:var(--accent-soft);color:var(--ink);border:1px solid var(--line)}
-.mcard.lead{border-color:var(--team,var(--accent));box-shadow:0 0 0 1px var(--team,var(--accent)) inset}
+.mcard.lead{border-color:var(--team,var(--accent));box-shadow:0 0 0 1px var(--team,var(--accent)) inset}.mcard.lead2{border-color:color-mix(in srgb,var(--team,var(--accent)) 55%,var(--line));background:color-mix(in srgb,var(--team,var(--accent)) 5%,var(--sheet))}.rolebadge.lead2{background:color-mix(in srgb,var(--team,var(--accent)) 14%,var(--sheet));color:var(--team,var(--accent));border:1px solid color-mix(in srgb,var(--team,var(--accent)) 45%,transparent)}
 .mcard.me{cursor:pointer;border:2px dashed var(--team,var(--accent));padding:11px;box-shadow:none}.mcard.me.lead{border-style:solid}
 .rolebadge.me{background:var(--sheet);color:var(--team,var(--accent));border:1.5px dashed var(--team,var(--accent))}
 .pptprev{flex:none;container-type:inline-size;width:100%;max-width:560px;margin:0 auto;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:5% 6%;box-sizing:border-box;overflow:hidden}
@@ -898,7 +898,10 @@ const WTYPES=["주일2부예배","주일오후예배","신년 주일","사순절
 const POSITIONS=["인도자","싱어","드럼","베이스","일렉","어쿠스틱","메인건반","세컨건반","PPT","음향"];
 const TIERS=["정회원","준회원","임시","게스트","휴면","직접입력"];
 const tierOf=mb=>({"정규":"정회원","수습":"준회원"})[mb&&mb.tier]||(mb&&mb.tier)||"정회원";
-const tierLabel=mb=>tierOf(mb)==="직접입력"?((mb&&mb.tierCustom)||"직접입력"):tierOf(mb);
+/* 정회원 · 준회원은 기드온만의 구분이에요 — 다른 팀은 그냥 「멤버」로 보여요 */
+const useTiers=()=>S.team==="gideon";const plainTier=mb=>!useTiers()&&["정회원","준회원"].includes(tierOf(mb));
+const tierLabel=mb=>tierOf(mb)==="직접입력"?((mb&&mb.tierCustom)||"직접입력"):plainTier(mb)?"멤버":tierOf(mb);
+const isLeadSinger=mb=>(mb.positions||[]).includes("인도자");
 const tierRank=mb=>{const i=TIERS.indexOf(tierOf(mb));return tierOf(mb)==="휴면"?99:i<0?50:i;};
 /* 짧은 이름(서연)도 명단의 온이름(우서연)으로 */
 function resolveName(n){const k=normName(n);if(!k)return "";const ex=S.members.find(mb=>normName(mb.name)===k);if(ex)return ex.name;
@@ -2862,7 +2865,7 @@ function openPicker(slot,onApply,roster,badge){const chosen=new Map(slot.people.
   const sortM=a=>a.slice().sort((x,y)=>TIERS.indexOf(x.tier)-TIERS.indexOf(y.tier)||x.name.localeCompare(y.name,"ko"));
   const row=mb=>{const id=`pk-${mb.id}`;return h("label",{class:"pick",htmlFor:id,"data-name":mb.name},
     h("input",{type:"checkbox",id,checked:chosen.has(mb.id),onchange:e=>{e.target.checked?chosen.set(mb.id,{id:mb.id,name:mb.name,tier:mb.tier}):chosen.delete(mb.id);updCnt();}}),
-    h("span",{text:mbName(mb)}),mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:roleText(mb)}):null,h("span",{class:`tier t${mb.tier}`,text:mb.tier}),badge?badge(mb):null,h("span",{class:"pos",text:(mb.positions||[]).join(" · ")}));};
+    h("span",{text:mbName(mb)}),mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:roleText(mb)}):null,plainTier(mb)?null:h("span",{class:`tier t${tierOf(mb)}`,text:tierLabel(mb)}),badge?badge(mb):null,h("span",{class:"pos",text:(mb.positions||[]).join(" · ")}));};
   const quick=h("input",{type:"text",id:"pk-quick",placeholder:"명단에 없는 이름 (게스트로 들어가요)"});
   /* 이름 찾기 (초성 가능): 맞는 사람만 보여요 · Enter로 첫 사람 고르기 */
   const cnt=h("span",{class:"hint",style:"white-space:nowrap"});const updCnt=()=>{cnt.textContent=`${chosen.size}명 골랐어요`;};updCnt();
@@ -4254,7 +4257,7 @@ function importMembersModal(){const others=TEAMS.filter(t=>t.id!==S.team);let fr
     h("div",{class:"row"},h("span",{class:"hint",text:"어느 팀에서"}),tsel,h("span",{class:"spacer"}),allBtn),st,box),[h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),go]);load();}
 function renderMembers(m){const f={name:"",tier:"정회원",positions:[]};let editId=null;
   const nameIn=h("input",{type:"text",id:"mb-name",placeholder:"이름"});
-  const tierIn=h("input",{type:"text",id:"mb-tiercustom",placeholder:"구분 이름",style:"max-width:140px"});tierIn.hidden=true;const tierSel=h("select",{id:"mb-tier",style:"width:auto",onchange:()=>{tierIn.hidden=tierSel.value!=="직접입력";}},TIERS.map(t=>h("option",{value:t,text:t})));
+  const tierIn=h("input",{type:"text",id:"mb-tiercustom",placeholder:"구분 이름",style:"max-width:140px"});tierIn.hidden=true;const tierSel=h("select",{id:"mb-tier",style:"width:auto",onchange:()=>{tierIn.hidden=tierSel.value!=="직접입력";}},TIERS.filter(t=>useTiers()||t!=="준회원").map(t=>h("option",{value:t,text:!useTiers()&&t==="정회원"?"멤버":t})));
   const titleSel=h("select",{id:"mb-title",style:"width:auto"},[["","없음"],...["목사","전도사","장로","권사","집사","청년"].map(x=>[x,x])].map(([v,t])=>h("option",{value:v,text:t})));
   const roleSel=h("select",{id:"mb-role",style:"width:auto",onchange:()=>{dutyIn.hidden=roleSel.value!=="직접입력";if(!dutyIn.hidden)dutyIn.focus();}},[["","없음"],...ROLES.map(x=>[x,x]),["직접입력","직접입력"]].map(([v,t])=>h("option",{value:v,text:t})));
   const dutyIn=h("input",{type:"text",id:"mb-duty",placeholder:"역할 이름 (예: 악보 담당, 음향)",style:"max-width:240px"});dutyIn.hidden=true;
@@ -4292,13 +4295,13 @@ function renderMembers(m){const f={name:"",tier:"정회원",positions:[]};let ed
         `(${g.map(mb=>(mb.positions||[]).join("·")||"자리 없음").join(" / ")}) `,
         h("button",{class:"btn sm",disabled:!canLead(),text:"통합할까요?",onclick:()=>{const rest=g.slice(1);
           askSameName(first.name,[first],{name:first.name,tier:rest[0].tier,positions:[...new Set(rest.flatMap(x=>x.positions||[]))]},null,()=>{},rest);}})));}
-    const rk=mb=>mb.role==="리더"?0:mb.role?1+(ROLES.indexOf(mb.role)<0?ROLES.length:ROLES.indexOf(mb.role))/10:9;const meN=normName(myName());const isMe=mb=>!!meN&&normName(mb.name)===meN;const rk2=mb=>isMe(mb)?-1:rk(mb);const arr=S.members.slice().sort((a,b)=>tierRank(a)-tierRank(b)||rk2(a)-rk2(b)||TIERS.indexOf(a.tier)-TIERS.indexOf(b.tier)||a.name.localeCompare(b.name,"ko"));
+    const rk=mb=>mb.role==="리더"?0:isLeadSinger(mb)?.5:mb.role?1+(ROLES.indexOf(mb.role)<0?ROLES.length:ROLES.indexOf(mb.role))/10:9;const meN=normName(myName());const isMe=mb=>!!meN&&normName(mb.name)===meN;const rk2=mb=>isMe(mb)?-1:rk(mb);const arr=S.members.slice().sort((a,b)=>tierRank(a)-tierRank(b)||rk2(a)-rk2(b)||TIERS.indexOf(a.tier)-TIERS.indexOf(b.tier)||a.name.localeCompare(b.name,"ko"));
     const lead=S.contis.reduce((o,c)=>{for(const r of c.roster||[])for(const p of r.people||[])if(p.id)o[p.id]=(o[p.id]||0)+1;return o;},{});
     const gAll=[...new Set(arr.map(tierLabel))];if(!S.memTab||(S.memTab!=="전체"&&!gAll.includes(S.memTab)))S.memTab=gAll[0]||"전체";
     listBox.append(h("div",{class:"subtabs tiertabs",role:"tablist","aria-label":"구분"},[...gAll,"전체"].map(t=>h("button",{type:"button",role:"tab","aria-selected":String(S.memTab===t),class:"tt-"+(TIERS.includes(t)?t:"etc"),onclick:()=>{S.memTab=t;draw();}},t,h("span",{class:"tcount",text:t==="전체"?arr.length:arr.filter(mb=>tierLabel(mb)===t).length})))));
     const gOrder=S.memTab==="전체"?gAll:[S.memTab];for(const gl of gOrder){const ga=arr.filter(mb=>tierLabel(mb)===gl);listBox.append(h("div",{class:"tgroup"+(gl==="휴면"?" dorm":"")},S.memTab==="전체"?h("h3",{class:"tgh"},gl,h("span",{text:`${ga.length}명`})):null,h("div",{class:"mcards"},ga.map(mb=>{let armed=false;const del=h("button",{class:"btn sm danger",disabled:!canLead(),text:"빼기",onclick:async()=>{if(!armed){armed=true;del.textContent="정말?";setTimeout(()=>{armed=false;del.textContent="빼기";},3000);return;}try{await S.db.doc(`members/${mb.id}`).delete();toast("명단에서 뺐어요");}catch(e){toast("빼지 못했어요");}}});
-        return h("div",{class:"mcard"+(mb.role==="리더"?" lead":"")+(isMe(mb)?" me":""),...(isMe(mb)?{role:"link",tabindex:"0",title:"내 프로필 보기",onclick:e=>{if(!e.target.closest("button"))setTab("me");},onkeydown:e=>{if(e.key==="Enter")setTab("me");}}:{})},avatarEl(mb.name),
-          h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,h("span",{class:`tier t${tierOf(mb)}`,text:tierLabel(mb)})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",mb.tierNote||""].filter(Boolean).join("  ·  ")})),
+        return h("div",{class:"mcard"+(mb.role==="리더"?" lead":isLeadSinger(mb)?" lead2":"")+(isMe(mb)?" me":""),...(isMe(mb)?{role:"link",tabindex:"0",title:"내 프로필 보기",onclick:e=>{if(!e.target.closest("button"))setTab("me");},onkeydown:e=>{if(e.key==="Enter")setTab("me");}}:{})},avatarEl(mb.name),
+          h("div",{class:"mi"},h("span",{class:"row",style:"gap:4px"},mb.role?h("span",{class:"rolebadge "+(mb.role==="리더"?"lead":"duty"),text:mb.role==="리더"?"★ 리더":roleText(mb)}):null,mb.role!=="리더"&&isLeadSinger(mb)?h("span",{class:"rolebadge lead2",text:"🎤 인도자"}):null,plainTier(mb)?null:h("span",{class:`tier t${tierOf(mb)}`,text:tierLabel(mb)})),h("b",{text:mbName(mb)}),h("small",{text:[(mb.positions||[]).join(" · ")||"자리 없음",mb.tierNote||""].filter(Boolean).join("  ·  ")})),
           h("div",{class:"ma"},h("button",{class:"btn sm",disabled:!canLead(),text:"고치기",onclick:()=>{editId=mb.id;nameIn.value=mb.name;tierSel.value=tierOf(mb);tierIn.value=mb.tierCustom||"";tierIn.hidden=tierSel.value!=="직접입력";titleSel.value=mb.title||"";roleSel.value=mb.role==="담당자"?"직접입력":(mb.role||"");dutyIn.value=mb.duty||"";dutyIn.hidden=roleSel.value!=="직접입력";f.positions=[...(mb.positions||[])];saveBtn.textContent="고친 내용 저장";cancelBtn.hidden=false;drawPos();nameIn.scrollIntoView({block:"center"});}}),del));}))));}}
   draw();renderMembers.redraw=draw;
   if(partOn("probation"))m.append(probationSheet());}
@@ -5155,7 +5158,7 @@ function renderLDash(m){const n=S.songs.length;const hasSc=x=>vers(x).some(v=>(v
     dtile("PPT 템플릿",`${pptTpls().length}개`,"예배마다 화면 모양",()=>setTab("ppt"))));
   m.append(h("div",{class:"dashgrid"},h("div",{class:"dashcol"},dashList("자주 부른 곡","우리 팀 콘티 기준",top.map(x=>dashRow(`${cnt[x.id]}회`,x.title,x.key||"",()=>open(x))),"아직 부른 곡이 없어요")),
     h("div",{class:"dashcol"},dashList("최근 들어온 곡","",recent.map(x=>dashRow(hasSc(x)?"🎼":"·",x.title,hasL(x)?"":"가사 없음",()=>open(x))),"곡이 없어요"))));}
-function renderTDash(m){const today=todayStr();const act=S.members.filter(mb=>!["게스트","휴면"].includes(tierOf(mb)));const by={};for(const mb of S.members){const t=tierOf(mb)||"정규";by[t]=(by[t]||0)+1;}
+function renderTDash(m){const today=todayStr();const act=S.members.filter(mb=>!["게스트","휴면"].includes(tierOf(mb)));const by={};for(const mb of S.members){const t=tierLabel(mb)||"멤버";by[t]=(by[t]||0)+1;}
   const d=(upcomingDates(1)||[])[0];const resp=d?availOf(d):{};const vals=Object.values(resp);const ok=vals.filter(v=>v.ok).length,no=vals.filter(v=>!v.ok).length;
   const pl=d?planOf(d):null;const c=d?contiOnDate(d):null;const ros=pl&&hasPeople(pl.roster)?pl.roster:c&&hasPeople(c.roster)?c.roster:[];
   const T=(k,f)=>tabAllowed("team",k)?f:()=>{};
