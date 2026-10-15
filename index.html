@@ -576,7 +576,7 @@ body.wide-conti .wrap{max-width:1280px}
 .kf-list{display:flex;flex-direction:column;gap:4px}.modal .kf-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto 70px;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:8px}.kf-row.off{opacity:.5}.kf-row input[type=checkbox]{width:auto}.kf-t{font-weight:600;overflow-wrap:anywhere}.kf-how{font-size:.75rem;max-width:180px}.modal .kf-row input.kf-k{width:70px;text-align:center}
 @media (max-width:560px){.modal .kf-row{grid-template-columns:auto minmax(0,1fr) 64px}.kf-how{grid-column:2/-1;grid-row:2;max-width:none}.modal .kf-row input.kf-k{width:64px}}
 body.lite #adminRow{display:none!important}
-.modechip{font-weight:700}
+.modechip{font-weight:700}#topLinks:has(.backphone){display:flex;gap:8px;align-items:center}.backphone{height:36px;padding:0 12px;font-size:.8rem;background:var(--accent);color:#fff;border-color:var(--accent)}
 .lite-list{display:grid;gap:10px}.lite-card{display:grid;gap:4px}.lite-card.soon{border-color:var(--accent,#2b3f8f);border-width:1.5px}
 .lite-title{font-size:1.08rem;font-weight:700}.lite-me{font-weight:700;color:var(--accent,#2b3f8f)}
 .lite-songs{margin:4px 0 0;padding-left:1.4em;display:grid;gap:2px}.lite-songs li{display:flex;gap:6px;align-items:baseline}.lite-songs li span:first-child{flex:1;min-width:0}
@@ -1387,7 +1387,8 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   const tc=(ALLT.find(t=>t.id===S.team)||{}).color;if(tc)document.documentElement.style.setProperty("--team",tc);else document.documentElement.style.removeProperty("--team");
   /* 휴대폰: 위에는 팀 이름과 「☰」만 · 팀 바꾸기 · 로그인 · 화면 바꾸기 · 홈 화면에 추가 · 유튜브는 모두 ☰ 안으로 */
   if(isPhone()){if(S.team)nm.append(h("button",{type:"button",class:"teamchip tcbtn",title:"팀 바꾸기","aria-label":`${teamName(S.team)} · 눌러서 팀 바꾸기`,onclick:switchTeam},h("span",{class:"tc-nm",text:teamName(S.team)}),h("span",{class:"tc-dd","aria-hidden":"true",text:"▾"})));
-    $("#topLinks").replaceChildren(h("button",{type:"button",class:"menubtn","aria-label":"메뉴",title:"메뉴",onclick:phoneMenu},h("span",{text:"☰"})));return;}
+    /* 휴대폰에서 PC 화면을 켠 동안엔 ☰ 옆에 「📱 휴대폰 화면」을 늘 보여 줘서 바로 돌아갈 수 있게 */
+    $("#topLinks").replaceChildren(isPhone()&&!isLite()?h("button",{type:"button",class:"lockchip modechip backphone",title:"보기 중심의 간단한 휴대폰 화면으로 돌아가요",text:"📱 휴대폰 화면",onclick:()=>setPcMode(false)}):"",h("button",{type:"button",class:"menubtn","aria-label":"메뉴",title:"메뉴",onclick:phoneMenu},h("span",{text:"☰"})));return;}
   const pcSide=sideOn();
   if(S.team&&pcSide){const g=groupOf(S.tab);const gl=((document.querySelector(`.bnav [data-group="${g}"] span`)||{}).textContent)||"";const sl=(NAVG[g].find(([k])=>k===S.tab)||[,""])[1];
     nm.append(h("span",{class:"pagetitle"},NAVG[g].length>1?h("span",{class:"pt-g",text:gl+" › "}):null,h("span",{text:NAVG[g].length>1?sl:gl})));}
