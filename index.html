@@ -2396,14 +2396,14 @@ const PAPER={a3l:{w:420,h:297,name:"A3 가로",fmt:"a3",ori:"landscape"},a4p:{w:
 const LY_FONT=`"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif`;
 function lyBlank(paper){return{paper:paper||"a3l",pages:[{els:[]}]};}
 /* 자동 배치: 인도자 콘티처럼 곡마다 칸 — 번호 · 진행 순서 · 인트로 · 악보 · 연주 시간 */
-function lyAuto(c,paper){const P=PAPER[paper];const M=10,GAP=paper==="a3l"?7:6,COLS=paper==="a3l"?3:2;const uw=(P.w-2*M-GAP*(COLS-1))/COLS;
+function lyAuto(c,paper){for(const it of allItems(c))syncFlowTop(it);const P=PAPER[paper];const M=10,GAP=paper==="a3l"?7:6,COLS=paper==="a3l"?3:2;const uw=(P.w-2*M-GAP*(COLS-1))/COLS;
   const items=[];let no=0;for(const[k]of SCORE_SECS)for(const it of c[k]||[]){no++;const r=(it.pages||[]).reduce((a,p)=>a+(p.w||1)/(p.h||1.414),0);items.push({it,no,r,units:!r?1:Math.min(COLS,r<=.95?1:r<=1.75?2:r<=2.5?3:4)});}
   const groups=[];let cur=[],used=0;for(const s of items){if(used+s.units>COLS&&cur.length){groups.push(cur);cur=[];used=0;}cur.push(s);used+=s.units;}if(cur.length)groups.push(cur);
   for(const g of groups){let u=g.reduce((a,s)=>a+s.units,0);while(u<COLS){const t=g.filter(s=>s.r).sort((a,b)=>b.r/b.units-a.r/a.units)[0];if(!t)break;t.units++;u++;}let col=0;for(const s of g){s.col=col;col+=s.units;}}
   const tm=contiTimes(c);const head=`■  ${fmtDate(c.date)}  ${wtypeOf(c)} 찬양악보${leaderOf(c)?`     인도 ${leaderOf(c)}`:""}${singersOf(c)?`   싱어 ${singersOf(c)}`:""}${instrumentsOf(c)?`   악기 ${instrumentsOf(c)}`:""}`;const FS=paper==="a3l"?4.4:4,LH=FS*1.35;
   const pages=groups.map(g=>{const els=[];els.push({id:uid(6),type:"text",x:M,y:M-2,w:P.w-2*M,h:10,text:head,size:paper==="a3l"?7:6,bold:true});
-    const flows=g.map(s=>{const L=[];if(s.it.intro&&s.it.intro.text)L.push(`*Intro : ${s.it.intro.text.replace(/\s+/g,"  ")}`);flowLines(s.it).forEach((t,i)=>L.push(`${circ(i+1)}  ${t}`));return L;});
-    const nl=Math.min(10,Math.max(3,...flows.map(l=>l.length)));const topY=M+12,topH=nl*LH+4,midY=topY+topH+2,botY=P.h-M-8,midH=botY-midY-3;
+    const flows=g.map(s=>{const L=[];if(s.it.intro&&s.it.intro.text)L.push(`*Intro : ${s.it.intro.text.replace(/\s+/g,"  ")}`);return L;});
+    const nl=Math.min(10,Math.max(1,...flows.map(l=>l.length)));const topY=M+12,topH=nl*LH+4,midY=topY+topH+2,botY=P.h-M-8,midH=botY-midY-3;
     g.forEach((s,i)=>{const cx=M+s.col*(uw+GAP),cw=s.units*uw+(s.units-1)*GAP;
       els.push({id:uid(6),type:"text",x:cx,y:topY,w:11,h:10,text:String(s.no),size:6,bold:true,align:"center",border:true,round:true});
       els.push({id:uid(6),type:"text",x:cx+13,y:topY,w:cw-13,h:topH,text:flows[i].join("\n")||s.it.title,size:FS});
@@ -2986,7 +2986,8 @@ const TRANS=["건반 전주","바로 이어짐","기도 반주","멘트 후 시�
 /* 진행 순서 (Intro → V1 → C …): 곡 진행 순서(it.flow)과 같은 자료 · 「악보 맨 위에」를 켜면 첫 쪽 위에 한 줄로 찍혀요 */
 const FLOW_TOKS=["Intro","V1","V2","V3","V4","V5","Pre","C","B","Inter","Outro","Ending"],FLOW_MODS=["× 2","× 3","KEY UP"];
 const flowOneLine=it=>flowLines(it).join(" → ");
-function syncFlowTop(it){for(const p of it.pages||[]){delete p.flowTop;delete p.flowSize;}if(it.flowTop&&flowLines(it).length)for(const p of it.pages||[]){p.flowTop=flowOneLine(it);if(it.flowSize&&it.flowSize!==1)p.flowSize=it.flowSize;}}
+/* 진행 순서는 악보 맨 위에 띄우는 게 기본 (끈 곡만 빼요) */
+function syncFlowTop(it){for(const p of it.pages||[]){delete p.flowTop;delete p.flowSize;}if(it.flowTop!==false&&flowLines(it).length)for(const p of it.pages||[]){p.flowTop=flowOneLine(it);if(it.flowSize&&it.flowSize!==1)p.flowSize=it.flowSize;}}
 function drawFlowTop(x,p,dx,dy,dw,dh){if(!p||!p.flowTop)return;const fs=Math.max(10,dw*.026*(p.flowSize||1));x.save();x.font=`800 ${fs}px ${FB}`;x.textBaseline="top";
   const lines=wrapText(x,p.flowTop,dw*.94);const lh=fs*1.25,bh=lines.length*lh+fs*.5;const bw=Math.min(dw*.96,Math.max(...lines.map(l=>x.measureText(l).width))+fs*.8);
   x.globalAlpha=.88;x.fillStyle="#fff";rr(x,dx+dw*.02,dy+dh*.006,bw,bh,fs*.3);x.fill();x.globalAlpha=1;x.fillStyle="#1d3fb3";lines.forEach((l,i)=>x.fillText(l,dx+dw*.02+fs*.4,dy+dh*.006+fs*.25+i*lh));x.restore();}
@@ -3068,7 +3069,7 @@ function memoToFlow(memo,base){const t=String(memo||"");if(!t.trim())return null
 function flowBox(it,song,key){S.flowOpen=S.flowOpen||new Set();const ed=curEditable();
   const sum=()=>{const n=flowLines(it).length;return [n?`진행 순서 ${n}단계`:"",it.intro&&(it.intro.text||it.intro.imgId)?"인트로":"",it.dur?`${it.dur}`:"",it.trans||""].filter(Boolean).join(" · ")||"아직 비어 있어요";};
   const sumEl=h("span",{class:"hint",text:sum()});let fe=null;const upd=(fromFe)=>{syncFlowTop(it);markDirty();sumEl.textContent=sum();updTimes();if(topCk){topCk.disabled=!flowLines(it).length;}if(!fromFe&&fe)fe.redraw();};
-  const topCk=ed?h("input",{type:"checkbox",checked:!!it.flowTop,disabled:!flowLines(it).length,onchange:e=>{it.flowTop=e.target.checked;upd();}}):null;
+  const topCk=ed?h("input",{type:"checkbox",checked:it.flowTop!==false,disabled:!flowLines(it).length,onchange:e=>{it.flowTop=e.target.checked;upd();}}):null;
   const ta=h("textarea",{id:`fl-${it.uid}`,rows:4,disabled:!ed,"aria-label":"곡 진행 순서",placeholder:"한 줄에 하나씩 · 번호(①②)는 저절로 붙어요\n예) 1절 × 2\n2절\n후렴 (힘을 내세요~) × 3",value:it.flow||"",style:"min-height:96px",oninput:e=>{it.flow=e.target.value;upd();}});
   fe=flowEditor(it,{editable:ed,onChange:()=>{ta.value=it.flow||"";upd(true);}});
   /* 단추는 커서 자리에 들어가요. 「× 2 · KEY UP」은 그 줄 끝에 붙고, 「1후」는 그 줄이 「1절」로 끝나면 「후렴」만 붙여 「1절 후렴」이 돼요 */
@@ -6032,7 +6033,7 @@ function drawHeader(x,c){x.fillStyle="#fff";x.fillRect(0,0,PW,PH);
 function drawFooter(x,n,total){x.fillStyle="#7a8299";x.font=`400 18px ${FB}`;x.textBaseline="alphabetic";
   x.fillText(`Central Bible Worship Planner · ${teamName(S.team)} · 제작자: 이삭 목사(중앙성서교회)`,MG,PH-40);const t=`${n} / ${total}`;x.fillText(t,PW-MG-x.measureText(t).width,PH-40);}
 function rr(x,X,Y,W,H,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+W,Y,X+W,Y+H,r);x.arcTo(X+W,Y+H,X,Y+H,r);x.arcTo(X,Y+H,X,Y,r);x.arcTo(X,Y,X+W,Y,r);x.closePath();}
-async function exportPdf(c,opt){if(!c)return;
+async function exportPdf(c,opt){if(!c)return;for(const it of allItems(c))syncFlowTop(it);
   const md=modal("PDF 만드는 중",h("div",{class:"panel-body"},h("p",{id:"pdf-st",text:"악보를 모으고 있어요…"})),null);const st=$("#pdf-st",md.el);
   try{await loadScript(JSPDF_URL);try{await document.fonts.load(`700 40px "Gowun Batang"`);await document.fonts.load(`500 20px "IBM Plex Sans KR"`);await document.fonts.load(`700 20px "IBM Plex Sans KR"`);}catch(e){}
     const items=[...(c.opening||[]).map((it,i)=>({it,label:`여는 찬양${c.opening.length>1?" "+(i+1):""}`})),...(c.before||[]).map((it,i)=>({it,label:`예배 찬양 ${i+1}`})),...(c.after||[]).map((it,i)=>({it,label:`설교 후 ${i+1}`}))];
@@ -7648,7 +7649,7 @@ function drawMarks(x,p,dx,dy,dw,dh){x.save();x.globalCompositeOperation="multipl
   const fs=Math.max(9,dw*.023);x.font=`700 ${fs}px ${FB}`;x.textBaseline="top";
   for(const mk of p.marks||[])if(mk.k==="L"){const tw=x.measureText(mk.t).width;const bx=dx+mk.x*dw,by=dy+mk.y*dh;x.fillStyle="#18213a";rr(x,bx,by,tw+fs*.9,fs*1.5,fs*.3);x.fill();x.fillStyle="#fff";x.fillText(mk.t,bx+fs*.45,by+fs*.22);}
   x.textBaseline="alphabetic";drawFlowTop(x,p,dx,dy,dw,dh);}
-async function exportCompact(c,opt){if(!c)return;
+async function exportCompact(c,opt){if(!c)return;for(const it of allItems(c))syncFlowTop(it);
   const secs=SCORE_SECS.map(([k,l])=>[l,c[k]||[]]);
   const items=[];let no=0;for(const[l,arr]of secs)for(const it of arr){no++;(it.pages||[]).forEach((p,pi)=>items.push({it,no,p,pi,pn:it.pages.length,sec:l}));}
   if(!items.length)return toast("이 콘티에는 악보가 없어요. 곡마다 악보를 먼저 골라 주세요.");
@@ -7700,7 +7701,7 @@ async function exportCompact(c,opt){if(!c)return;
   }catch(e){md.close();toast("압축버전을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.");console.error(e);}}
 /* 인도자 콘티 (A3 가로): 곡마다 세로 3단 — 위 진행 순서 · 가운데 인트로와 악보 · 아래 연주 시간 */
 function wrapText(x,t,maxW){const out=[];let line="";for(const ch of String(t)){if(x.measureText(line+ch).width>maxW&&line){out.push(line);line=ch.trim()?ch:"";}else line+=ch;}if(line)out.push(line);return out;}
-async function exportLeader(c,opt){if(!c)return;const items=[];let no=0;for(const[k]of SCORE_SECS)for(const it of c[k]||[]){no++;items.push({it,no});}
+async function exportLeader(c,opt){if(!c)return;for(const it of allItems(c))syncFlowTop(it);const items=[];let no=0;for(const[k]of SCORE_SECS)for(const it of c[k]||[]){no++;items.push({it,no});}
   if(!items.length)return toast("콘티에 곡이 없어요");
   const md=modal("인도자 콘티 만드는 중",h("div",{class:"panel-body"},h("p",{id:"ld-st",text:"악보를 모으고 있어요…"})),null);const st=$("#ld-st",md.el);
   try{await loadScript(JSPDF_URL);try{await document.fonts.load(`700 40px "IBM Plex Sans KR"`);await document.fonts.load(`700 40px "Gowun Batang"`);}catch(e){}
@@ -7723,8 +7724,8 @@ async function exportLeader(c,opt){if(!c)return;const items=[];let no=0;for(cons
       /* 위 칸 높이: 이 장에서 가장 긴 진행 순서에 맞춰 */
       const FS=36,LH=50,NUMW=96;const lines=pg.map(s=>{const sw=s.cw-NUMW;x.font=`500 ${FS}px ${FB}`;const L=[];
         if(s.it.intro&&s.it.intro.text)L.push(...wrapText(x,`*Intro : ${s.it.intro.text.replace(/\s+/g,"  ")}`,sw));
-        flowLines(s.it).forEach((t,i)=>L.push(...wrapText(x,`${circ(i+1)}  ${t}`,sw).map((l,j)=>j?"     "+l:l)));return L;});
-      const nl=Math.min(10,Math.max(3,...lines.map(l=>l.length)));const topY=M+HEAD,topH=nl*LH+40;
+        return L;});
+      const nl=Math.min(10,Math.max(1,...lines.map(l=>l.length)));const topY=M+HEAD,topH=nl*LH+40;
       const midY=topY+topH,midH=H-M-BOT-midY-20;
       pg.forEach((s,si)=>{const cx=s.cx,cw=s.cw;
         /* 번호 동그라미 */
@@ -7777,6 +7778,7 @@ function outputModal(c){if(!c)return;let kind="leader";
   const sync=()=>{paperRow.hidden=fmt!=="print";goBtn.textContent=fmt==="print"?"🖨 인쇄":"저장";};
   const opt=(name,val,cur,label,sub)=>h("label",{class:"pick",style:"align-items:flex-start"},h("input",{type:"radio",name,checked:cur===val,onchange:()=>{if(name==="ok"){kind=val;livePrev();}else if(name==="pp")paperMode=val;else fmt=val;sync();}}),h("span",{},h("b",{text:label}),sub?h("div",{class:"hint",text:sub}):null));
   const paperRow=h("div",null,h("div",{class:"lab",text:"인쇄 용지"}),h("div",{class:"picklist"},opt("pp","orig",paperMode,"콘티 크기 그대로","A4 콘티는 A4로, A3 콘티는 A3로"),opt("pp","a4",paperMode,"모두 A4에 맞춰 줄이기","A3 프린터가 없을 때 · A3 콘티를 A4 가로 한 장에 그대로 줄여요")));
+  for(const it of allItems(c))syncFlowTop(it);
   const make0=k=>k==="layout"?exportLayout(c):k==="leader"?exportLeader(c):k==="a3"?exportCompact(c,{blob:true}):exportPdf(c,{blob:true});
   /* 왼쪽 미리보기: 고른 종류를 바로 만들어 보여 줘요 · 만든 건 기억했다가 저장할 때 그대로 써요 */
   const made={};const make=async()=>made[kind]||(made[kind]=await make0(kind));
