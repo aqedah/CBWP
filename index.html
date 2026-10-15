@@ -2988,8 +2988,10 @@ function drawFlowTop(x,p,dx,dy,dw,dh){if(!p||!p.flowTop)return;const fs=Math.max
   x.globalAlpha=.88;x.fillStyle="#fff";rr(x,dx+dw*.02,dy+dh*.006,bw,bh,fs*.3);x.fill();x.globalAlpha=1;x.fillStyle="#1d3fb3";lines.forEach((l,i)=>x.fillText(l,dx+dw*.02+fs*.4,dy+dh*.006+fs*.25+i*lh));x.restore();}
 /* 진행 순서 편집기 (악보 편집 칸 · 악보 편집 창 공용): 조각을 눌러 고르고 → 그 뒤에 넣기 · 바꾸기 · 지우기 · 끌어서 옮기기
    붙이는 단추(목소리 · × 2 · 8마디 · KEY UP)는 고른 조각(없으면 마지막)에 붙어요 */
-const FE_MAIN=["Intro","V","V1","V2","V3","V4","V5","Pre","C","B","Inter","Tag","Outro","Ending"],FE_MODS=["목소리","× 2","× 3","8마디","4마디","KEY UP"];
-function feMod(t,m){t=String(t);if(m==="목소리")return /\(목소리\)$/.test(t)?t.replace(/\s*\(목소리\)$/,""):t.replace(/(\s*×\s*\d+|\s*\d+마디|\s*KEY UP)*$/,x=>"(목소리)"+x);
+const FE_MAIN=["Intro","V","V1","V2","V3","V4","V5","Pre","C","B","Inter","Tag","Outro","Ending"],FE_WHO=["목소리","여자만","남자만","회중만","악기만","다같이"],FE_MODS=[...FE_WHO,"× 2","× 3","8마디","4마디","KEY UP"];
+/* 누가 부르나 (목소리 · 여자만 · 남자만 · 회중만 · 악기만 · 다같이 · 직접입력): 괄호 하나만 · 같은 걸 다시 누르면 빠져요 */
+function feMod(t,m){t=String(t);const wm=FE_WHO.includes(m)?m:/^\(.+\)$/.test(m)?m.slice(1,-1).trim():null;
+  if(wm!=null){const r=t.match(/^(.*?)(\s*\(([^)]*)\))?((?:\s*×\s*\d+|\s*\d+마디|\s*KEY UP)*)$/);if(!r)return t;const same=r[3]===wm;return r[1]+(same||!wm?"":`(${wm})`)+r[4];}
   if(/^×/.test(m))return t.replace(/\s*×\s*\d+/,"").replace(/\s+$/,"")+" "+m;if(/마디$/.test(m))return t.replace(/\s*\d+마디/,"").replace(/\s+$/,"")+" "+m;
   if(m==="KEY UP")return /KEY UP/.test(t)?t.replace(/\s*KEY UP/,""):t+" KEY UP";return t;}
 /* 라이브러리에서 악보 고르기: 콘티에 없는 곡 · 같은 곡의 다른 키(버전)도 · 여러 장 골라 한 번에 */
@@ -3027,7 +3029,10 @@ function flowEditor(it,{editable=true,onChange}={}){let sel=null,drag=null;const
       selOn?h("button",{type:"button",class:"btn sm ghost",text:"고르기 풀기",onclick:()=>{sel=null;inp.value="";draw();}}):null,
       h("button",{type:"button",class:"btn sm ghost danger",text:"비우기",disabled:!a.length,onclick:e=>{if(!confirmInline(e.currentTarget,"모두 지울까요? · 한 번 더"))return;save([],null);}})):null;
     const btns=editable?h("div",{class:"fe-btns"},h("div",{class:"row",style:"gap:4px;flex-wrap:wrap"},...FE_MAIN.map(t=>h("button",{type:"button",class:"btn sm chipbtn",text:t,onclick:()=>push(t)}))),
-      h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;align-items:center"},h("span",{class:"hint",text:"붙이기"}),...FE_MODS.map(t=>h("button",{type:"button",class:"btn sm chipbtn ghost",text:t,title:`${selOn?"고른 조각":"마지막 조각"}에 「${t}」 붙이기`,onclick:()=>push(t)}))),
+      h("div",{class:"row",style:"gap:4px;flex-wrap:wrap;align-items:center"},h("span",{class:"hint",text:"붙이기"}),...FE_MODS.map(t=>h("button",{type:"button",class:"btn sm chipbtn ghost",text:t,title:`${selOn?"고른 조각":"마지막 조각"}에 「${t}」 붙이기`,onclick:()=>push(t)})),
+        (()=>{const ci=h("input",{type:"text",class:"fe-who-in",placeholder:"직접입력 (예: 솔로, 건반만)",style:"width:170px;min-height:30px;padding:4px 8px",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}}});
+          const go=()=>{const v=ci.value.trim().replace(/[()]/g,"");if(!v)return;const a=toks();const i=sel!=null?sel:a.length-1;if(i<0)return toast("먼저 순서를 하나 넣어 주세요");a[i]=feMod(a[i],`(${v})`);ci.value="";save(a);};
+          return h("span",{class:"row",style:"gap:4px;align-items:center"},ci,h("button",{type:"button",class:"btn sm",text:"붙이기",onclick:go}));})()),
       h("div",{class:"row",style:"gap:4px;flex-wrap:nowrap"},inp,h("button",{type:"button",class:"btn sm",text:selOn?"뒤에 넣기":"넣기",onclick:()=>addText(false)}),selOn?h("button",{type:"button",class:"btn sm primary",text:"바꾸기",title:"고른 조각을 이 글로 바꿔요 (Shift+Enter)",onclick:()=>addText(true)}):null)):null;
     box.replaceChildren(...[strip,tools,btns].filter(Boolean));}
   draw();box.redraw=()=>{sel=null;draw();};return box;}
