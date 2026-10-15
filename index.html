@@ -387,6 +387,9 @@ table.t td.n{text-align:right;font-variant-numeric:tabular-nums}
 .modal{position:fixed;inset:0;z-index:50;background:rgb(10 14 24 / .55);display:flex;align-items:flex-end;justify-content:center;padding-top:env(safe-area-inset-top,0px)}
 .modal .panel{background:var(--sheet);width:min(720px,100%);max-height:92%;border-radius:14px 14px 0 0;display:flex;flex-direction:column;overflow:hidden}
 @media (min-width:720px){.modal{align-items:center}.modal .panel{border-radius:14px}}
+html.modal-open,html.modal-open body{overflow:hidden;overscroll-behavior:none}
+.modal{overscroll-behavior:contain}.modal .panel-body{overscroll-behavior:contain}
+@supports (height:100dvh){.modal:not(.vwflow-m){bottom:auto;height:100dvh}}
 /* ☰ 메뉴: 오른쪽에서 밀려 나오는 서랍 */
 .modal.sheetmenu{justify-content:flex-end;align-items:stretch!important;padding-top:0;animation:smfade .2s ease-out}
 .modal.sheetmenu .panel{width:min(320px,84vw);height:100%;max-height:100%!important;border-radius:16px 0 0 16px!important;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);animation:smin .24s cubic-bezier(.2,.8,.2,1);box-shadow:-8px 0 24px rgb(0 0 0 / .18)}
@@ -2865,6 +2868,10 @@ function openPicker(slot,onApply,roster,badge){const chosen=new Map(slot.people.
 const normName=n=>(n||"").replace(/\s+/g,"");
 function askConfirm(title,content,okText,onOk){const md=modal(title,h("div",{class:"panel-body"},...content),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:okText,onclick:()=>{md.close();onOk();}})]);}
 
+/* 창(모달 · ☰ 메뉴)이 떠 있는 동안 뒤 페이지가 같이 밀리지 않게 잠가요.
+   휴대폰 주소창은 페이지가 밀릴 때 숨었다 나오는데, 그때 화면 높이가 바뀌며 창이 덜 그려지거나 아래가 비어 보였어요 → 뒤 페이지가 안 밀리면 주소창도 안 움직여요 */
+{const sync=()=>{const on=!!document.querySelector("body>.modal:not(.vwflow-m)");document.documentElement.classList.toggle("modal-open",on);};
+  new MutationObserver(sync).observe(document.body,{childList:true});}
 function modal(title,body,foot,cls="",opts={}){const panel=h("div",{class:"panel",role:"dialog","aria-modal":"true","aria-label":title},
     h("div",{class:"panel-head"},h("h3",{text:title}),h("button",{class:"btn ghost",text:"닫기",onclick:()=>close()})),body,foot?h("div",{class:"panel-foot"},foot):null);
   const wrap=h("div",{class:"modal "+cls},panel);
