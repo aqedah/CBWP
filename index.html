@@ -5690,7 +5690,7 @@ const cleanLyrics=t=>String(t||"").replace(/\r/g,"").split("\n").map(l=>l.replac
 /* 구간 표시 줄(슬라이드에 안 나와요): [1절] · (후렴) 처럼 짧은 표시만. 「(온 맘과 정성을 다해)」 같은 괄호 가사는 그대로 나와요 */
 const SEC_LABEL=/^\s*(\[.*\]|\(\s*(?:\d+\s*절|후렴|브릿지|간주|bridge|chorus|verse\s*\d*|pre-?chorus|tag|ending|intro|outro|[x×]\s*\d+|\d+\s*(?:번|회)|반복)\s*\)|\d+\s*절|후렴|브릿지|간주|bridge|chorus|verse\s*\d*|pre-?chorus|tag|ending|intro|outro)\s*:?\s*$/i;
 function lyricSlides(text,per){const out=[];
-  for(const para of String(text||"").replace(/\r/g,"").split(/\n\s*\n/)){const lines=para.split("\n").map(l=>l.trim()).filter(l=>l&&!SEC_LABEL.test(l));
+  for(const para of String(text||"").replace(/\r/g,"").replace(ZW_RE,"").split(/\n\s*\n/)){const lines=para.split("\n").map(l=>l.trim()).filter(l=>l&&!SEC_LABEL.test(l)&&markOf(l)===null);
     for(let i=0;i<lines.length;i+=per)out.push(lines.slice(i,i+per));}
   return out;}
 /* 모든 콘티를 열지 않아도: 자료를 받을 때마다 번호 없는 곡을 같은 제목 라이브러리 곡과 이어 두고, 고칠 수 있는 콘티는 조용히 저장해요 */
@@ -6335,17 +6335,20 @@ function flowArrange(it,cfg){const seq=parseFlowSeq(it);if(!seq.some(x=>x.sec!==
   while(slides.length&&!slides[slides.length-1].length)slides.pop();return{slides};}
 const pptFlowOn=()=>S.pptFlow!==false;
 /* 이 콘티에만 쓰는 가사 (초청팀 등): 적힌 순서 그대로 · [간주] [Inter] [Outro] [간증] 자리는 제목 장 · [A] [2B] 같은 구간 이름은 빼요 */
+/* 구간 표시 줄: [1A] · 1A] (괄호 빠짐) · [기도회] - 메모 · 보이지 않는 글자(​)가 붙은 것까지 */
+const ZW_RE=/[\u200b-\u200d\ufeff]/g;
+function markOf(l){l=String(l||"").replace(ZW_RE,"").trim();let m=l.match(/^\[([^\]]{0,24})\]/);if(m)return m[1];m=l.match(/^([^\[\]]{1,12})\]$/);if(m)return m[1];m=l.match(/^\(([^)]*)\)$/);if(m&&SEC_LABEL.test(l))return m[1];return null;}
 const GAP_RE=/간주|inter|outro|아웃트로|엔딩|ending|간증|기도|멘트|solo|솔로|반주|연주|intro|인트로/i;
 function hereSlides(it,cfg){const per=cfg.lines||2;const out=[];let blk=[],seen=false;const T=()=>{const a=[];a.isTitle=true;return a;};
   const flush=()=>{for(let i=0;i<blk.length;i+=per)out.push(blk.slice(i,i+per));if(blk.length)seen=true;blk=[];};
   const gap=()=>{flush();if(!seen&&cfg.titleSlide)return;if(out.length&&out[out.length-1].isTitle)return;out.push(T());};
-  for(const raw of String(it.lyHere||"").replace(/\r/g,"").split("\n")){const l=raw.trim();if(!l){flush();continue;}
-    const m=l.match(/^\[(.*)\]$/)||l.match(/^\((.*)\)$/);if(m){GAP_RE.test(m[1])?gap():flush();continue;}
+  for(const raw of String(it.lyHere||"").replace(/\r/g,"").split("\n")){const l=raw.replace(ZW_RE,"").trim();if(!l){flush();continue;}
+    const mk=markOf(l);if(mk!==null){GAP_RE.test(mk)?gap():flush();continue;}
     if(SEC_LABEL.test(l)){GAP_RE.test(l)?gap():flush();continue;}blk.push(stripChorusMark(l));}
   flush();return out;}
 function slidesFor(it,cfg){if(it&&typeof it.lyHere==="string"&&it.lyHere.trim())return hereSlides(it,cfg);let out=null;if(pptFlowOn()){try{const r=flowArrange(it,cfg);if(r&&r.slides&&r.slides.length)out=r.slides;}catch(e){console.error(e);}}
   /* 화면에는 「후렴|」 표시를 빼고 보여요 */
-  return (out||slidesPlain(it,cfg)).map(ls=>ls.map(l=>stripChorusMark(l)).filter((l,i,a)=>l.trim()||a.length===1));}
+  return (out||slidesPlain(it,cfg)).map(ls=>ls.map(l=>stripChorusMark(l).replace(ZW_RE,"")).filter(l=>markOf(l)===null)).map(ls=>ls.filter((l,i,a)=>l.trim()||a.length===1)).filter(ls=>ls.length);}
 /* 🎚 구간 이름 고치기: 덩어리마다 1절 · 후렴 · 브릿지 … 를 골라 곡에 저장 (다음부터 그대로) */
 function secTagModal(it,after){const sg=songOf(it);if(!sg)return toast("라이브러리 곡이 아니라 구간 이름을 저장할 수 없어요");const cfg={lines:(tplFor(null)||{}).lines||2};
   let {bl,tags,key}=secTagsOf(it,cfg);const list=h("div",{class:"sec-list"});
