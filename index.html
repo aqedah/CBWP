@@ -607,6 +607,37 @@ body.dash .wrap{max-width:1320px}
 .dtile .ok{color:#1f9d55}.dtile .no{color:#d93025}.dtile.warn{border-left:4px solid #e0a100}.dtile.good{border-left:4px solid #1f9d55}
 .dashgrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
 .dashcol{display:flex;flex-direction:column;gap:16px;min-width:0}
+/* 회칙 (CBCS 회칙 화면처럼) */
+.bylaw-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:980px){.bylaw-grid{grid-template-columns:1fr}}
+.blwrap{display:flex;flex-direction:column;gap:16px}.blside{display:flex;flex-direction:column;gap:16px;min-width:0}
+body:has(.blwrap) .wrap{max-width:1280px}
+.blpill{display:inline-block;font-size:.74rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--ink2)}.blpill.ok{background:#e3f4ea;color:#0b6b3a}.blpill.warn{background:#fff3c4;color:#7a5a00}.blpill.bad{background:#fdecea;color:#b42318}
+.bllist{display:flex;flex-direction:column;gap:6px}.blitem{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;font:inherit;color:inherit;background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}.blitem.on{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.bylaw-text{font-size:14.5px;line-height:1.85;position:relative}.bylaw-text p{margin:0 0 4px}.bylaw-text .art{font-weight:700}
+.bylaw-text .bl-title{font-weight:700;font-family:var(--font-display,inherit);font-size:20px;text-align:center;margin:4px 0 14px}
+.bylaw-text .bl-subtitle{text-align:center;color:var(--muted);margin:-8px 0 14px;font-size:14px}
+.bylaw-text .bl-part{font-weight:700;font-size:17px;margin:26px 0 8px;padding:6px 10px;background:var(--accent-soft);color:var(--accent);border-left:4px solid var(--accent);border-radius:3px}
+.bylaw-text .bl-chap{font-weight:700;font-size:15.5px;margin:20px 0 6px;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:3px}
+.bylaw-text .bl-sect{font-weight:700;font-size:14.5px;margin:14px 0 4px}
+.bylaw-text .bl-special{font-weight:700;font-size:15.5px;margin:20px 0 6px;color:var(--accent);border-bottom:1px dashed var(--line);padding-bottom:3px}
+.bylaw-text .bl-sub{font-size:14px;margin:12px 0 4px;font-weight:700}
+.bylaw-text .bl-pre{padding:2px 12px;border-left:3px solid var(--line);margin:0}
+.bylaw-text .bl-cl1{padding-left:1.4em;text-indent:-1em;margin:0 0 3px 1em}
+.bylaw-text .bl-cl2{padding-left:1.4em;text-indent:-1em;margin:0 0 3px 2.2em}
+.bylaw-text .bl-cl2.bl-pre{margin-left:0;padding-left:calc(1.4em + 12px)}
+.bylaw-text .bl-note{margin:0 0 4px 2.4em;font-size:13px;color:var(--muted)}
+.bylaw-text .bl-hit{padding:6px 0;border-bottom:1px dotted var(--line)}
+.bl-toc{display:flex;flex-direction:column;gap:2px;padding:10px 12px;margin:0 0 14px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--soft)}
+.bl-toc b{font-size:12px;color:var(--muted);margin-bottom:2px}.bl-toc a{text-decoration:none;color:var(--ink)}.bl-toc a:hover{color:var(--accent)}.bl-toc a.t-part{font-weight:700;color:var(--accent);margin-top:4px}.bl-toc a.t-chap{padding-left:12px}
+ins.bl-add{text-decoration:none;color:#0b6b3a;background:#e3f4ea;border-radius:2px;padding:0 2px;font-weight:600}del.bl-del{color:#b42318;background:#fdecea;text-decoration:line-through;border-radius:2px;padding:0 2px}
+.bylaw-text .bl-chg{position:relative}.bylaw-text .bl-chg::before{content:"";position:absolute;top:2px;bottom:2px;left:-10px;width:3px;border-radius:2px;background:#2e9d5b}
+.bylaw-text .bl-cl1.bl-chg::before{left:calc(-1em - 10px)}.bylaw-text .bl-cl2.bl-chg::before{left:calc(-2.2em - 10px)}
+.bl-diffbar{font-size:12.5px;line-height:1.7;padding:8px 10px;margin:0 0 12px;border:1px dashed var(--line);border-radius:8px;background:var(--bg)}.bl-diffbar .lg{margin:0 8px;font-size:12px}.bl-diffbar .btn{margin-left:4px}
+.bl-chgcard .bl-cg{padding:8px 0;border-top:1px dotted var(--line)}.bl-chgcard .bl-cg:first-child{border-top:0}.bl-cg-h{font-weight:700;font-size:13px;margin-bottom:3px;display:flex;gap:6px;align-items:center}.bl-cg-b{font-size:12.5px;line-height:1.65}.bl-cg-b+.bl-cg-b{margin-top:4px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) ins.bl-add{color:#7fe0a6;background:#123a24}:root:not([data-theme="light"]) del.bl-del{color:#ff9b91;background:#3d1714}}
+:root[data-theme="dark"] ins.bl-add{color:#7fe0a6;background:#123a24}:root[data-theme="dark"] del.bl-del{color:#ff9b91;background:#3d1714}
+@media print{body.printbyl *{visibility:hidden}body.printbyl .blmain,body.printbyl .blmain *{visibility:visible}body.printbyl .blmain{position:absolute;left:0;top:0;width:100%;border:0}body.printbyl .bl-diffbar,body.printbyl .bl-toc{display:none}body.printbyl .bylaw-text .bl-chg::before{display:none}body.printbyl ins.bl-add{color:inherit;background:none;font-weight:inherit}body.printbyl del.bl-del{display:none}}
 .lyhit-tag{flex:none;font-size:.72rem;font-weight:700;padding:1px 6px;border-radius:6px;background:#fff3c4;color:#7a5a00}
 .servebrief{display:flex;gap:8px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;padding:10px 12px}.servebrief .sb-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.servebrief .sb-pos{color:var(--accent,#2b3f8f);white-space:nowrap}
 .servemore{margin-top:10px}.servemore>summary,.oldfold>summary{cursor:pointer;list-style:none;margin:6px 0}.servemore>summary{color:var(--accent,#2b3f8f);font-weight:600}.oldfold>summary{width:100%;text-align:center}.oldfold[open]>summary{margin-bottom:10px}.oldfold{display:grid;gap:10px}
@@ -4771,6 +4802,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-15","📜 회칙 화면을 CBCS처럼: 차례 · 편/장/조/항 구분 · 판(版) 목록 · 앞 판과 바뀐 낱말 표시 · HWP · PDF · Word 올리기"],
   ["2026-10-15","🖥 PC 홈을 대시보드로: 다음 예배 · 참여 응답 · 준비 상황 · 다음 연습을 한눈에, 아래는 두 단"],
   ["2026-10-15","🖨 악보 출력에서 특송은 빼요 · 인도자 콘티는 한 장에 2~3곡씩 가로로, A3 두 장까지"],
   ["2026-10-15","📄 「콘티 없이 PPT 만들기」에서도 초청팀 가사 파일(Word · 글)을 넣으면 보낸 가사 그대로 PPT"],
@@ -4902,29 +4934,269 @@ async function uploadBylaws(file,st){if(!S.db)return toast("저장소에 연결�
   BYL=null;st.textContent="";toast("회칙을 새로 올렸어요");render();}
 async function bylawsPdf(meta){const parts=await Promise.all(Array.from({length:meta.n},(_,i)=>S.db.doc(`bylawsChunks/${meta.team||S.team}.${i}`).get()));
   const bin=atob(parts.map(p=>p.exists?p.data().d:"").join(""));const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
+/* ===== 회칙 보기 (CBCS 회칙 화면에서 가져옴): 편·장·조·항 구조 · 차례 · 판(版) 목록 · 앞 판과 바뀐 낱말 표시 · HWP·HWPX·PDF·Word 읽기 ===== */
+const blEsc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const BL_SPECIAL = /^[\[【<〈《(「]?\s*(머\s*리\s*말|전\s*문|서\s*문|前\s*文|서\s*언|총\s*강|강\s*령|신앙\s*고백|신\s*조|선\s*언(?:\s*문)?|선\s*서(?:\s*문)?|목\s*적|이\s*념|정\s*신|비\s*전|사\s*명(?:\s*선언)?|맺\s*음\s*말|부\s*록|별\s*표|별\s*지)(?:\s*[:：].*)?\s*[\]】>〉》)」]?$/;
+/* 회칙 판 비교 — 조(條)·항(項) 단위로 짝을 맞춰 바뀐 낱말만 색으로 표시 */
+const blNorm = x => String(x || '').replace(/\s+/g, '');
+function wordDiffHTML(oldT, newT, known = '') {
+  const A = String(oldT).split(/\s+/).filter(Boolean), B = String(newT).split(/\s+/).filter(Boolean);
+  if (A.length * B.length > 250000) return `<span class="bl-add">${blEsc(newT)}</span>`;
+  const L = Array.from({ length: A.length + 1 }, () => new Uint16Array(B.length + 1));
+  for (let i = A.length - 1; i >= 0; i--) for (let j = B.length - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const out = []; let i = 0, j = 0; const push = (k, w) => { const l = out[out.length - 1]; if (l && l.k === k) l.w.push(w); else out.push({ k, w: [w] }); };
+  while (i < A.length && j < B.length) { if (A[i] === B[j]) { push('=', B[j]); i++; j++; } else if (L[i + 1][j] >= L[i][j + 1]) push('-', A[i++]); else push('+', B[j++]); }
+  while (i < A.length) push('-', A[i++]); while (j < B.length) push('+', B[j++]);
+  // 예전 판에서 다른 줄에 있던 글이 이번 판에서 한 줄로 합쳐진 것은 바뀐 것이 아님
+  out.forEach(x => { if (x.k === '+' && known && known.includes(blNorm(x.w.join('')))) x.k = '='; });
+  out.forEach((x, i) => { if (x.k !== '-') return; const nb = [out[i - 1], out[i + 1]].filter(Boolean); if (nb.some(y => y.k === '=' && blNorm(y.w.join('')).includes(blNorm(x.w.join(''))))) x.k = 'x'; });
+  const res = out.filter(x => x.k !== 'x'); res.changed = res.some(x => x.k !== '=');
+  const html = res.map(x => x.k === '=' ? blEsc(x.w.join(' ')) : x.k === '+' ? `<ins class="bl-add">${blEsc(x.w.join(' '))}</ins>` : `<del class="bl-del">${blEsc(x.w.join(' '))}</del>`).join(' ');
+  return res.changed ? html : null;
+}
+function bylawParas(t) { const c = []; bylawHTML(t, { collect: c }); return c; }
+function bylawHTML(t, opt = {}) {
+  if (!String(t || '').trim()) return '';
+  const out = [], toc = []; let n = 0, started = false, inArticles = false, pre = false, para = null, art = 'pre', pi = 0;
+  const P = opt.prev, seen = opt.seenKeys;
+  const keyOf = q => { const tok = q.lab ? (/조/.test(q.lab) ? 'art' : blNorm(q.lab)) : ((q.txt.match(/^(\(\d+\)|（\d+）|\d+\s*항|\d+\s*[.)]|[가-하]\s*[.)]|[①-⑳])/) || [])[0] ? blNorm(q.txt.match(/^(\(\d+\)|（\d+）|\d+\s*항|\d+\s*[.)]|[가-하]\s*[.)]|[①-⑳])/)[0]) : 'p' + (pi++)); return art + '|' + tok; };
+  const body = (q, key) => { const full = (q.lab || '') + ' ' + q.txt; if (!P) return blEsc(q.txt);
+    if (P.all.has(blNorm(full)) || P.text.includes(blNorm(q.txt))) return blEsc(q.txt); const o = P.byKey.get(key);
+    if (o) { const h = wordDiffHTML(o.txt, q.txt, P.text); if (h == null) return blEsc(q.txt); q.chg = 1; return h; }
+    const h = wordDiffHTML('', q.txt, P.text); if (h == null) return blEsc(q.txt); q.chg = 2; return h; };
+  const flush = () => { if (para) { if (para.lab) { const m = para.lab.match(/제\s*(\d+)\s*조(?:\s*의\s*(\d+))?/); if (m) art = 'A' + m[1] + (m[2] ? '-' + m[2] : ''), pi = 0; } const key = keyOf(para);
+      const html = body(para, key); if (seen) seen.add(key);
+      if (opt.collect) opt.collect.push({ key, lab: para.lab || '', txt: para.txt, full: (para.lab || '') + ' ' + para.txt, chg: para.chg || 0, html }); out.push(`<p class="${para.cls}${para.chg ? ' bl-chg' : ''}">${para.lab ? `<span class="art">${blEsc(para.lab)}</span>` : ''}${html}</p>`); para = null; } };
+  const head = (lvl, cls, x) => { flush(); started = true; const id = 'bl-h' + (n++); toc.push({ id, cls, x }); const nw = P && !P.heads.has(blNorm(x)); out.push(`<div role="heading" aria-level="${lvl}" class="${cls}${nw ? ' bl-chg' : ''}" id="${blEsc(id)}">${nw ? `<ins class="bl-add">${blEsc(x)}</ins>` : blEsc(x)}</div>`); if (opt.collect) opt.collect.push({ head: blNorm(x) }); };
+  const start = (cls, txt, lab) => { flush(); para = { cls, txt, lab }; };
+  const ends = x => /([.。!?」』)\]]|다|함|음|됨|임|요)$/.test(x);
+  const L = t.split('\n');
+  for (let li = 0; li < L.length; li++) { const raw = L[li];
+    const x = raw.trim(); if (!x) { flush(); continue; }
+    if (/^={3,}/.test(x)) continue; // 예전에 여러 파일을 합칠 때 넣은 "===== 파일이름" 구분 줄
+    const indented = /^\s{2,}/.test(raw);
+    // 조문 바로 뒤 괄호 한 줄 "(…)"은 앞 문장에 딸린 덧붙임 — 판마다 줄을 바꿨다 붙였다 해서 비교가 어긋나므로 한 문단으로 잇는다
+    if (para && /^[(（][^()（）]*[)）]\.?$/.test(x)) { para.txt += ' ' + x; continue; }
+    // 한글에서 Enter+스페이스로 줄을 맞춘 흔적: 끝나지 않은 문장 뒤의 "다." 같은 조각이나 "제 4장 14조에 의하여…"는 앞 문장에 잇는다
+    if (para && !ends(para.txt) && (/^[가-힣]{1,2}[.)]?$/.test(x) || /^제\s*\d+\s*(장|조)\s*\d*\s*(조|항)?\s*(에|의|를|을|및|과|와)/.test(x))) { para.txt += blGlue(para.txt, x) + x; continue; }
+    if (/^제\s*\d+\s*편/.test(x)) { pre = false; head(2, 'bl-part', x.replace(/\s{2,}/g, ' ')); continue; }
+    if (/^부\s*칙/.test(x)) { pre = false; const nx = L.slice(li + 1, li + 4).join(' '); const dm = nx.match(/(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/); head(3, 'bl-chap bl-addenda', '부칙' + (dm ? ` (${dm[1]}. ${dm[2]}. ${dm[3]}. 시행)` : '')); continue; }
+    if (/^제\s*\d+\s*장/.test(x)) { pre = false; head(3, 'bl-chap', x.replace(/\s{2,}/g, ' ')); continue; }
+    if (/^제\s*\d+\s*(절|관)/.test(x)) { pre = false; head(4, 'bl-sect', x.replace(/\s{2,}/g, ' ')); continue; }
+    let m = x.match(/^(제\s*\d+\s*조(?:\s*의\s*\d+)?\s*(?:[(（][^)）]*[)）])?)(.*)$/);
+    if (m) { pre = false; inArticles = true; started = true; start('bl-art', m[2], m[1]); continue; }
+    if (BL_SPECIAL.test(x) || /^[<〈《【\[「]\s*[^<>〈〉《》【】\[\]]{1,24}\s*[>〉》】\]」]$/.test(x)) { pre = true; head(3, 'bl-special', x.replace(/^[\[【<〈《(「]\s*|\s*[\]】>〉》)」]$/g, '')); continue; }
+    m = x.match(/^((?:제\s*)?\d+\s*항\s*(?:[(（][^)）]*[)）])?)(.*)$/); // "제1항"뿐 아니라 "1항 :"도 항으로 — 조 제목 줄에 붙지 않고 따로 줄을 잡음
+    if (m) { start('bl-cl1', m[2], m[1]); continue; }
+    if (/^([①-⑳])/.test(x)) { start('bl-cl1', x); continue; }
+    if (/^(\(\d+\)|（\d+）|\d+\s*[.)]|[가-하]\s*[.)])\s*/.test(x) && !/^\d{4}\s*[.년]/.test(x)) { start('bl-cl2' + (pre && !inArticles ? ' bl-pre' : ''), x); continue; }
+    if (/^[*※]/.test(x)) { start('bl-note', x); continue; }
+    if (para && (indented || !ends(para.txt))) { para.txt += (/[가-힣]$/.test(para.txt) && /^[가-힣]/.test(x) ? ' ' : ' ') + x; continue; }
+    if (!started && x.length <= 30) { flush(); out.push(`<div class="${out.some(o => o.includes('bl-title')) ? 'bl-subtitle' : 'bl-title'}">${blEsc(x.replace(/\s{2,}/g, ' '))}</div>`); continue; }
+    const shortHead = x.length <= 24 && !ends(x) && !/[,:;，]$/.test(x) && !/\d{4}/.test(x);
+    if (shortHead && !indented) { pre = !inArticles; head(4, 'bl-sub', x); continue; }
+    start(pre || !inArticles ? 'bl-pre' : '', x);
+  }
+  flush();
+  const adds = toc.filter(h => h.cls.includes('bl-addenda'));
+  const big = toc.filter(h => h.cls !== 'bl-sub' && h.cls !== 'bl-sect' && (!h.cls.includes('bl-addenda') || h === adds[0])).map(h => h === adds[0] && adds.length > 1 ? { ...h, x: `부칙 (${adds.length}개)` } : h);
+  const tocHTML = big.length >= 4 ? `<nav class="bl-toc no-print"><b>차례</b>${big.map(h => `<a href="#${h.id}" class="t-${h.cls.split(' ')[0].slice(3)}" data-bltoc="${blEsc(h.id)}">${blEsc(h.x)}</a>`).join('')}</nav>` : '';
+  return tocHTML + out.join('');
+}
+/* 바로 앞 판 찾기: 개정안은 현행과, 나머지는 날짜가 앞선 판 중 가장 최근 것과 비교 */
+function bylawPrev(b, vs) {
+  const c = vs.filter(x => x.id !== b.id && String(x.text || '').trim());
+  if (b.status === 'draft') return c.find(x => x.status === 'current') || null;
+  return c.filter(x => x.status !== 'draft' && (x.date || '') < (b.date || '')).sort((x, y) => (x.date < y.date ? 1 : -1))[0] || null;
+}
+const _blDiff = {};
+function bylawDiffOpt(b, vs) {
+  const pv = bylawPrev(b, vs); if (!pv) return {};
+  const ck = b.id + '|' + pv.id + '|' + blNorm(b.text).length + '|' + blNorm(pv.text).length; if (_blDiff.k === ck) return _blDiff.opt;
+  const ps = bylawParas(pv.text); const P = { all: new Set(), byKey: new Map(), heads: new Set() };
+  ps.forEach(q => { if (q.head) P.heads.add(q.head); else { P.all.add(blNorm(q.full)); if (!P.byKey.has(q.key)) P.byKey.set(q.key, q); } }); P.text = ps.filter(q => !q.head).map(q => blNorm(q.full)).join('');
+  const seenKeys = new Set(); const cur = []; bylawHTML(b.text, { prev: P, seenKeys, collect: cur });
+  const curText = cur.filter(q => !q.head).map(q => blNorm(q.full)).join('');
+  const removed = ps.filter(q => !q.head && !/^=+/.test(q.full.trim()) && !seenKeys.has(q.key) && !curText.includes(blNorm(q.txt)));
+  const artName = (q, src) => /\d+\s*차\s*수정\s*:|공포\s*서기/.test(q.txt) ? '개정 이력' : (() => { const a = q.key.split('|')[0]; if (a === 'pre') return '머리말'; const m = a.match(/^A(\d+)(?:-(\d+))?$/); return m ? `제${m[1]}조${m[2] ? '의' + m[2] : ''}` : a; })();
+  const changes = [...cur.filter(q => !q.head && q.chg).map(q => ({ art: artName(q), kind: q.chg === 1 ? '바뀜' : '새로 생김', html: String(q.html || '').replace(/^\s*[:：]\s*/, '') })), ...removed.map(q => ({ art: artName(q), kind: '빠짐', html: `<del class="bl-del">${blEsc(q.txt.trim().replace(/^[:：]\s*/, ''))}</del>` }))];
+  const opt = { prev: P, pv, removed, changes, nChg: cur.filter(q => q.chg === 1).length, nNew: cur.filter(q => q.chg === 2).length };
+  _blDiff.k = ck; _blDiff.opt = opt; return opt;
+}
+const BL_LIBS = { cfb: 'https://cdn.jsdelivr.net/npm/cfb@1.2.2/dist/cfb.min.js', pako: 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js', jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', pdf: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', pdfw: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', html2pdf: 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js' };
+const _blLibs = {};
+function blLoadLib(k, global) { if (window[global]) return Promise.resolve(window[global]); return _blLibs[k] || (_blLibs[k] = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = BL_LIBS[k]; sc.onload = () => ok(window[global]); sc.onerror = () => no(new Error('도구를 불러오지 못했습니다(인터넷 연결 확인)')); document.head.appendChild(sc); })); }
+function hwpParaText(u8) { const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength); let out = ''; let j = 0; while (j + 1 < u8.length) { const c = dv.getUint16(j, true); if (c === 10) { out += '\n'; j += 2; continue; } if (c === 0 || c === 13 || (c >= 24 && c <= 31)) { j += 2; continue; } if (c === 9) { out += ' '; j += 16; continue; } if (c < 32) { j += 16; continue; } out += String.fromCharCode(c); j += 2; } return out; }
+async function hwpToText(buf) {
+  const CFB = await blLoadLib('cfb', 'CFB'); const pako = await blLoadLib('pako', 'pako');
+  const cfb = CFB.read(new Uint8Array(buf), { type: 'array' });
+  const hdr = CFB.find(cfb, 'FileHeader'); if (!hdr) throw new Error('한글(HWP 5.0) 파일이 아닙니다');
+  const h = hdr.content; const compressed = h[36] & 1, distributed = h[36] & 4;
+  if (distributed) throw new Error('배포용(보호된) 한글 파일은 읽을 수 없습니다. 한글에서 "다른 이름으로 저장"한 뒤 올려 주세요');
+  const secs = cfb.FullPaths.map((p, i) => [p, cfb.FileIndex[i]]).filter(([p]) => /BodyText\/Section\d+$/i.test(p)).sort((a, b) => +a[0].match(/(\d+)$/)[1] - +b[0].match(/(\d+)$/)[1]);
+  const lines = [];
+  for (const [, e] of secs) {
+    let d = new Uint8Array(e.content); if (compressed) d = pako.inflateRaw(d);
+    const dv = new DataView(d.buffer, d.byteOffset, d.byteLength); let i = 0;
+    while (i + 4 <= d.length) { const hh = dv.getUint32(i, true); i += 4; const tag = hh & 0x3ff; let size = hh >>> 20; if (size === 0xfff) { size = dv.getUint32(i, true); i += 4; } if (tag === 67) lines.push(hwpParaText(d.subarray(i, i + size))); i += size; }
+  }
+  return lines.join('\n');
+}
+async function hwpxToText(buf) {
+  const JSZip = await blLoadLib('jszip', 'JSZip'); const z = await JSZip.loadAsync(buf);
+  const names = Object.keys(z.files).filter(n => /Contents\/section\d+\.xml$/i.test(n)).sort((a, b) => +a.match(/(\d+)\.xml/i)[1] - +b.match(/(\d+)\.xml/i)[1]);
+  const lines = [];
+  for (const n of names) { const xml = await z.file(n).async('string'); const doc = new DOMParser().parseFromString(xml, 'application/xml'); doc.querySelectorAll('*').forEach(el => { if (el.localName === 'p') { const t = [...el.children].filter(c => c.localName === 'run').map(r => [...r.children].filter(x => x.localName === 't').map(x => x.textContent).join('')).join(''); lines.push(t); } }); }
+  return lines.join('\n');
+}
+async function blPdfToText(buf) { const pages = await pdfToText(buf.slice(0)); return pages.join("\n"); }
+async function docxToText(buf) {
+  const JSZip = await blLoadLib('jszip', 'JSZip'); const z = await JSZip.loadAsync(buf); const f = z.file('word/document.xml'); if (!f) throw new Error('Word(DOCX) 파일이 아닙니다');
+  const doc = new DOMParser().parseFromString(await f.async('string'), 'application/xml'); const lines = [];
+  doc.querySelectorAll('*').forEach(el => { if (el.localName !== 'p') return; let t = ''; el.querySelectorAll('*').forEach(x => { if (x.localName === 't') t += x.textContent; else if (x.localName === 'tab') t += ' '; else if (x.localName === 'br') t += '\n'; }); lines.push(t); });
+  return lines.join('\n');
+}
+async function odtToText(buf) {
+  const JSZip = await blLoadLib('jszip', 'JSZip'); const z = await JSZip.loadAsync(buf); const f = z.file('content.xml'); if (!f) throw new Error('ODT 파일이 아닙니다');
+  const doc = new DOMParser().parseFromString(await f.async('string'), 'application/xml'); const lines = [];
+  doc.querySelectorAll('*').forEach(el => { if (el.localName === 'p' || el.localName === 'h') lines.push(el.textContent); });
+  return lines.join('\n');
+}
+async function fileToRuleText(file, buf) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (ext === 'pdf') return blPdfToText(buf);
+  if (ext === 'hwpx') return hwpxToText(buf);
+  if (ext === 'hwp') return hwpToText(buf);
+  if (ext === 'docx') return docxToText(buf);
+  if (ext === 'odt') return odtToText(buf);
+  if (ext === 'txt' || ext === 'md') return new TextDecoder('utf-8').decode(buf);
+  if (ext === 'doc') throw new Error('옛 Word(.doc) 파일은 읽을 수 없습니다. Word에서 .docx로 저장하거나 PDF로 저장해 올려 주세요');
+  throw new Error('HWP·HWPX·PDF·DOCX·ODT·TXT 파일만 읽을 수 있습니다');
+}
+/* @@UNWRAP-START — 한글에서 Tab(정렬) 대신 "Enter + 스페이스 여러 번"이나 "스페이스 여러 번"으로 다음 줄에 맞춘 글을
+   원래 문장으로 되돌린다. 끊긴 자리에서 띄어 쓸지 붙여 쓸지는 아래 규칙으로 정한다.
+   ① 뒤쪽이 조사·어미 한 덩어리(에, 를, 으로, 다. 등)면 붙인다 — "자격 에" → "자격에", "맡는 다." → "맡는다."
+   ② 앞쪽이 한 글자(흔한 낱말 제외)이고, 그 글자+뒷말 첫 글자가 다른 판·다른 줄에서 붙어 쓰인 적이 있으면 붙인다 — "미 만자로" → "미만자로"
+   ③ "가. 회  장 -"처럼 줄 맞추려고 띄운 두 글자 직함은 붙인다 — "회장", "총무"
+   그 밖에는 원래대로 한 칸 띄운다. */
+const BL_PART = new Set(['에', '를', '을', '로', '으로', '과', '와', '는', '은', '다', '도', '에서', '에게', '까지', '부터']);
+const BL_COMMON = new Set('본 각 및 등 시 후 중 그 전 구 정 수 타 또 더 잘 꼭 할 될 한 된 두 세 네 첫 매 현 약 즉 곧 단 총 회 서 부 새 안 내 외 저 줄 때 것 자 곳'.split(' '));
+const blTokSet = corpus => { const set = new Set(); String(corpus || '').split(/\s+/).forEach(w => { const h = w.replace(/[^가-힣]/g, ''); for (let i = 0; i + 1 < h.length; i++) set.add(h.slice(i, i + 2)); }); return set; };
+function blGlue(L, R, pairs) {
+  R = String(R).trim().split(/\s+/)[0] || ''; L = String(L).trim().split(/\s+/).pop() || '';
+  const l = (L.match(/[가-힣]+$/) || [''])[0], r0 = R.replace(/[.,)」』:;·\]]+$/, ''), r = (R.match(/^[가-힣]+/) || [''])[0];
+  if (!l || !r) return ' ';
+  if (BL_PART.has(r0)) return '';
+  if (/으$/.test(l) && /^로/.test(r)) return '';
+  if (L === l && l.length === 1 && !BL_COMMON.has(l) && !BL_PART.has(l) && !/^(의|가|이)$/.test(l) && pairs && pairs.has(l + r[0])) return '';
+  return ' ';
+}
+function blJoinTitles(x) { return x.replace(/^(\s*[가-하]\s*[.)]\s*)([가-힣])\s+([가-힣])(\s*[-:：])/, '$1$2$3$4'); }
+function unwrapHwpText(t, corpus = '') {
+  const NEW = /^(제\s*\d+\s*(편|장|절|관|조)|[가-하]\s*[.)]\s*\S|\d+\s*항|[①-⑳]|\(\d+\)|（\d+）|\d+\s*[.)]\s*\S|[*※]|부\s*칙|[<〈《【\[「])/;
+  const ends = x => /([.。!?」』)\]]|다|함|음|됨|임|요)$/.test(x);
+  const BR = '\u0001'; const out = [];
+  String(t).replace(/\r/g, '').split('\n').forEach(raw => {
+    const x = raw.replace(/\s+$/, ''); const ind = /^\s{2,}/.test(x); const body = x.replace(/(\S)\s{4,}(?=\S)/g, '$1' + BR).trim();
+    const prev = out[out.length - 1];
+    const frag = body.length <= 3 && /^[가-힣]{1,2}[.)]?$/.test(body);
+    if (prev && body && ((ind && !ends(prev.replace(/\u0001/g, ' ')) && (!NEW.test(body) || frag || /^제\s*\d+\s*(장|조)\s*\d*\s*(조|항)?\s*(에|의|를|을|및|과|와)/.test(body))) || (ind && /^\(/.test(body) && prev.trim()))) out[out.length - 1] = prev + BR + body;
+    else out.push(body);
+  });
+  const pairs = blTokSet(corpus + '\n' + out.join('\n').replace(/\u0001/g, ' '));
+  const joined = out.map(l => blJoinTitles(l.split(BR).reduce((a, b) => a + blGlue(a, b, pairs) + b)).replace(/(\S) {2,}/g, '$1 ')).join('\n');
+  return tidyBylawSpaces(joined, corpus + '\n' + joined);
+}
+/* 이미 저장된 본문(줄 맞춤 띄어쓰기가 한 칸으로 남은 것)에 같은 규칙을 조심스럽게 적용 */
+function tidyBylawSpaces(t, corpus = '') {
+  const pairs = blTokSet(corpus);
+  return String(t).split('\n').map(line => { const w = line.split(' '); let res = w[0];
+    for (let i = 1; i < w.length; i++) { const L = res.split(' ').pop(); res += (L && w[i] ? blGlue(L, w[i], pairs) : ' ') + w[i]; }
+    return blJoinTitles(res); }).join('\n');
+}
+/* @@UNWRAP-END */
+/* 판 목록 순서: 개정일이 늦은 판이 위. 날짜가 같거나 없으면 차수 큰 판이 위. 날짜 없는 개정안은 맨 위 */
+function bylawNo(x) { const m = String(x && x.revision || '').match(/(\d+)\s*차/); return m ? +m[1] : -1; }
+function bylawOrder(a, b) {
+  const da = a.date || (a.status === 'draft' ? '9999' : ''), db = b.date || (b.status === 'draft' ? '9999' : '');
+  return da !== db ? (da < db ? 1 : -1) : bylawNo(b) - bylawNo(a);
+}
+/* 본문 끝의 "N차 수정 : YYYY년 M월 D일" 기록에서 이 판의 차수와 개정일을 찾는다. 기록이 없으면 파일 이름의 연도를 쓴다 */
+function bylawGuess(text, fileName, kind) {
+  // 한 줄에 여러 기록이 붙어 있어도("1 차 수정일 : 2013년 11월 23일 2 차 수정일 : …") 모두 찾는다. "**일", "??일"은 모르는 날
+  let best = null; const re = /(\d+)\s*차\s*(?:수정|개정)\s*일?\s*[:：]?\s*(\d{4})\s*년\s*(\d{1,2}|[?*]+)?\s*월?\s*(\d{1,2}|[?*]+)?\s*일?/g; let m;
+  while ((m = re.exec(String(text || '')))) { const no = +m[1]; if (best && best.no >= no) continue;
+    const mo = /^\d+$/.test(m[3] || '') ? m[3].padStart(2, '0') : '', da = mo && /^\d+$/.test(m[4] || '') ? m[4].padStart(2, '0') : '';
+    best = { no, rev: no + '차 수정', date: m[2] + (mo ? '-' + mo + (da ? '-' + da : '') : ''), from: 'text' }; }
+  if (best) return best;
+  const n = String(fileName || ''); const y = n.match(/(?:^|\D)(20\d\d|19\d\d)(?!\d)/) || n.match(/(?:^|\D)(\d\d)\s*년/);
+  const c = n.match(/(\d+)\s*차/); const charter = kind === 'charter';
+  // 헌장 말고는 파일 이름을 판 이름으로 쓰지 않는다 — 판 이름은 늘 "N차 수정"
+  return { no: c ? +c[1] : -1, rev: c ? c[1] + '차 수정' : charter ? n.replace(/\.[^.]+$/, '') : '', date: y ? (y[1].length === 2 ? '20' + y[1] : y[1]) : '', from: y || c ? 'name' : '' };
+}
+/* 판 이름 맞추기: "24", "24차", "24 차 개정" → "24차 수정" (헌장은 그대로) */
+function bylawRevName(v, kind) { v = String(v || '').trim(); if (kind === 'charter') return v; const m = v.match(/^(\d+)\s*(?:차)?\s*(?:수정|개정)?\s*(\(.*\))?$/); return m ? `${m[1]}차 수정${m[2] ? ' ' + m[2] : ''}` : v; }
+function cleanBylawText(t) { return t.replace(/\r/g, '').split('\n').map(l => l.replace(/[\u0000-\u0008-]/g, '').replace(/\s+$/, '')).join('\n').replace(/\n{3,}/g, '\n\n').trim(); }
+/* 회칙 화면 (CBCS 회칙 화면처럼): 왼쪽 본문(차례 · 편/장/조/항 · 앞 판과 바뀐 낱말) · 오른쪽 판(版) 목록 · 바뀐 점 */
+const BYL_ST={current:"현행",draft:"개정안",old:"이전 판"};
+function bylVersions(B){if(!B||B.none)return[];if(Array.isArray(B.versions)&&B.versions.length)return B.versions;
+  if(Array.isArray(B.pages)&&B.pages.length)return[{id:"pdf",title:`${teamName(S.team)} 회칙`,revision:"올린 PDF",date:"",status:"current",text:cleanBylawText(unwrapHwpText((B.pages||[]).join("\n"))),pdf:true,notes:B.updatedAt?`${new Date(B.updatedAt).toLocaleDateString("ko-KR")} 올림`:""}];return[];}
+async function bylSave(vs){if(!S.db)return toast("저장소에 연결되지 않았어요"),false;const team=S.team;
+  try{const ref=S.db.doc(`bylaws/${team}`);if(BYL&&!BYL.none)await ref.update({versions:clone(vs),updatedAt:Date.now(),by:S.myId||null});else await ref.set({team,versions:clone(vs),updatedAt:Date.now(),by:S.myId||null});
+    BYL={...(BYL&&!BYL.none?BYL:{team}),versions:clone(vs),updatedAt:Date.now()};return true;}catch(e){console.error(e);toast("저장하지 못했어요");return false;}}
+const bylCurrent=vs=>vs.find(x=>x.status==="current")||vs[0];
+function bylEditModal(vs,b,isNew){const t=h("input",{type:"text",id:"bt-title",value:b.title||`${teamName(S.team)} 회칙`}),rv=h("input",{type:"text",id:"bt-rev",value:b.revision||"",placeholder:"예: 3차 수정"}),dt=h("input",{type:"text",id:"bt-date",value:b.date||"",placeholder:"예: 2025-12-28 (모르면 연도만)"});
+  const stS=h("select",{id:"bt-st"},Object.entries(BYL_ST).map(([k,l])=>h("option",{value:k,text:l,selected:(b.status||"draft")===k})));
+  const ta=h("textarea",{id:"bt-text",style:"width:100%;min-height:52vh;font-size:14px;line-height:1.7",value:b.text||"",placeholder:"한글 파일에서 전체 선택 → 복사 → 붙여넣기. 「제1조」 「제1장」으로 시작하는 줄은 저절로 제목이 돼요."});
+  const md=modal(isNew?"새 판 추가":"회칙 본문 수정",h("div",{class:"panel-body"},h("div",{class:"grid"},h("div",{class:"field"},h("label",{htmlFor:"bt-title",text:"제목"}),t),h("div",{class:"field"},h("label",{htmlFor:"bt-rev",text:"개정 차수"}),rv),h("div",{class:"field"},h("label",{htmlFor:"bt-date",text:"개정일"}),dt),h("div",{class:"field"},h("label",{htmlFor:"bt-st",text:"상태"}),stS)),ta),
+    [h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"저장",onclick:async()=>{const nb={...b,title:t.value.trim()||`${teamName(S.team)} 회칙`,revision:bylawRevName(rv.value),date:dt.value.trim(),status:stS.value,text:cleanBylawText(ta.value)};delete nb.pdf;
+      let list=vs.filter(x=>x.id!==b.id).map(x=>nb.status==="current"&&x.status==="current"?{...x,status:"old"}:x);list.push(nb);if(!list.some(x=>x.status==="current"))list[list.length-1].status="current";
+      if(await bylSave(list)){S.bylSel=nb.id;md.close();toast("저장했어요");render();}}})],"tu-modal");}
+async function bylUpload(vs,cur,file){const st=toast("파일에서 글자를 읽는 중…",8000);let text;
+  try{text=await fileToRuleText(file,await file.arrayBuffer());}catch(e){console.error(e);return toast(e.message||"파일을 읽지 못했어요",4000);}
+  const corpus=vs.map(x=>x.text||"").join("\n");text=cleanBylawText(unwrapHwpText(text,corpus));if(!text.trim())return toast("글자를 찾지 못했어요 (스캔한 그림 PDF일 수 있어요)",4000);
+  const g=bylawGuess(text,file.name);const nb={id:uid(6),title:`${teamName(S.team)} 회칙`,revision:g.rev,date:g.date,status:vs.length?"old":"current",text};
+  /* 지금 현행보다 새 차수 · 늦은 날짜면 현행으로, 아니면 이전 판으로 (다음 칸에서 바꿀 수 있어요) */
+  const cv=bylCurrent(vs);if(cv&&((g.no>=0&&g.no>bylawNo(cv))||(g.date&&(!cv.date||g.date>cv.date))))nb.status="current";
+  const tgt=h("select",{id:"bu-tgt"},[h("option",{value:"new",text:"새 판으로 추가"}),cur?h("option",{value:"replace",text:`지금 보는 판(${cur.revision||"이름 없음"}) 본문 바꾸기`}):null].filter(Boolean));
+  const md=modal("회칙 파일 올리기",h("div",{class:"panel-body"},h("p",{class:"hint",text:`${file.name} · ${text.split("\n").filter(Boolean).length}줄을 읽었어요${g.from==="text"?" · 본문 끝 개정 기록에서 차수와 날짜를 찾았어요":""}. 확인하고 저장하세요.`}),
+    h("div",{class:"field"},h("label",{htmlFor:"bu-tgt",text:"어디에"}),tgt),h("div",{class:"bylaw-text",style:"max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:10px 14px"}),
+  ),[h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),h("button",{class:"btn primary",text:"다음: 차수 · 날짜 확인",onclick:()=>{md.close();if(tgt.value==="replace")bylEditModal(vs,{...cur,text},false);else bylEditModal(vs,nb,true);}})],"tu-modal");
+  md.el.querySelector(".bylaw-text").innerHTML=bylawHTML(text);}
 function renderBylaws(m){const box=h("div",{class:"sheet"},h("p",{class:"hint",text:"회칙을 불러오는 중…"}));m.append(box);
-  const admin=isAdminUser();const st=h("span",{class:"hint"});
-  const up=h("input",{type:"file",id:"byl-file",accept:".pdf,application/pdf",onchange:async e=>{const f=e.target.files[0];e.target.value="";if(f)await uploadBylaws(f,st);}});
-  const adminRow=admin?h("div",{class:"row",style:"margin-top:10px"},h("span",{class:"btn sm primary filebtn"},`${teamName(S.team)} 회칙 PDF 올리기 (바꾸기)`,up),st):h("p",{class:"hint",text:"회칙은 관리자만 올리고 바꿀 수 있어요."});
-  (async()=>{try{if(!BYL||BYL.team!==S.team){const d=S.db?await S.db.doc(`bylaws/${S.team}`).get():null;BYL=d&&d.exists?d.data():{none:true,team:S.team};}}catch(e){BYL={none:true,team:S.team};}
-    if(S.tab!=="bylaws")return;
-    if(BYL.none){box.replaceChildren(h("h2",{},`${teamName(S.team)} 회칙`),h("div",{class:"empty",text:`아직 올린 ${teamName(S.team)} 회칙이 없어요.`}),adminRow);return;}
-    const q=h("input",{type:"search",id:"byl-q",placeholder:"회칙에서 찾기 (예: 임원, 출석, 회비)",value:bylQ,style:"flex:1;min-width:0",oninput:e=>{bylQ=e.target.value;draw();}});
-    const out=h("div",{class:"byl"});
-    const dl=h("button",{class:"btn sm",text:"PDF 받기",onclick:async()=>{try{const a=await bylawsPdf(BYL);await S.downloads.save({filename:BYL.name||"회칙.pdf",data:new Blob([a],{type:"application/pdf"})});}catch(e){toast("받지 못했어요");}}});
-    const view=h("button",{class:"btn sm",text:"원본 보기",onclick:async()=>{const body=h("div",{class:"panel-body pdfprev"},h("p",{class:"hint",text:"불러오는 중…"}));const md=modal(BYL.name||"회칙",body,null);
-      try{const a=await bylawsPdf(BYL);await loadScript(PDFJS_URL);await loadScript(PDFJS_WORKER);const lib=window.pdfjsLib;lib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;const pdf=await lib.getDocument({data:a}).promise;body.replaceChildren();
-        for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const v0=pg.getViewport({scale:1});const vp=pg.getViewport({scale:1400/v0.width});const c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:x,viewport:vp}).promise;c.style.width="100%";c.style.border="1px solid var(--line)";body.append(c);}}
-      catch(e){body.replaceChildren(h("p",{class:"hint",text:"원본을 불러오지 못했어요"}));}}});
-    function draw(){out.replaceChildren();const qq=bylQ.trim();const words=qq.split(/\s+/).filter(Boolean);
-      const mark=t=>{if(!words.length)return[t];const re=new RegExp(words.map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|"),"g");const parts=[];let last=0;t.replace(re,(mm,idx)=>{parts.push(t.slice(last,idx),h("mark",{text:mm}));last=idx+mm.length;return mm;});parts.push(t.slice(last));return parts;};
-      if(!qq){BYL.pages.forEach((t,i)=>out.append(h("section",{class:"bylpage"},h("div",{class:"bylno",text:`${i+1}쪽`}),h("div",{class:"byltext",text:t||"(이 쪽에는 읽을 수 있는 글자가 없어요)"}))));return;}
-      const hits=[];BYL.pages.forEach((t,i)=>t.split(/\n+/).forEach(line=>{if(words.every(w=>line.includes(w)))hits.push([i,line]);}));
-      out.append(h("p",{class:"hint",text:`「${qq}」 ${hits.length}곳`}));
-      if(!hits.length){out.append(h("div",{class:"empty",text:"찾는 말이 없어요."}));return;}
-      for(const[i,line]of hits)out.append(h("div",{class:"bylhit"},h("button",{type:"button",class:"vref",text:`${i+1}쪽`,onclick:()=>{bylQ="";q.value="";draw();setTimeout(()=>out.children[i]?.scrollIntoView({block:"start"}),30);}}),h("div",{},mark(line))));}
-    box.replaceChildren(h("h2",{},`${teamName(S.team)} 회칙`,h("span",{class:"sub",text:`${BYL.name||""} · ${new Date(BYL.updatedAt||0).toLocaleDateString("ko-KR")} 올림 · ${BYL.pages.length}쪽`})),
-      h("div",{class:"row",style:"flex-wrap:nowrap"},q,dl,view),adminRow,h("div",{style:"height:10px"}),out);draw();})();}
+  (async()=>{try{if(!BYL||BYL.team!==S.team){const d=S.db?await S.db.doc(`bylaws/${S.team}`).get():null;BYL=d&&d.exists?{team:S.team,...d.data()}:{none:true,team:S.team};}}catch(e){BYL={none:true,team:S.team};}
+    if(S.tab!=="bylaws")return;const admin=isAdminUser();const DOC=`${teamName(S.team)} 회칙`;
+    const vs=bylVersions(BYL).slice().sort(bylawOrder);const b=vs.find(x=>x.id===S.bylSel)||bylCurrent(vs);
+    const fin=h("input",{type:"file",accept:".hwp,.hwpx,.pdf,.docx,.odt,.txt",onchange:e=>{const f=e.target.files[0];e.target.value="";if(f)bylUpload(vs,b,f);}});
+    const adminBtns=admin?[h("span",{class:"btn sm primary filebtn",title:"한글(HWP · HWPX) · PDF · Word 원본에서 본문을 읽어 와요"},"파일 올리기 (HWP · PDF · Word)",fin),
+      b?h("button",{class:"btn sm",text:"본문 수정",onclick:()=>bylEditModal(vs,b,false)}):null,
+      h("button",{class:"btn sm",text:"새 개정안 추가",onclick:()=>bylEditModal(vs,{id:uid(6),title:DOC,revision:"",date:"",status:"draft",text:b?b.text:""},true)}),
+      b&&b.status!=="current"?h("button",{class:"btn sm primary",text:"현행으로 지정",onclick:async()=>{if(await bylSave(vs.map(x=>({...x,status:x.id===b.id?"current":x.status==="current"?"old":x.status}))))toast("현행으로 지정했어요"),render();}}):null,
+      b&&vs.length>1?h("button",{class:"btn sm ghost danger",text:"이 판 삭제",onclick:async e=>{if(!confirmInline(e.currentTarget,"정말 지울까요? · 한 번 더"))return;let list=vs.filter(x=>x.id!==b.id);if(!list.some(x=>x.status==="current"))list[0]={...list[0],status:"current"};if(await bylSave(list)){S.bylSel=null;toast("지웠어요");render();}}}):null]:[];
+    if(!b){box.replaceChildren(h("h2",{},DOC),h("div",{class:"empty",text:`아직 올린 ${DOC}이 없어요.`}),admin?h("div",{class:"row"},...adminBtns.filter(Boolean)):h("p",{class:"hint",text:"회칙은 관리자만 올리고 바꿀 수 있어요."}));return;}
+    const pill=h("span",{class:"blpill "+(b.status==="current"?"ok":b.status==="draft"?"warn":"mute"),text:b.status==="draft"?"개정안 · 총회 통과 전":BYL_ST[b.status]||""});
+    const q=h("input",{type:"search",id:"byl-q",placeholder:"회칙에서 찾기 (예: 임원, 출석, 회비)",value:bylQ,style:"flex:1;min-width:180px",oninput:e=>{bylQ=e.target.value;drawBody();}});
+    const pdfBtns=b.pdf&&BYL.n?[h("button",{class:"btn sm",text:"원본 PDF 받기",onclick:async()=>{try{const a=await bylawsPdf(BYL);await saveBlob(new Blob([a],{type:"application/pdf"}),BYL.name||"회칙.pdf");}catch(e){toast("받지 못했어요");}}})]:[];
+    const head=h("div",{class:"sheet blhead"},h("div",{class:"row",style:"gap:10px;align-items:baseline;flex-wrap:wrap"},h("h2",{style:"margin:0"},DOC),pill,h("span",{class:"hint",text:[b.revision,b.date].filter(Boolean).join(" · ")})),
+      h("div",{class:"row",style:"margin-top:10px;gap:6px;flex-wrap:wrap"},q,h("button",{class:"btn sm",text:"🖨 회칙 출력",onclick:()=>{document.body.classList.add("printbyl");setTimeout(()=>{window.print();setTimeout(()=>document.body.classList.remove("printbyl"),400);},50);}}),...pdfBtns),
+      admin?h("div",{class:"row",style:"margin-top:8px;gap:6px;flex-wrap:wrap"},...adminBtns.filter(Boolean)):null);
+    const dif=S.bylNoDiff?{}:bylawDiffOpt(b,vs);const body=h("div",{class:"bylaw-text"});
+    const bar=(()=>{const o=bylawDiffOpt(b,vs);if(!o.pv)return h("div",{class:"bl-diffbar",text:"비교할 이전 판이 없어요 (가장 오래된 판)."});
+      const d=h("div",{class:"bl-diffbar"});d.innerHTML=`<b>${blEsc(o.pv.revision||"이전 판")}${o.pv.date?" ("+blEsc(o.pv.date)+")":""}</b>과 비교 — 바뀐 곳 ${o.nChg} · 새로 생긴 곳 ${o.nNew} · 빠진 곳 ${o.removed.length} <span class="lg"><ins class="bl-add">새로 들어간 글</ins> <del class="bl-del">빠진 글</del></span>`;
+      d.append(h("button",{class:"btn sm",text:S.bylNoDiff?"달라진 점 표시":"표시 끄기",onclick:()=>{S.bylNoDiff=!S.bylNoDiff;render();}}));return d;})();
+    function drawBody(){const qq=bylQ.trim();if(!qq){body.innerHTML=bylawHTML(b.text,dif)||'<p class="hint">본문이 없어요.</p>';
+        body.querySelectorAll("[data-bltoc]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();const t=body.querySelector("#"+a.dataset.bltoc);if(t)t.scrollIntoView({behavior:"smooth",block:"start"});}));return;}
+      const words=qq.split(/\s+/).filter(Boolean);const re=new RegExp(words.map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|"),"g");
+      const hits=bylawParas(b.text).filter(x=>!x.head&&words.every(w=>x.full.includes(w)));
+      body.innerHTML=`<p class="hint">「${blEsc(qq)}」 ${hits.length}곳</p>`+(hits.length?hits.map(x=>`<p class="bl-hit">${x.lab?`<span class="art">${blEsc(x.lab)}</span> `:""}${blEsc(x.txt).replace(re,mm=>`<mark>${mm}</mark>`)}</p>`).join(""):'<div class="empty">찾는 말이 없어요.</div>');}
+    drawBody();
+    const list=h("div",{class:"sheet"},h("h2",{},"판(版) 목록",h("span",{class:"sub",text:`${vs.length}개`})),h("div",{class:"bllist"},vs.map(x=>h("button",{type:"button",class:"blitem"+(x.id===b.id?" on":""),onclick:()=>{S.bylSel=x.id;bylQ="";render();}},
+      h("b",{text:x.revision||x.title||DOC}),h("span",{class:"hint",text:[x.date,BYL_ST[x.status]].filter(Boolean).join(" · ")})))));
+    const chg=(()=>{const o=bylawDiffOpt(b,vs);const c=h("div",{class:"sheet bl-chgcard"});if(!o.pv){c.append(h("h2",{},"앞 판에서 바뀐 점"),h("p",{class:"hint",text:"이 판보다 앞선 판이 없어 비교할 수 없어요."}));return c;}
+      const groups=[];o.changes.forEach(x=>{let g=groups.find(y=>y.art===x.art);if(!g)groups.push(g={art:x.art,items:[]});g.items.push(x);});
+      c.append(h("h2",{},`${b.revision||"이 판"}에서 바뀐 점`,h("span",{class:"sub",text:`${o.pv.revision||"앞 판"} 대비 · 조문 ${groups.length}곳`})));
+      const d=h("div");d.innerHTML=groups.length?groups.map(g=>`<div class="bl-cg"><div class="bl-cg-h">${blEsc(g.art)} ${[...new Set(g.items.map(x=>x.kind))].map(k=>`<span class="blpill ${k==="빠짐"?"bad":k==="새로 생김"?"ok":"warn"}">${k}</span>`).join(" ")}</div>${g.items.map(x=>`<div class="bl-cg-b">${x.html}</div>`).join("")}</div>`).join(""):'<p class="hint">앞 판과 글자가 같아요.</p>';c.append(d);return c;})();
+    box.replaceWith(h("div",{class:"blwrap"},head,h("div",{class:"bylaw-grid"},h("div",{class:"sheet blmain"},bar,body),h("div",{class:"blside"},list,chg))));})();}
 
 /* =========================================================
    BIBLE TAB  (말씀 찾기)
