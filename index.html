@@ -3105,7 +3105,9 @@ function flowEditor(it,{editable=true,onChange,compact=false,onEdit,store}={}){l
         (()=>{const ci=h("input",{type:"text",class:"fe-who-in",placeholder:"괄호로 붙이기 (예: 솔로)",title:"고른 조각 뒤에 (솔로)처럼 괄호로 붙어요. 새 조각은 아래 「직접 쓰기」 칸에 쓰세요",style:"width:170px;min-height:30px;padding:4px 8px",onkeydown:e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}}});
           const go=()=>{const v=ci.value.trim().replace(/[()]/g,"");if(!v)return;const a=toks();const i=sel!=null?sel:a.length-1;if(i<0)return toast("먼저 순서를 하나 넣어 주세요");a[i]=feMod(a[i],`(${v})`);ci.value="";save(a);};
           return h("span",{class:"row",style:"gap:4px;align-items:center"},ci,h("button",{type:"button",class:"btn sm",text:"붙이기",onclick:go}));})())):null;
-    box.replaceChildren(...[strip,tools,btns].filter(Boolean));}
+    /* 좁은 편집 칸: ◀ ▶ (⌫)은 순서 줄 오른쪽 끝에 붙여 한 줄을 아껴요 */
+    if(compact&&tools){const k=[...tools.children].filter(x=>!x.classList.contains("spacer"));strip.append(h("span",{class:"row fe-inl",style:"gap:4px;margin-left:auto;align-items:center"},...k));}
+    box.replaceChildren(...[strip,compact?null:tools,btns].filter(Boolean));}
   ctl.clear=()=>save([],null);ctl.has=()=>toks().length>0;box.ctl=ctl;
   draw();box.redraw=()=>{sel=null;draw();};return box;}
 const FLOW_CHIPS=["1절","2절","3절","4절","후렴","1후","2후","3후","4후","브릿지","Intro","간주","Outro","× 2","× 3","KEY UP","기도 (반주)"];
