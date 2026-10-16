@@ -3279,7 +3279,7 @@ function verCard(song,v,selected,can,onPick,onChanged,onDeleted,lab={on:"✓ 지
   return h("div",{class:"vcard"+(selected?" on":"")},
     h("button",{type:"button",class:"vthumbbtn",onclick:onPick,"aria-pressed":String(selected),"aria-label":`${v.name||"악보"} 고르기`},th),
     h("div",{class:"vtext",style:"flex:1;min-width:0"},nm,h("button",{type:"button",class:"vinfo",onclick:onPick},
-      h("small",{text:[`${(v.pages||[]).length}장`,teams].filter(Boolean).join(" · ")}),selected?h("em",{text:lab.on}):h("em",{class:"pickme",text:lab.off}))),
+      h("small",{text:[`${(v.pages||[]).length}장`,teams].filter(Boolean).join(" · ")}),selected?(lab.on?h("em",{text:lab.on}):null):(lab.off?h("em",{class:"pickme",text:lab.off}):null))),
     can?h("label",{class:"vkeylab hint"},"조성",ky):(v.key?h("span",{class:"tag",text:v.key}):null),del);}
 /* choose which saved score of the song this conti uses (the one that goes into the PDF) */
 function openScorePicker(it,song,key){if(song&&song.id&&!String(song.id).startsWith("local-")&&S.db)return versionsViewer(song,it.verId,{pick:{it,key}});const editable=curEditable();let vs=vers(song);
@@ -7717,7 +7717,7 @@ function versionsViewer(song,startVid,vopt={}){const vs=vers(song).filter(v=>(v.
     return h("div",{class:"vs-wrap"},h("div",{class:"vcard"+(on?" on":"")},h("button",{type:"button",class:"vmain",onclick:fn,"aria-pressed":String(on)},th,h("span",{class:"vtext"},h("b",{text:label}),h("small",{text:sub}),on?h("em",{text:"✓ 지금 이 콘티에 들어가는 악보"}):null))));};
   const draw=()=>{const loose=P&&IT.pages.length&&!vs.some(v=>v.vid===IT.verId);
     const selOf=v=>P?(!loose&&IT.verId===v.vid):v===cur;
-    const lab=P?{on:"✓ 지금 이 콘티에 들어가는 악보",off:"눌러서 이 콘티에 넣기"}:{on:"👁 오른쪽에 보고 있어요",off:"눌러서 크게 보기"};
+    const lab=P?{on:"✓ 지금 이 콘티에 들어가는 악보",off:"눌러서 이 콘티에 넣기"}:{on:"",off:""};
     list.replaceChildren(...[loose?simpleCard("이 콘티에서 고친 악보",`${IT.pages.length}장 · 라이브러리에는 없는 악보예요`,IT.pages,true,()=>{}):null,
       ...vs.map(v=>{const isDef=(song.teamVer||{})[S.team]===v.vid;
         const card=verCard(song,v,selOf(v),canEd,()=>choose(v),()=>{if(P&&IT.verId===v.vid){const nv=vers(song).find(x=>x.vid===v.vid);if(nv&&nv.key){IT.key=nv.key;markDirty();renderSetlist(P.key);}}refresh();},
