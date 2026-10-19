@@ -3081,7 +3081,7 @@ function drawFlowTop(x,p,dx,dy,dw,dh){if(!p||!p.flowTop)return;const fs=Math.max
   x.globalAlpha=.88;x.fillStyle="#fff";rr(x,dx+dw*.02,dy+dh*.006,bw,bh,fs*.3);x.fill();x.globalAlpha=1;x.fillStyle="#1d3fb3";lines.forEach((l,i)=>x.fillText(l,dx+dw*.02+fs*.4,dy+dh*.006+fs*.25+i*lh));x.restore();}
 /* 진행 순서 편집기 (악보 편집 칸 · 악보 편집 창 공용): 조각을 눌러 고르고 → 그 뒤에 넣기 · 바꾸기 · 지우기 · 끌어서 옮기기
    붙이는 단추(목소리 · × 2 · 8마디 · KEY UP)는 고른 조각(없으면 마지막)에 붙어요 */
-const FE_MAIN=["Intro","V","V1","V2","V3","V4","V5","Pre","C","B","Inter","Tag","Outro","Ending"],FE_WHO=["목소리","여자만","남자만","회중만","악기만","다같이"],FE_MODS=[...FE_WHO,"× 2","× 3","8마디","4마디","KEY UP"];
+const FE_MAIN=["Intro","V","V1","V2","V3","V4","V5","Pre","A","B","C","Inter","Tag","Outro","Ending"],FE_WHO=["목소리","여자만","남자만","회중만","악기만","다같이"],FE_MODS=[...FE_WHO,"× 2","× 3","8마디","4마디","KEY UP"];
 /* 누가 부르나 (목소리 · 여자만 · 남자만 · 회중만 · 악기만 · 다같이 · 직접입력): 괄호 하나만 · 같은 걸 다시 누르면 빠져요 */
 function feMod(t,m){t=String(t);const wm=FE_WHO.includes(m)?m:/^\(.+\)$/.test(m)?m.slice(1,-1).trim():null;
   if(wm!=null){const r=t.match(/^(.*?)(\s*\(([^)]*)\))?((?:\s*×\s*\d+|\s*\d+마디|\s*KEY UP)*)$/);if(!r)return t;const same=r[3]===wm;return r[1]+(same||!wm?"":`(${wm})`)+r[4];}
