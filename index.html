@@ -7812,12 +7812,18 @@ function versionsViewer(song,startVid,vopt={}){const vs=vers(song).filter(v=>(v.
         const keyOfName=n=>{const m=String(n).replace(/\.[^.]+$/,"").match(/(?:^|[_\s\-(\[])([A-G](?:#|b|♭|♯)?m?)(?:코드|key)?[_\s)\]]*$/i);return m?m[1].replace("♭","b").replace("♯","#").replace(/^./,c=>c.toUpperCase()):"";};
         const keyed=files.map(f=>({f,k:keyOfName(f.name)}));const byKey=files.length>1&&new Set(keyed.map(x=>x.k)).size>1&&keyed.every(x=>x.k);
         const groups=byKey?[...new Set(keyed.map(x=>x.k))].map(k=>({k,files:keyed.filter(x=>x.k===k).map(x=>x.f)})):[{k:files.length===1?keyOfName(files[0].name):"",files}];
-        let all=clone(vers(song));let last=null,tot=0;
+        let all=clone(vers(song));let last=null,tot=0;const fresh=[];
         for(const [gi,g] of groups.entries()){const pages=[];st.textContent=`올리는 중… (${gi+1}/${groups.length})`;const n=await uploadInto(pages,g.files,t=>st.textContent=t);if(!n)continue;tot+=n;
-          last={vid:uid(6),name:g.k?`${g.k}코드`:`악보 ${all.length+1}`,key:g.k||song.key||"",pages,by:S.myId||null,at:Date.now()};all.push(last);}
+          last={vid:uid(6),name:g.k?`${g.k}코드`:`악보 ${all.length+1}`,key:g.k||song.key||"",pages,by:S.myId||null,at:Date.now()};all.push(last);fresh.push({vid:last.vid,f:g.files[0],pages});}
         st.textContent="";if(!last)return;if(!await saveVersions(song,all))return;
         toast(byKey?`조성별 악보 ${groups.length}개(${groups.map(g=>g.k).join(" · ")})를 올렸어요`:`새 악보(${tot}장)를 올렸어요${last.key?` · Key ${last.key}`:" · 「제목 변경」으로 Key를 적어 주세요"}`,4000);
-        vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));cur=vs.find(y=>y.vid===last.vid)||vs[0];if(P)choose(cur);else draw();renderSongs.redraw&&renderSongs.redraw();}});
+        vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));cur=vs.find(y=>y.vid===last.vid)||vs[0];if(P)choose(cur);else draw();renderSongs.redraw&&renderSongs.redraw();
+        /* 조성이 없는 새 악보는 그림을 읽어 조성을 짐작해 넣어요 (콘티 곡에 Key가 비어 있으면 거기에도) */
+        for(const x of fresh){const v0=vers(song).find(y=>y.vid===x.vid);if(!v0||v0.key)continue;const src=x.f&&/^image\/(png|jpe?g|gif|webp|bmp)$/i.test(x.f.type)?URL.createObjectURL(x.f):null;
+          detectKey(src?[{url:src}]:x.pages.slice(0,2).map(pg=>({url:imgCache.get(pg.imgId)})).filter(y=>y.url)).then(async r=>{if(src)URL.revokeObjectURL(src);if(!r)return;
+            const v2=clone(vers(song));const v=v2.find(y=>y.vid===x.vid);if(!v||v.key)return;v.key=r.key;if(genericVerName(v.name))v.name=keyName(r.key);if(!await saveVersions(song,v2,song.key?{}:{key:r.key}))return;
+            if(P&&IT.verId===x.vid&&!(IT.key||"").trim()&&curEditable()){IT.key=r.key;markDirty();renderSetlist(P.key);}
+            vs.splice(0,vs.length,...vers(song).filter(y=>(y.pages||[]).length));cur=vs.find(y=>y.vid===(cur&&cur.vid))||cur;draw();renderSongs.redraw&&renderSongs.redraw();toast(`조성을 ${r.key}(으)로 적었어요 (${r.how}로 짐작)`,3500);}).catch(()=>{if(src)URL.revokeObjectURL(src);});}}});
       list.append(h("label",{class:"btn sm vs-new"},"＋ 새 악보 올리기 (여러 파일 · 조성별 파일도 한 번에)",up),st,h("div",{class:"hint",style:"margin-top:2px",text:"파일 이름 끝에 조성을 붙여 두면(예: 곡_D.png, 곡_Bb.png) 조성마다 따로 악보가 돼요."}));upEl=up;}
     if(P){pagesInto(prev,IT.pages,IT.title);if(!IT.pages.length)prev.replaceChildren(h("div",{class:"vw-noscore",text:"이 콘티에는 이 곡 악보를 넣지 않았어요. 왼쪽에서 골라 주세요."}));
       if(canEd&&IT.pages.length>1)[...prev.querySelectorAll(".vw-page")].forEach((cv,i)=>{if(!IT.pages[i])return;cv.insertAdjacentElement("afterend",h("div",{class:"vs-touch"},h("button",{type:"button",class:"btn sm ghost danger",text:"🗑 이 쪽 빼기",onclick:e=>{if(!confirmInline(e.currentTarget,"정말 뺄까요?"))return;dropScorePage(IT,song,P.key,i).then(draw);}})));});
@@ -7855,7 +7861,9 @@ function versionsViewer(song,startVid,vopt={}){const vs=vers(song).filter(v=>(v.
       all.splice(at,1,...made);if(!await saveVersions(song,all))return;toast(`악보를 ${made.length}가지로 나눴어요`);
       vs.splice(0,vs.length,...vers(song).filter(x=>(x.pages||[]).length));cur=vs.find(x=>x.vid===v.vid)||vs[0];draw();
       renderSongs.redraw&&renderSongs.redraw();});};
-  draw();const md=modal(P?`악보 선택 · ${IT.title}`:`${song.title} · 악보 ${vs.length}개`,h("div",{class:"panel-body vsplit"},list,prev),P?[h("button",{class:"btn primary",text:"완료",onclick:()=>md.close()})]:null,"viewer");if(vopt.upload&&upEl)setTimeout(()=>upEl.click(),80);}
+  draw();const md=modal(P?`악보 선택 · ${IT.title}`:`${song.title} · 악보 ${vs.length}개`,h("div",{class:"panel-body vsplit"},list,prev),P?[h("button",{class:"btn primary",text:"완료",onclick:()=>md.close()})]:null,"viewer");if(vopt.upload&&upEl)setTimeout(()=>upEl.click(),80);
+  /* 창 어디에나 악보 파일을 끌어다 놓으면 「새 악보 올리기」와 똑같이 올려요 */
+  if(canUp){const pn=md.el.querySelector(".panel");if(pn)fileDropOn(pn,files=>{if(!upEl)return;const dt=new DataTransfer();files.forEach(f=>dt.items.add(f));upEl.files=dt.files;upEl.dispatchEvent(new Event("change"));},"여기에 놓으면 새 악보로 올려요");}}
 /* 콘티 보기 (읽기 전용 · 악보를 바로 봄) */
 /* 콘티 보기에서 곡 칸에 악보를 끌어다 놓으면: 그 곡에 악보를 붙이고, 라이브러리 곡에 악보가 없으면 거기에도 넣어요 */
 async function attachScoreToItem(c,k,ii,files,si,close){const it=(c[k]||[])[ii];if(!it)return;const wasEmpty=!(it.pages||[]).length;
