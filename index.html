@@ -1871,9 +1871,9 @@ function unlockModal(team,after){const isAdmin=team==="admin";const isLead=/_lea
   const codeIn=h("input",{type:"password",id:"ul-code",placeholder:isAdmin?"관리자 비밀번호":projOf(team)?"내 찬양팀 비밀번호":`${tn} 비밀번호`,autocomplete:"off"});
   const msg=h("p",{class:"hint",style:"color:var(--danger)"});
   const go=async()=>{const name=nameIn.value.trim();if(!isAdmin&&!isLead&&!name){nameIn.focus();msg.textContent="이름을 써 주세요";return;}
-    btn.disabled=true;msg.textContent="";try{try{await window.CBWP.unlock(team,codeIn.value,name);}catch(e1){if(e1.message!=="wrong"||isAdmin||isLead||projOf(team))throw e1;await window.CBWP.unlock(`${team}_member`,codeIn.value,name);}md.close();
+    btn.disabled=true;btn.textContent="확인하는 중…";msg.textContent="";const slow=setTimeout(()=>{msg.style.color="var(--muted)";msg.textContent="연결이 느려요. 조금만 기다려 주세요…";},5000);try{try{await window.CBWP.unlock(team,codeIn.value,name);}catch(e1){if(e1.message!=="wrong"||isAdmin||isLead||projOf(team))throw e1;await window.CBWP.unlock(`${team}_member`,codeIn.value,name);}clearTimeout(slow);md.close();
       if(isAdmin){S.isOwner=true;}setAccess();if(after)return after();render();toast(isAdmin?"관리자로 들어왔어요. 모든 콘티를 고칠 수 있어요":isLead?`${tn}로 들어왔어요. 멤버를 등록하고 고칠 수 있어요`:projOf(team)?`${teamName(team)}에 들어왔어요`:`이제 ${teamName(team)} 팀 콘티를 쓸 수 있어요`,3200);}
-    catch(e){btn.disabled=false;msg.textContent=e.message==="wrong"?"비밀번호가 맞지 않아요":"확인하지 못했어요. 인터넷 연결을 확인해 주세요";codeIn.select();}};
+    catch(e){clearTimeout(slow);btn.disabled=false;btn.textContent="확인";msg.style.color="var(--danger)";msg.textContent=e.message==="wrong"?"비밀번호가 맞지 않아요":"확인하지 못했어요. 인터넷 연결을 확인해 주세요";codeIn.select();}};
   codeIn.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)go();});
   const btn=h("button",{class:"btn primary",text:"확인",onclick:go});
   const md=modal(isAdmin?"관리자 비밀번호":`${tn} 비밀번호`,h("div",{class:"panel-body"},
