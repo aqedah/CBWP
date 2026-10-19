@@ -1306,7 +1306,9 @@ const groupOf=t=>Object.keys(NAVG).find(g=>NAVG[g].some(([k])=>k===t))||"home";
 const PROJ_G=["home","conti","songs","team","me"];const PROJ_TEAM=["members"];
 /* 역할: admin(관리자) · lead(리더 비밀번호) · writer(인도자·리더·작성자) · clerk(서기) · member(팀원)
    팀원에게는 「홈 · 일정 · 나」만, 서기에게는 운영(편성·출결·멤버·결산)만 보여요. 기능은 그대로, 보이는 메뉴만 달라요 */
-function role(){if(!window.CBWP)return"admin";if(S.isOwner||window.CBWP.isAdmin())return"admin";if(S.memberOnly)return"member";if(canLead())return"lead";if(isWriter())return"writer";
+/* 새로고침 직후(자료를 읽는 동안)엔 지난번 역할로 메뉴를 그려서 아래 탭이 줄었다 늘었다 하지 않게 해요 · 권한 검사는 서버가 따로 해요 */
+function role(){const r=role0();const k="cbwp-role-"+(S.team||"");try{if(S.ready&&!S.dbFailed&&typeof RR!=="undefined"&&RR.memTeam===S.team){if(localStorage.getItem(k)!==r)localStorage.setItem(k,r);return r;}const c=localStorage.getItem(k);if(c&&r==="member"&&!S.memberOnly)return c;}catch(e){}return r;}
+function role0(){if(!window.CBWP)return"admin";if(S.isOwner||window.CBWP.isAdmin())return"admin";if(S.memberOnly)return"member";if(canLead())return"lead";if(isWriter())return"writer";
   const me=normName(myName());const mb=me&&S.members.find(x=>normName(x.name)===me);if(mb&&mb.role==="서기")return"clerk";return"member";}
 const ROLE_TABS={member:{home:1,me:1},clerk:{home:1,team:["tdash","members","lineup","attend","stats","bylaws"],me:1}};
 /* 팀마다 끈 메뉴 (관리자가 개발자 모드 「🧩 메뉴 켜고 끄기」에서 정해요) · 정하지 않았으면 출결은 기드온만 */
@@ -8164,7 +8166,7 @@ function startShared(){if(RR.shared||!S.db)return;RR.shared=true;const db=S.db;
   db.collection("songs").onSnapshot(s=>{S.songs=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.rerender();scheduleAutoLink();},RR.onErr);}
 function startTeam(team){if(!S.db||RR.team===team)return;RR.offs.forEach(f=>f());RR.offs=[];RR.team=team;const db=S.db;S.allContis=[];S.allMembers=[];S.allEvents=[];S.teamCfgs={};
   RR.offs.push(db.collection("contis").where("team","==",team).onSnapshot(s=>{S.allContis=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();document.dispatchEvent(new Event("cbwp-contis"));},RR.onErr));
-  RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();RR.rerender();},RR.onErr));
+  RR.offs.push(db.collection("members").where("team","==",team).onSnapshot(s=>{S.allMembers=s.docs.map(d=>({id:d.id,...clone(d.data())}));RR.memTeam=team;applyTeam();RR.rerender();},RR.onErr));
   RR.offs.push(db.collection("events").where("team","==",team).onSnapshot(s=>{S.allEvents=s.docs.map(d=>({id:d.id,...clone(d.data())}));applyTeam();if(["cal","home","me","members","attend","lineup"].includes(S.tab))RR.rerender();},RR.onErr));
   RR.offs.push(db.doc(`teams/${team}`).onSnapshot(d=>{S.teamCfgs=d.exists?{[team]:clone(d.data())}:{};if(S.tab!=="write")RR.rerender();},RR.onErr));}
 render();
