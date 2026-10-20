@@ -2750,7 +2750,7 @@ function workbench(fs,c,editable,wtabs){document.body.classList.add("wb-on");con
   const mini=colR.firstChild;mini.style.overflow="auto";
   const sync=()=>{if(!mini.isConnected)return ro.disconnect();const pan=[...colC.children].find(e=>e.offsetParent!==null);const first=pan&&(pan.classList.contains("sheet")?pan:pan.querySelector(".sheet"));
     /* 왼쪽 상자가 곡으로 길어지면(420px 넘게) 맞추지 않아요 — 곡 찾기가 너무 아래로 밀리지 않게 */
-    const hh=first?first.offsetHeight:0;mini.style.height=hh&&hh<=420?hh+"px":"";
+    const hh=first?first.offsetHeight:0;/* 첫 상자를 접어 낮아지면(여는 찬양 접기) 맞추지 않고 제 높이로 두어요 */mini.style.height=hh>=240&&hh<=420?hh+"px":"";mini.style.maxHeight=hh>=240?"":"420px";
     /* 곡 찾기 높이를 왼쪽 단 끝에 맞춰요 — 아래 「저장 · 다음 단계」 위에 빈자리가 안 생기게 (브라우저마다 글자 높이가 달라도 늘 실제 높이로 맞춰요) */
     const lib=colR.querySelector(".wb-lib");if(lib){const room=colC.getBoundingClientRect().height-mini.getBoundingClientRect().height-16;
       lib.style.maxHeight=Math.round(Math.max(260,Math.min(room,window.innerHeight-120)))+"px";}};
