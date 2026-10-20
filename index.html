@@ -3081,7 +3081,7 @@ function drawFlowTop(x,p,dx,dy,dw,dh){if(!p||!p.flowTop)return;const fs=Math.max
   x.globalAlpha=.88;x.fillStyle="#fff";rr(x,dx+dw*.02,dy+dh*.006,bw,bh,fs*.3);x.fill();x.globalAlpha=1;x.fillStyle="#1d3fb3";lines.forEach((l,i)=>x.fillText(l,dx+dw*.02+fs*.4,dy+dh*.006+fs*.25+i*lh));x.restore();}
 /* 진행 순서 편집기 (악보 편집 칸 · 악보 편집 창 공용): 조각을 눌러 고르고 → 그 뒤에 넣기 · 바꾸기 · 지우기 · 끌어서 옮기기
    붙이는 단추(목소리 · × 2 · 8마디 · KEY UP)는 고른 조각(없으면 마지막)에 붙어요 */
-const FE_MAIN=["Intro","V","V1","V2","V3","V4","V5","Pre","A","B","C","Inter","Tag","Outro","Ending"],FE_WHO=["목소리","여자만","남자만","회중만","악기만","다같이"],FE_MODS=[...FE_WHO,"× 2","× 3","8마디","4마디","KEY UP"];
+const FE_MAIN=["Intro","V","V1","V2","V3","V4","V5","Pre","A","B","C","Inter","Tag","Outro","Ending","KEY UP"],FE_WHO=["목소리","여자만","남자만","회중만","악기만","다같이"],FE_MODS=[...FE_WHO,"× 2","× 3","8마디","4마디"];
 /* 누가 부르나 (목소리 · 여자만 · 남자만 · 회중만 · 악기만 · 다같이 · 직접입력): 괄호 하나만 · 같은 걸 다시 누르면 빠져요 */
 function feMod(t,m){t=String(t);const wm=FE_WHO.includes(m)?m:/^\(.+\)$/.test(m)?m.slice(1,-1).trim():null;
   if(wm!=null){const r=t.match(/^(.*?)(\s*\(([^)]*)\))?((?:\s*×\s*\d+|\s*\d+마디|\s*KEY UP)*)$/);if(!r)return t;const same=r[3]===wm;return r[1]+(same||!wm?"":`(${wm})`)+r[4];}
@@ -5254,6 +5254,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-20","🎚 진행 순서: A · B · C(단락) 방식도 PPT 순서대로 · 「구간 이름」에서 곡마다 「부르는 방식」을 골라요 · KEY UP은 순서 단추로"],
   ["2026-10-19","☰ 메뉴를 새로 다듬었어요 · 오른쪽으로 밀어서 닫기 · 「CBSR」 바로 가기"],
   ["2026-10-18","📝 가사 버전: 한 곡에 가사를 여러 버전으로 (새찬송가 · 통일찬송가 등) · 콘티마다 부를 버전을 골라 PPT에 써요"],
   ["2026-10-15","📋 「한눈에」 다듬기: 다음 콘티 곡마다 키 · 악보 · 가사 · 진행 순서 표 + 「악보 넣기」 · 「가사 넣기」 바로 · 우리 팀 「확인할 일」 (편성됐는데 불참 → 응답 전 → 불참) · 라이브러리 「악보 없는 곡」 바로 보기"],
@@ -7136,6 +7137,9 @@ async function chorusMarkFix(btn){const list=S.songs.filter(hasChorusMark);if(!l
    진행 순서가 없는 곡 · 진행 순서에 있는 구간이 가사에 없는 곡은 본래 순서 그대로 */
 const SEC_TAGS=["V1","V2","V3","V4","V5","Pre","C","B","-"];
 const SEC_NAME={V1:"1절",V2:"2절",V3:"3절",V4:"4절",V5:"5절",Pre:"프리코러스",C:"후렴",B:"브릿지","-":"안 씀"};
+/* A · B · C 방식(단락): 인도자가 곡마다 고를 수 있어요 · 같은 글자가 여러 번이면 진행 순서에서 나온 차례대로 써요 (A → 첫 A 덩어리, 두 번째 A → 두 번째 A 덩어리) */
+const SEC_TAGS_ABC=["A","B","C","D","Pre","-"];const SEC_NAME_ABC={A:"A 단락",B:"B 단락",C:"C 단락",D:"D 단락",Pre:"프리코러스","-":"안 씀"};
+const toAbc=t=>/^V/.test(t)?"A":t==="C"?"B":t==="B"?"C":t;
 /* 곡에 저장된 PPT 장(가져온 그대로)과 가사가 같으면 PPT 장 나눔을 쓰고, 가사를 나중에 고쳤으면(더하거나 바꿈) 가사를 써요 */
 const pptSlidesUsable=(sg,it)=>{if(!(sg&&sg.ppt&&(sg.ppt.slides||[]).length)||(it&&(it.lyrics||(it.lyHere||"").trim()||lyAltOf(sg,it.lyVer))))return false;const ly=(sg.lyrics||"").trim();if(!ly)return true;
   return nk(sg.ppt.slides.map(x=>Array.isArray(x)?x.join("\n"):String(x)).join("\n").replace(CHORUS_MARK,""))===nk(ly.replace(CHORUS_MARK,""));};
@@ -7163,7 +7167,7 @@ function secTagsOf(it,cfg){const sg=songOf(it);const bl=lyricBlocks(it,cfg);cons
 /* 곡 진행 순서 줄 → 순서 [{sec:"V1"|"C"|…|"_"(빈 화면)}] */
 function parseFlowSeq(it){const out=[];
   /* 한 줄에 여러 구간을 써도 (예: 「1절 2절 후렴 × 2」, 「1~3절」, 「V1 C V2」) 순서대로 다 읽어요 */
-  const TOK=/(\d)\s*[~\-–]\s*(\d)\s*절|(\d)\s*절|\bv\s*(\d)|verse\s*(\d)?|후렴|chorus|\bc\b|(\d)\s*후(?!렴)|브릿지|bridge|\bb\b|pre-?chorus|\bpre\b|프리|intro|인트로|전주|간주|inter(?:lude)?|outro|아웃트로|ending|엔딩|기도|멘트|반주|[×xX*]\s*(\d)|(\d)\s*번/gi;
+  const TOK=/(\d)\s*[~\-–]\s*(\d)\s*절|(\d)\s*절|\bv\s*(\d)|verse\s*(\d)?|후렴|chorus|\bc\b|(\d)\s*후(?!렴)|브릿지|bridge|\bb\b|\ba\b|\bd\b|pre-?chorus|\bpre\b|프리|intro|인트로|전주|간주|inter(?:lude)?|outro|아웃트로|ending|엔딩|기도|멘트|반주|[×xX*]\s*(\d)|(\d)\s*번/gi;
   for(const line of flowLines(it)){let m;TOK.lastIndex=0;
     while((m=TOK.exec(line))){const w=m[0].toLowerCase();
       if(m[7]||m[8]){const rep=+(m[7]||m[8]);const last=out[out.length-1];if(last)for(let i=1;i<rep;i++)out.push({...last});continue;}
@@ -7171,6 +7175,7 @@ function parseFlowSeq(it){const out=[];
       const vn=m[3]||m[4]||m[5];if(vn){out.push({sec:"V"+Math.min(+vn,5)});continue;}if(/^verse/.test(w)){out.push({sec:"V1"});continue;}
       if(m[6]||/후렴|chorus|^c$/.test(w)){out.push({sec:"C"});continue;}
       if(/브릿지|bridge|^b$/.test(w)){out.push({sec:"B"});continue;}
+      if(w==="a"||w==="d"){out.push({sec:w.toUpperCase()});continue;}
       if(/pre|프리/.test(w)){out.push({sec:"Pre"});continue;}
       out.push({sec:"_"});}}
   return out;}
@@ -7179,7 +7184,8 @@ function flowArrange(it,cfg){const seq=parseFlowSeq(it);if(!seq.some(x=>x.sec!==
   const miss=[...new Set(seq.filter(x=>x.sec!=="_"&&!tags.includes(x.sec)).map(x=>x.sec))];if(miss.length)return{miss};
   const slides=[];let lastBlank=false;for(let qi=0;qi<seq.length;qi++){const x=seq[qi];if(x.sec==="_"){if(!lastBlank&&slides.length)slides.push([]);lastBlank=true;continue;}lastBlank=false;
     /* 같은 구간이 가사에 여러 번 있으면(되풀이된 후렴 등) 처음 나온 한 묶음만 써요 */
-    const i0=tags.indexOf(x.sec);let i=i0;for(;i<bl.length&&tags[i]===x.sec;i++)slides.push(...bl[i].slides.map(l=>l.slice()));
+    const runs=[];tags.forEach((t,k)=>{if(t===x.sec&&(k===0||tags[k-1]!==t))runs.push(k);});const nth=seq.slice(0,qi).filter(y=>y.sec===x.sec).length;
+    const i0=runs[nth]!==undefined?runs[nth]:runs[0];let i=i0;for(;i<bl.length&&tags[i]===x.sec;i++)slides.push(...bl[i].slides.map(l=>l.slice()));
     /* 절마다 끝에 붙는 되풀이 줄(「주의 영원한 팔 의지해」처럼): 진행 순서에서 바로 다음이 후렴이 아니면, 그 절 바로 뒤의 후렴 묶음을 절에 붙여 둬요 */
     if(/^V/.test(x.sec)&&!(seq[qi+1]&&seq[qi+1].sec==="C")){for(;i<bl.length&&tags[i]==="C";i++)slides.push(...bl[i].slides.map(l=>l.slice()));}}
   while(slides.length&&!slides[slides.length-1].length)slides.pop();return{slides};}
@@ -7202,15 +7208,21 @@ function slidesFor(it,cfg){if(it&&typeof it.lyHere==="string"&&it.lyHere.trim())
 /* 🎚 구간 이름 고치기: 덩어리마다 1절 · 후렴 · 브릿지 … 를 골라 곡에 저장 (다음부터 그대로) */
 function secTagModal(it,after){const sg=songOf(it);if(!sg)return toast("라이브러리 곡이 아니라 구간 이름을 저장할 수 없어요");const cfg={lines:(tplFor(null)||{}).lines||2};
   let {bl,tags,key}=secTagsOf(it,cfg);const list=h("div",{class:"sec-list"});
-  const draw=()=>list.replaceChildren(...bl.map((b,i)=>h("div",{class:"sec-row"},h("select",{"aria-label":`${i+1}번째 덩어리 구간`,onchange:e=>{tags[i]=e.target.value;}},SEC_TAGS.map(t=>h("option",{value:t,text:`${t==="-"?"—":t} · ${SEC_NAME[t]}`,selected:tags[i]===t}))),
-    h("div",{class:"sec-txt",text:b.text.split("\n").slice(0,3).join(" / ")+(b.text.split("\n").length>3?" …":"")}))));draw();
+  /* 부르는 방식: 절 · 후렴(V · C · B) 또는 단락(A · B · C) — 인도자마다 달라서 곡마다 골라요 */
+  let mode=(sg.secTags&&sg.secTags.mode)||(tags.includes("A")?"abc":"v");
+  const modeBar=h("div",{class:"row",style:"gap:6px;align-items:center;margin:0 0 8px"});
+  const drawMode=()=>modeBar.replaceChildren(h("span",{class:"lab",style:"margin:0",text:"부르는 방식"}),...[["v","절 · 후렴 (V1 · C · B)"],["abc","단락 (A · B · C)"]].map(([k,l])=>h("button",{type:"button",class:"btn sm chipbtn","aria-pressed":String(mode===k),text:l,onclick:()=>{if(mode===k)return;mode=k;
+    tags=k==="abc"?tags.map(toAbc):guessSecTags(bl,it.title);drawMode();draw();}})));drawMode();
+  const draw=()=>list.replaceChildren(...bl.map((b,i)=>{const TG=mode==="abc"?SEC_TAGS_ABC:SEC_TAGS,NM=mode==="abc"?SEC_NAME_ABC:SEC_NAME;if(!TG.includes(tags[i]))tags[i]=mode==="abc"?toAbc(tags[i]):"V1";if(!TG.includes(tags[i]))tags[i]=TG[0];
+    return h("div",{class:"sec-row"},h("select",{"aria-label":`${i+1}번째 덩어리 구간`,onchange:e=>{tags[i]=e.target.value;}},TG.map(t=>h("option",{value:t,text:`${t==="-"?"—":t} · ${NM[t]}`,selected:tags[i]===t}))),
+    h("div",{class:"sec-txt",text:b.text.split("\n").slice(0,3).join(" / ")+(b.text.split("\n").length>3?" …":"")}));}));draw();
   const seq=parseFlowSeq(it);
   const md=modal(`🎚 구간 이름 · ${it.title}`,h("div",{class:"panel-body"},
-    h("p",{class:"hint",style:"margin:0 0 6px",text:"가사 덩어리마다 1절 · 후렴 · 브릿지를 정해 두면, 콘티에 곡 진행 순서가 있을 때 PPT가 그 순서대로 나와요. 한 번 저장하면 이 곡은 다음에도 그대로 써요."}),
+    modeBar,h("p",{class:"hint",style:"margin:0 0 6px",text:"가사 덩어리마다 1절 · 후렴 · 브릿지(또는 A · B · C)를 정해 두면, 콘티에 곡 진행 순서가 있을 때 PPT가 그 순서대로 나와요. 한 번 저장하면 이 곡은 다음에도 그대로 써요."}),
     seq.length?h("p",{class:"hint",style:"margin:0 0 6px",text:`이 콘티의 진행 순서: ${seq.map(x=>x.sec==="_"?"(빈 화면)":x.sec).join(" → ")}`}):null,
     h("p",{class:"pdf-warn",text:"⚠️ 처음 값은 앱이 짐작한 거예요. 틀린 것만 골라 고쳐 주세요."}),list),
-    [h("button",{class:"btn ghost",text:"↺ 다시 짐작",onclick:()=>{tags=guessSecTags(bl,it.title);draw();}}),h("span",{class:"spacer"}),h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),
-     h("button",{class:"btn primary",text:"저장",onclick:async()=>{const v={key,tags:tags.slice()};try{if(S.db&&!String(sg.id).startsWith("local-"))await S.db.doc(`songs/${sg.id}`).update({secTags:v});sg.secTags=v;md.close();toast("구간 이름을 저장했어요");after&&after();}catch(e){toast("저장하지 못했어요");}}})],"devedit");}
+    [h("button",{class:"btn ghost",text:"↺ 다시 짐작",onclick:()=>{tags=guessSecTags(bl,it.title);if(mode==="abc")tags=tags.map(toAbc);draw();}}),h("span",{class:"spacer"}),h("button",{class:"btn",text:"닫기",onclick:()=>md.close()}),
+     h("button",{class:"btn primary",text:"저장",onclick:async()=>{const v={key,tags:tags.slice(),...(mode==="abc"?{mode:"abc"}:{})};try{if(S.db&&!String(sg.id).startsWith("local-"))await S.db.doc(`songs/${sg.id}`).update({secTags:v});sg.secTags=v;md.close();toast("구간 이름을 저장했어요");after&&after();}catch(e){toast("저장하지 못했어요");}}})],"devedit");}
 /* 콘티 곡마다 진행 순서 PPT 상태 */
 function flowPptReport(c,cfg){return allItems(c).map(it=>{const seq=parseFlowSeq(it);if(!seq.some(x=>x.sec!=="_"))return{it,st:"none"};if(!lyricsOf(it).trim()&&!(songOf(it)&&songOf(it).ppt))return{it,st:"nolyr"};
   const r=flowArrange(it,cfg);if(!(r&&r.slides))return{it,st:"miss",miss:(r&&r.miss)||[],seq};
