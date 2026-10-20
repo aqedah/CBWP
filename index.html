@@ -7788,12 +7788,13 @@ function versionsViewer(song,startVid,vopt={}){const vs=vers(song).filter(v=>(v.
       openScoreEditor({item:IT,title:`${IT.title} · ${v.name||"악보"}`,pages:IT.pages,songId:song.id,verId:IT.verId,onDone:(pages,vid)=>{IT.pages=pages;if(vid)IT.verId=vid;markDirty();renderSetlist(P.key);draw();}});return;}
     const all=clone(vers(song));const i=all.findIndex(y=>y.vid===v.vid);if(i<0)return;
     openScoreEditor({title:`${song.title} · ${v.name||"악보"}`,pages:all[i].pages,songId:song.id,isSongDefault:true,onDone:async pages=>{const a2=clone(vers(song));const x=a2.find(y=>y.vid===v.vid);if(!x)return;x.pages=pages;if(await saveVersions(song,a2)){toast("악보를 저장했어요");cur=v;refresh();}}});};
-  const simpleCard=(label,sub,pages,on,fn)=>{const th=h("span",{class:"vthumb"});if(pages&&pages.length)getImg(pages[0].imgId).then(u=>{if(u)th.style.backgroundImage=`url("${u}")`;});else th.textContent="없음";
-    return h("div",{class:"vs-wrap"},h("div",{class:"vcard"+(on?" on":"")},h("button",{type:"button",class:"vmain",onclick:fn,"aria-pressed":String(on)},th,h("span",{class:"vtext"},h("b",{text:label}),h("small",{text:sub}),on?h("em",{text:"✓ 지금 이 콘티에 들어가는 악보"}):null))));};
+  const simpleCard=(label,sub,pages,on,fn,onDel)=>{const th=h("span",{class:"vthumb"});if(pages&&pages.length)getImg(pages[0].imgId).then(u=>{if(u)th.style.backgroundImage=`url("${u}")`;});else th.textContent="없음";
+    return h("div",{class:"vs-wrap"},h("div",{class:"vcard"+(on?" on":"")},h("button",{type:"button",class:"vmain",onclick:fn,"aria-pressed":String(on)},th,h("span",{class:"vtext"},h("b",{text:label}),h("small",{text:sub}),on?h("em",{text:"✓ 지금 이 콘티에 들어가는 악보"}):null)),
+      onDel?h("button",{type:"button",class:"btn sm ghost danger",text:"지우기",style:"align-self:center;margin-right:8px",title:"이 콘티에서 이 악보를 빼요",onclick:e=>{e.stopPropagation();if(!confirmInline(e.currentTarget,"지울까요? · 한 번 더"))return;onDel();}}):null));};
   const draw=()=>{const loose=P&&IT.pages.length&&!vs.some(v=>v.vid===IT.verId);
     const selOf=v=>P?(!loose&&IT.verId===v.vid):v===cur;
     const lab=P?{on:"✓ 지금 이 콘티에 들어가는 악보",off:"눌러서 이 콘티에 넣기"}:{on:"",off:""};
-    list.replaceChildren(...[loose?simpleCard("이 콘티에서 고친 악보",`${IT.pages.length}장 · 라이브러리에는 없는 악보예요`,IT.pages,true,()=>{}):null,
+    list.replaceChildren(...[loose?simpleCard("이 콘티에서 고친 악보",`${IT.pages.length}장 · 라이브러리에는 없는 악보예요`,IT.pages,true,()=>{},curEditable()?()=>{choose(null);toast("이 콘티에서 고친 악보를 지웠어요");}:null):null,
       ...vs.map(v=>{const isDef=(song.teamVer||{})[S.team]===v.vid;
         const card=verCard(song,v,selOf(v),canEd,()=>choose(v),()=>{if(P&&IT.verId===v.vid){const nv=vers(song).find(x=>x.vid===v.vid);if(nv&&nv.key){IT.key=nv.key;markDirty();renderSetlist(P.key);}}refresh();},
           ()=>{if(P&&IT.verId===v.vid){IT.verId="";markDirty();renderSetlist(P.key);}refresh();if(!vs.length&&!P){const m=list.closest(".modal");if(m)m.remove();}},lab);
