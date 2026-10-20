@@ -2661,7 +2661,7 @@ function layoutEditor(c,onSave){const editable=curEditable();
   const clrMarks=h("button",{type:"button",class:"btn sm ghost danger",text:"표시 모두 지우기",title:"모든 쪽의 구간 표시 · 형광펜을 한꺼번에 지워요 (되돌리기로 살릴 수 있어요)",onclick:()=>{for(const p of L.pages){p.els=p.els.filter(e=>e.type!=="hl"&&e.type!=="lbl"&&e.type!=="pen");p.els.forEach(e=>{if(e.marks)e.marks=[];});}sel.clear();commit();draw();toast("표시를 모두 지웠어요");}});
   const selAll=()=>{sel=new Set(page().els.map(e=>e.id));tool="move";draw();};
   const zoomLbl=h("span",{class:"hint",text:"100%"});const zoomBy=f=>{zoom=Math.min(5,Math.max(.4,f?zoom*f:1));zoomLbl.textContent=`${Math.round(zoom*100)}%`;fit();};
-  const fsz=h("span",{class:"hint"});const chSize=d=>{const els=selEls().filter(x=>x.type==="text");if(!els.length)return;els.forEach(e=>e.size=Math.max(2,Math.round(((e.size||5)+d)*10)/10));commit();draw();};
+  const fsz=h("span",{class:"hint",style:"display:inline-block;min-width:4.6em;text-align:center;font-variant-numeric:tabular-nums"});const chSize=d=>{const els=selEls().filter(x=>x.type==="text");if(!els.length)return;els.forEach(e=>e.size=Math.max(2,Math.round(((e.size||5)+d)*10)/10));commit();draw();};
   const forT=f=>{const els=selEls().filter(x=>x.type==="text");if(!els.length)return;f(els);commit();draw();};
   const bld=h("button",{type:"button",class:"btn sm ghost",text:"굵게",onclick:()=>forT(els=>{const v=!els[0].bold;els.forEach(e=>e.bold=v);})});
   const algn=h("button",{type:"button",class:"btn sm ghost",text:"정렬",title:"왼쪽 → 가운데 → 오른쪽",onclick:()=>forT(els=>{const v={left:"center",center:"right",right:"left"}[els[0].align||"left"];els.forEach(e=>e.align=v);})});
