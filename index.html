@@ -5254,6 +5254,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-20","🖥 예배 전체 틀: 설교 제목이 두 줄(작은 줄 + 큰 줄)인 틀은 줄마다 나눠 넣어요 (「설교 제목 줄 나누기」에서 「/」로 고쳐요) · 본문 장마다 장:절"],
   ["2026-10-20","🎚 진행 순서: A · B · C(단락) 방식도 PPT 순서대로 · 「구간 이름」에서 곡마다 「부르는 방식」을 골라요 · KEY UP은 순서 단추로"],
   ["2026-10-19","☰ 메뉴를 새로 다듬었어요 · 오른쪽으로 밀어서 닫기 · 「CBSR」 바로 가기"],
   ["2026-10-18","📝 가사 버전: 한 곡에 가사를 여러 버전으로 (새찬송가 · 통일찬송가 등) · 콘티마다 부를 버전을 골라 PPT에 써요"],
@@ -7271,7 +7272,12 @@ function previewLyricsPpt(c,prefer){if(!c)return;S.afterTplSave=null;const items
     const OPTS=[["keep","틀에 있던 곡 그대로"],["opening","여는 찬양"],["before","예배 찬양"],["special","특송"],["after","설교 후 찬양"],["opening,before","여는 + 예배 찬양"],["opening,before,after","모든 곡"],["","비우기 (이 자리 빼기)"]];
     fullBox.replaceChildren(h("div",{class:"banner",style:"margin-top:8px"},h("b",{text:"예배 전체 틀로 만들어요. "}),"순서 장은 틀 그대로 두고 날짜 · 성경봉독 · 본문 · 설교 제목 · 설교자 · 특송 · 찬양만 바꿔 넣어요. 특송은 콘티 작성에 적은 대로 들어가요. 아래 그림은 찬양 장 미리보기예요.",
       h("div",{class:"pchips",style:"margin-top:6px"},((base.full||{}).slots||[]).map((sl,i)=>h("label",{class:"row",style:"gap:4px"},h("span",{class:"hint",text:`찬양 자리 ${i+1} (${slotLbl(sl)})`}),
-        h("select",{style:"width:auto",onchange:e=>{const v=e.target.value;fmap[i]=v==="keep"?null:v?v.split(","):[];syncMem();}},OPTS.map(([v,l])=>h("option",{value:v,text:l,selected:fmap[i]===null?v==="keep":fmap[i].join(",")===v}))))))));};
+        h("select",{style:"width:auto",onchange:e=>{const v=e.target.value;fmap[i]=v==="keep"?null:v?v.split(","):[];syncMem();}},OPTS.map(([v,l])=>h("option",{value:v,text:l,selected:fmap[i]===null?v==="keep":fmap[i].join(",")===v})))))),
+      /* 설교 제목이 틀에서 두 줄(작은 줄 + 큰 줄)이면: 어디서 나눌지 「/」로 정해요 */
+      (c.sermonTitle||"").trim().split(/\s+/).length>=2?h("label",{class:"row",style:"gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap"},h("span",{class:"hint",text:"설교 제목 줄 나누기"}),
+        h("input",{type:"text",style:"flex:1;min-width:220px",value:c.sermonLines||sermonLines((c.sermonTitle||"").trim(),2).filter(Boolean).join(" / "),title:"틀의 설교 제목이 두 줄일 때 「/」 앞은 윗줄, 뒤는 아랫줄(큰 글씨)로 들어가요",
+          onchange:async e=>{const v=e.target.value.trim();c.sermonLines=v;if(c===S.cur)markDirty();else if(c.id&&S.db&&S.canWrite){try{await S.db.doc(`contis/${c.id}`).update({sermonLines:v});}catch(err){}}}}),
+        h("span",{class:"hint",text:"「/」 뒤가 아랫줄 · 틀 제목이 한 줄이면 쓰지 않아요"})):null));};
   const memHint=h("span",{class:"hint"});
   const memBtn=h("button",{class:"btn sm",title:"이 예배에서는 다음부터 이 템플릿과 찬양 자리 설정으로 열어요",onclick:async()=>{if(!S.db||!S.canWrite)return toast("팀 비밀번호를 넣은 기기에서만 기억할 수 있어요");
       const all={...prefAll()};const on=pref()&&pref().tpl===base.id&&(base.kind!=="full"||JSON.stringify(pref().slots||null)===JSON.stringify(fmap?fmap.map(v=>v==null?null:v.join(",")):null));
@@ -7319,6 +7325,10 @@ function fitMarked(xml){if(!xml.includes(FIT_MARK))return xml;
 const pText=p=>xUn([...p.matchAll(/<a:t>([^<]*)<\/a:t>|<a:t [^>]*>([^<]*)<\/a:t>|<a:br[ >\/]/g)].map(m=>m[0].startsWith("<a:br")?"\n":(m[1]??m[2]??"")).join(""));
 const PARA_RE=/<a:p>[\s\S]*?<\/a:p>/g;
 /* 한 문단의 글을 바꿔요: 첫 글자 모양(rPr)을 그대로 쓰고, 줄바꿈은 <a:br> */
+/* 한 문단 안에서 줄바꿈(Shift+Enter)으로 나뉜 제목: 줄마다 원래 글자 모양(크기)을 지켜 바꿔요 */
+function setParaKeep(p,lines){const ppr=(p.match(/^<a:p>\s*(<a:pPr[\s\S]*?<\/a:pPr>|<a:pPr[^>]*\/>)/)||[])[1]||"";const end=(p.match(/<a:endParaRPr[\s\S]*?<\/a:endParaRPr>|<a:endParaRPr[^>]*\/>/)||[""])[0];
+  const segs=p.split(/<a:br[\s>\/][\s\S]*?(?:<\/a:br>|\/>)/);const rp=segs.map(g=>(g.match(/<a:r>\s*(<a:rPr[\s\S]*?<\/a:rPr>|<a:rPr[^>]*\/>)/)||[])[1]||"");const r0=rp.find(Boolean)||"";
+  return `<a:p>${ppr}${lines.map((l,i)=>`<a:r>${rp[i]||rp[rp.length-1]||r0}<a:t>${xEsc(l)}</a:t></a:r>`).join(`<a:br>${r0}</a:br>`)}${end}</a:p>`;}
 function setPara(p,text){const ppr=(p.match(/^<a:p>\s*(<a:pPr[\s\S]*?<\/a:pPr>|<a:pPr[^>]*\/>)/)||[])[1]||"";const r1=(p.match(/<a:r>\s*(<a:rPr[\s\S]*?<\/a:rPr>|<a:rPr[^>]*\/>)/)||[])[1]||"";
   const end=(p.match(/<a:endParaRPr[\s\S]*?<\/a:endParaRPr>|<a:endParaRPr[^>]*\/>/)||[""])[0];
   const runs=String(text).split("\n").map(l=>`<a:r>${r1}<a:t>${xEsc(l)}</a:t></a:r>`).join(r1?`<a:br>${r1}</a:br>`:"<a:br/>");return `<a:p>${ppr}${runs}${end}</a:p>`;}
@@ -7369,7 +7379,11 @@ async function fullAnalyze(zip){const rd=async p=>{const f=zip.file(p);return f?
       for(let i=ref.i;i<Math.min(order.length,ref.i+12);i++){const s=order[i].sps.find(hit);if(s){if(body.length&&body[body.length-1].i!==i-1)break;const n=normV(s.t);body.push({i,s,nv:Math.max(1,old.filter(v=>n.includes(v.slice(0,10))).length)});}else if(body.length)break;}}}
   let sermon=null;order.forEach((o,i)=>{if(sermon||o.sps.some(s=>/축\s*도|benediction/i.test(s.t)))return;const pr=o.sps.flatMap(s=>s.ps).find(p=>/^[가-힣\s]{2,12}(담임)?\s*(목사|전도사|강도사|선교사)$/.test(p.t));if(!pr)return;
     const all=o.sps.flatMap(s=>s.ps).filter(p=>p!==pr);const q=all.find(p=>/^[“"'‘].+[”"'’]$/.test(p.t));
-    const big=all.filter(p=>!/설교|sermon|말씀|교회$|^\d+$/i.test(p.t)).sort((a,b)=>b.sz-a.sz)[0];const tt=q?q.t.slice(1,-1).trim():big&&big.t;if(tt)sermon={i,title:tt,preacher:pr.t};});
+    const big=all.filter(p=>!/설교|sermon|말씀|교회$|^\d+$/i.test(p.t)).sort((a,b)=>b.sz-a.sz)[0];const tt=q?q.t.slice(1,-1).trim():big&&big.t;
+    /* 제목이 여러 줄(작은 줄 + 큰 줄)로 나뉘어 있으면 줄마다 따로 바꿔요 */
+    const home=q||!big?null:o.sps.find(sx=>sx.ps.includes(big));
+    const parts=home?home.ps.filter(p=>p.t.trim()&&p!==pr&&!REF_RE.test(p.t)&&!DATE_RE.test(p.t)&&p.t.length<=40).map(p=>p.t.trim()):[];
+    if(tt)sermon={i,title:tt,preacher:pr.t,parts:parts.length>=2&&parts.length<=3&&parts.includes(tt.trim())?parts:null};});
   /* 특송 안내 장: 「특송」 글자와 곡 제목(“곡” - 하는 사람) */
   let special=null;order.forEach((o,i)=>{if(special)return;const ps=o.sps.flatMap(s=>s.ps);if(!ps.some(p=>/^특\s*송$/.test(p.t)))return;const q=ps.find(p=>!/^특\s*송$/.test(p.t)&&p.t.length<=60);special={i,line:q?q.t:null};});
   return{order,lsz,lines,slots,dates,ref:ref&&{i:ref.i,str:ref.str,ko:ref.ko},body,sermon,special};}
@@ -7384,6 +7398,11 @@ function fullSlotMap(starts,ser,c,lens,sp){lens=lens||starts.map(()=>1);const n=
   const oIdx=has("opening")&&pre.length>1?pre[0]:null;const bIdx=pre.length?big(oIdx===null?pre:pre.slice(1)):0;const aIdx=post.length?post[0]:(ser<0&&n>1?n-1:bIdx);
   const put=(i,k)=>{if(!has(k))return;m[i]=(m[i]||[]).concat(k);};
   put(oIdx===null?bIdx:oIdx,"opening");if(oIdx===null&&m[bIdx]){m[bIdx]=["opening"];}m[bIdx]=(m[bIdx]||[]).concat("before");put(aIdx,"after");if(sIdx<0&&has("special"))put(bIdx,"special");return m;}
+/* 설교 제목을 틀의 줄 수(n)에 맞춰 나눠요 · 직접 나눈 값(「앞 / 뒤」)이 있으면 그대로, 없으면 마지막 어절(서술어)을 아래 큰 줄로 */
+function sermonLines(T,n,manual){const m=String(manual||"").split("/").map(x=>x.trim());if(manual&&m.length>=2&&m.join(" ").replace(/\s+/g,"")===T.replace(/\s+/g,"")){while(m.length>n)m.splice(m.length-2,2,m[m.length-2]+" "+m[m.length-1]);while(m.length<n)m.unshift("");return m;}
+  const w=T.split(/\s+/).filter(Boolean);if(w.length<2||T.replace(/\s/g,"").length<=9){/* 짧은 제목은 나누지 않고 아랫줄(큰 줄) 하나로 */const out=new Array(n).fill("");out[n-1]=T;return out;}
+  let k=w.length-1;if(w[k].replace(/[.!?。]/g,"").length<=2&&k>1)k--;/* 「~다.」처럼 아주 짧으면 앞 어절까지 */
+  const out=new Array(n).fill("");out[n-1]=w.slice(k).join(" ");out[n-2]=w.slice(0,k).join(" ");return out;}
 /* 성경 본문을 장마다 나눠요 (틀의 본문 장과 같은 모양 · 길이) */
 function verseSlides(rows,proto,per){per=per||99;const numbered=/^\s*\d+\s*[.)]/.test(proto.t);const plines=proto.t.split("\n");const avg=plines.length>1?Math.max(10,Math.round(plines.reduce((n,l)=>n+l.length,0)/plines.length)):0;
   const cap=Math.max(40,Math.round(proto.t.replace(/\n/g,"").length*1.15));
@@ -7425,7 +7444,10 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
     if(A.special&&i===A.special.i&&A.special.line){const sp=(c.special||[])[0];const by0=(c.specialBy||"").trim();if(!sp&&by0)x=editPara(x,t=>t.trim()===A.special.line?by0:null);if(sp){const by=by0;const m=A.special.line.match(/^\s*([“"'‘])(.*?)([”"'’])\s*(?:([-–—])\s*(.*))?$/);
       const nl=m?`${m[1]}${sp.title}${m[3]}${by?` ${m[4]||"-"} ${by}`:""}`:`"${sp.title}"${by?` - ${by}`:""}`;x=editPara(x,t=>t.trim()===A.special.line?nl:null);}}
     if(A.sermon&&i===A.sermon.i){const T=(c.sermonTitle||"").trim(),P=(c.preacher||"").trim();
-      x=editPara(x,t=>{const tt=t.trim();if(T&&(tt===A.sermon.title||tt.replace(/^[“"'‘]|[”"'’]$/g,"").trim()===A.sermon.title))return t.replace(A.sermon.title,T);
+      if(T&&!A.sermon.parts&&A.sermon.title.includes("\n")){const n=A.sermon.title.split("\n").length;const LN=sermonLines(T,n,c.sermonLines);
+        x=x.replace(PARA_RE,p=>pText(p).trim()===A.sermon.title.trim()?FIT_MARK+setParaKeep(p,LN):p);}
+      const PT=A.sermon.parts;let pi=0;const LN=PT&&T?sermonLines(T,PT.length,c.sermonLines):null;
+      x=editPara(x,t=>{const tt=t.trim();if(LN&&pi<PT.length&&tt===PT[pi]){const v=LN[pi++];return v||" ";}if(T&&(tt===A.sermon.title||tt.replace(/^[“"'‘]|[”"'’]$/g,"").trim()===A.sermon.title))return t.replace(A.sermon.title,T);
         if(P&&tt===A.sermon.preacher){const sp=/^([가-힣] ){2,}/.test(tt);const nm=P.replace(/\s*(담임)?\s*(목사|전도사|강도사|선교사)\s*$/,"");if(nm.replace(/\s/g,"")===tt.replace(/\s*(담임)?\s*(목사|전도사|강도사|선교사)\s*$/,"").replace(/\s/g,""))return null;const role=(P.match(/(목사|전도사|강도사|선교사)\s*$/)||tt.match(/((담임)?\s*(목사|전도사|강도사|선교사))$/)||["","목사"])[1];
           return sp?`${nm.replace(/\s/g,"").split("").join(" ")} ${role}`:(/담임/.test(tt)&&!/(목사|전도사|강도사|선교사)\s*$/.test(P)?`${nm} 담임목사`:`${nm} ${role}`);}return null;});}
     return x;};
