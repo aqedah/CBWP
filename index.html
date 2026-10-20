@@ -894,6 +894,14 @@ table.t.ctr td,table.t.ctr td.n,table.t.ctr thead th{text-align:center}.t.ctr th
 
 <script>
 "use strict";
+/* Firestore는 「배열 안의 배열」(펜 그림 점 [[x,y],…])을 저장하지 못해요 → 저장할 때 안쪽 배열을 {__a:[…]}로 싸고, 읽을 때 다시 풀어요 */
+const FS_NA=v=>Array.isArray(v)?v.map(x=>Array.isArray(x)?{__a:FS_NA(x)}:FS_NA(x)):v&&typeof v==="object"&&Object.getPrototypeOf(v)===Object.prototype?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,FS_NA(x)])):v;
+const FS_UNA=v=>Array.isArray(v)?v.map(x=>x&&typeof x==="object"&&!Array.isArray(x)&&Array.isArray(x.__a)&&Object.keys(x).length===1?FS_UNA(x.__a):FS_UNA(x)):v&&typeof v==="object"&&Object.getPrototypeOf(v)===Object.prototype?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,FS_UNA(x)])):v;
+try{const F=window.firebase&&window.firebase.firestore;if(F&&F.DocumentReference&&!F.__na){F.__na=true;
+  const wrapW=(proto,name,argIdx)=>{if(!proto||!proto[name])return;const o=proto[name];proto[name]=function(...a){if(a[argIdx]&&typeof a[argIdx]==="object")a[argIdx]=FS_NA(a[argIdx]);return o.apply(this,a);};};
+  wrapW(F.DocumentReference.prototype,"set",0);wrapW(F.DocumentReference.prototype,"update",0);wrapW(F.CollectionReference&&F.CollectionReference.prototype,"add",0);
+  wrapW(F.WriteBatch&&F.WriteBatch.prototype,"set",1);wrapW(F.WriteBatch&&F.WriteBatch.prototype,"update",1);wrapW(F.Transaction&&F.Transaction.prototype,"set",1);wrapW(F.Transaction&&F.Transaction.prototype,"update",1);
+  for(const C of [F.DocumentSnapshot,F.QueryDocumentSnapshot])if(C&&C.prototype&&C.prototype.data&&!C.prototype.data.__na){const od=C.prototype.data;const nd=function(...a){const d=od.apply(this,a);return d===undefined?d:FS_UNA(d);};nd.__na=true;C.prototype.data=nd;}}}catch(e){console.warn("FS_NA",e);}
 /* ---------- constants ---------- */
 const WTYPES=["주일2부예배","주일오후예배","신년 주일","사순절","종려주일","고난주간","부활절","어린이주일","어버이주일","교사주일","맥추감사주일","좋은만남의축제","추수감사주일","대림절","성탄절","송구영신예배","동계수련회","하계수련회","특별새벽기도회","금요기도회","직접쓰기"];
 const POSITIONS=["인도자","싱어","드럼","베이스","일렉","어쿠스틱","메인건반","세컨건반","PPT","음향"];
@@ -3617,7 +3625,8 @@ async function saveConti(mode){if(!curEditable())return;const c=S.cur;
     if(!S.curId){const ref=S.db.collection("contis").doc();body.authorId=S.myId||null;body.authorName=myName()||"";body.createdAt=Date.now();await ref.set(body);S.curId=ref.id;S.cur=body;}
     else{const old=S.contis.find(x=>x.id===S.curId);body.authorId=old?.authorId??c.authorId??S.myId??null;body.authorName=old?.authorName||c.authorName||(body.authorId===S.myId?myName():S.names[body.authorId])||"";body.createdAt=old?.createdAt||c.createdAt||Date.now();await S.db.doc(`contis/${S.curId}`).set(body);S.cur=body;}
     if(S.cur.shareId)publishShare(S.cur);H.owner=S.cur;H.last=JSON.stringify(S.cur);S.dirty=false;S.autoNote="";saveDraft();toast("저장했어요. 팀원 모두에게 보여요.");render();rememberFlows(S.cur);
-  }catch(e){toast(e&&e.code==="invalid_argument"?"저장 권한이 없어요":"저장하지 못했어요. 다시 눌러 주세요.");btn.disabled=false;btn.textContent="저장";}}
+  }catch(e){console.error("saveConti",e);const msg=String(e&&e.message||"");const kb=Math.round(JSON.stringify(FS_NA(body)).length/1024);
+    toast(e&&e.code==="permission-denied"?"저장 권한이 없어요 · 팀 비밀번호를 다시 넣어 주세요":/exceeds the maximum|too large|size/i.test(msg)||kb>950?`콘티가 너무 커서(${kb}KB) 저장하지 못했어요 · 자유롭게 편집의 펜 그림이나 악보 수를 줄여 주세요`:"저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.",5000);btn.disabled=false;btn.textContent="저장";}}
 /* is there really unsaved work in the write tab? (empty drafts and drafts identical to the saved conti don't count) */
 const draftSig=c=>JSON.stringify([c.date,c.wtype,c.wtypeCustom||"",c.sermonTitle||"",c.passage||"",c.preacher||"",c.memo||"",
   (c.roster||[]).map(r=>[r.pos,(r.people||[]).map(p=>p.name)]).filter(r=>r[1].length),...SECTIONS.map(([k])=>(c[k]||[]).map(i=>[i.title,i.key||"",i.yt||"",(i.pages||[]).length]))]);
