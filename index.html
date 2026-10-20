@@ -7419,7 +7419,9 @@ async function buildFullPpt(blob,c,tpl,slotMap,onSt){await loadScript(JSZIP_URL)
     return c1===c2?`${bk} ${c1}:${v1}${v2!==v1?`-${v2}`:""}`:`${bk} ${c1}:${v1}-${c2}:${v2}`;};
   const fix=(xml,i,vs)=>{let x=xml;const nr=vs?refOf(vs):newRef;
     if(d)x=editPara(x,t=>DATE_RE.test(t)?t.replace(DATE_RE,(m,y,a,mo,b2,da,e)=>`${d.getFullYear()}${a}${mo.length===2?String(d.getMonth()+1).padStart(2,"0"):d.getMonth()+1}${b2}${da.length===2?String(d.getDate()).padStart(2,"0"):d.getDate()}${e||""}`):null);
-    if(A.ref&&nr)x=editPara(x,t=>t.includes(A.ref.str)?t.replace(A.ref.str,nr).replace(/\s*\((구약|신약)\s*p\.?\s*\d+\)/,""):null);
+    if(A.ref&&nr)x=editPara(x,t=>t.includes(A.ref.str)?t.replace(A.ref.str,nr).replace(/\s*\((구약|신약)\s*p\.?\s*\d+\)/,""):
+      /* 본문 장: 틀에 적힌 장소가 성경봉독 장소와 달라도(예: 장마다 「사도행전 11:19」) 그 장에 나온 절로 바꿔요 */
+      vs&&REF_RE.test(t)&&t.replace(REF_RE,"").trim().length<=12?t.replace(REF_RE,nr).replace(/\s*\((구약|신약)\s*p\.?\s*\d+\)/,""):null);
     if(A.special&&i===A.special.i&&A.special.line){const sp=(c.special||[])[0];const by0=(c.specialBy||"").trim();if(!sp&&by0)x=editPara(x,t=>t.trim()===A.special.line?by0:null);if(sp){const by=by0;const m=A.special.line.match(/^\s*([“"'‘])(.*?)([”"'’])\s*(?:([-–—])\s*(.*))?$/);
       const nl=m?`${m[1]}${sp.title}${m[3]}${by?` ${m[4]||"-"} ${by}`:""}`:`"${sp.title}"${by?` - ${by}`:""}`;x=editPara(x,t=>t.trim()===A.special.line?nl:null);}}
     if(A.sermon&&i===A.sermon.i){const T=(c.sermonTitle||"").trim(),P=(c.preacher||"").trim();
