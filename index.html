@@ -693,7 +693,7 @@ body.sidenav .pcside .pinfo,body.sidenav .pcside .grid{grid-template-columns:1fr
 .fe{display:flex;flex-direction:column;gap:8px}
 .fe-strip{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);min-height:44px}
 .fe-tok{font:inherit;font-weight:800;font-size:.95rem;color:#1d3fb3;background:var(--sheet);border:1px solid color-mix(in srgb,#1d3fb3 30%,var(--line));border-radius:8px;padding:3px 9px;cursor:pointer}
-.fe-tok.on{background:#1d3fb3;color:#fff;border-color:#1d3fb3}.fe-tok.over{box-shadow:0 0 0 2px var(--accent)}.fe-tok:disabled{cursor:default}
+.fe-tok.on{background:#1d3fb3;color:#fff;border-color:#1d3fb3}.fe-tok.over{box-shadow:0 0 0 2px var(--accent)}.fe-tok{touch-action:none;user-select:none}.fe-tok.dragging{opacity:.45}.fe-ins{position:absolute;width:3px;border-radius:2px;background:var(--accent);pointer-events:none}.fe-strip{position:relative}.fe-tok:disabled{cursor:default}
 .fe-arr{color:var(--muted);font-weight:700}
 .fe-tools{gap:6px;flex-wrap:wrap;align-items:center}.fe-btns{display:flex;flex-direction:column;gap:6px}.fe-in{flex:none;min-width:0;max-width:100%}
 .fe-text>summary{cursor:pointer}
@@ -3152,11 +3152,16 @@ function flowEditor(it,{editable=true,onChange,compact=false,onEdit,store}={}){l
   function draw(){const a=toks();const strip=h("div",{class:"fe-strip"+(a.length?"":" empty")});
     if(!a.length)strip.append(h("span",{class:"hint",text:"아래 단추를 순서대로 누르세요 (Intro → V1 → C …)"}));
     a.forEach((t,i)=>{if(i)strip.append(h("span",{class:"fe-arr","aria-hidden":"true",text:"→"}));
-      const chip=h("button",{type:"button",class:"fe-tok"+(i===sel?" on":""),draggable:editable,title:editable?"눌러서 고르기 · 끌어서 옮기기":"",disabled:!editable,onclick:()=>{sel=sel===i?null:i;inp.value=sel!=null?a[i]:"";fromSel=sel!=null;draw();},text:t});
-      chip.addEventListener("dragstart",e=>{drag=i;e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",String(i));}catch(_){}});
-      chip.addEventListener("dragover",e=>{if(drag!=null){e.preventDefault();chip.classList.add("over");}});chip.addEventListener("dragleave",()=>chip.classList.remove("over"));
-      chip.addEventListener("drop",e=>{e.preventDefault();chip.classList.remove("over");if(drag==null||drag===i)return;const b=toks();const [x]=b.splice(drag,1);b.splice(i,0,x);drag=null;save(b,i);});
-      chip.addEventListener("dragend",()=>{drag=null;});
+      const chip=h("button",{type:"button",class:"fe-tok"+(i===sel?" on":""),"data-i":i,title:editable?"눌러서 고르기 · 끌어서 옮기기":"",disabled:!editable,onclick:()=>{if(Date.now()-(S._feDragEnd||0)<250)return;sel=sel===i?null:i;inp.value=sel!=null?a[i]:"";fromSel=sel!=null;draw();},text:t});
+      /* 끌어서 순서 바꾸기 (손가락 · 마우스 모두): 놓는 자리 앞에 세로 막대가 보여요 */
+      if(editable)chip.addEventListener("pointerdown",e=>{if(e.button)return;const x0=e.clientX,y0=e.clientY;let on=false,to=null;const mark=h("span",{class:"fe-ins"});
+        const where=ev=>{const cs=[...strip.querySelectorAll(".fe-tok")];let best=null;for(const c of cs){const r=c.getBoundingClientRect();if(ev.clientY<r.top-8||ev.clientY>r.bottom+8)continue;const k=+c.dataset.i;if(ev.clientX<r.left+r.width/2){if(!best||r.left<best.r.left)best={k,r,before:true};}}
+          if(!best){const row=cs.filter(c=>{const r=c.getBoundingClientRect();return ev.clientY>=r.top-8&&ev.clientY<=r.bottom+8;});const last=row[row.length-1]||cs[cs.length-1];if(!last)return null;best={k:+last.dataset.i+1,r:last.getBoundingClientRect(),before:false};}return best;};
+        const mv=ev=>{if(!on){if(Math.abs(ev.clientX-x0)+Math.abs(ev.clientY-y0)<6)return;on=true;chip.classList.add("dragging");strip.append(mark);}ev.preventDefault();const w=where(ev);if(!w)return;to=w.k;
+          const sr=strip.getBoundingClientRect();mark.style.left=((w.before?w.r.left-6:w.r.right+3)-sr.left)+"px";mark.style.top=(w.r.top-sr.top)+"px";mark.style.height=w.r.height+"px";};
+        const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);mark.remove();chip.classList.remove("dragging");
+          if(!on||to==null)return;S._feDragEnd=Date.now();let dst=to>i?to-1:to;if(dst===i)return;const b=toks();const [x]=b.splice(i,1);b.splice(dst,0,x);save(b,dst);inp.value=b[dst];fromSel=true;};
+        window.addEventListener("pointermove",mv,{passive:false});window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});
       if(editable&&i===sel)strip.append(h("span",{class:"fe-tokw"},chip,h("button",{type:"button",class:"fe-x","aria-label":`「${t}」 지우기`,title:"이 조각 지우기",text:"✕",onclick:()=>{const b=toks();b.splice(i,1);save(b,null);inp.value="";}})));
       else strip.append(chip);});
     const selOn=sel!=null&&sel<a.length;
