@@ -2656,10 +2656,17 @@ function layoutEditor(c,onSave){const editable=curEditable();
       paint();});
     cv.addEventListener("pointerup",()=>{d=null;});paint();
     /* 처음엔 악보 전체가 한눈에 들어오게 줄여 보여요 · 「🔍 크게」로 키워서 세밀하게 */
-    let big=false;const fit=()=>{cv.style.maxWidth=big?"none":"100%";cv.style.maxHeight=big?"none":"calc(100dvh - 230px)";cv.style.width=big?Math.round(img.naturalWidth*1)+"px":"auto";cv.style.height="auto";zB.textContent=big?"🔍 전체 보기":"🔍 크게";};
-    const zB=h("button",{class:"btn",onclick:()=>{big=!big;fit();}});fit();
-    const cm=modal("자르기 · 모서리 점을 끌거나 남길 부분을 네모로 끄세요",h("div",{class:"panel-body"},h("div",{style:"overflow:auto;max-height:calc(100dvh - 200px)"},cv)),[zB,h("span",{class:"spacer"}),h("button",{class:"btn",text:"원래대로",onclick:()=>{r={x:0,y:0,w:1,h:1};paint();}}),
-      h("button",{class:"btn primary",text:"자르기",onclick:()=>{if(r.w<.02||r.h<.02)return toast("조금 더 크게 잡아 주세요");/* 악보 글씨 크기(배율)는 그대로, 보이는 부분만 바꿔요 */const oc=e.crop||{x:0,y:0,w:1,h:1};const k=e.w/(oc.w*img.naturalWidth);e.crop=r;e.w=r.w*img.naturalWidth*k;e.h=r.h*img.naturalHeight*k;commit();cm.close();draw();}})],"editor");});};
+    /* 배율: 처음엔 「맞춤」(악보 전체가 한눈에) · − / + 로 조금씩 · Ctrl+휠로도 */
+    const ZS=[.5,.75,1,1.25,1.5,2,2.5,3,4];let zi=2;const scr=h("div",{style:"overflow:auto;max-height:calc(100dvh - 200px);padding:10px"},cv);
+    const fitW=()=>{const aw=Math.max(200,(scr.clientWidth||innerWidth*.8)-24),ah=Math.max(200,innerHeight-240);return Math.min(aw,img.naturalWidth*ah/img.naturalHeight);};
+    const zL=h("span",{class:"hint",style:"min-width:3.6em;text-align:center;font-variant-numeric:tabular-nums"});
+    const fit=()=>{cv.style.maxWidth="none";cv.style.maxHeight="none";cv.style.width=Math.round(fitW()*ZS[zi])+"px";cv.style.height="auto";zL.textContent=`${Math.round(ZS[zi]*100)}%`;zm.disabled=zi<=0;zp.disabled=zi>=ZS.length-1;paint();};
+    const zm=h("button",{class:"btn sm",text:"−",title:"작게",onclick:()=>{zi=Math.max(0,zi-1);fit();}}),zp=h("button",{class:"btn sm",text:"+",title:"크게",onclick:()=>{zi=Math.min(ZS.length-1,zi+1);fit();}});
+    const zf=h("button",{class:"btn sm ghost",text:"맞춤",title:"악보 전체가 한눈에",onclick:()=>{zi=2;fit();}});
+    scr.addEventListener("wheel",ev=>{if(!(ev.ctrlKey||ev.metaKey))return;ev.preventDefault();zi=Math.max(0,Math.min(ZS.length-1,zi+(ev.deltaY<0?1:-1)));fit();},{passive:false});
+    const zBar=h("span",{class:"row",style:"gap:4px;align-items:center"},h("span",{class:"hint",text:"배율"}),zm,zL,zp,zf);
+    const cm=modal("자르기 · 모서리 점을 끌거나 남길 부분을 네모로 끄세요",h("div",{class:"panel-body"},scr),[zBar,h("span",{class:"spacer"}),h("button",{class:"btn",text:"원래대로",onclick:()=>{r={x:0,y:0,w:1,h:1};paint();}}),
+      h("button",{class:"btn primary",text:"자르기",onclick:()=>{if(r.w<.02||r.h<.02)return toast("조금 더 크게 잡아 주세요");/* 악보 글씨 크기(배율)는 그대로, 보이는 부분만 바꿔요 */const oc=e.crop||{x:0,y:0,w:1,h:1};const k=e.w/(oc.w*img.naturalWidth);e.crop=r;e.w=r.w*img.naturalWidth*k;e.h=r.h*img.naturalHeight*k;commit();cm.close();draw();}})],"editor");requestAnimationFrame(fit);});};
   /* 도구 막대 */
   const paperSel=h("select",{style:"width:auto","aria-label":"종이",disabled:!editable,onchange:ev=>{const np=ev.target.value;const o=P(),n2=PAPER[np];const k=Math.min(n2.w/o.w,n2.h/o.h);
       /* 같은 비율로 줄이거나 늘리고 가운데로 */const ox=(n2.w-o.w*k)/2,oy=(n2.h-o.h*k)/2;
