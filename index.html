@@ -2537,7 +2537,8 @@ function layoutEditor(c,onSave){const editable=curEditable();
         t.addEventListener("blur",()=>{e.text=t.innerText.replace(/\n$/,"");editing=null;commit();draw();});t.addEventListener("pointerdown",ev=>ev.stopPropagation());}}
     const selOne=sel.size===1&&sel.has(e.id)&&editable;
     /* 크기 손잡이: 네 모서리 + 네 변 — 어느 쪽으로든 키우고 줄여요 */
-    if(selOne)n.append(...["tl","t","tr","l","r","bl","b","br"].map(k=>h("div",{class:"ly-h "+k,"data-h":k})));
+    /* 작은 것(구간 표시 · 작은 글상자)은 손잡이가 몸통을 덮지 않게 오른쪽 아래 하나만 — 몸통을 끌면 옮겨져요 */
+    if(selOne){const small=e.w*sc<70||e.h*sc<44||e.type==="lbl";n.append(...(small?["br"]:["tl","t","tr","l","r","bl","b","br"]).map(k=>h("div",{class:"ly-h "+k,"data-h":k})));}
     /* ✕ 바로 지우기: 눌러서 고른 것에만 · 되돌리기(↶)로 살릴 수 있어요 */
     if(selOne){
       const x=h("button",{type:"button",class:"ly-x","aria-label":"지우기",title:"지우기 (↶로 되돌릴 수 있어요)",text:"✕"});
@@ -2575,12 +2576,13 @@ function layoutEditor(c,onSave){const editable=curEditable();
         const np=pts.map(q=>{const r=[Math.round((q[0]-x0)/w*10000)/10000,Math.round((q[1]-y0)/hh*10000)/10000];if(q[2]!=null)r.push(q[2]);return r;});
         page().els.push({id:uid(6),type:"pen",x:x0,y:y0,w,h:hh,pts:np,color:penColor,lw:penW});commit();draw();};
       window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);return;}
+    let grab=false;/* 구간 표시 · 형광펜 도구 중에도 이미 붙인 것을 끌면 옮겨져요 */
     if(tool==="lbl"||tool==="hl"){if(ev.target.closest(".ly-x"))return;const hitN=ev.target.closest(".ly-el");const hit=hitN&&page().els.find(z=>z.id===hitN.dataset.id);
-      if(hit&&(hit.type==="lbl"||hit.type==="hl")){ev.preventDefault();sel.clear();sel.add(hit.id);draw();return;}
-      if(sel.size){sel.clear();draw();}}
-    if(tool==="lbl"){ev.preventDefault();const a=ptMM(ev);const t=(lblCustom||lblText||"").trim();if(!t)return toast("붙일 이름표를 고르거나 쓰세요");const sz=4;const w=Math.max(8,t.length*sz*.62+3),hh=sz*1.5;
+      if(hit&&(hit.type==="lbl"||hit.type==="hl"))grab=true;
+      else if(sel.size){sel.clear();draw();}}
+    if(tool==="lbl"&&!grab){ev.preventDefault();const a=ptMM(ev);const t=(lblCustom||lblText||"").trim();if(!t)return toast("붙일 이름표를 고르거나 쓰세요");const sz=4;const w=Math.max(8,t.length*sz*.62+3),hh=sz*1.5;
       const e={id:uid(6),type:"lbl",x:a.x,y:a.y-hh/2,w,h:hh,text:t,size:sz};page().els.push(e);S.lyLbl=Date.now();commit();draw();return;}
-    if(tool==="hl"){ev.preventDefault();const a=ptMM(ev);const e={id:uid(6),type:"hl",x:a.x,y:a.y,w:.1,h:.1,color:hlColor};page().els.push(e);const nd=elNode(e);sheet.append(nd);
+    if(tool==="hl"&&!grab){ev.preventDefault();const a=ptMM(ev);const e={id:uid(6),type:"hl",x:a.x,y:a.y,w:.1,h:.1,color:hlColor};page().els.push(e);const nd=elNode(e);sheet.append(nd);
       const mv=me=>{const b=ptMM(me);e.x=Math.min(a.x,b.x);e.y=Math.min(a.y,b.y);e.w=Math.abs(b.x-a.x);e.h=Math.abs(b.y-a.y);Object.assign(nd.style,{left:`${e.x*sc}px`,top:`${e.y*sc}px`,width:`${e.w*sc}px`,height:`${e.h*sc}px`});};
       const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);if(e.w<1.5||e.h<1){page().els.splice(page().els.indexOf(e),1);}else commit();draw();};
       window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);return;}
