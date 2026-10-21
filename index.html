@@ -3847,9 +3847,11 @@ function openScoreEditor({title,pages,songId,verId,onDone,isSongDefault,item,nav
     el.dataset.i=mi;return el;}
   const pt=e=>{const r=stage.getBoundingClientRect();return{x:Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y:Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))};};
   let drag=null;
-  stage.addEventListener("pointerdown",e=>{if(!editable||curTool()==="view")return;const p=E.pages[E.cur];if(!p||!stage.querySelector("img"))return;const at=pt(e);const mkEl=e.target.closest(".mk");
+  /* 진행 순서 탭에서도 붙여 둔 이름표 · 형광펜은 끌어 옮기고 눌러 지울 수 있어요 (새로 붙이는 것만 막아요 — 악보를 넘기다 잘못 붙지 않게) */
+  stage.addEventListener("pointerdown",e=>{if(!editable)return;const viewOnly=curTool()==="view";const p=E.pages[E.cur];if(!p||!stage.querySelector("img"))return;const at=pt(e);const mkEl=e.target.closest(".mk");
     if(e.target.closest(".mkdel"))return;hideDel();
-    if(mkEl){const mk=p.marks[+mkEl.dataset.i];push();drag={kind:"move",el:mkEl,mk,i:+mkEl.dataset.i,ox:at.x-mk.x,oy:at.y-mk.y,sx:e.clientX,sy:e.clientY,moved:false};try{stage.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();return;}
+    if(mkEl){const mk=p.marks[+mkEl.dataset.i];if(!mk)return;push();drag={kind:"move",el:mkEl,mk,i:+mkEl.dataset.i,ox:at.x-mk.x,oy:at.y-mk.y,sx:e.clientX,sy:e.clientY,moved:false};try{stage.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();return;}
+    if(viewOnly)return;
     /* 이름표는 「톡」 눌렀을 때만 붙여요 (손가락으로 밀면 악보가 위아래로 움직여요) */
     if(E.tool==="label"){tapAt={id:e.pointerId,x:e.clientX,y:e.clientY,at};return;}
     if(E.tool==="hl"){const v=E.verse;const tmp=h("div",{class:"mk hl",style:`background:${VCOL[v-1]}`});stage.append(tmp);
