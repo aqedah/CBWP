@@ -682,7 +682,7 @@ body.sidenav header.top .homelink{display:none}body.sidenav .brand{padding-right
 .sn-brand{display:flex;align-items:center;gap:8px;border:0;background:none;padding:2px 6px 10px;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}.sn-brand img{height:30px;width:auto}.sn-brand span{display:flex;flex-direction:column;line-height:1.15;font-family:var(--font-display)}.sn-brand b{font-size:.82rem;font-weight:700}.sn-brand span span{font-size:.74rem;color:var(--ink2)}
 body.sidenav .sn-team{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;border:0;cursor:pointer;font:inherit;font-weight:800;font-size:.9rem;color:#fff;background:var(--team,var(--accent));border-radius:10px;padding:8px 12px;margin:0 0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sidenav-bar>*{flex:none}.sn-items{display:flex;flex-direction:column;gap:3px;flex:1 0 auto}
-.sn-foot{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line);margin-top:12px}.sn-foot a,.sn-foot .lockchip{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink2);text-decoration:none;justify-content:flex-start;width:100%}.sn-foot svg{width:18px;height:18px}
+.sn-link{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:10px;background:none;font:inherit;font-size:.85rem;font-weight:600;color:var(--ink2);text-decoration:none;cursor:pointer;text-align:left}.sn-link:hover{background:var(--soft);color:var(--ink)}.sn-link .mi-ic{flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}.sn-link .mi-ic svg{width:16px;height:16px}.sn-lt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sn-go{color:var(--muted);flex:none}#topLinks .sn-link{width:auto;padding:3px 8px 3px 3px;font-size:.8rem;gap:6px;border:1px solid var(--line);border-radius:999px;background:var(--sheet)}@media (max-width:1280px){#topLinks .sn-lt{display:none}#topLinks .sn-link{padding:3px}}#topLinks .sn-link .mi-ic{width:24px;height:24px}#topLinks .sn-go{display:none}#topLinks:has(.sn-link){display:flex;flex-wrap:wrap;gap:4px;align-items:center}.sn-foot{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line);margin-top:12px}.sn-foot a,.sn-foot .lockchip{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink2);text-decoration:none;justify-content:flex-start;width:100%}.sn-foot svg{width:18px;height:18px}
 .pcgrid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
 .pccol{display:flex;flex-direction:column;gap:16px;min-width:0}
 body.sidenav .dashgrid{grid-template-columns:minmax(0,1fr) 380px;gap:20px}
@@ -1452,9 +1452,10 @@ function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
     h("button",{type:"button",class:"lockchip",title:"팀 비밀번호를 넣으면 콘티를 쓸 수 있어요",text:"🔒 보기 전용",onclick:()=>unlockModal(S.team)}));
   if(S.team&&isPhone())nm.append(h("button",{type:"button",class:"lockchip modechip",title:isLite()?"콘티 쓰기 · 악보 편집 · PPT까지 모든 기능을 써요":"보기 중심의 간단한 휴대폰 화면으로",text:isLite()?"💻 PC 화면":"📱 휴대폰 화면",onclick:()=>setPcMode(isLite())}));
   if(S.team&&window.CBWP&&S.canWrite)nm.append(DEMO?h("button",{type:"button",class:"lockchip",text:"체험판 나가기",onclick:()=>{location.href=location.pathname;}}):h("button",{type:"button",class:"lockchip",title:"이 기기에서 로그아웃",text:"로그아웃",onclick:logoutModal}));
-  const ytIcon=()=>{const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");sv.setAttribute("viewBox","0 0 24 24");sv.innerHTML='<rect x="2" y="5" width="20" height="14" rx="4" fill="#e1251b"/><path d="M10 9l5 3-5 3z" fill="#fff"/>';return sv;};
-  const inst=!isStandalone()?h("button",{type:"button",class:"lockchip instchip",title:IN_KAKAO?"브라우저로 열기":"홈 화면에 앱처럼 추가해요","aria-label":IN_KAKAO?"브라우저로 열기":"홈 화면에 추가",onclick:installHelp},h("span",{text:IN_KAKAO?"🌐":"📲"}),h("span",{class:"instlabel",text:IN_KAKAO?" 브라우저로 열기":" 홈 화면에 추가"})):null;
-  const links=[inst,h("a",{href:CHURCH_YT,target:"_blank",rel:"noopener","aria-label":"중앙성서교회 유튜브 채널"},ytIcon(),h("span",{class:"ytlabel",text:"중앙성서교회"}))];
+  /* 홈 화면에 추가 · 유튜브 · CBSR: ☰ 메뉴와 같은 모양(선 아이콘 + 이름 + 화살표)으로 통일 */
+  const sl=(icon,label,o)=>h(o.href?"a":"button",{class:"sn-link",...(o.href?{href:o.href,target:"_blank",rel:"noopener"}:{type:"button",onclick:o.onclick}),title:o.title||label,"aria-label":o.aria||label},miIcon(icon),h("span",{class:"sn-lt",text:label}),h("span",{class:"sn-go","aria-hidden":"true",text:o.href?"↗":"›"}));
+  const inst=!isStandalone()?sl(IN_KAKAO?"globe":"add",IN_KAKAO?"브라우저로 열기":"홈 화면에 추가",{onclick:installHelp,title:IN_KAKAO?"브라우저로 열기":"홈 화면에 앱처럼 추가해요"}):null;
+  const links=[inst,sl("play","중앙성서교회 유튜브",{href:CHURCH_YT,aria:"중앙성서교회 유튜브 채널 (새 창)"}),!isPhone()?sl("book","CBSR 통독 노트",{href:CBSR_URL,aria:"CBSR 이야기 통독 노트 (새 창)"}):null];
   if(pcSide){$("#topLinks").replaceChildren();S._sideLinks=links.filter(Boolean);drawSideNav();return;}
   $("#topLinks").replaceChildren(...links.filter(Boolean));}
 /* 팀원 비밀번호(보기 · 참여 응답)로 들어온 기기인지 */
@@ -5351,6 +5352,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-23","📚 PC 왼쪽 메뉴 아래에 「CBSR 통독 노트」 바로 가기 · 홈 화면에 추가 · 유튜브와 같은 모양으로"],
   ["2026-10-20","🧩 자유롭게 편집: 고른 것 다루는 줄이 늘 보여요(화면 출렁임 없음) · 자르기 창은 악보 전체가 한눈에 · 자른 악보가 옮길 때 다시 보이던 것 고침 · Ctrl+C · X · V"],
   ["2026-10-20","🧽 악보 편집: 진짜 지우개 — 펜으로 그린 줄 · 글자 · 덮기를 문질러 지워요 (예전 지우개는 「⬜ 덮기」로)"],
   ["2026-10-20","✂ 악보 편집: 「자르기」로 브릿지처럼 한 부분을 빼거나, 새 장으로 떼어 내거나, 그 부분만 남겨요"],
