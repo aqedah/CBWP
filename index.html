@@ -3712,7 +3712,21 @@ function newConti(){guardDraft(()=>{S.draftOwner=null;S.cur=blankConti();S.curId
 function duplicateConti(c){guardDraft(()=>dupConti(c));}
 function dupConti(c){const n=clone(c);delete n.authorId;delete n.createdAt;delete n.updatedAt;delete n.id;n.date=nextSunday();
   fixConti(n);n.team=S.team;for(const[k]of SECTIONS)n[k].forEach(it=>it.uid=uid(8));S.draftOwner=null;S.cur=n;S.curId=null;S.dirty=true;saveDraft();setTab("write");toast("복제했어요. 날짜와 내용을 고친 뒤 저장하세요.");}
-function openConti(c){if(S.curId===c.id&&S.dirty){setTab("write");return;}
+/* 휴대폰 화면에서 「고치기」: 콘티 작성 화면이 없으니 예배 정보(본문 · 설교 · 특송)만 바로 고쳐요 · 곡까지 고치려면 PC 화면으로 */
+function liteContiEdit(c){if(!c)return;const can=S.canWrite&&!!S.db&&c.id&&canEditConti(c,c.id);if(!can)return viewConti(c);
+  const sp=(c.special||[])[0];const fld=(id,lab,val,ph)=>h("div",{class:"field"},h("label",{htmlFor:id,text:lab}),h("input",{type:"text",id,value:val||"",placeholder:ph||""}));
+  const body=h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 8px",text:`${fmtDate(c.date)} · ${wtypeOf(c)}`}),
+    fld("lq-pass","본문",c.passage,"예: 마 21:28-31"),fld("lq-title","설교 제목",c.sermonTitle),fld("lq-pre","설교자",c.preacher,"예: 이삭 목사"),
+    fld("lq-sp","특송 곡",sp&&sp.title,"예: 마음속에 근심 있는 사람"),fld("lq-spby","특송 하는 사람",c.specialBy,"예: 종려나무권사회"),
+    h("p",{class:"hint",style:"margin:6px 0 0",text:"곡 · 악보 · 참여자까지 고치려면 PC 화면에서 열어요."}));
+  const v=id=>body.querySelector("#"+id).value.trim();
+  const md=modal("콘티 고치기",body,[h("button",{class:"btn ghost",text:"💻 PC 화면에서 모두 고치기",onclick:()=>{md.close();setPcMode(true);setTimeout(()=>openConti(c),50);}}),h("span",{class:"spacer"}),
+    h("button",{class:"btn",text:"취소",onclick:()=>md.close()}),
+    h("button",{class:"btn primary",text:"저장",onclick:async e=>{const btn=e.currentTarget;btn.disabled=true;
+      const up={passage:v("lq-pass"),sermonTitle:v("lq-title"),preacher:v("lq-pre"),specialBy:v("lq-spby"),updatedAt:Date.now()};const st=v("lq-sp");
+      if(st!==((sp&&sp.title)||""))up.special=st?[sp&&sp.title===st?sp:{...itemByTitle(st)}]:[];
+      try{await S.db.doc(`contis/${c.id}`).update(up);Object.assign(c,up);md.close();toast("고쳤어요. 팀원 모두에게 보여요");render();}catch(err){console.error(err);btn.disabled=false;toast("저장하지 못했어요. 인터넷 연결을 확인해 주세요");}}})]);}
+function openConti(c){if(isLite())return liteContiEdit(c);if(S.curId===c.id&&S.dirty){setTab("write");return;}
   guardDraft(()=>{S.draftOwner=null;S.cur=fixConti(clone(c));delete S.cur.id;S.curId=c.id;S.dirty=false;saveDraft();setTab("write");});}
 
 document.addEventListener("keydown",e=>{if(S.tab!=="write"||!(e.ctrlKey||e.metaKey)||e.key.toLowerCase()!=="z"||e.shiftKey)return;const a=document.activeElement;
@@ -5380,6 +5394,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-26","📱 휴대폰 화면 「고치기」: 본문 · 설교 · 특송을 바로 고쳐요 (곡까지는 「PC 화면에서 모두 고치기」)"],
   ["2026-10-26","🧰 악보 편집 창 새 모양: 도구는 악보 위 한 줄(되돌리기 · 악보에 표시 · 고치기 · 이 장)에 늘 보여요 · 오른쪽 위는 진행 순서(늘 고정 · 접기), 아래는 고른 도구의 설정 · 「아이콘만」으로 얇게"],
   ["2026-10-24","⛪ 중앙성서교회 홈페이지 바로 가기 (PC 왼쪽 메뉴 아래 · 휴대폰 ☰ 메뉴)"],
   ["2026-10-23","📚 PC 왼쪽 메뉴 아래에 「CBSR 통독 노트」 바로 가기 · 홈 화면에 추가 · 유튜브와 같은 모양으로"],
