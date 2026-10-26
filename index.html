@@ -5417,6 +5417,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-26","📤 콘티 보기에서 「다른 팀으로 복사」: 예) 좋은만남의축제 콘티를 인도한 기드온 팀에도 (받는 팀 비밀번호 필요)"],
   ["2026-10-26","⏳ 새로고침할 때 로딩 화면 (자료를 다 불러오면 사라져요)"],
   ["2026-10-26","📖 본문을 떨어진 여러 곳으로 적어도 읽어요 (예: 요 14:12 / 출 15:22-27) · 본문 보기 · 묵상 · 예배 PPT 본문 장 모두"],
   ["2026-10-26","📱 휴대폰 화면 「고치기」: 본문 · 설교 · 특송을 바로 고쳐요 (곡까지는 「PC 화면에서 모두 고치기」)"],
@@ -8120,6 +8121,17 @@ async function attachScoreToItem(c,k,ii,files,si,close){const it=(c[k]||[])[ii];
 /* 곡 넘김 효과: 넘어가면 옆에서 밀려 들어오고, 더 갈 곡이 없으면 살짝 튕겨요 */
 function slideIn(el,dir){if(!el||!el.animate||matchMedia("(prefers-reduced-motion: reduce)").matches)return;el.animate([{transform:`translateX(${dir*70}px)`,opacity:.15},{transform:"none",opacity:1}],{duration:230,easing:"cubic-bezier(.2,.8,.2,1)"});}
 function bounce(el,dir){if(!el||!el.animate)return;el.animate([{transform:"none"},{transform:`translateX(${-dir*26}px)`},{transform:"none"}],{duration:260,easing:"ease-out"});}
+/* 콘티를 다른 팀으로 복사: 예) 「좋은만남의축제」 콘티를 인도한 「기드온」 팀 기록에도 · 받는 팀 비밀번호가 이 기기에 있어야 해요 */
+function copyContiModal(c){const here=S.team;const list=ALLT.filter(t=>t.id!==here);
+  const rows=list.map(t=>{const can=window.CBWP.canWrite(t.id);
+    return h("div",{class:"row",style:"gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px"},h("span",{style:`width:10px;height:10px;border-radius:50%;background:${t.color||"#999"}`}),h("b",{style:"flex:1",text:t.name}),
+      can?h("button",{class:"btn sm primary",text:"여기로 복사",onclick:async e=>{const btn=e.currentTarget;btn.disabled=true;btn.textContent="복사 중…";
+          const body=clone(c);delete body.id;delete body.shareId;Object.assign(body,{team:t.id,copiedFrom:{team:here,id:c.id||null,at:Date.now()},status:c.status||"draft",authorId:S.myId||null,authorName:myName()||c.authorName||"",createdAt:Date.now(),updatedAt:Date.now()});
+          try{await S.db.collection("contis").add(body);btn.textContent="✓ 복사했어요";toast(`「${t.name}」 팀 콘티에도 넣었어요 · 원래 콘티는 그대로예요`,3500);}catch(err){console.error(err);btn.disabled=false;btn.textContent="여기로 복사";toast(err&&err.code==="permission-denied"?`「${t.name}」 팀 비밀번호가 필요해요`:"복사하지 못했어요");}}})
+        :h("button",{class:"btn sm",text:"🔒 비밀번호 넣기",title:`「${t.name}」 팀 비밀번호를 넣으면 복사할 수 있어요`,onclick:()=>{md.close();unlockModal(t.id,()=>copyContiModal(c));}}));});
+  const md=modal("다른 팀으로 복사",h("div",{class:"panel-body"},h("p",{class:"hint",style:"margin:0 0 8px",text:`${fmtDate(c.date)} · ${wtypeOf(c)} 콘티를 고른 팀에도 똑같이 넣어요. 곡 · 악보 · 진행 순서 · 참여자 · 본문이 모두 함께 가요. 원래 콘티는 그대로 남아요.`}),
+    h("div",{style:"display:grid;gap:6px"},...rows),h("p",{class:"hint",style:"margin:8px 0 0",text:"받는 팀의 비밀번호를 이 기기에 넣은 적이 있어야 복사할 수 있어요. 복사한 뒤 그 팀에서 따로 고쳐도 서로 영향을 주지 않아요."})),
+    [h("button",{class:"btn",text:"닫기",onclick:()=>md.close()})]);}
 function viewConti(c){if(!c)return;const me=normName(myName());const editable=canEditConti(c,c.id)&&S.canWrite&&isWriter();
   const roster=(c.roster||[]).filter(r=>(r.people||[]).length);
   const ids=refIds(c);
@@ -8135,7 +8147,8 @@ function viewConti(c){if(!c)return;const me=normName(myName());const editable=ca
       h("span",{class:"hint",text:r?(r.ok?"참여로 알렸어요":"불참으로 알렸어요"):"리더가 편성할 때 봐요"}));})():null,
     c.memo?h("div",{class:"vw-memo",text:c.memo}):null,
     h("div",{class:"row"},ids.length?h("a",{class:"btn sm yt",href:`https://www.youtube.com/watch_videos?video_ids=${ids.join(",")}`,target:"_blank",rel:"noopener",text:`▶ 레퍼런스 재생목록 (${ids.length}곡)`}):null,
-      c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:"유튜브 재생목록"}):null,editable?h("button",{class:"btn sm",text:"📣 콘티 공지",onclick:()=>contiNotice(c)}):null),
+      c.playlist?h("a",{class:"btn sm",href:c.playlist,target:"_blank",rel:"noopener",text:"유튜브 재생목록"}):null,editable?h("button",{class:"btn sm",text:"📣 콘티 공지",onclick:()=>contiNotice(c)}):null,
+      S.db&&window.CBWP&&!DEMO&&isWriter()?h("button",{class:"btn sm",text:"📤 다른 팀으로 복사",title:"이 콘티를 다른 찬양팀 · 프로젝트에도 똑같이 넣어요 (원래 콘티는 그대로)",onclick:()=>copyContiModal(c)}):null),
     c.meditation?h("div",{class:"vw-memo",style:"white-space:pre-wrap",text:c.meditation}):null);
   const songs=[];let no=0;for(const[k,l]of SECTIONS)(c[k]||[]).forEach((it,ii)=>{no++;songs.push({it,no,sec:l,k,ii});});
   const nav=h("div",{class:"vw-nav",role:"tablist","aria-label":"곡으로 바로 가기"});
