@@ -892,6 +892,29 @@ table.t.ctr td,table.t.ctr td.n,table.t.ctr thead th{text-align:center}.t.ctr th
     
   </div>
 </header>
+<!-- 새로고침할 때 로딩창 (CBSR처럼): 자료를 다 읽으면 사라져요 -->
+<style>
+#appBoot{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:#F4F5F8;color:#18213a;transition:opacity .35s ease;text-align:center;font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+#appBoot.out{opacity:0;pointer-events:none}
+#appBoot img{width:58px;height:auto;display:block;margin:0 auto 14px;opacity:.92}
+#appBoot .k{font-size:12px;letter-spacing:.18em;color:#6b7390}
+#appBoot .t{font-family:var(--font-display,"Gowun Batang",serif);font-weight:700;font-size:30px;margin-top:8px;color:#25397f}
+#appBoot .s{font-size:14.5px;color:#6b7390;margin-top:8px}
+#appBoot .bar{width:160px;height:2px;background:#dde1ea;margin:24px auto 0;overflow:hidden;border-radius:2px}
+#appBoot .bar i{display:block;height:100%;width:40%;background:#25397f;animation:bootBar 1s ease-in-out infinite}
+@keyframes bootBar{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@media (prefers-reduced-motion:reduce){#appBoot .bar i{animation:none;width:100%}}
+</style>
+<div id="appBoot" role="status" aria-live="polite"><div><img alt="" id="bootLogo"><div class="k">CENTRAL BIBLE CHURCH</div><div class="t">Worship Planner</div><div class="s">찬양 콘티를 불러오고 있어요</div><div class="bar"><i></i></div></div></div>
+<script>
+(function(){var lg=document.querySelector(".brandlogo"),bl=document.getElementById("bootLogo");if(lg&&bl)bl.src=lg.src;else if(bl)bl.remove();
+  var b=document.getElementById("appBoot"),t0=Date.now(),done=false;
+  function hide(){if(done||!b)return;done=true;b.classList.add("out");setTimeout(function(){b.remove();},400);}
+  /* 팀 자료를 다 읽었거나(또는 팀을 아직 안 골랐거나) 화면을 처음 그리면 사라져요 · 너무 오래 걸리면 8초 뒤엔 그냥 닫아요 */
+  var iv=setInterval(function(){var ok=false;try{ok=(typeof S!=="undefined")&&(S.dbFailed||(S.ready&&(!S.team||(typeof DEMO!=="undefined"&&DEMO)||(typeof RR!=="undefined"&&RR.memTeam===S.team))))&&document.querySelector("#main")&&document.querySelector("#main").children.length>0;}catch(e){}
+    if(ok&&Date.now()-t0>500){clearInterval(iv);hide();}else if(Date.now()-t0>8000){clearInterval(iv);hide();}},80);
+})();
+</script>
 
 <main class="wrap" id="main"></main>
 <datalist id="trans-dl"><option value="건반 전주"><option value="바로 이어짐"><option value="기도 반주"><option value="멘트 후 시작"><option value="드럼 카운트"></datalist>
@@ -5394,6 +5417,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-10-26","⏳ 새로고침할 때 로딩 화면 (자료를 다 불러오면 사라져요)"],
   ["2026-10-26","📖 본문을 떨어진 여러 곳으로 적어도 읽어요 (예: 요 14:12 / 출 15:22-27) · 본문 보기 · 묵상 · 예배 PPT 본문 장 모두"],
   ["2026-10-26","📱 휴대폰 화면 「고치기」: 본문 · 설교 · 특송을 바로 고쳐요 (곡까지는 「PC 화면에서 모두 고치기」)"],
   ["2026-10-26","🧰 악보 편집 창 새 모양: 도구는 악보 위 한 줄(되돌리기 · 악보에 표시 · 고치기 · 이 장)에 늘 보여요 · 오른쪽 위는 진행 순서(늘 고정 · 접기), 아래는 고른 도구의 설정 · 「아이콘만」으로 얇게"],
