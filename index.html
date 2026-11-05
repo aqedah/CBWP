@@ -1011,6 +1011,14 @@ body.sidenav .cmake .cs-top{display:none}
   .wpanel[data-wt="info"] #rosterBox{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
   .wpanel[data-wt="info"] .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.wpanel[data-wt="info"] .grid>.field:nth-child(3){grid-column:1/-1}}
 .pt-gb{margin-right:6px}.pagetitle .pt-g{margin-right:4px}
+
+/* ② 콘티 안 「예배 정보 · 찬양」: 위 단계 탭(서류철)과 다르게 알약 단추로 */
+.wtabs.wseg{margin:0;display:inline-flex;align-items:center;gap:2px;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px}
+.wseg .wtab{height:38px!important;margin:0!important;border:0;border-radius:999px;background:none;box-shadow:none!important;padding:0 18px;font-size:.92rem;color:var(--ink2)}
+.wseg .wtab[aria-selected="true"]{background:var(--team,var(--accent));color:var(--accent-ink)}
+.wseg .wtab[aria-selected="true"] .wtn:not(:empty){background:var(--sheet);color:var(--team,var(--accent))}
+.wseg .wtab:not([aria-selected="true"]):hover{background:var(--sheet)}
+@media (max-width:640px){.wb-head .savebar .wseg{order:-1;width:100%;justify-content:center}.wseg .wtab{flex:1;justify-content:center}}
 </style>
 
 <style>img{max-width:100%}html{-webkit-text-size-adjust:100%}</style>
@@ -2177,7 +2185,8 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
     const y=wtabs.getBoundingClientRect().top;if(y<0)window.scrollBy({top:y-80});};
   S.setWT=setWT;
   const miniDet=isWide()?null:h("details",{class:"sheet cmini-det",open:!!S.miniOpen,ontoggle:e=>{S.miniOpen=e.target.open;}},h("summary",{},h("b",{text:"전체 콘티"}),h("span",{class:"cm-n"}),h("span",{class:"cm-rd hint"})),contiMini());
-  fs.append(...panels);if(miniDet)m.append(miniDet);m.append(wtabs,fs);
+  fs.append(...panels);if(miniDet)m.append(miniDet);
+  {const hsb=head.querySelector(".savebar");const sp=hsb&&hsb.querySelector(".spacer");if(sp){wtabs.classList.add("wseg");sp.after(wtabs,h("span",{class:"spacer"}));}else m.append(wtabs);}m.append(fs);
   const reopened=!!c.reopenedAt&&!isLocked(c);
   const wBot=h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 다음 단계"}),reopened?h("span",{class:"sub",style:"color:var(--warn)",text:"확정을 푼 동안은 공지 · 재생목록을 잠시 꺼 둬요. 다시 확정하면 마무리 칸이 열려요."}):null),
     h("div",{class:"savebar"},
@@ -3310,7 +3319,8 @@ const verPages=v=>{const ps=verPagesAll(v);return v&&v.alt?ps.slice(0,1):ps;};
 /* ===== 인도자 콘티: 곡마다 진행 순서 · 인트로 · 연주 시간 ===== */
 const CIRC="①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 const circ=n=>CIRC[n-1]||`(${n})`;
-function parseDur(t){t=String(t||"").trim();if(!t)return 0;let m=t.match(/^(\d{1,3})\s*[:：']\s*(\d{1,2})$/);if(m)return +m[2]<60?+m[1]*60+ +m[2]:0;m=t.match(/^(\d{1,3})\s*분(?:\s*(\d{1,2})\s*초)?$/);if(m)return +m[1]*60+(+m[2]||0);m=t.match(/^(\d{1,3})(?:\.(\d))?$/);if(m)return +m[1]*60+(m[2]?+m[2]*6:0);return 0;}
+function parseDur(t,unit){t=String(t||"").trim();if(!t)return 0;
+  {const d=t.match(/^(\d{1,4})$/);if(d){const v=d[1];if(v.length>=3){const mm=+v.slice(0,-2),ss=+v.slice(-2);return ss<60?mm*60+ss:0;}return unit==="s"?+v:+v*60;}}let m=t.match(/^(\d{1,3})\s*[:：']\s*(\d{1,2})$/);if(m)return +m[2]<60?+m[1]*60+ +m[2]:0;m=t.match(/^(\d{1,3})\s*분(?:\s*(\d{1,2})\s*초)?$/);if(m)return +m[1]*60+(+m[2]||0);m=t.match(/^(\d{1,3})(?:\.(\d))?$/);if(m)return +m[1]*60+(m[2]?+m[2]*6:0);return 0;}
 const fmtDur=(sec,pad)=>{const m=Math.floor(sec/60),ss=sec%60;return `${pad?String(m).padStart(2,"0"):m}:${String(ss).padStart(2,"0")}`;};
 function contiTimes(c){const out={};let cum=0;for(const[k]of SECTIONS)for(const it of c[k]||[]){const d=parseDur(it.dur);cum+=d;out[it.uid]={d,cum};}return{map:out,total:cum};}
 const flowLines=it=>String(it.flow||"").split("\n").map(l=>l.replace(/^\s*(?:[①-⑳]|\(?\d{1,2}[.)]|[-*·•])\s*/,"").trim()).filter(Boolean);
@@ -5616,8 +5626,8 @@ function stageStrip(c){const s=stageOf(c);const it=(on,warn,lab,sub)=>h("span",{
     it(s.ppt,s.pptStale,"PPT",s.pptStale?"확정 뒤에 다시 받아 주세요":s.ppt?`${fmtWhen(c.pptAt)} 받음${c.pptN?` · ${c.pptN}장`:""}`:"아직"));}
 
 /* 2. 시간 계획: 목표 시간 · 곡 사이 시간 · 남은 시간 (예배 찬양 묶음과 전체를 따로) */
-const durOk=t=>{t=String(t||"").trim();if(!t)return true;if(/^(\d{1,3})\s*[:：']\s*(\d{1,2})$/.test(t))return +t.match(/[:：']\s*(\d{1,2})$/)[1]<60;return /^\d{1,3}\s*분(\s*\d{1,2}\s*초)?$/.test(t)||/^\d{1,3}(\.\d)?$/.test(t);};
-function timePlan(c){const its=c.before||[];const n=its.length;const play=its.reduce((a,it)=>a+parseDur(it.dur),0);const gap=parseDur(c.gapDur)*Math.max(0,n-1);
+const durOk=t=>{t=String(t||"").trim();if(!t)return true;if(/^\d{1,4}$/.test(t))return t.length<3||+t.slice(-2)<60;if(/^(\d{1,3})\s*[:：']\s*(\d{1,2})$/.test(t))return +t.match(/[:：']\s*(\d{1,2})$/)[1]<60;return /^\d{1,3}\s*분(\s*\d{1,2}\s*초)?$/.test(t)||/^\d{1,3}(\.\d)?$/.test(t);};
+function timePlan(c){const its=c.before||[];const n=its.length;const play=its.reduce((a,it)=>a+parseDur(it.dur),0);const gap=parseDur(c.gapDur,"s")*Math.max(0,n-1);
   const goal=parseDur(c.goalDur);const noDur=its.filter(it=>!parseDur(it.dur)).length;const all=allItems(c);const allPlay=all.reduce((a,it)=>a+parseDur(it.dur),0);
   return{n,play,gap,sum:play+gap,goal,left:goal?goal-(play+gap):null,noDur,allN:all.length,allPlay};}
 function timeBox(c,editable){const box=h("div",{class:"tplan"});
@@ -5627,11 +5637,13 @@ function timeBox(c,editable){const box=h("div",{class:"tplan"});
       t.noDur&&t.n?h("div",{class:"tp-line hint"},`시간 안 적은 곡 ${t.noDur}곡`):null,
       t.allN>t.n?h("div",{class:"tp-line hint"},`여는 찬양 · 특송 · 설교 후까지 전체 ${t.allN}곡 · 연주 ${fmtDur(t.allPlay)}`):null].filter(Boolean));};
   const inp=(key,ph,lab)=>{const i=h("input",{type:"text",class:"tp-in",inputmode:"numeric",placeholder:ph,"aria-label":lab,value:c[key]||"",disabled:!editable,
-    oninput:e=>{const v=e.target.value.trim();e.target.classList.toggle("bad",!durOk(v));c[key]=v;markDirty();draw();}});return h("label",{class:"tp-f"},h("span",{text:lab}),i);};
-  box.append(h("div",{class:"tp-row"},inp("goalDur","15:00","목표 시간"),inp("gapDur","0:15","곡 사이")),h("div",{class:"tp-st"}));draw();box._draw=draw;return box;}
+    oninput:e=>{const v=e.target.value.trim();e.target.classList.toggle("bad",!durOk(v));c[key]=v;markDirty();draw();},
+    onblur:e=>{const v=e.target.value.trim();if(!v||!durOk(v))return;const sec=parseDur(v,key==="gapDur"?"s":"");if(!sec)return;const f=fmtDur(sec);if(f!==v){e.target.value=f;c[key]=f;markDirty();draw();}}});return h("label",{class:"tp-f"},h("span",{text:lab}),i);};
+  box.append(h("div",{class:"tp-row"},inp("goalDur","1500","목표 시간"),inp("gapDur","15초","곡 사이")),h("div",{class:"tp-st"}));draw();box._draw=draw;return box;}
 /* 곡 시간 칸 (콘티 옆 「전체 콘티」에서 바로 적어요) */
-function durInput(it,editable){return h("input",{type:"text",class:"cm-dur"+(durOk(it.dur)?"":" bad"),inputmode:"numeric",placeholder:"시간",title:"연주 시간 (예: 3:15)","aria-label":`${it.title} 연주 시간`,value:it.dur||"",disabled:!editable,
-  onclick:e=>e.stopPropagation(),oninput:e=>{const v=e.target.value.trim();e.target.classList.toggle("bad",!durOk(v));it.dur=v;markDirty();document.querySelectorAll(".tplan").forEach(b=>b._draw&&b._draw());}});}
+function durInput(it,editable){return h("input",{type:"text",class:"cm-dur"+(durOk(it.dur)?"":" bad"),inputmode:"numeric",placeholder:"시간",title:"연주 시간 (예: 315 → 3:15)","aria-label":`${it.title} 연주 시간`,value:it.dur||"",disabled:!editable,
+  onclick:e=>e.stopPropagation(),oninput:e=>{const v=e.target.value.trim();e.target.classList.toggle("bad",!durOk(v));it.dur=v;markDirty();document.querySelectorAll(".tplan").forEach(b=>b._draw&&b._draw());},
+  onblur:e=>{const v=e.target.value.trim();if(!v||!durOk(v))return;const sec=parseDur(v);if(!sec)return;const f=fmtDur(sec);if(f!==v){e.target.value=f;it.dur=f;markDirty();}}});}
 document.addEventListener("input",e=>{const t=e.target;if(t&&t.matches&&t.matches('input[aria-label="연주 시간"]'))t.classList.toggle("bad",!durOk(t.value));});
 
 /* 3. Key와 악보 조성 */
@@ -5836,6 +5848,8 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-11-05","⌨️ 시간은 숫자만 써도 돼요: 1500 → 15:00 · 315 → 3:15 · 곡 사이는 15 → 15초"],
+  ["2026-11-05","🔘 ② 콘티 안 「예배 정보 · 찬양」을 단계 탭과 다른 알약 단추로 바꿔 「이전 · 다음」 사이에 두었어요"],
   ["2026-11-05","🧭 PC 머리 띠: 지금 쓰는 콘티(날짜 · 예배 · 상태) · 저장 상태 · 「꼭 필요한 것 n개 남음」이 늘 보여요 · 다른 메뉴에선 「쓰던 콘티 돌아가기」"],
   ["2026-11-05","▦ 예배 정보 탭(넓은 화면): 예배 정보와 참여자를 나란히, 아래에 메모"],
   ["2026-11-05","➡️ 예배 정보 탭: 「다음은 찬양 고르기」 안내를 크게 · 오른쪽 곡 찾기는 찬양 탭에서만 · 새 콘티는 ① 말씀부터 (① 말씀에도 실행 취소)"],
