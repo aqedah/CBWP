@@ -1071,6 +1071,14 @@ body.has-stepnav .wb-r{top:calc(env(safe-area-inset-top,0px) + 145px)}
 .pmrow:hover{border-color:var(--team,var(--accent));background:color-mix(in srgb,var(--team,var(--accent)) 5%,var(--sheet));box-shadow:0 4px 14px rgb(0 0 0 / .08)}
 .pmothers>summary{cursor:pointer;font-weight:700;color:var(--ink2);padding:8px 2px}
 .dtile:hover,.card.pmrow:hover{outline:0}
+
+/* 왼쪽 메뉴: 콘티를 보고 있으면 단계가 내려와요 */
+.sn-csubs .sn-cur{font-size:.74rem;font-weight:700;color:var(--muted);padding:8px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sn-csubs .sn-st{display:flex;align-items:center;gap:7px}
+.sn-csubs .sn-st i{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--line);color:var(--ink2);font-size:.66rem;font-weight:800;flex:none}
+.sn-csubs .sn-st.on i{background:var(--team,var(--accent));color:var(--accent-ink)}
+.sn-csubs .sn-st.done i{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.sn-csubs .sn-ppt2{margin-top:4px;opacity:.8}
 </style>
 
 <style>img{max-width:100%}html{-webkit-text-size-adjust:100%}</style>
@@ -1320,7 +1328,7 @@ function drawStepNav(){let bar=document.getElementById("stepNav");document.body.
     const foot=h("div",{id:"stepFoot",class:"stepfoot"},prevB||h("span"),h("span",{class:"spacer"}),nextB||h("span"));
     const anc=[...m.children].find(e=>e.classList&&e.classList.contains("sheet")&&/^저장/.test(((e.querySelector(":scope > h2")||{}).textContent||"").trim()));if(anc)anc.before(foot);else m.append(foot);}
   updateStatus();updUndo();}
-function syncCSteps(){setTimeout(drawStepNav,0);document.querySelectorAll(".csteps [data-step]").forEach(b=>{const x=CSTEPS[+b.dataset.step];const on=x.k===S.tab&&(!x.wt||x.wt===curWT());b.setAttribute("aria-selected",String(on));
+function syncCSteps(){setTimeout(()=>{drawStepNav();if(sideOn())drawSideNav();},0);document.querySelectorAll(".csteps [data-step]").forEach(b=>{const x=CSTEPS[+b.dataset.step];const on=x.k===S.tab&&(!x.wt||x.wt===curWT());b.setAttribute("aria-selected",String(on));
   const dn=b.dataset.done==="1"&&!on;b.classList.toggle("done",dn);const i=b.querySelector("i");if(i)i.textContent=dn?"✓":String(+b.dataset.step+1);});}/* 요일: 일요일은 늘 「주일」 */
 function fmtDate(s){const d=parseD(s);if(!d)return "날짜 미정";return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()} (${"주일,월,화,수,목,금,토".split(",")[d.getDay()]})`;}
 /* guess the worship from the date (church calendar); always editable */
@@ -1630,7 +1638,12 @@ function drawSideNav(){let nav=document.getElementById("sideNav");const on=sideO
   document.querySelectorAll(".bnav button").forEach(b=>{if(b.hidden)return;const g=b.dataset.group;const subs=subsOf(g);const lab=(b.querySelector("span")||{}).textContent||"";
     const svg=b.querySelector("svg");const gb=h("button",{type:"button",class:"sn-g"+(g===cg?" on":""),"aria-current":g===cg?"page":"false",onclick:()=>{const dk=dashOf(g);if(dk)return goTab(dk);const ks=subs.map(x=>x[0]);if(g==="conti"&&ks.includes("list"))return goTab("list");const last=S.lastSub[g];goTab(ks.includes(last)?last:ks[0]);}},svg?svg.cloneNode(true):null,h("span",{text:lab}));
     items.push(gb);
-    if(subs.length>1&&g!=="conti")items.push(h("div",{class:"sn-subs"},subs.map(([k,l])=>h("button",{type:"button",class:"sn-s"+(k===S.tab?" on":""),"aria-current":k===S.tab?"page":"false",onclick:()=>goTab(k)},l))));});
+    if(g==="conti"&&g===cg&&subs.some(([k])=>k==="write")){const c=S.cur||{};const now=stepNow();const dn=stepDone(c);const open=!!S.curId||(isMineDraft()&&(allItems(c).length>0||!!(c.passage||"").trim()))||S.tab!=="list";
+      items.push(h("div",{class:"sn-subs sn-csubs"},h("button",{type:"button",class:"sn-s"+(S.tab==="list"?" on":""),"aria-current":S.tab==="list"?"page":"false",onclick:()=>goTab("list")},"콘티 목록"),
+        open&&c.date?h("div",{class:"sn-cur",title:"지금 쓰는 콘티",text:`${dLabel(c.date)} ${wtypeOf(c)}`}):null,
+        ...(open?CSTEPS.map((x,j)=>{const on=!!now&&now.no===j+1;return h("button",{type:"button",class:"sn-s sn-st"+(on?" on":"")+(dn[j]&&!on?" done":""),"aria-current":on?"step":"false",onclick:()=>goStep(x)},h("i",{text:dn[j]&&!on?"✓":String(j+1)}),x.l);}):[]),
+        open?h("button",{type:"button",class:"sn-s sn-st sn-ppt2"+(S.tab==="pptmake"?" on":""),onclick:()=>goTab("pptmake")},"PPT"):null));}
+    else if(subs.length>1&&g!=="conti")items.push(h("div",{class:"sn-subs"},subs.map(([k,l])=>h("button",{type:"button",class:"sn-s"+(k===S.tab?" on":""),"aria-current":k===S.tab?"page":"false",onclick:()=>goTab(k)},l))));});
   const logo=document.querySelector(".brandlogo");
   const brand=h("button",{type:"button",class:"sn-brand",title:"처음 화면 (팀 고르기)",onclick:()=>{const a=document.getElementById("homeLink");if(a)a.click();}},logo?h("img",{src:logo.src,alt:""}):null,h("span",{},h("b",{text:"Central Bible Church"}),h("span",{text:"Worship Planner"})));
   const team=h("button",{type:"button",class:"sn-team",title:"눌러서 팀 바꾸기",onclick:switchTeam},h("span",{text:teamName(S.team)}),h("span",{class:"sn-dd",text:"▾"}));
@@ -5936,6 +5949,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-11-05","📂 왼쪽 메뉴: 콘티를 보고 있으면 아래로 콘티 목록 · 지금 콘티 · ①~⑤ 단계 · PPT가 펼쳐져요"],
   ["2026-11-05","🖥 PPT: 지금 쓰는 콘티를 맨 위에 크게 · 「가사 PPT 미리보기 →」 하나만 진하게 · 다른 콘티는 접어 두기 · 마우스를 올린 칸이 또렷하게"],
   ["2026-11-05","🧭 콘티 위 진행 막대(①~⑤ · 저장)는 늘 위에 · 「이전 · 다음」은 화면 아래 저장 칸 위에"],
   ["2026-11-05","👥 ② 단계는 「참여자」: 날짜 · 본문 · 설교는 ① 말씀에서만 넣고, ②에서는 한 줄로 보여요"],
