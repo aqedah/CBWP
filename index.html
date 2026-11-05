@@ -984,6 +984,13 @@ input.bad{border-color:var(--danger)!important;background:color-mix(in srgb,var(
 @media (pointer:coarse){.slot-plus,.cs-back,.lnkbtn{position:relative}
   .slot-plus::after,.cs-back::after,.lnkbtn::after{content:"";position:absolute;inset:-8px}
   .btn.sm{min-height:36px}}
+
+/* 예배 정보 탭: 찬양 탭으로 가는 안내를 또렷하게 · 오른쪽 「전체 콘티 · 곡 찾기」는 찬양 탭에서만 */
+.gosongs{border:0!important;background:var(--team,var(--accent))!important;color:var(--accent-ink)!important;padding:16px 20px!important;border-radius:14px!important;text-align:left;box-shadow:0 4px 14px color-mix(in srgb,var(--team,var(--accent)) 30%,transparent)}
+.gosongs .gs-t{display:grid;gap:2px}.gosongs .gs-t b{font-size:1.05rem}.gosongs .gs-t small{font-size:.82rem;opacity:.88;font-weight:500}
+.gosongs .gs-go{background:var(--sheet)!important;color:var(--team,var(--accent))!important;padding:9px 16px;border-radius:999px;font-weight:800;flex:none}
+.gosongs:hover{filter:brightness(1.06)}
+body.wb-on.wt-info .wb.wb2{grid-template-columns:minmax(0,1fr)}body.wb-on.wt-info .wb-r{display:none}
 </style>
 
 <style>img{max-width:100%}html{-webkit-text-size-adjust:100%}</style>
@@ -2067,10 +2074,11 @@ function statusBanner(){
    WRITE TAB
    ========================================================= */
 function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();initHist();
+  const wNext=()=>S.wTab==="info"&&S.setWT?S.setWT("songs"):setTab("sheet");const wNextLabel=()=>S.wTab==="info"?"다음: 찬양 고르기 →":"다음: 악보 →";
   const head=h("div",{class:"sheet wb-head"},
     h("h2",{style:"display:flex;align-items:center;gap:8px;flex-wrap:wrap"},h("span",{text:"콘티 작성"}),isWriter()?h("button",{type:"button",class:"btn sm",text:"불러오기",title:"저장해 둔 콘티를 열어서 이어 써요",onclick:openSavedModal}):null,isWriter()?h("button",{type:"button",class:"btn sm",text:"＋ 새로 작성하기",title:"말씀 · 묵상을 건너뛰고 빈 콘티를 바로 시작해요. 저장해 둔 콘티는 그대로 남아요",onclick:()=>guardDraft(()=>{S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();S.wTab="info";render();window.scrollTo({top:0});toast("빈 콘티를 새로 시작했어요",2400);})}):null,h("span",{class:"sub",id:"authorLine",style:"margin-left:auto"})),h("div",{class:"brief",id:"briefLine"}),
     h("div",{class:"savebar"},h("button",{class:"btn",onclick:()=>setTab("bible"),text:"← 이전: 말씀"}),
-      h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 진행 순서 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 →"})));
+      h("span",{class:"spacer"}),h("button",{class:"btn primary wnext",onclick:()=>wNext(),title:"예배 정보 다음엔 찬양 · 찬양 다음엔 악보",text:wNextLabel()})));
   if(S.curId){const a=$("#authorLine",head);a.append("콘티 제작 - ",authorEl(c.authorId,c.authorName));resolveNames([c.authorId]);
     const sv=S.contis.find(x=>x.id===S.curId);if(sv&&S.db&&S.canWrite&&(isAuthor(sv)||S.isOwner))a.append(" ",h("button",{class:"btn sm ghost",text:"↪ 넘기기",title:"이 콘티를 다른 인도자에게 넘겨요",onclick:()=>handoverModal(sv)}));}
   m.append(head);
@@ -2127,13 +2135,14 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
   /* 번호 01~07 그대로, 칸은 탭 4개로 묶어요 */
   [sI,sR,sM,secEls.opening,secEls.before,secEls.special,secEls.after].forEach((el,i)=>{const h2=el.querySelector(":scope > h2, :scope > summary > h2");if(!h2)return;const first=h2.firstChild;
     const wrap=h("span",{style:"display:inline-flex;align-items:center"},h("span",{class:"secno",text:String(i+1).padStart(2,"0")}));h2.insertBefore(wrap,first);if(first)wrap.append(first);});
-  const goSongs=h("button",{type:"button",class:"gosongs",onclick:()=>{setWT("songs");}},h("span",{text:"🎵 찬양을 선곡할까요?"}),h("span",{class:"gs-go",text:"찬양 탭으로 →"}));
+  const nSongs=allItems(c).length;const goSongs=h("button",{type:"button",class:"gosongs",onclick:()=>{setWT("songs");}},h("span",{class:"gs-t"},h("b",{text:nSongs?`찬양 ${nSongs}곡 · 이어서 고르기`:"다음은 찬양 고르기"}),h("small",{text:"예배 정보를 다 썼으면 「찬양」 탭에서 곡을 골라요. 곡 찾기 · 전체 콘티도 거기 있어요."})),h("span",{class:"gs-go",text:"찬양 탭으로 →"}));
   const WT=[["info","예배 정보",[],[sI,sR,sM,goSongs]],["songs","찬양",["opening","before","special","after"],[secEls.opening,secEls.before,secEls.special,secEls.after]]];
   if(["opening","before","after"].includes(S.wTab))S.wTab="songs";if(!WT.some(x=>x[0]===S.wTab))S.wTab="info";
   const panels=WT.map(([id,,,els])=>h("div",{class:"wpanel","data-wt":id,hidden:id!==S.wTab},els));
   const wtabs=h("div",{class:"wtabs",role:"tablist","aria-label":"콘티 작성 칸"},WT.map(([id,label,keys])=>h("button",{type:"button",role:"tab",class:"wtab","data-wt":id,"data-keys":keys.join(","),"aria-selected":String(id===S.wTab),onclick:()=>setWT(id)},
     h("span",{text:label}),h("span",{class:"wtn"}))));
-  const setWT=id=>{S.wTab=id;wtabs.querySelectorAll(".wtab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.wt===id)));panels.forEach(p=>p.hidden=p.dataset.wt!==id);
+  const syncWNext=()=>{const t=wNextLabel();document.querySelectorAll(".wnext,.floatbar .fb-next").forEach(b=>b.textContent=t);document.body.classList.toggle("wt-info",S.wTab==="info");};
+  const setWT=id=>{S.wTab=id;syncWNext();wtabs.querySelectorAll(".wtab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.wt===id)));panels.forEach(p=>p.hidden=p.dataset.wt!==id);
     const t=$("#wb-tgt");if(t&&["opening","before","after"].includes(id)){t.value=id;t.dispatchEvent(new Event("change"));}
     const y=wtabs.getBoundingClientRect().top;if(y<0)window.scrollBy({top:y-80});};
   S.setWT=setWT;
@@ -2148,11 +2157,11 @@ function renderWrite(m){const c=fixConti(S.cur);const editable=curEditable();ini
       S.curId&&isWriter()?h("button",{class:"btn",onclick:newConti,title:"빈 콘티를 새로 시작해요",text:"+ 새 콘티 만들기"}):null),
     h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"},
       h("span",{class:"hint",text:"확정 · 공지 · 연습 일정 · 재생목록은 ④ 공유 단계에 모았어요"}),
-      h("span",{class:"spacer"}),h("button",{class:"btn primary",onclick:()=>setTab("sheet"),title:"악보 표시 · 곡 진행 순서 · 인트로 · 연주 시간 · 출력",text:"다음: 악보 →"})));
+      h("span",{class:"spacer"}),h("button",{class:"btn primary wnext",onclick:()=>wNext(),title:"예배 정보 다음엔 찬양 · 찬양 다음엔 악보",text:wNextLabel()})));
   const botEl=isLocked(c)?shareCue(c):wBot;m.append(botEl);
   if(isWide())workbench(fs,c,editable,wtabs);else document.body.classList.remove("wb-on");
   renderRoster();for(const[k]of SECTIONS)renderSetlist(k);updAux();if(S.wTab!=="info")setTimeout(()=>setWT(S.wTab),0);
-  floatSave(head,editable,["다음: 악보 →",()=>setTab("sheet")],botEl,true);updUndo();updateStatus();updUndo();}
+  floatSave(head,editable,[wNextLabel(),()=>wNext()],botEl,true);syncWNext();updUndo();updateStatus();updUndo();}
 function updAux(){updWTabs();updMini();drawBrief();}
 /* 전체 콘티 미니맵: 어느 탭에 있어도 곡 순서 · 키 · 악보 여부를 한눈에, 누르면 그 곡으로 */
 function contiMini(){const box=h("div",{class:"cmini"});return box;}
@@ -3850,7 +3859,7 @@ function guardDraft(go){if(!hasUnsaved())return go();const c=S.cur;
   askConfirm("저장하지 않은 콘티가 있어요",[h("p",{},"「콘티 작성」 탭에 아직 저장하지 않은 내용이 있어요."),
     h("p",{class:"hint",text:`${fmtDate(c.date)} · ${wtypeOf(c)}${c.sermonTitle?` · 「${c.sermonTitle}」`:""} · 곡 ${allItems(c).length}개`}),
     h("p",{},"그 내용을 버리고 넘어갈까요? 남기려면 「취소」를 누르고 「콘티 작성」 탭에서 저장하세요.")],"버리고 넘어가기",go);}
-function newConti(){guardDraft(()=>{S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();setTab("write");});}
+function newConti(){guardDraft(()=>{S.draftOwner=null;S.cur=blankConti();S.curId=null;S.dirty=false;saveDraft();S.wTab="info";setTab("bible");});}
 function duplicateConti(c){guardDraft(()=>dupConti(c));}
 function dupConti(c){const n=clone(c);delete n.authorId;delete n.createdAt;delete n.updatedAt;delete n.id;n.date=nextSunday();
   fixConti(n);n.team=S.team;for(const[k]of SECTIONS)n[k].forEach(it=>it.uid=uid(8));S.draftOwner=null;S.cur=n;S.curId=null;S.dirty=true;saveDraft();setTab("write");toast("복제했어요. 날짜와 내용을 고친 뒤 저장하세요.");}
@@ -3887,7 +3896,7 @@ function liteContiEdit(c){if(!c)return;const can=S.canWrite&&!!S.db&&c.id&&canEd
 function openConti(c,tab){if(isLite())return liteContiEdit(c);tab=tab||"write";if(S.curId===c.id&&S.dirty){setTab(tab);return;}
   guardDraft(()=>{S.draftOwner=null;S.cur=fixConti(clone(c));delete S.cur.id;S.curId=c.id;S.dirty=false;saveDraft();setTab(tab);});}
 
-document.addEventListener("keydown",e=>{if(S.tab!=="write"||!(e.ctrlKey||e.metaKey)||e.key.toLowerCase()!=="z"||e.shiftKey)return;const a=document.activeElement;
+document.addEventListener("keydown",e=>{if(!["write","bible"].includes(S.tab)||!(e.ctrlKey||e.metaKey)||e.key.toLowerCase()!=="z"||e.shiftKey)return;const a=document.activeElement;
   if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;if(document.querySelector(".modal"))return;e.preventDefault();undoConti();});
 /* =========================================================
    SCORE EDITOR
@@ -5442,7 +5451,7 @@ function readyFixKey(c){S.wTab="songs";openConti(c);}
 function nextConti(){const l=sameDayContis();if(!l.length)return null;return l.find(c=>c.id===S.curId)||l.filter(c=>isAuthor(c)).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))[0]||l.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))[0];}
 function sameDayContis(){const t=todayStr();const up=S.contis.filter(c=>!c.noService&&!c.past&&c.date&&c.date>=t).sort((a,b)=>a.date.localeCompare(b.date));return up.length?up.filter(c=>c.date===up[0].date):[];}
 const isLeadHome=()=>!isProject()&&!!S.team&&S.canWrite&&!S.memberOnly&&isWriter();
-function newContiOn(d){guardDraft(()=>{S.draftOwner=null;S.cur=blankConti();if(d){S.cur.date=d;const g=guessWtype(d);S.cur.wtype=g.wtype;S.cur.wtypeCustom=g.custom;}S.curId=null;S.dirty=false;saveDraft();S.wTab="info";setTab("write");});}
+function newContiOn(d){guardDraft(()=>{S.draftOwner=null;S.cur=blankConti();if(d){S.cur.date=d;const g=guessWtype(d);S.cur.wtype=g.wtype;S.cur.wtypeCustom=g.custom;}S.curId=null;S.dirty=false;saveDraft();S.wTab="info";setTab("bible");});}
 function todoRow(kind,title,sub,btn){return h("div",{class:"todo"},h("span",{class:"tdot "+kind,"aria-hidden":"true",text:kind==="warn"?"!":kind==="ok"?"✓":""}),
   h("div",{class:"tt"},h("b",{text:title}),sub?h("small",{text:sub}):null),btn||null);}
 function heroTodo(c,r,ed){const rows=[];const B=(t,fn,cls="btn sm")=>ed?h("button",{type:"button",class:cls,text:t,onclick:fn}):null;
@@ -5796,6 +5805,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-11-05","➡️ 예배 정보 탭: 「다음은 찬양 고르기」 안내를 크게 · 오른쪽 곡 찾기는 찬양 탭에서만 · 새 콘티는 ① 말씀부터 (① 말씀에도 실행 취소)"],
   ["2026-11-05","⏱ 시간 계획: 「전체 콘티」에서 곡마다 시간을 적고, 목표 시간 · 곡 사이 시간 · 남은 시간을 봐요 (예배 찬양 묶음 따로)"],
   ["2026-11-05","🎼 Key와 고른 악보의 조성이 다르면 알려 줘요 (홈 · 공유 · 확정할 때)"],
   ["2026-11-05","🧩 편성표와 콘티 참여자가 다르면 알려 주고, 「편성표대로 바꾸기 / 그대로 두기」를 골라요"],
@@ -6559,7 +6569,7 @@ function parseKakao(text){const out={};const today=todayStr();
   if(typeof isProject==="function"&&isProject()){const pj=projOf(S.team);if(pj)out.wtype=pj.wtype;}
   return out;}
 function itemByTitle(t){const n=norm(t);const sg=S.songs.find(x=>norm(x.title)===n)||S.songs.find(x=>norm(splitTitle(x.title).base)===n);return sg?itemFromSong(sg):{uid:uid(8),songId:null,title:t,key:"",yt:"",memo:"",pages:[]};}
-function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!c&&writer&&curEditable();
+function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!c&&writer&&curEditable();if(writer&&c)initHist();
   if(writer&&c&&isLocked(c))m.append(lockBanner());
   const out=h("div",{class:"bibout"});
   /* 1. 예배 정보 (카톡에서 받은 것) */
@@ -6639,8 +6649,10 @@ function renderBible(m){const writer=S.team&&isWriter();let c=S.cur;const can=!!
   q.value=bibQ;
   if(S.team&&writer)m.append(meditSheet());
   if(S.team&&writer&&c)m.append(h("div",{class:"sheet"},h("h2",{},h("span",{text:"저장 · 다음 단계"}),h("span",{class:"sub",text:`${fmtDate(c.date)} ${wtypeOf(c)} 콘티에 함께 저장돼요`})),
-    h("div",{class:"savebar"},h("button",{class:"btn primary",id:"saveBtn",disabled:!can,onclick:()=>saveConti(),text:"저장"}),h("span",{class:"status",id:"saveStatus3"}),h("span",{class:"spacer"}),
-      h("button",{class:"btn primary",onclick:()=>setTab("write"),text:"다음: 콘티 작성 →"}))));
+    h("div",{class:"savebar"},h("button",{class:"btn primary",id:"saveBtn",disabled:!can,onclick:()=>saveConti(),text:"저장"}),h("span",{class:"status",id:"saveStatus3"}),
+      can?h("button",{type:"button",class:"btn",id:"undoBtn",title:"방금 고친 것을 한 단계씩 되돌려요 (Ctrl+Z)",onclick:undoConti,text:"↶ 실행 취소"}):null,h("span",{class:"spacer"}),
+      h("button",{class:"btn primary",onclick:()=>setTab("write"),text:"다음: 콘티 →"}))));
+  setTimeout(updUndo,0);
   if(bibQ)go();else loadBible().then(()=>{fillCh();}).catch(()=>{});}
 /* 낱말 찾기: 한 글자 낱말(물 · 피 · 빛 …)은 낱말 첫머리에서만, 뒤에 조사만 붙은 경우에 맞춰요 — 「하물며」 「제물」 「물리치다」는 빼요 */
 const JOSA="이여|에서|에게|으로|처럼|같이|보다|까지|부터|이라|이요|이네|이니|이고|이며|이|가|을|를|은|는|에|로|과|와|도|만|의|여|야|아|라|요|네|니|고|며";
