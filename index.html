@@ -706,8 +706,8 @@ body.sidenav .pcside .pinfo,body.sidenav .pcside .grid{grid-template-columns:1fr
 /* 진행 순서 편집기 */
 .fe{display:flex;flex-direction:column;gap:8px}
 .fe-strip{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);min-height:44px}
-.fe-tok{font:inherit;font-weight:800;font-size:.95rem;color:#1d3fb3;background:var(--sheet);border:1px solid color-mix(in srgb,#1d3fb3 30%,var(--line));border-radius:8px;padding:3px 9px;cursor:pointer}
-.fe-tok.on{background:#1d3fb3;color:#fff;border-color:#1d3fb3}.fe-tok.over{box-shadow:0 0 0 2px var(--accent)}.fe-tok{touch-action:none;user-select:none}.fe-tok.dragging{opacity:.45}.fe-ins{position:absolute;width:3px;border-radius:2px;background:var(--accent);pointer-events:none}.fe-strip{position:relative}.fe-tok:disabled{cursor:default}
+.fe-tok{font:inherit;font-weight:800;font-size:.95rem;color:var(--accent);background:var(--sheet);border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:8px;padding:3px 9px;cursor:pointer}
+.fe-tok.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.fe-tok.over{box-shadow:0 0 0 2px var(--accent)}.fe-tok{touch-action:none;user-select:none}.fe-tok.dragging{opacity:.45}.fe-ins{position:absolute;width:3px;border-radius:2px;background:var(--accent);pointer-events:none}.fe-strip{position:relative}.fe-tok:disabled{cursor:default}
 .fe-arr{color:var(--muted);font-weight:700}
 .fe-tools{gap:6px;flex-wrap:wrap;align-items:center}.fe-btns{display:flex;flex-direction:column;gap:6px}.fe-in{flex:none;min-width:0;max-width:100%}
 .fe-text>summary{cursor:pointer}
@@ -1093,6 +1093,13 @@ body.has-stepnav .wb-r{top:calc(env(safe-area-inset-top,0px) + 145px)}
 .fe-tok.dragging{opacity:.3;border-style:dashed}body.fe-grabbing .fe-x{opacity:0!important;pointer-events:none!important}
 .fe-ghost{position:fixed;z-index:200;pointer-events:none;transform:rotate(-3deg) scale(1.08);box-shadow:0 10px 24px rgb(0 0 0 / .25);opacity:.95;margin:0}
 .fe-ins{width:4px!important;background:var(--hl,var(--accent))!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--hl,var(--accent)) 25%,transparent)}
+
+/* ④ 악보: 곡 고르기를 서류철 탭으로 (아래 곡 칸과 이어져요) */
+.sh-tabrow{align-items:flex-end;margin-bottom:-17px;position:relative;z-index:1}
+.sh-tabrow .sh-tabs{gap:4px;padding:0;align-items:flex-end}
+.sh-tab{border-radius:12px 12px 0 0;border-bottom:none;background:var(--soft);color:var(--muted);padding:0 16px;height:44px;box-sizing:border-box;font-weight:700}
+.sh-tab.on{height:46px;margin-bottom:-1px;background:var(--sheet);border-color:var(--line);color:var(--team,var(--accent));box-shadow:inset 0 3px 0 var(--team,var(--accent))}
+.sh-tab.on .sh-tabno{color:var(--team,var(--accent))}
 </style>
 
 <style>img{max-width:100%}html{-webkit-text-size-adjust:100%}</style>
@@ -1753,7 +1760,13 @@ function headCtx(){if(!S.team||isProject()&&false||!(S.canWrite&&isWriter())||!S
     h("button",{type:"button",class:"hready "+(r.miss.length?"warn":"ok"),title:S.curId?"⑤ 공유에서 준비 상태 보기":"",onclick:()=>{if(S.curId&&S.tab!=="share")setTab("share");}},r.miss.length?`꼭 필요한 것 ${r.miss.length}개 남음`:"꼭 필요한 것 ✓"));}
 function drawChrome(){const nm=$("#teamName");nm.replaceChildren();
   
-  const tc=(ALLT.find(t=>t.id===S.team)||{}).color;if(tc)document.documentElement.style.setProperty("--team",tc);else document.documentElement.style.removeProperty("--team");
+  const tc=(ALLT.find(t=>t.id===S.team)||{}).color;const rs=document.documentElement.style;
+  if(tc){rs.setProperty("--team",tc);
+    /* 주 단추 · 강조색도 팀 색으로 (흰 글씨가 잘 읽히게 조금 짙게 · 어두운 화면에선 조금 밝게) */
+    const th=document.documentElement.dataset.theme;const dark=th==="dark"||(!th&&matchMedia("(prefers-color-scheme: dark)").matches);
+    rs.setProperty("--accent",dark?`color-mix(in srgb,${tc} 70%,#fff)`:`color-mix(in srgb,${tc} 82%,#000)`);
+    rs.setProperty("--accent-soft",dark?`color-mix(in srgb,${tc} 22%,#181e2c)`:`color-mix(in srgb,${tc} 12%,#fff)`);}
+  else{rs.removeProperty("--team");rs.removeProperty("--accent");rs.removeProperty("--accent-soft");}
   /* 휴대폰: 위에는 팀 이름과 「☰」만 · 팀 바꾸기 · 로그인 · 화면 바꾸기 · 홈 화면에 추가 · 유튜브는 모두 ☰ 안으로 */
   if(isPhone()){if(S.team)nm.append(h("button",{type:"button",class:"teamchip tcbtn",title:"팀 바꾸기","aria-label":`${teamName(S.team)} · 눌러서 팀 바꾸기`,onclick:switchTeam},h("span",{class:"tc-nm",text:teamName(S.team)}),h("span",{class:"tc-dd","aria-hidden":"true",text:"▾"})));
     /* 휴대폰에서 PC 화면을 켠 동안엔 ☰ 옆에 「📱 휴대폰 화면」을 늘 보여 줘서 바로 돌아갈 수 있게 */
@@ -5969,6 +5982,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-11-05","🎨 주 단추 · 강조색도 팀 색으로 (기드온은 금색, 쉐마는 초록 …) · ④ 악보의 곡 고르기는 서류철 탭으로"],
   ["2026-11-05","✋ 진행 순서 조각: 마우스를 올리면 ✕ · 손 모양 커서로 잡아서 끌면 조각이 손을 따라와요"],
   ["2026-11-05","🎤 특송곡을 ① 말씀에서 비워 두면 ③ 찬양 단계에서 특송 칸이 사라져요"],
   ["2026-11-05","🖱 마우스를 올렸을 때 색을 팀 색 하나로 맞추고, 단추 · 칸 · 목록 · 입력 칸 어디서나 올린 곳이 보이게 했어요"],
