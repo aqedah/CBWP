@@ -1124,6 +1124,9 @@ body.has-stepnav .wb-r{top:calc(env(safe-area-inset-top,0px) + 145px)}
 @media (max-width:900px){.solo-grid{grid-template-columns:1fr}}
 .solo-res{display:grid;gap:6px;margin-top:8px}.solo-hit{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 12px}
 .solo-pv{max-height:72vh;overflow:auto}
+
+.solo-warn{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--warn) 14%,var(--sheet));border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));color:var(--ink);font-size:.92rem}
+.solo-warn b{color:var(--warn);font-size:.98rem}
 </style>
 
 <style>img{max-width:100%}html{-webkit-text-size-adjust:100%}</style>
@@ -1716,7 +1719,8 @@ function subTabs(){const g=groupOf(S.tab);const subs=subsOf(g);if(subs.length<2)
 /* 로고를 누르면 CBWP 메인 화면 (팀 안에서는 맨 위에 「지금 팀 · 돌아가기」) · 팀 바꾸기는 팀 이름 단추에서 */
 $("#homeLink").addEventListener("click",e=>{e.preventDefault();if(S.solo)return soloEnd();if(S.team){S.mainView=true;render();}window.scrollTo({top:0});});
 /* 「일정」은 홈에 합쳤어요: 예전 「일정」으로 가는 길은 홈의 달력을 펼쳐서 보여 줘요 */
-function setTab(t){S.mainView=false;if(S.solo){if(S._realDb){S.db=S._realDb;S._realDb=null;}S.solo=null;}if(t==="cal"){t="home";S.homeCal=true;}S.tab=t;render();window.scrollTo({top:0});if(S.homeCal&&t==="home")setTimeout(()=>{const c=document.querySelector("#homeCal");if(c&&arguments[0]==="cal")c.scrollIntoView({block:"start",behavior:"smooth"});},60);}
+function setTab(t){if(S.solo&&soloHasWork()&&!S._soloOk){askConfirm("악보 한 곡 나가기",[h("p",{text:"나가면 여기서 한 작업(악보 · 진행 순서 · 가사)이 모두 사라져요. 라이브러리는 그대로예요."})],"나가기",()=>{S._soloOk=true;setTab(t);S._soloOk=false;});return;}
+  S.mainView=false;if(S.solo){if(S._realDb){S.db=S._realDb;S._realDb=null;}S.solo=null;}if(t==="cal"){t="home";S.homeCal=true;}S.tab=t;render();window.scrollTo({top:0});if(S.homeCal&&t==="home")setTimeout(()=>{const c=document.querySelector("#homeCal");if(c&&arguments[0]==="cal")c.scrollIntoView({block:"start",behavior:"smooth"});},60);}
 /* who writes contis: admin, team leader password, a member marked 리더 or 인도자 (by the name given on this device), or someone who already wrote one */
 function isWriter(){if(!S.canWrite||S.memberOnly)return false;if(!window.CBWP||isProject())return true;if(window.CBWP.isAdmin()||canLead())return true;
   if(S.contis.some(c=>isAuthor(c)&&!c.past))return true;const me=normName(myName());if(!me)return false;
@@ -5876,8 +5880,11 @@ function soloDb(real){if(!real)return real;
 function soloStart(){const it={uid:uid(8),title:"",key:"",pages:[],flow:"",memo:"",dur:"",lyHere:""};
   S.solo={step:0,q:"",c:{team:S.team||"none",date:todayStr(),wtype:"직접쓰기",wtypeCustom:"특송",opening:[],before:[it],special:[],after:[],roster:[]}};
   if(!S._realDb){S._realDb=S.db;S.db=soloDb(S.db);}S.mainView=false;render();window.scrollTo(0,0);}
+const soloHasWork=()=>{const it=S.solo&&S.solo.c.before[0];return !!it&&(!!(it.pages||[]).length||!!(it.flow||"").trim()||!!(it.lyHere||"").trim());};
+/* 새로고침 · 창 닫기: 브라우저가 한 번 더 물어봐요 */
+window.addEventListener("beforeunload",e=>{if(S.solo&&soloHasWork()){e.preventDefault();e.returnValue="";}});
 function soloEnd(force){const it=S.solo&&S.solo.c.before[0];
-  if(!force&&it&&((it.pages||[]).length||(it.flow||"").trim()))return askConfirm("악보 한 곡 나가기",[h("p",{text:"나가면 이 화면에서 고친 내용(진행 순서 · 악보 표시 · 가사)이 사라져요. 라이브러리는 그대로예요."})],"나가기",()=>soloEnd(true));
+  if(!force&&soloHasWork())return askConfirm("악보 한 곡 나가기",[h("p",{text:"나가면 이 화면에서 고친 내용(진행 순서 · 악보 표시 · 가사)이 사라져요. 라이브러리는 그대로예요."})],"나가기",()=>soloEnd(true));
   if(S._realDb){S.db=S._realDb;S._realDb=null;}S.solo=null;render();window.scrollTo(0,0);}
 function soloGo(i){S.solo.step=i;render();window.scrollTo({top:0});}
 function renderSolo(m){const Z=S.solo,c=Z.c,it=c.before[0];const lib=(S.songs||[]).length>0;const STEPS=["악보","진행 순서","공유 · PPT"];const ready=(it.pages||[]).length>0;
@@ -5886,7 +5893,9 @@ function renderSolo(m){const Z=S.solo,c=Z.c,it=c.before[0];const lib=(S.songs||[
     h("span",{class:"sn-lab"},h("i",{text:done[j]&&j!==Z.step?"✓":String(j+1)}),l),h("span",{class:"sn-bar"}))));
   m.append(h("div",{class:"sheet solohead"},h("div",{class:"row",style:"gap:10px;align-items:center;flex-wrap:wrap"},h("h2",{style:"margin:0"},"악보 한 곡"),
       h("span",{class:"hint",text:"특송처럼 한 곡만 빠르게 · 여기서 고친 건 이 곡에만 남고 라이브러리는 바뀌지 않아요"}),h("span",{class:"spacer"}),
-      h("button",{type:"button",class:"btn",text:"나가기",onclick:()=>soloEnd()})),h("div",{class:"solo-prog"},prog)));
+      h("button",{type:"button",class:"btn",text:"나가기",onclick:()=>soloEnd()})),
+    h("div",{class:"solo-warn",role:"note"},h("b",{text:"⚠ 저장되지 않아요"}),h("span",{text:"새로고침하거나 나가면 여기서 한 작업(악보 · 진행 순서 · 가사)이 모두 사라져요. 끝나면 꼭 PDF · PPT로 받아 두세요."})),
+    h("div",{class:"solo-prog"},prog)));
   const nav=(prevI,nextI,nextLab)=>h("div",{class:"stepfoot"},prevI!=null?h("button",{type:"button",class:"btn",text:`← 이전: ${circ(prevI+1)} ${STEPS[prevI]}`,onclick:()=>soloGo(prevI)}):h("span"),h("span",{class:"spacer"}),
     nextI!=null?h("button",{type:"button",class:"btn primary",disabled:nextI===1&&!ready,title:nextI===1&&!ready?"먼저 악보를 넣어 주세요":"",text:nextLab||`다음: ${circ(nextI+1)} ${STEPS[nextI]} →`,onclick:()=>soloGo(nextI)}):h("span"));
   const pv=h("div",{class:"solo-pv"});if(ready)pagesInto(pv,it.pages,it.title);else pv.append(h("div",{class:"empty",text:"아직 악보가 없어요."}));
