@@ -2177,7 +2177,7 @@ function statusBanner(){
   if(S.dbFailed)return h("div",{class:"banner warn"},h("b",{text:"팀 저장소에 연결되지 않았어요. "}),window.CBWP?"인터넷 연결을 확인하고 새로고침해 주세요. 그동안 쓴 내용은 이 기기에만 남아요.":"이 화면에서 쓴 내용은 이 기기에만 임시로 남고 팀원에게 보이지 않아요. claude.ai에 로그인한 상태로 열어 주세요.");
   if(!S.canWrite&&window.CBWP&&S.team)return h("div",{class:"banner"},h("b",{text:"보기 전용이에요. "}),`콘티를 쓰려면 ${teamName(S.team)} 팀 비밀번호를 한 번 넣어 주세요. 이 기기에서는 다음부터 묻지 않아요. `,
     h("button",{class:"btn sm primary",text:"팀 비밀번호 넣기",onclick:()=>unlockModal(S.team)}));
-  if(!S.canWrite)return h("div",{class:"banner"},h("b",{text:"보기 전용으로 열렸어요. "}),"콘티를 쓰려면 이 페이지 주인에게 편집 권한(Contributor 이상)을 요청하세요.");
+  if(!S.canWrite&&!window.CBWP)return h("div",{class:"banner"},h("b",{text:"보기 전용으로 열렸어요. "}),"콘티를 쓰려면 이 페이지 주인에게 편집 권한(Contributor 이상)을 요청하세요.");
   return null;}
 
 /* =========================================================
