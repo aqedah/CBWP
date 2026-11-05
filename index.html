@@ -1100,6 +1100,17 @@ body.has-stepnav .wb-r{top:calc(env(safe-area-inset-top,0px) + 145px)}
 .sh-tab{border-radius:12px 12px 0 0;border-bottom:none;background:var(--soft);color:var(--muted);padding:0 16px;height:44px;box-sizing:border-box;font-weight:700}
 .sh-tab.on{height:46px;margin-bottom:-1px;background:var(--sheet);border-color:var(--line);color:var(--team,var(--accent));box-shadow:inset 0 3px 0 var(--team,var(--accent))}
 .sh-tab.on .sh-tabno{color:var(--team,var(--accent))}
+
+/* 진행 막대: 「지금」(팀 색 · 굵게)과 「끝냄」(짙은 회색 ✓)이 팀 색과 상관없이 확실히 다르게 */
+.sn-seg.done .sn-bar{background:color-mix(in srgb,var(--ink) 38%,var(--sheet))!important}
+.sn-seg.done .sn-lab{color:var(--ink2)!important}
+.sn-seg.done .sn-lab i{background:color-mix(in srgb,var(--ink) 75%,var(--sheet))!important;color:var(--sheet)!important}
+.sn-seg.cur .sn-bar{height:11px;box-shadow:0 0 0 3px color-mix(in srgb,var(--team,var(--accent)) 22%,transparent)}
+.sn-seg.cur .sn-lab{font-weight:900;font-size:.95rem}
+.sn-seg.cur .sn-lab i{width:24px;height:24px;font-size:.8rem;box-shadow:0 0 0 3px color-mix(in srgb,var(--team,var(--accent)) 25%,transparent)}
+.sn-seg{align-self:end}
+.sn-csubs .sn-st.done i{background:color-mix(in srgb,var(--ink) 75%,var(--sheet))!important;color:var(--sheet)!important}
+.sn-csubs .sn-st.done{color:var(--ink2)}
 </style>
 
 <style>img{max-width:100%}html{-webkit-text-size-adjust:100%}</style>
@@ -5982,6 +5993,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-11-05","🎯 진행 막대: 지금 단계는 팀 색으로 굵게, 끝낸 단계는 짙은 회색 ✓로 (팀 색과 헷갈리지 않게)"],
   ["2026-11-05","🎨 주 단추 · 강조색도 팀 색으로 (기드온은 금색, 쉐마는 초록 …) · ④ 악보의 곡 고르기는 서류철 탭으로"],
   ["2026-11-05","✋ 진행 순서 조각: 마우스를 올리면 ✕ · 손 모양 커서로 잡아서 끌면 조각이 손을 따라와요"],
   ["2026-11-05","🎤 특송곡을 ① 말씀에서 비워 두면 ③ 찬양 단계에서 특송 칸이 사라져요"],
