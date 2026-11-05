@@ -1241,6 +1241,7 @@ function nextSunday(){const d=new Date();d.setDate(d.getDate()+((7-d.getDay())%7
 function dateKeys(ds){const m=(ds||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return ds||"";const[,y,mm,dd]=m,mo=+mm,d=+dd;
   return[ds,`${mo}/${d}`,`${mm}/${dd}`,`${mo}.${d}`,`${mm}.${dd}`,`${mo}월 ${d}일`,`${mo}월${d}일`,`${mm}${dd}`,`${y}.${mm}.${dd}`,`${y}. ${mo}. ${d}`,`${y}/${mo}/${d}`,`${y.slice(2)}${mm}${dd}`].join(" ");}
 function parseD(s){const[y,m,d]=(s||"").split("-").map(Number);return y?new Date(y,m-1,d):null;}
+const WDAY=["주일","월","화","수","목","금","토"];/* 요일: 일요일은 늘 「주일」 */
 function fmtDate(s){const d=parseD(s);if(!d)return "날짜 미정";return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()} (${"주일,월,화,수,목,금,토".split(",")[d.getDay()]})`;}
 /* guess the worship from the date (church calendar); always editable */
 function easterOf(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),hh=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-hh-k)%7,m=Math.floor((a+11*hh+22*l)/451);
@@ -4236,7 +4237,7 @@ async function exportXlsx(list,o){await loadScript(XLSX_URL);const X=window.XLSX
 async function exportCsv(list,o){const n=Math.max(1,...list.map(c=>allItems(c).length));
   const head=["날짜","요일","예배","설교자","설교 제목","본문","특송","찬양 인도",...Array.from({length:n},(_,i)=>`곡 ${i+1}`)];
   const q=v=>{v=String(v??"");return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v;};
-  const rows=list.map(c=>{const d=parseD(c.date);const its=allItems(c);return[c.date,"일월화수목금토"[d.getDay()],wtypeOf(c),c.preacher||"",c.sermonTitle||"",c.passage||"",c.specialBy||((c.special||[])[0]||{}).title||"",praiseOf(c),...Array.from({length:n},(_,i)=>its[i]?its[i].title+(its[i].key?` (${its[i].key})`:""):"")];});
+  const rows=list.map(c=>{const d=parseD(c.date);const its=allItems(c);return[c.date,WDAY[d.getDay()],wtypeOf(c),c.preacher||"",c.sermonTitle||"",c.passage||"",c.specialBy||((c.special||[])[0]||{}).title||"",praiseOf(c),...Array.from({length:n},(_,i)=>its[i]?its[i].title+(its[i].key?` (${its[i].key})`:""):"")];});
   const csv="﻿"+[head,...rows].map(r=>r.map(q).join(",")).join("\r\n");   /* 앞의 BOM: 엑셀에서 한글이 안 깨지게 */
   if(await saveBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}),`${o.title||teamName(S.team)}_${o.from}~${o.to}.csv`))toast(`CSV (콘티 ${list.length}개)를 저장했어요`);}
 function renderList(m){let q="";
@@ -4751,7 +4752,7 @@ async function savePlan(d,pl){const body={team:S.team,post:"plan",date:d,roster:
     practice:pl.prAt&&pl.prAt.date?`${dLabel(pl.prAt.date)}${pl.prAt.time?` ${pl.prAt.time}`:""}${pl.prAt.place?`, ${pl.prAt.place}`:""}`:(pl.practice||""),practiceAt:pl.prAt||pl.practiceAt||null,practiceRoster:pl.prOwn?(pl.prNames||[]):(pl.prOwn===false?null:(pl.practiceRoster||null)),note:pl.note||"",off:!!pl.off,label:pl.label||"",by:S.myId||null,updatedAt:Date.now()};
   try{await S.db.doc(`events/${planId(d)}`).set(body);}catch(e){console.error(e);toast("편성을 저장하지 못했어요");return false;}
   patchLocal(planId(d),()=>body);return true;}
-const dLabel=d=>{const x=parseD(d);return `${x.getMonth()+1}/${x.getDate()}(${"일월화수목금토"[x.getDay()]})`;};
+const dLabel=d=>{const x=parseD(d);return `${x.getMonth()+1}/${x.getDate()}(${WDAY[x.getDay()]})`;};
 /* 홈: 참여 응답 */
 function availSheet(){const me=myName();if(!me||!S.team)return null;const mb=S.members.find(x=>normName(x.name)===normName(me));if(mb&&tierOf(mb)==="휴면")return null;
   const ds=upcomingDates(3).filter(d=>!(planOf(d)||{}).off);const can=S.canWrite&&!!S.db;
@@ -5341,7 +5342,7 @@ function dateSel({id,value,disabled,empty}){const now=new Date();const [y0,m0,d0
   const mS=h("select",{"aria-label":"월",disabled},[empty?opt("","월",!m0):null,...Array.from({length:12},(_,i)=>opt(i+1,`${i+1}월`,i+1===m0))].filter(Boolean));
   const dS=h("select",{"aria-label":"일",disabled});
   const fillD=()=>{const y=+yS.value||now.getFullYear(),m=+mS.value||1;const n=new Date(y,m,0).getDate();const cur=+dS.value||d0;
-    dS.replaceChildren(...[empty?opt("","일",!cur):null,...Array.from({length:n},(_,i)=>{const dd=i+1;const wd="일월화수목금토"[new Date(y,m-1,dd).getDay()];return opt(dd,`${dd}일 (${wd})`,dd===Math.min(cur||0,n));})].filter(Boolean));};
+    dS.replaceChildren(...[empty?opt("","일",!cur):null,...Array.from({length:n},(_,i)=>{const dd=i+1;const wd=WDAY[new Date(y,m-1,dd).getDay()];return opt(dd,`${dd}일 (${wd})`,dd===Math.min(cur||0,n));})].filter(Boolean));};
   fillD();yS.addEventListener("change",fillD);mS.addEventListener("change",fillD);
   const box=h("span",{class:"dtsel"},yS,mS,dS);
   Object.defineProperty(box,"value",{get:()=>yS.value&&mS.value&&dS.value?`${yS.value}-${String(mS.value).padStart(2,"0")}-${String(dS.value).padStart(2,"0")}`:"",
@@ -5406,7 +5407,7 @@ function renderCal(m){const today=todayStr();if(!S.calMonth)S.calMonth=today.sli
   const [Y,M]=S.calMonth.split("-").map(Number);const first=new Date(Y,M-1,1);const start=new Date(Y,M-1,1-first.getDay());
   const go=n=>{const d=new Date(Y,M-1+n,1);S.calMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;render();};
   const grid=h("div",{class:"cal",role:"grid"});
-  ["일","월","화","수","목","금","토"].forEach((w,i)=>grid.append(h("div",{class:"cal-wd"+(i===0?" sun":i===6?" sat":""),text:w})));
+  WDAY.forEach((w,i)=>grid.append(h("div",{class:"cal-wd"+(i===0?" sun":i===6?" sat":""),text:w})));
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=ymd(d);if(i>=35&&d.getMonth()!==M-1)break;
     const {evs,cs,bds}=dayItems(ds);const out=d.getMonth()!==M-1;const hol=HOLIDAYS[ds];const n=evs.length+cs.length+bds.length;
     grid.append(h("button",{type:"button",class:"cal-day"+(out?" out":"")+(ds===today?" today":"")+(d.getDay()===0?" sun":"")+(hol?" hol":""),"aria-label":`${fmtDate(ds)}${hol?" "+hol:""} 일정 ${n}개 · 눌러서 보기와 추가`,onclick:()=>dayModal(ds)},
@@ -5440,7 +5441,7 @@ const weekStart=ds=>{const d=parseD(ds);return addDays(ds,-d.getDay());};
 function projectListSheet(){const today=todayStr();const all=S.contis.filter(c=>!c.noService&&c.date).sort((a,b)=>a.date.localeCompare(b.date)||wtypeOf(a).localeCompare(wtypeOf(b)));
   const weeks={};for(const c of all)(weeks[weekStart(c.date)]=weeks[weekStart(c.date)]||[]).push(c);const keys=Object.keys(weeks).sort();
   const curW=weekStart(today);const openDef=keys.find(k=>k>=curW)||keys[keys.length-1];S.pwOpen=S.pwOpen||{};const isOpen=k=>S.pwOpen[k]??(k===openDef);
-  const md=ds=>{const d=parseD(ds);return `${d.getMonth()+1}/${d.getDate()}`;};const DW="일월화수목금토";
+  const md=ds=>{const d=parseD(ds);return `${d.getMonth()+1}/${d.getDate()}`;};const DW=WDAY;
   const row=c=>{const n=allItems(c).length,sp=(c.special||[])[0];return h("div",{class:"card pmrow"},h("div",{style:"flex:1;min-width:200px"},
       h("b",{text:`${fmtDate(c.date)}${c.sermonTitle?` · ${c.sermonTitle}`:""}`}),
       h("div",{class:"hint",text:[leaderOf(c)?`인도 ${leaderOf(c)}`:"인도자 미정",c.preacher?`설교 ${c.preacher}`:"",c.passage,n?`${n}곡`:"곡 미입력",(sp||c.specialBy)?`특송 ${[sp&&sp.title,c.specialBy].filter(Boolean).join(" - ")}`:""].filter(Boolean).join(" · ")})),
@@ -5456,7 +5457,7 @@ function projectListSheet(){const today=todayStr();const all=S.contis.filter(c=>
     h("div",{style:"display:flex;flex-direction:column;gap:8px"},keys.map(week)),
     h("div",{class:"row",style:"margin-top:8px;gap:6px"},isWriter()?h("button",{class:"btn sm",text:"+ 새 집회 콘티",onclick:()=>newConti()}):null,h("button",{class:"btn sm",text:"📊 엑셀 · CSV로 내보내기",onclick:exportTableModal}),h("button",{class:"btn sm",text:"🎞 PPT 일괄 저장",title:"기간 안 콘티의 가사 PPT를 한꺼번에 (.zip)",onclick:pptBulkModal})));}
 /* 행사 프로젝트 홈: 앞으로 2주 달력 · 날마다 설교자 · 특송 */
-function projectCalSheet(){const today=todayStr();const st=weekStart(today);const DW="일월화수목금토";
+function projectCalSheet(){const today=todayStr();const st=weekStart(today);const DW=WDAY;
   const cells=Array.from({length:14},(_,i)=>{const d=addDays(st,i);const dt=parseD(d);const cs=S.contis.filter(c=>c.date===d&&!c.noService);const hol=HOLIDAYS[d];
     return h("div",{class:"pcal-c"+(d===today?" today":"")+(d<today?" past":"")+(cs.length?" has":""),onclick:cs.length?()=>viewConti(cs[0]):null},
       h("div",{class:"pcal-d"},h("b",{text:String(dt.getDate())}),dt.getDate()===1||i===0?h("span",{class:"hint",text:`${dt.getMonth()+1}월`}):null,hol?h("span",{class:"pcal-hol",text:hol}):null),
@@ -5848,6 +5849,7 @@ function nameBox(){const inp=h("input",{type:"text",id:"my-name",placeholder:"�
     if(window.CBWP&&window.CBWP.setName)await window.CBWP.setName(v);else S.meName=v;toast(`${v} 님으로 저장했어요`);render();}}));}
 /* ===== 패치 내역 전광판: 홈 맨 위에 새로 바뀐 것을 한 줄씩 돌려 보여 줘요 · 누르면 전체 목록 ===== */
 const PATCH_NOTES=[
+  ["2026-11-05","📅 요일 표시: 일요일은 모두 「주일」로 (송리스트 공지 · 11/8(주일) · 달력 · 엑셀)"],
   ["2026-11-05","⌨️ 시간은 숫자만 써도 돼요: 1500 → 15:00 · 315 → 3:15 · 곡 사이는 15 → 15초"],
   ["2026-11-05","🔘 ② 콘티 안 「예배 정보 · 찬양」을 단계 탭과 다른 알약 단추로 바꿔 「이전 · 다음」 사이에 두었어요"],
   ["2026-11-05","🧭 PC 머리 띠: 지금 쓰는 콘티(날짜 · 예배 · 상태) · 저장 상태 · 「꼭 필요한 것 n개 남음」이 늘 보여요 · 다른 메뉴에선 「쓰던 콘티 돌아가기」"],
